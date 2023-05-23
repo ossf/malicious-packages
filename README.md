@@ -1,7 +1,7 @@
 # OpenSSF Malicious Packages
 
 This repository is a collection of reports of malicious packages identified in
-Open Source package repositories consumable via the
+Open Source package repositories, consumable via the
 [Open Source Vulnerability (OSV)](https://osv.dev) format.
 
 This project is closely related to the [OpenSSF
@@ -11,7 +11,7 @@ Package Analysis project](https://github.com/ossf/package-analysis).
 
 ### Background
 
-Attacks against open source ecosystems are gaining popularaity. Typosquating,
+Attacks against open source ecosystems are gaining popularity. Typosquatting,
 dependency confusion, account takeovers, etc are happening more frequently each
 year.
 
@@ -34,7 +34,8 @@ new open source malware.
 What is in scope?
 
 - any package that belongs to an ecosystem supported by the [OSV Schema](https://ossf.github.io/osv-schema/)
-- malicious packages published under typosquating or dependency confusion type attacks
+- malicious packages published under typosquatting or dependency confusion type
+  attacks
 - malicious packages published through account takeover
 - security researcher activity
 
@@ -58,7 +59,7 @@ We accept new reports, and updates to existing reports.
 
 #### Automated Sources (Coming Soon!)
 
-If you regularly produce high-quality, low false positive, detections and
+If you regularly produce high-quality detections with few false positives, and
 have them accumulating in a database, we can consume them as OSV from a cloud
 storage environment (S3, GCS).
 
