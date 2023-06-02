@@ -57,24 +57,30 @@ func main() {
 		log.Fatalf("Failed reading config: %v", err)
 	}
 
+	keys, err := loadStartKeys(*startKeysFlag)
+	if err != nil {
+		log.Fatalf("Failed loading start keys: %v", err)
+	}
+
 	// Create a temp directory for atomic writes. We use the system temp
 	// directory to avoid accidentally leaving temp junk in the repository.
 	tempDir, err = os.MkdirTemp("", "osv-ingest-*")
 	if err != nil {
 		log.Fatalf("Failed creating temp dir: %v", err)
 	}
-
-	keys, err := loadStartKeys(*startKeysFlag)
-	if err != nil {
-		log.Fatalf("Failed loading start keys: %v", err)
-	}
+	defer func() {
+		// Clean up temp directory
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Fatalf("Failed cleaning up temp dir: %v", err)
+		}
+	}()
 
 	ctx := context.Background()
 	for _, s := range c.Sources {
 		end, err := ingestReports(ctx, s, c, keys.Get(s.ID))
 		if err != nil {
 			// Abort here since the repo is now in a dirty state.
-			log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err)
+			log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err) //nolint:gocritic
 		}
 		keys.Set(s.ID, end)
 	}
@@ -82,11 +88,6 @@ func main() {
 	// Atomically write updated start keys...
 	if err := saveStartKeys(*startKeysFlag, keys); err != nil {
 		log.Fatalf("Failed saving start keys: %v", err)
-	}
-
-	// Clean up temp directory
-	if err := os.RemoveAll(tempDir); err != nil {
-		log.Fatalf("Failed cleaning up temp dir: %v", err)
 	}
 }
 
