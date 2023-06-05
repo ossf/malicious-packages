@@ -17,7 +17,7 @@ package report_test
 import (
 	"testing"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/report"
+	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestPath(t *testing.T) {

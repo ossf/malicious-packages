@@ -20,7 +20,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/report"
+	"github.com/ossf/malicious-packages/internal/report"
 )
 
 var (
