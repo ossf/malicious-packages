@@ -28,12 +28,12 @@ import (
 	_ "gocloud.dev/blob/gcsblob"
 	_ "gocloud.dev/blob/s3blob"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/config"
 	"github.com/ossf/malicious-packages/cmd/ingest/report"
 	"github.com/ossf/malicious-packages/cmd/ingest/reportio"
-	"github.com/ossf/malicious-packages/cmd/ingest/source"
 	"github.com/ossf/malicious-packages/cmd/ingest/sourceio"
 	"github.com/ossf/malicious-packages/cmd/ingest/startkeys"
+	"github.com/ossf/malicious-packages/internal/config"
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 var tempDir string

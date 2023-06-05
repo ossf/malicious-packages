@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/exp/slices"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/config"
-	"github.com/ossf/malicious-packages/cmd/ingest/source"
+	"github.com/ossf/malicious-packages/internal/config"
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 const validConfigYAML = `

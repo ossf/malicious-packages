@@ -26,7 +26,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 	"gocloud.dev/blob"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/source"
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 // beforeListFunc will return a function that can be passed in for the
