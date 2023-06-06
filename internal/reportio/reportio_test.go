@@ -17,7 +17,7 @@ package reportio_test
 import (
 	"testing"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/reportio"
+	"github.com/ossf/malicious-packages/internal/reportio"
 )
 
 func TestValidatePath(t *testing.T) {
