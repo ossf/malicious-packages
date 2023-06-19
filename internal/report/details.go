@@ -12,7 +12,7 @@ const (
 	// contributors (above) and the details included from the origins (below).
 	detailHeader = "\n##= Per source details. Do not edit below this line. =##\n"
 
-	// detailSectionHeader preceeds each detail section indicating which source
+	// detailSectionHeader precedes each detail section indicating which source
 	// and origin the details were included from.
 	detailSectionHeader = "\n###= Source: %s (%s) =###\n"
 

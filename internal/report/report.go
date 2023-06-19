@@ -78,7 +78,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 	}
 	r.origins = db.DatabaseSpecific.Origins
 
-	// TODO: validate schema verison is >= 1.4.0
+	// TODO: validate schema version is >= 1.4.0
 
 	if len(r.raw.Affected) == 0 {
 		return fmt.Errorf("%w: no affected packages listed", ErrInvalidOSV)

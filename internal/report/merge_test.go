@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
-	"github.com/ossf/malicious-packages/internal/report"
 	"golang.org/x/exp/slices"
+
+	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestMerge_MismatchName(t *testing.T) {
