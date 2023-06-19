@@ -46,34 +46,60 @@ func ValidatePath(path string) error {
 // OriginExistsInPaths returns true if an OSV report exists with an origin that
 // exists with the same sourceID and shasum.
 //
-// The function will iterate across each of the base paths in bases and join
-// them with path using `filepath.Join(base, path)`.
+// The function iterates across each of the base paths in bases and joins them
+// with path using `filepath.Join(base, path)`.
 //
-// An error will be returned if there is an error reading the OSV reports, or
-// the filesystem.
+// An error is returned if there is an error reading the OSV reports, or the
+// filesystem.
 func OriginExistsInPaths(path string, bases []string, sourceID, shasum string) (bool, error) {
-	for _, base := range bases {
-		fp := filepath.Clean(filepath.Join(base, path))
-		uniq, err := originExistsInPath(fp, sourceID, shasum)
+	reports, err := ReportsInPaths(path, bases)
+	if err != nil {
+		return false, err
+	}
+	for _, n := range reports {
+		r, err := report.FromFile(n)
 		if err != nil {
-			return false, err
+			return false, fmt.Errorf("failed loading %s: %w", n, err)
 		}
-		if uniq {
+
+		if r.HasOrigin(sourceID, shasum) {
 			return true, nil
 		}
 	}
-	// No bases, so no origins can exist.
+	// No reports, so no origins can exist.
 	return false, nil
 }
 
-func originExistsInPath(path, sourceID, shasum string) (bool, error) {
+// ReportsInPaths returns a slice with all the filepaths to all OSV reports
+// that share the same path (i.e. ecosystem and package name) across the
+// directories in bases.
+//
+// The function iterates across each of the base paths in bases and joins them
+// with path using `filepath.Join(base, path)`.
+//
+// An error will be returned if there is an error reading the the filesystem.
+func ReportsInPaths(path string, bases []string) ([]string, error) {
+	var reports []string
+	for _, base := range bases {
+		fp := filepath.Clean(filepath.Join(base, path))
+		rs, err := reportsInPath(fp)
+		if err != nil {
+			return nil, err
+		}
+		reports = append(reports, rs...)
+	}
+	return reports, nil
+}
+
+func reportsInPath(path string) ([]string, error) {
+	var reports []string
 	entries, err := os.ReadDir(path)
 	if os.IsNotExist(err) {
-		// path doesn't exist, so there is no origin here.
-		return false, nil
+		// path doesn't exist, so there are no reports here.
+		return reports, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("failed to read dir %s: %w", path, err)
+		return nil, fmt.Errorf("failed to read dir %s: %w", path, err)
 	}
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -81,21 +107,7 @@ func originExistsInPath(path, sourceID, shasum string) (bool, error) {
 			continue
 		}
 		n := filepath.Join(path, entry.Name())
-		f, err := os.Open(n)
-		if err != nil {
-			return false, fmt.Errorf("failed to open %s: %w", n, err)
-		}
-
-		r, err := report.ReadJSON(f)
-		f.Close()
-		if err != nil {
-			return false, fmt.Errorf("failed to parse %s: %w", n, err)
-		}
-
-		if r.HasOrigin(sourceID, shasum) {
-			return true, nil
-		}
+		reports = append(reports, n)
 	}
-	// We looked at every entry, and reached here, so no origins exists.
-	return false, nil
+	return reports, nil
 }

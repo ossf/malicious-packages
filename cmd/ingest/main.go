@@ -57,6 +57,8 @@ func main() {
 		log.Fatalf("Failed reading config: %v", err)
 	}
 
+	log.Printf("Using config: id prefix=%s, malicious=%s, false positives=%s, sources=%d", c.IDPrefix, c.MaliciousPath, c.FalsePositivePath, len(c.Sources))
+
 	keys, err := loadStartKeys(*startKeysFlag)
 	if err != nil {
 		log.Fatalf("Failed loading start keys: %v", err)
@@ -123,7 +125,7 @@ func ingestReports(ctx context.Context, s *source.Source, c *config.Config, star
 
 		// Add the origin to the report so we can de-dupe in the future and
 		// track where and when the report was ingested.
-		r.SetOrigin(s.ID, shasum)
+		r.AddOrigin(s.ID, shasum)
 
 		// Prepare the destination path, creating it if needed.
 		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))

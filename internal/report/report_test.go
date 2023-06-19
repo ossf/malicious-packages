@@ -15,10 +15,24 @@
 package report_test
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"reflect"
 	"testing"
 
+	"github.com/google/osv-scanner/pkg/models"
 	"github.com/ossf/malicious-packages/internal/report"
 )
+
+func testReport(ecosystem models.Ecosystem, name string) *report.Report {
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}}]}`
+	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
 
 func TestPath(t *testing.T) {
 	tests := []struct {
@@ -49,5 +63,119 @@ func TestPath(t *testing.T) {
 				t.Errorf("Dir() = %v; want %v", got, test.want)
 			}
 		})
+	}
+}
+
+func TestNormalize_WithID(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().ID = "MAL-1234-5678"
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+}
+
+func TestNormalize_Summary(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "Malicious code in example (RubyGems)"
+	if got := r.Vuln().Summary; got != want {
+		t.Errorf("Summary = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_TooManyOrigins(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.AddOrigin("test-origin", "deadbeef")
+	r.AddOrigin("another-test-origin", "00000000")
+
+	if err := r.Normalize(); err == nil || !errors.Is(err, report.ErrNormalizing) {
+		t.Fatalf("Normalize() = %v; want %v", err, report.ErrNormalizing)
+	}
+}
+
+func TestNormalize_DetailHeaderPresent(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.SetDetails("user")
+
+	if err := r.Normalize(); err == nil || !errors.Is(err, report.ErrNormalizing) {
+		t.Fatalf("Normalize() = %v; want %v", err, report.ErrNormalizing)
+	}
+}
+
+func TestNormalize_DatabaseSpecificStrip(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().DatabaseSpecific = map[string]any{
+		"object":    map[string]any{"a": "b"},
+		"array":     []any{"a", 1},
+		"scalar":    42,
+		"weirdtype": map[string]int{"meaning": 42},
+	}
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := map[string]any{
+		"object": map[string]any{"a": "b"},
+		"array":  []any{"a", 1},
+	}
+	if got := r.Vuln().DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_AffectedDatabaseSpecificStrip(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"object":    map[string]any{"a": "b"},
+		"array":     []any{"a", 1},
+		"scalar":    42,
+		"weirdtype": map[string]int{"meaning": 42},
+	}
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := map[string]any{
+		"object": map[string]any{"a": "b"},
+		"array":  []any{"a", 1},
+	}
+	if got := r.Vuln().Affected[0].DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_NoOrigin_DetailsUnchanged(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().Details = "  please do\nnot touch  "
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "  please do\nnot touch  "
+	if got := r.Vuln().Details; got != want {
+		t.Errorf("Details = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_Origin_DetailsChanged(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().Details = "  please move\nmy details  "
+	r.AddOrigin("test-origin", "deadbeef")
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "\n##= Per source details. Do not edit below this line. =##\n\n###= Source: test-origin (deadbeef) =###\nplease move\nmy details\n"
+	if got := r.Vuln().Details; got != want {
+		t.Errorf("Details = %v; want %v", got, want)
 	}
 }
