@@ -25,11 +25,9 @@ const (
 	detailSHASumMatchIdx = 2
 )
 
-var (
-	// detailSectionHeaderRE is used to find the position of each section and
-	// extract the source information from it.
-	detailSectionHeaderRE = regexp.MustCompile("(?s)\n###= Source: ([a-z0-9-]+) \\(([a-zA-Z0-9]+)\\) =###\n")
-)
+// detailSectionHeaderRE is used to find the position of each section and
+// extract the source information from it.
+var detailSectionHeaderRE = regexp.MustCompile("(?s)\n###= Source: ([a-z0-9-]+) \\(([a-zA-Z0-9]+)\\) =###\n")
 
 // RawDetails returns the raw, unparsed, details of the OSV report.
 func (r *Report) RawDetails() string {

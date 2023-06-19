@@ -489,8 +489,8 @@ func TestMerge_AffectedDatabaseSpecific(t *testing.T) {
 }
 
 func TestMerge_PublishTimes(t *testing.T) {
-	time1 := time.Date(2023, 06, 19, 8, 46, 0, 0, time.UTC)
-	time2 := time.Date(2023, 12, 25, 10, 00, 0, 0, time.UTC)
+	time1 := time.Date(2023, 0o6, 19, 8, 46, 0, 0, time.UTC)
+	time2 := time.Date(2023, 12, 25, 10, 0o0, 0, 0, time.UTC)
 	tests := []struct {
 		name         string
 		report       time.Time
