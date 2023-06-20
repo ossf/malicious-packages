@@ -80,7 +80,7 @@ func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err
 		}
 		sources[o] = detail
 	}
-	return
+	return user, sources, nil
 }
 
 // SetDetails constructs and stores the OSV details based on any user contributed

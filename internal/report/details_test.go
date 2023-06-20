@@ -1,3 +1,4 @@
+//nolint:goconst
 package report_test
 
 import (

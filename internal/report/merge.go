@@ -41,7 +41,8 @@ func (r *Report) Merge(other *Report) error {
 	r.raw.Credits = combineCredits(r.raw.Credits, other.raw.Credits)
 	r.raw.References = mergeSlices(r.raw.References, other.raw.References)
 	r.raw.Aliases = mergeSlices(r.raw.Aliases, other.raw.Aliases)
-	// r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related)  // uncomment when osv-scanner is released
+	//nolint:gocritic
+	//r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related) // uncomment when osv-scanner is released
 	r.raw.Severity = nil
 
 	// Description merging.
