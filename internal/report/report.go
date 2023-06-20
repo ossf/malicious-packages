@@ -19,41 +19,44 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
 )
 
-var (
-	ErrInvalidOSV    = errors.New("invalid OSV")
-	ErrUnexpectedOSV = errors.New("unexpected OSV")
+const (
+	// osvSchemaVersion is the current version of the OSV schema we are
+	// generating. OSV processed will be upgraded to this version of the OSV
+	// schema format.
+	osvSchemaVersion = "1.5.0"
 
-	ecosystemRE  = regexp.MustCompile(`[ \/._-]+`)
-	originRefKey = "malicious-packages-origins"
+	// summaryFormat is the format string used to generate the summary.
+	summaryFormat = "Malicious code in %s (%s)"
+)
+
+var (
+	ErrInvalidOSV     = errors.New("invalid OSV")
+	ErrUnexpectedOSV  = errors.New("unexpected OSV")
+	ErrNormalizing    = errors.New("normalization error")
+	ErrInvalidDetails = errors.New("invalid details")
+
+	ecosystemRE = regexp.MustCompile(`[ \/._-]+`)
 )
 
 type databaseSpecific struct {
-	Origins []*originRef `json:"malicious-packages-origins"`
+	Origins []*OriginRef `json:"malicious-packages-origins"`
 }
 
 type dbSpecificVuln struct {
 	DatabaseSpecific databaseSpecific `json:"database_specific,omitempty"`
 }
 
-type originRef struct {
-	Source     string         `json:"source"`
-	SHASum     string         `json:"sha256"`
-	ImportTime time.Time      `json:"import_time"`
-	Ranges     []models.Range `json:"ranges,omitempty"`
-	Versions   []string       `json:"versions,omitempty"`
-}
-
 type Report struct {
 	raw       *models.Vulnerability
-	origins   []*originRef
+	origins   []*OriginRef
 	Ecosystem string
 	Name      string
 }
@@ -75,6 +78,8 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 	}
 	r.origins = db.DatabaseSpecific.Origins
 
+	// TODO: validate schema version is >= 1.4.0
+
 	if len(r.raw.Affected) == 0 {
 		return fmt.Errorf("%w: no affected packages listed", ErrInvalidOSV)
 	}
@@ -93,6 +98,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 }
 
 func (r *Report) MarshalJSON() ([]byte, error) {
+	r.raw.SchemaVersion = osvSchemaVersion // Bump the schema version
 	if r.raw.DatabaseSpecific == nil {
 		r.raw.DatabaseSpecific = make(map[string]interface{})
 	}
@@ -134,22 +140,54 @@ func cleanEcosystem(in string) string {
 	return strings.ToLower(out)
 }
 
-func (r *Report) HasOrigin(sourceID, shasum string) bool {
-	for _, o := range r.origins {
-		if o.Source == sourceID && o.SHASum == shasum {
-			return true
-		}
+func (r *Report) Normalize() error {
+	if r.raw.ID != "" {
+		// Only normalize reports which currently don't have an ID assigned.
+		return nil
 	}
-	return false
+
+	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
+	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
+	r.raw.DatabaseSpecific = stripUnexpectedValues(r.raw.DatabaseSpecific)
+
+	if len(r.origins) > 1 {
+		return fmt.Errorf("%w: normalizing must be done before merge", ErrNormalizing)
+	}
+
+	if strings.Contains(r.raw.Details, detailHeader) {
+		// Abort early if we have already added the header.
+		return fmt.Errorf("%w: header already present in details", ErrNormalizing)
+	}
+
+	if len(r.origins) == 1 {
+		r.SetDetails("", map[*OriginRef]string{
+			r.origins[0]: r.raw.Details,
+		})
+	}
+
+	return nil
 }
 
-func (r *Report) SetOrigin(sourceID, shasum string) {
-	ref := &originRef{
-		Source:     sourceID,
-		SHASum:     shasum,
-		ImportTime: time.Now().UTC(),
-		Ranges:     r.raw.Affected[0].Ranges,
-		Versions:   r.raw.Affected[0].Versions,
+func stripUnexpectedValues(obj map[string]any) map[string]any {
+	cleaned := make(map[string]any)
+	for k, v := range obj {
+		switch v.(type) {
+		case map[string]any:
+		case []any:
+		default:
+			// noop - scalars, and other unexpected types are removed.
+			continue
+		}
+		cleaned[k] = v
 	}
-	r.origins = append(r.origins, ref)
+	return cleaned
+}
+
+func FromFile(filename string) (*Report, error) {
+	fd, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed opening %s: %w", filename, err)
+	}
+	defer fd.Close()
+	return ReadJSON(fd)
 }

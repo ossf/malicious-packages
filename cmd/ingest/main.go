@@ -28,12 +28,12 @@ import (
 	_ "gocloud.dev/blob/gcsblob"
 	_ "gocloud.dev/blob/s3blob"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/config"
-	"github.com/ossf/malicious-packages/cmd/ingest/report"
-	"github.com/ossf/malicious-packages/cmd/ingest/reportio"
-	"github.com/ossf/malicious-packages/cmd/ingest/source"
 	"github.com/ossf/malicious-packages/cmd/ingest/sourceio"
 	"github.com/ossf/malicious-packages/cmd/ingest/startkeys"
+	"github.com/ossf/malicious-packages/internal/config"
+	"github.com/ossf/malicious-packages/internal/report"
+	"github.com/ossf/malicious-packages/internal/reportio"
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 var tempDir string
@@ -56,6 +56,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed reading config: %v", err)
 	}
+
+	log.Printf("Using config: id prefix=%s, malicious=%s, false positives=%s, sources=%d", c.IDPrefix, c.MaliciousPath, c.FalsePositivePath, len(c.Sources))
 
 	keys, err := loadStartKeys(*startKeysFlag)
 	if err != nil {
@@ -123,7 +125,7 @@ func ingestReports(ctx context.Context, s *source.Source, c *config.Config, star
 
 		// Add the origin to the report so we can de-dupe in the future and
 		// track where and when the report was ingested.
-		r.SetOrigin(s.ID, shasum)
+		r.AddOrigin(s.ID, shasum)
 
 		// Prepare the destination path, creating it if needed.
 		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))

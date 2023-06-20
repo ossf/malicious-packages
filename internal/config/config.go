@@ -22,7 +22,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/source"
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 var ErrInvalidConfig = errors.New("invalid config")
