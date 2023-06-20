@@ -45,12 +45,10 @@ func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err
 	parts := strings.Split(r.raw.Details, detailHeader)
 	if l := len(parts); l == 1 {
 		// If parts has one entry then assume there are only user contributed details.
-		user = strings.TrimSpace(r.raw.Details)
-		return
+		return strings.TrimSpace(r.raw.Details), nil, nil
 	} else if l > 2 {
 		// If we have more than two parts then somehow we have multiple headers.
-		err = fmt.Errorf("%w: too many headers (%d)", ErrInvalidDetails, l-1)
-		return
+		return "", nil, fmt.Errorf("%w: too many headers (%d)", ErrInvalidDetails, l-1)
 	}
 	// If we reached here then we have both user contributed details, and
 	// ingested source details.
@@ -59,7 +57,7 @@ func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err
 	if strings.TrimSpace(parts[1]) == "" {
 		// It is possible that the header was added, but there are no source
 		// details.
-		return
+		return user, nil, nil
 	}
 	matches := detailSectionHeaderRE.FindAllStringSubmatch(parts[1], -1)
 	if matches == nil {

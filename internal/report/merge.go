@@ -122,11 +122,11 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 	return creditList
 }
 
-func mergeSlices[K comparable](slices ...[]K) []K {
+func mergeSlices[K comparable](ss ...[]K) []K {
 	seen := make(map[K]struct{})
 	var res []K
-	for _, slice := range slices {
-		for _, e := range slice {
+	for _, s := range ss {
+		for _, e := range s {
 			if _, ok := seen[e]; ok {
 				continue
 			}
@@ -142,8 +142,8 @@ func mergeSlices[K comparable](slices ...[]K) []K {
 // The following rules are used to determine how the merge works:
 // - sources *must* have keys unique to that source.
 // - values must not be scalars. they must be arrays or objects.
-// - values that are arrays will concatinated together, duplicates will be preserved.
-// - values that are objects will be merged, keys should be unique, but if they are the same the first key seen will retain its value.
+// - values that are arrays are concatenated together, duplicates will be preserved.
+// - values that are objects are merged, keys should be unique, but if they are the same the first key seen will retain its value.
 func combineDatabaseSpecific(objs ...map[string]any) map[string]any {
 	if len(objs) == 0 {
 		return nil

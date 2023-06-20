@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/renameio"
+
 	"github.com/ossf/malicious-packages/internal/config"
 	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportio"
@@ -49,7 +50,7 @@ func main() {
 	}()
 
 	if err := preprocessRepo(c); err != nil {
-		log.Fatalf("Failed to preprocess repo: %v", err)
+		log.Fatalf("Failed to preprocess repo: %v", err) //nolint:gocritic
 	}
 }
 
