@@ -25,6 +25,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/renameio"
+	_ "gocloud.dev/blob/fileblob"
 	_ "gocloud.dev/blob/gcsblob"
 	_ "gocloud.dev/blob/s3blob"
 
@@ -41,13 +42,31 @@ var tempDir string
 func main() {
 	configFlag := flag.String("config", "", "the filepath to the YAML config file")
 	startKeysFlag := flag.String("start-keys", "", "the filepath to a YAML file containing the keys to start from")
+	sourceFlag := flag.String("source", "", "ingest files for the specified source only")
+	localDirFlag := flag.String("dir", "", "ingest OSV reports from the given local dir. Requires -source.")
 	flag.Parse()
 
 	if *configFlag == "" {
 		log.Fatalf("-config flag is required")
 	}
 
-	// read sources from config
+	if *localDirFlag != "" && *sourceFlag == "" {
+		log.Fatalf("-dir requires -source to be set")
+	}
+
+	lp, err := filepath.Abs(*localDirFlag)
+	if err != nil {
+		log.Fatalf("Failed finding absolute path of %s: %v", *localDirFlag, err)
+	}
+	if s, err := os.Stat(lp); os.IsNotExist(err) {
+		log.Fatalf("-dir %s does not exist", *localDirFlag)
+	} else if err != nil {
+		log.Fatalf("-dir %s failed to stat: %v", *localDirFlag, err)
+	} else if !s.IsDir() {
+		log.Fatalf("-dir %s is not a directory", *localDirFlag)
+	}
+
+	// Read sources from config
 	configFile, err := os.Open(*configFlag)
 	if err != nil {
 		log.Fatalf("Failed to open config file %s: %v", *configFlag, err)
@@ -57,7 +76,30 @@ func main() {
 		log.Fatalf("Failed reading config: %v", err)
 	}
 
-	log.Printf("Using config: id prefix=%s, malicious=%s, false positives=%s, sources=%d", c.IDPrefix, c.MaliciousPath, c.FalsePositivePath, len(c.Sources))
+	// Determine sources based on flags
+	sources := c.Sources
+	if *sourceFlag != "" {
+		src := c.GetSource(*sourceFlag)
+		if src == nil && *localDirFlag == "" {
+			log.Fatalf("Unknown source: %s", *sourceFlag)
+		}
+		if *localDirFlag != "" {
+			// We have a path, so if there is no source we create one.
+			if src == nil {
+				src = &source.Source{
+					ID:              *sourceFlag,
+					LookbackEntries: 0,
+				}
+			}
+			// Override the source bucket and prefix with a file:// handler so the
+			// local files are consumed instead.
+			src.Bucket = fmt.Sprintf("file://%s", lp)
+			src.Prefix = ""
+		}
+		sources = []*source.Source{src}
+	}
+
+	log.Printf("Using config: id prefix=%s, malicious=%s, false positives=%s, sources=%d", c.IDPrefix, c.MaliciousPath, c.FalsePositivePath, len(sources))
 
 	keys, err := loadStartKeys(*startKeysFlag)
 	if err != nil {
@@ -78,7 +120,7 @@ func main() {
 	}()
 
 	ctx := context.Background()
-	for _, s := range c.Sources {
+	for _, s := range sources {
 		end, err := ingestReports(ctx, s, c, keys.Get(s.ID))
 		if err != nil {
 			// Abort here since the repo is now in a dirty state.
