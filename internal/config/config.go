@@ -77,6 +77,17 @@ func (c *Config) Paths() []string {
 	}
 }
 
+// GetSource looks up a given source by its ID and returns it if it exists,
+// otherwise nil is returned.
+func (c *Config) GetSource(id string) *source.Source {
+	for _, s := range c.Sources {
+		if s.ID == id {
+			return s
+		}
+	}
+	return nil
+}
+
 func ReadYAML(r io.Reader) (*Config, error) {
 	dec := yaml.NewDecoder(r)
 	var c *Config

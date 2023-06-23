@@ -77,35 +77,26 @@ func main() {
 	}
 
 	// Determine sources based on flags
-	var sources []*source.Source
+	sources := c.Sources
 	if *sourceFlag != "" {
-		// Attempt to find an existing source
-		var src *source.Source
-		for _, s := range c.Sources {
-			if s.ID == *sourceFlag {
-				src = s
-				break
-			}
+		src := c.GetSource(*sourceFlag)
+		if src == nil && *localDirFlag == "" {
+			log.Fatalf("Unknown source: %s", *sourceFlag)
 		}
-		// Override the source bucket and prefix with a file:// handler so the
-		// local files are consumed instead.
 		if *localDirFlag != "" {
+			// We have a path, so if there is no source we create one.
 			if src == nil {
-				// For local files tolerate the non-existance of a source.
 				src = &source.Source{
 					ID:              *sourceFlag,
 					LookbackEntries: 0,
 				}
 			}
+			// Override the source bucket and prefix with a file:// handler so the
+			// local files are consumed instead.
 			src.Bucket = fmt.Sprintf("file://%s", lp)
 			src.Prefix = ""
 		}
-		if src == nil {
-			log.Fatalf("Unknown source %s", *sourceFlag)
-		}
-		sources = append(sources, src)
-	} else {
-		sources = c.Sources
+		sources = []*source.Source{src}
 	}
 
 	log.Printf("Using config: id prefix=%s, malicious=%s, false positives=%s, sources=%d", c.IDPrefix, c.MaliciousPath, c.FalsePositivePath, len(sources))
