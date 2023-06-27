@@ -115,14 +115,6 @@ func TestInit_NoFalsePositivePath(t *testing.T) {
 	}
 }
 
-func TestInit_NoSources(t *testing.T) {
-	c := getTestConfig()
-	c.Sources = make([]*source.Source, 0)
-	if err := c.Init(); err == nil {
-		t.Error("Init() = nil; want an error")
-	}
-}
-
 func getTestConfig() *config.Config {
 	return &config.Config{
 		IDPrefix:          "FOO",

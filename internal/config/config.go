@@ -63,9 +63,6 @@ func (c *Config) Init() error {
 	if err != nil {
 		return fmt.Errorf("invalid false positive path: %w", err)
 	}
-	if len(c.Sources) == 0 {
-		return fmt.Errorf("%w: no sources specified", ErrInvalidConfig)
-	}
 	return nil
 }
 
