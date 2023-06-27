@@ -135,6 +135,10 @@ func (r *Report) Path() string {
 	return filepath.Join(cleanEcosystem(r.Ecosystem), strings.ToLower(r.Name))
 }
 
+func (r *Report) ID() string {
+	return r.raw.ID
+}
+
 func cleanEcosystem(in string) string {
 	out := ecosystemRE.ReplaceAllString(in, "-")
 	return strings.ToLower(out)
