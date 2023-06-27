@@ -27,3 +27,7 @@ test-targets = test/unit
 test: $(test-targets)  ## Run all tests
 test/unit:
 	go test -race './...'
+
+.PHONY: validate
+validate: ## Validate all OSV files
+	go run ./cmd/validate -config ./config/config.yaml
