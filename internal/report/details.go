@@ -24,11 +24,11 @@ import (
 const (
 	// detailHeader is the delimiter that sits between details provided by
 	// contributors (above) and the details included from the origins (below).
-	detailHeader = "\n##= Per source details. Do not edit below this line. =##\n"
+	detailHeader = "\n---\n_-= Per source details. Do not edit below this line.=-_\n"
 
 	// detailSectionHeader precedes each detail section indicating which source
 	// and origin the details were included from.
-	detailSectionHeader = "\n###= Source: %s (%s) =###\n"
+	detailSectionHeader = "\n## Source: %s (%s)\n"
 
 	// detailSourceMatchIdx is the index in the match for detailSectionHeaderRE
 	// for the source submatch.
@@ -41,7 +41,7 @@ const (
 
 // detailSectionHeaderRE is used to find the position of each section and
 // extract the source information from it.
-var detailSectionHeaderRE = regexp.MustCompile("(?s)\n###= Source: ([a-z0-9-]+) \\(([a-zA-Z0-9]+)\\) =###\n")
+var detailSectionHeaderRE = regexp.MustCompile("(?s)\n## Source: ([a-z0-9-]+) \\(([a-zA-Z0-9]+)\\)\n")
 
 // RawDetails returns the raw, unparsed, details of the OSV report.
 func (r *Report) RawDetails() string {

@@ -204,6 +204,23 @@ func TestMerge_Aliases(t *testing.T) {
 	}
 }
 
+func TestMerge_Related(t *testing.T) {
+	r := testReport(models.EcosystemNPM, "example")
+	r.Vuln().Related = []string{"z", "b", "c"}
+	other := testReport(models.EcosystemNPM, "example")
+	other.Vuln().Related = []string{"b", "c", "d"}
+
+	want := []string{"z", "b", "c", "d"}
+
+	if err := r.Merge(other); err != nil {
+		t.Fatalf("Merge() = %v; want no error", err)
+	}
+
+	if got := r.Vuln().Related; !slices.Equal(got, want) {
+		t.Fatalf("Related = %v; want %v", got, want)
+	}
+}
+
 func TestMerge_References(t *testing.T) {
 	ref1 := models.Reference{
 		Type: models.ReferenceAdvisory,
@@ -304,7 +321,7 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 
 func TestMerge_DetailsParseError(t *testing.T) {
 	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Details = "\n##= Per source details. Do not edit below this line. =##\n\n##= Per source details. Do not edit below this line. =##\n"
+	r.Vuln().Details = "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n---\n_-= Per source details. Do not edit below this line.=-_\n"
 	other := testReport(models.EcosystemNPM, "example")
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
