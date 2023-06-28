@@ -175,7 +175,7 @@ func TestNormalize_Origin_DetailsChanged(t *testing.T) {
 		t.Fatalf("Normalize() = %v; want no error", err)
 	}
 
-	want := "\n##= Per source details. Do not edit below this line. =##\n\n###= Source: test-origin (deadbeef) =###\nplease move\nmy details\n"
+	want := "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-origin (deadbeef)\nplease move\nmy details\n"
 	if got := r.Vuln().Details; got != want {
 		t.Errorf("Details = %v; want %v", got, want)
 	}

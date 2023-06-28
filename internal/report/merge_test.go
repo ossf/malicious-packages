@@ -321,7 +321,7 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 
 func TestMerge_DetailsParseError(t *testing.T) {
 	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Details = "\n##= Per source details. Do not edit below this line. =##\n\n##= Per source details. Do not edit below this line. =##\n"
+	r.Vuln().Details = "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n---\n_-= Per source details. Do not edit below this line.=-_\n"
 	other := testReport(models.EcosystemNPM, "example")
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
