@@ -29,6 +29,11 @@ import (
 	"github.com/ossf/malicious-packages/internal/reportio"
 )
 
+const (
+	filenameReadme = "README.md"
+	validExt       = ".json"
+)
+
 var validIDRe = regexp.MustCompile(`^([A-Z]+)-[0-9]{4}-[0-9]+$`)
 
 func main() {
@@ -78,6 +83,10 @@ func validateBase(basePath, idPrefix string) error {
 		if filepath.Base(path)[0] == '.' {
 			return nil
 		}
+		// Skip readme files
+		if filepath.Base(path) == filenameReadme {
+			return nil
+		}
 
 		return validateReport(path, basePath, idPrefix)
 	}))
@@ -119,6 +128,11 @@ func validateReport(reportPath, basePath, idPrefix string) error {
 	}
 	if wantPath != gotPath {
 		return fmt.Errorf("report path %s does not match expected path %s", gotPath, wantPath)
+	}
+
+	// Ensure the extension is valid.
+	if ext != validExt {
+		return fmt.Errorf("report filename %s does not end with %s", basename, validExt)
 	}
 
 	// TODO: add "withdrawn" check for files in the false positives directory.
