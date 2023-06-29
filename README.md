@@ -33,10 +33,12 @@ new open source malware.
 
 What is in scope?
 
-- any package that belongs to an ecosystem supported by the [OSV Schema](https://ossf.github.io/osv-schema/)
-- malicious packages published under typosquatting or dependency confusion type
-  attacks
+- any package that belongs to an ecosystem supported by the
+  [OSV Schema](https://ossf.github.io/osv-schema/)
+- malicious packages published under typosquatting or dependency
+  confusion type attacks
 - malicious packages published through account takeover
+- prebuilt binaries for a package that are malicious
 - security researcher activity
 
 Out-of-scope:
@@ -53,15 +55,20 @@ Out-of-scope:
 
 ### Contribute Malicious Package Reports
 
-#### Pull Requests
+See our [contributing guide](CONTRIBUTING.md) for complete details.
+
+#### OSV reports via Pull Request
 
 We accept new reports, and updates to existing reports.
 
-#### Automated Sources (Coming Soon!)
+We will also accept bulk imports via PR (please create an issue first).
 
-If you regularly produce high-quality detections with few false positives, and
-have them accumulating in a database, we can consume them as OSV from a cloud
-storage environment (S3, GCS).
+#### Automated Sources
+
+If you regularly produce high-quality detections with few
+false-positives, and have them accumulating in a database, we can
+automatically consume them as OSV from a cloud storage
+environment (S3, GCS).
 
 ### Comms
 
@@ -71,8 +78,33 @@ storage environment (S3, GCS).
 
 ### Meeting Times
 
-- Every other Thursday @ either an APAC or EMEA friendly time (See [shared calendar](https://calendar.google.com/calendar/u/2?cid=czYzdm9lZmhwNWk5cGZsdGI1cTY3bmdwZXNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)).
+- Every other Thursday @ either an APAC or EMEA friendly time (See
+  [shared calendar](https://calendar.google.com/calendar/u/2?cid=czYzdm9lZmhwNWk5cGZsdGI1cTY3bmdwZXNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)).
 - [Meeting Minutes](https://docs.google.com/document/d/1MIXxadtWsaROpFcJnBtYnQPoyzTCIDhd0IGV8PIV0mQ/edit).
+
+## False Positives
+
+While we do our best to ensure false positives are not present, they may
+be present in our dataset from time-to-time.
+
+If you see a non-malicious package is flagged as malicious
+[create an issue](https://github.com/ossf/malicious-packages/issues/new).
+Please include the following:
+
+- The affected ecosystem and package.
+- Which versions are false positives, if specific versions are false
+  positives.
+- Any relelvant links.
+
+We will then either:
+
+- Move the entire report into the `./withdrawn/` directory and add the
+  `withdrawn` time to the report - if the whole report is a false positive.
+- Move the affected versions into a `database_specific` array
+  indicating that which versions were false positives - if
+  some versions are malicious and some are false positives.
+
+**Note:** support for handling false positives is TBC.
 
 ## Governance
 
@@ -81,4 +113,5 @@ This work is associated with the
 
 This project belongs to the [Securing Critical Projects Working Group](https://github.com/ossf/wg-securing-critical-projects) in the [OpenSSF](https://openssf.org/) ([Slack](https://openssf.slack.com/archives/wg_securing_critical_projects)).
 
-The working group's [CHARTER.md](https://github.com/ossf/wg-securing-critical-projects/blob/main/CHARTER.md) outlines the scope and governance of our group activities.
+The working group's [CHARTER.md](https://github.com/ossf/wg-securing-critical-projects/blob/main/CHARTER.md)
+outlines the scope and governance of our group activities.
