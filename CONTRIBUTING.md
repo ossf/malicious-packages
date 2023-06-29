@@ -68,8 +68,8 @@ on how the process can be improved.
 
 #### Bulk Import
 
-1. [Create an issue](https://github.com/ossf/malicious-packages/issues/new),
-   which should include the following:
+1. [Create an issue](https://github.com/ossf/malicious-packages/issues/new)
+   if this is the first bulk import. The issue should include the following:
     - A proposed unique "source id" if you do not already have one.
     - Some details on the reports (i.e. quantity, ecosystems), etc.
 1. Use the `ingest` command to copy the reports from a local folder to the
@@ -84,10 +84,10 @@ on how the process can be improved.
        -source [source id]
     ```
 
-    - Fix any issues. You will need to revert the repo before running
+    - Fix any problems reported. You will need to revert the repo before running
       ingest again.
 1. Commit and push the changes to a form and submit a Pull Request.
-    - Reference the issue from step #1 in the PR.
+    - Reference the issue from step #1 in the PR, and any future bulk import PR.
     - Please fix any validation errors, although the `ingest` command
       should avoid these.
 
