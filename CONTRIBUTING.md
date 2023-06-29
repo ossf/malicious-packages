@@ -87,7 +87,8 @@ on how the process can be improved.
     - Fix any problems reported. You will need to revert the repo before running
       ingest again.
 1. Commit and push the changes to a form and submit a Pull Request.
-    - Reference the issue from step #1 in the PR, and any future bulk import PR.
+    - Reference the issue from step #1 in the PR, and any future bulk import PR,
+      even once the issue is closed.
     - Please fix any validation errors, although the `ingest` command
       should avoid these.
 
