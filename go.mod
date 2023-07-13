@@ -3,7 +3,7 @@ module github.com/ossf/malicious-packages
 go 1.20
 
 require (
-	cloud.google.com/go/storage v1.30.1
+	cloud.google.com/go/storage v1.31.0
 	github.com/aws/aws-sdk-go v1.44.292
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.35.0
 	github.com/google/osv-scanner v1.3.5
