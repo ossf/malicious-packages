@@ -135,8 +135,21 @@ func (r *Report) Path() string {
 	return filepath.Join(cleanEcosystem(r.Ecosystem), strings.ToLower(r.Name))
 }
 
+// ID returns the ID for the report.
+//
+// If no ID has been assigned the value will be the empty string.
 func (r *Report) ID() string {
 	return r.raw.ID
+}
+
+// StripID removes the ID for the report.
+func (r *Report) StripID() {
+	r.raw.ID = ""
+}
+
+// IsWithdrawn returns whether or not the report has been withdrawn.
+func (r *Report) IsWithdrawn() bool {
+	return !r.raw.Withdrawn.IsZero()
 }
 
 func cleanEcosystem(in string) string {

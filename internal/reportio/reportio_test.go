@@ -15,6 +15,7 @@
 package reportio_test
 
 import (
+	"io/fs"
 	"testing"
 
 	"github.com/ossf/malicious-packages/internal/reportio"
@@ -61,6 +62,43 @@ func TestValidatePath_Invalid(t *testing.T) {
 			err := reportio.ValidatePath(test)
 			if err == nil {
 				t.Error("ValidatePath() = nil; want an error")
+			}
+		})
+	}
+}
+
+func TestIsPossibleReport(t *testing.T) {
+	tests := []struct {
+		name string
+		mode fs.FileMode
+		want bool
+	}{
+		{
+			name: "MAL-1234-1.json",
+			mode: 0,
+			want: true,
+		},
+		{
+			name: "foobar.ext",
+			mode: 0,
+			want: true,
+		},
+		{
+			name: "README.md",
+			mode: 0,
+			want: false,
+		},
+		{
+			name: "subdir",
+			mode: fs.ModeDir,
+			want: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := reportio.IsPossibleReport(test.name, test.mode)
+			if got != test.want {
+				t.Fatalf("IsPossibleReport() = %v, want %v", got, test.want)
 			}
 		})
 	}

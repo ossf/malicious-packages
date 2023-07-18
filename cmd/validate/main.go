@@ -30,8 +30,7 @@ import (
 )
 
 const (
-	filenameReadme = "README.md"
-	validExt       = ".json"
+	validExt = ".json"
 )
 
 var validIDRe = regexp.MustCompile(`^([A-Z]+)-[0-9]{4}-[0-9]+$`)
@@ -76,15 +75,7 @@ func validateBase(basePath, idPrefix string) error {
 		} else if err != nil {
 			return err
 		}
-		if info.IsDir() {
-			return nil
-		}
-		// Skip dot files
-		if filepath.Base(path)[0] == '.' {
-			return nil
-		}
-		// Skip readme files
-		if filepath.Base(path) == filenameReadme {
+		if !reportio.IsPossibleReport(info.Name(), info.Type()) {
 			return nil
 		}
 
