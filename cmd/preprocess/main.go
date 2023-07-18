@@ -99,14 +99,14 @@ func preprocessRepo(c *config.Config) error {
 				noIDs = append(noIDs, n)
 			}
 		}
+		if n := len(withIDs); n > 1 {
+			// If there is more than one reports with an ID then our assumption
+			// that there is only a single OSV per package is wrong.
+			return fmt.Errorf("%d reports with IDs in %s (%v)", n, p, withIDs)
+		}
 		if len(noIDs) == 0 {
 			// All IDs are assigned
 			return nil
-		}
-		if len(withIDs) > 1 {
-			// If there is more than one reports with an ID then our assumption
-			// that there is only a signle OSV per package is wrong.
-			return fmt.Errorf("multiple reports with IDs in %s", p)
 		}
 
 		var basis string
@@ -138,6 +138,24 @@ func processReports(path, dest string, mergeSrcs []string) error {
 		return fmt.Errorf("failed loading dest %s: %w", dest, err)
 	}
 
+	if destReport.IsWithdrawn() && destReport.ID() == "" {
+		if len(mergeSrcs) == 0 {
+			// The destination is new and withdrawn and we aren't merging with
+			// any other reports, so remove the report because we don't already
+			// redacted reports.
+			// NOTE: this may cause the same withdrawn report to be ingested and
+			// ignored repeated times, as the origin information is lost when
+			// the report is deleted. We may eventually decide to keep reports
+			// even if they are withdrawn.
+			if err := os.Remove(dest); err != nil {
+				return fmt.Errorf("failed to remove %s: %w", dest, err)
+			}
+			return nil
+		}
+		// TODO: implement withdrawn behaviour
+		return fmt.Errorf("merging new withdrawn reports is currently unsupported")
+	}
+
 	// Ensure the base report is always normalized.
 	log.Printf("  normalizing %s", filepath.Base(dest))
 	if err := destReport.Normalize(); err != nil {
@@ -150,6 +168,11 @@ func processReports(path, dest string, mergeSrcs []string) error {
 		srcReport, err := report.FromFile(src)
 		if err != nil {
 			return fmt.Errorf("failed loading src %s: %w", src, err)
+		}
+
+		if srcReport.IsWithdrawn() {
+			// TODO: implement withdrawn behaviour
+			return fmt.Errorf("merging new withdrawn reports is currently unsupported")
 		}
 
 		if err := destReport.Merge(srcReport); err != nil {
