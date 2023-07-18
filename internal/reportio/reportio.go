@@ -17,10 +17,15 @@ package reportio
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/ossf/malicious-packages/internal/report"
+)
+
+const (
+	filenameReadme = "README.md"
 )
 
 var (
@@ -102,12 +107,28 @@ func reportsInPath(path string) ([]string, error) {
 		return nil, fmt.Errorf("failed to read dir %s: %w", path, err)
 	}
 	for _, entry := range entries {
-		if entry.IsDir() {
-			// skip subdirectories
+		if !IsPossibleReport(entry.Name(), entry.Type()) {
 			continue
 		}
 		n := filepath.Join(path, entry.Name())
 		reports = append(reports, n)
 	}
 	return reports, nil
+}
+
+// IsPossibleReport returns true if the given file is possibly a report.
+func IsPossibleReport(name string, mode fs.FileMode) bool {
+	// Directories are not reports.
+	if mode.IsDir() {
+		return false
+	}
+	// Dot files are not reports.
+	if name[0] == '.' {
+		return false
+	}
+	// Readme files are not reports.
+	if name == filenameReadme {
+		return false
+	}
+	return true
 }
