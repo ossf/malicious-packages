@@ -157,6 +157,9 @@ func ingestReports(ctx context.Context, s *source.Source, c *config.Config, star
 			return fmt.Errorf("failed to validate destination: %w", err)
 		}
 
+		// Ensure the incoming report does not have an ID
+		r.StripID()
+
 		// Check if the origin has already been ingested.
 		if ok, err := reportio.OriginExistsInPaths(path, c.Paths(), s.ID, shasum); err != nil {
 			return fmt.Errorf("duplicate detection failed: %w", err)
