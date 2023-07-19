@@ -195,11 +195,11 @@ func TestStripID(t *testing.T) {
 
 func TestAliasID(t *testing.T) {
 	r := testReport(models.EcosystemRubyGems, "example")
-	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().ID = "TEST-1234-2"
 
 	r.AliasID()
 
-	want := []string{"TEST-1234-1"}
+	want := []string{"TEST-1234-2"}
 	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
 		t.Errorf("Aliases = %v; want %s", got, want)
 	}
@@ -207,12 +207,12 @@ func TestAliasID(t *testing.T) {
 
 func TestAliasID_ExistingAliases(t *testing.T) {
 	r := testReport(models.EcosystemRubyGems, "example")
-	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().ID = "TEST-1234-3"
 	r.Vuln().Aliases = []string{"OTHER-5432-1"}
 
 	r.AliasID()
 
-	want := []string{"OTHER-5432-1", "TEST-1234-1"}
+	want := []string{"OTHER-5432-1", "TEST-1234-3"}
 	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
 		t.Errorf("Aliases = %v; want %s", got, want)
 	}
@@ -220,12 +220,12 @@ func TestAliasID_ExistingAliases(t *testing.T) {
 
 func TestAliasID_Duplicate(t *testing.T) {
 	r := testReport(models.EcosystemRubyGems, "example")
-	r.Vuln().ID = "TEST-1234-1"
-	r.Vuln().Aliases = []string{"TEST-1234-1", "OTHER-5432-1"}
+	r.Vuln().ID = "TEST-1234-4"
+	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
 
 	r.AliasID()
 
-	want := []string{"TEST-1234-1", "OTHER-5432-1"}
+	want := []string{"TEST-1234-4", "OTHER-5432-1"}
 	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
 		t.Errorf("Aliases = %v; want %s", got, want)
 	}
