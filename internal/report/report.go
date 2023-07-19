@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/google/osv-scanner/pkg/models"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -145,6 +146,21 @@ func (r *Report) ID() string {
 // StripID removes the ID for the report.
 func (r *Report) StripID() {
 	r.raw.ID = ""
+}
+
+// AliasID will add the ID for the report into the aliases section.
+//
+// If no ID has been assigned, this function is a no-op.
+func (r *Report) AliasID() {
+	if r.raw.ID == "" {
+		// No ID.
+		return
+	}
+	if slices.Contains(r.raw.Aliases, r.raw.ID) {
+		// ID is already present in aliases. Don't add it again.
+		return
+	}
+	r.raw.Aliases = append(r.raw.Aliases, r.raw.ID)
 }
 
 // IsWithdrawn returns whether or not the report has been withdrawn.
