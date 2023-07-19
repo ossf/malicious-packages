@@ -67,6 +67,11 @@ func beforeListFunc(start string) func(as func(interface{}) bool) error {
 //
 // If start is not empty, entries will be consumed from start.
 func Walk(ctx context.Context, s *source.Source, start string, walkFn func(ctx context.Context, key string, r io.Reader) error) (string, error) {
+	// Ignore sources that have no bucket set.
+	if s.Bucket == "" {
+		return "", nil
+	}
+
 	bkt, err := blob.OpenBucket(ctx, s.Bucket)
 	if err != nil {
 		return "", fmt.Errorf("failed opening %s: %w", s.Bucket, err)

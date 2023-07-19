@@ -32,6 +32,7 @@ type Source struct {
 	Bucket          string `yaml:"bucket"`
 	Prefix          string `yaml:"prefix"`
 	LookbackEntries int    `yaml:"lookback-entries"`
+	AliasID         bool   `yaml:"alias-id"`
 }
 
 func validateID(id string) error {

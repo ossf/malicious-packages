@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/google/osv-scanner/pkg/models"
@@ -178,5 +179,54 @@ func TestNormalize_Origin_DetailsChanged(t *testing.T) {
 	want := "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-origin (deadbeef)\nplease move\nmy details\n"
 	if got := r.Vuln().Details; got != want {
 		t.Errorf("Details = %v; want %v", got, want)
+	}
+}
+
+func TestStripID(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-1"
+
+	r.StripID()
+
+	if got := r.ID(); got != "" {
+		t.Errorf("ID = %v; want no ID", got)
+	}
+}
+
+func TestAliasID(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-1"
+
+	r.AliasID()
+
+	want := []string{"TEST-1234-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestAliasID_ExistingAliases(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().Aliases = []string{"OTHER-5432-1"}
+
+	r.AliasID()
+
+	want := []string{"OTHER-5432-1", "TEST-1234-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestAliasID_Duplicate(t *testing.T) {
+	r := testReport(models.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().Aliases = []string{"TEST-1234-1", "OTHER-5432-1"}
+
+	r.AliasID()
+
+	want := []string{"TEST-1234-1", "OTHER-5432-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
 	}
 }
