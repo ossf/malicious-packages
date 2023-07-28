@@ -23,11 +23,13 @@ import (
 const originRefKey = "malicious-packages-origins"
 
 type OriginRef struct {
-	Source     string         `json:"source"`
-	SHASum     string         `json:"sha256"`
-	ImportTime time.Time      `json:"import_time"`
-	Ranges     []models.Range `json:"ranges,omitempty"`
-	Versions   []string       `json:"versions,omitempty"`
+	Source       string         `json:"source"`
+	SHASum       string         `json:"sha256"`
+	ImportTime   time.Time      `json:"import_time"`
+	ID           string         `json:"id,omitempty"`
+	ModifiedTime time.Time      `json:"modified_time"`
+	Ranges       []models.Range `json:"ranges,omitempty"`
+	Versions     []string       `json:"versions,omitempty"`
 }
 
 func (r *Report) getOrigin(sourceID, shasum string) *OriginRef {
@@ -45,11 +47,13 @@ func (r *Report) HasOrigin(sourceID, shasum string) bool {
 
 func (r *Report) AddOrigin(sourceID, shasum string) *OriginRef {
 	ref := &OriginRef{
-		Source:     sourceID,
-		SHASum:     shasum,
-		ImportTime: time.Now().UTC(),
-		Ranges:     r.raw.Affected[0].Ranges,
-		Versions:   r.raw.Affected[0].Versions,
+		Source:       sourceID,
+		SHASum:       shasum,
+		ImportTime:   time.Now().UTC(),
+		ModifiedTime: r.raw.Modified.UTC(),
+		ID:           r.raw.ID,
+		Ranges:       r.raw.Affected[0].Ranges,
+		Versions:     r.raw.Affected[0].Versions,
 	}
 	r.origins = append(r.origins, ref)
 	return ref

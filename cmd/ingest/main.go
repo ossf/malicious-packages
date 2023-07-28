@@ -157,15 +157,6 @@ func ingestReports(ctx context.Context, s *source.Source, c *config.Config, star
 			return fmt.Errorf("failed to validate destination: %w", err)
 		}
 
-		// If the source is asking for the ID to be aliased, then copy it into
-		// the aliases section.
-		if s.AliasID {
-			r.AliasID()
-		}
-
-		// Ensure the incoming report does not have an ID.
-		r.StripID()
-
 		// Check if the origin has already been ingested.
 		if ok, err := reportio.OriginExistsInPaths(path, c.Paths(), s.ID, shasum); err != nil {
 			return fmt.Errorf("duplicate detection failed: %w", err)
@@ -177,6 +168,15 @@ func ingestReports(ctx context.Context, s *source.Source, c *config.Config, star
 		// Add the origin to the report so we can de-dupe in the future and
 		// track where and when the report was ingested.
 		r.AddOrigin(s.ID, shasum)
+
+		// If the source is asking for the ID to be aliased, then copy it into
+		// the aliases section.
+		if s.AliasID {
+			r.AliasID()
+		}
+
+		// Ensure the incoming report does not have an ID.
+		r.StripID()
 
 		// Prepare the destination path, creating it if needed.
 		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))
