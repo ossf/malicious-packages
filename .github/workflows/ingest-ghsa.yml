@@ -1,0 +1,72 @@
+name: Ingest GHSA Malware
+
+on:
+  schedule:
+  - cron: '7 * * * *' # Once an day
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  ingest-ghsa:
+    name: Ingest GHSA
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+    - name: Checkout self
+      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+    - name: Checkout ossf/osv-schema
+      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      with:
+        repository: ossf/osv-schema
+        ref: c2daa7514282ba34925e4dd8fb1177e78e3cf431
+        path: osv-schema
+    - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+      with:
+        go-version: "1.20"
+    - uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # v4.7.0
+      with:
+        python-version: "3.10"
+        cache: pipenv
+        cache-dependency-path: osv-schema/tools/ghsa/Pipfile.lock
+
+    - name: Install pipenv
+      run: |
+        pip install pipenv==2023.7.11
+
+    - name: Install dependencies
+      run: |
+        cd osv-schema/tools/ghsa
+        pipenv sync
+
+    - name: Dump GHSA Malware
+      run: |
+        cd osv-schema/tools/ghsa
+        mkdir OUT
+        TIMESINCE=`python3 -c 'import datetime; dt=datetime.datetime.now(datetime.UTC)-datetime.timedelta(hours=48); print(dt.isoformat())'`
+        pipenv shell python dump_ghsa.py --token "${{ github.token }}" --query "classifications: [MALWARE] updatedSince: \"$TIMESINCE\"" OUT
+
+    - name: Convert GHSA to OSV
+      run: |
+        cd osv-schema/tools/ghsa
+        mkdir OSV
+        pipenv shell python convert_ghsa.py -o OSV OUT/*.json
+
+    - name: Ingest OSV
+      run: |
+        go run ./cmd/ingest -config config/config.yaml -dir osv-schema/tools/ghsa/OSV -source ghsa-malware
+
+#    - name: Prepare commit
+#      run: |
+#        git config user.name github-actions
+#        git config user.email github-actions@github.com
+#        git add .
+#    - name: Commit report changes
+#      run: git diff --cached --quiet || git commit -m 'Ingest GHSA Malware OSV'
+#    - name: Push commit
+#      run: git push
