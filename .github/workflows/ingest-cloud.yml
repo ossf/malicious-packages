@@ -1,0 +1,40 @@
+name: Ingest Cloud OSV
+
+on:
+  schedule:
+  - cron: '*/30 * * * *' # Every hour
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  ingest-osv:
+    name: Ingest Cloud OSV
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    timeout-minutes: 45 # Don't allow the job to run too long.
+
+    permissions:
+      actions: read
+      contents: write
+
+    steps:
+    - name: Checkout self
+      uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+    - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+      with:
+        go-version: "1.20"
+
+    - name: Ingest OSV
+      run: |
+        go run ./cmd/ingest -config config/config.yaml -start-keys config/start-keys.yaml
+
+    - name: Prepare commit
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add malicious withdrawn
+    - name: Commit report changes
+      run: git diff --cached --quiet || git commit -m 'Ingest OSV - Cloud Storage'
+    - name: Push commit
+      run: git push
