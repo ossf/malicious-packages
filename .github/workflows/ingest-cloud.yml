@@ -25,9 +25,17 @@ jobs:
       with:
         go-version: "1.20"
 
+    # gocloud has an issue where it requires an ADC file to work with GCS, even
+    # for anonymous requests. This change tricks the auth code into succeeding.
+    - name: GCP Credential Workaround
+      run: |
+        echo "{ 'type': 'service_account' }" > .dummy_adc.json
+
     - name: Ingest OSV
       run: |
         go run ./cmd/ingest -config config/config.yaml -start-keys config/start-keys.yaml
+      env:
+        GOOGLE_APPLICATION_CREDENTIALS: .dummy_adc.json
 
     - name: Prepare commit
       run: |
