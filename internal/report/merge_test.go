@@ -293,6 +293,11 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 		Contact: []string{"john.appleseed@example.com"},
 	}
 	c2 := models.Credit{
+		Name:    "XYZ",
+		Type:    models.CreditFinder,
+		Contact: []string{"xyz@example.com"},
+	}
+	c3 := models.Credit{
 		Name:    "John Appleseed",
 		Type:    models.CreditFinder,
 		Contact: []string{"https://twitter.com/john_appleseed_this_does_not_exist"},
@@ -300,13 +305,18 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 	r := testReport(models.EcosystemNPM, "example")
 	r.Vuln().Credits = []models.Credit{c1}
 	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Credits = []models.Credit{c2}
+	other.Vuln().Credits = []models.Credit{c2, c3}
 
 	want := []models.Credit{
 		{
 			Name:    "John Appleseed",
 			Type:    models.CreditFinder,
 			Contact: []string{"john.appleseed@example.com", "https://twitter.com/john_appleseed_this_does_not_exist"},
+		},
+		{
+			Name:    "XYZ",
+			Type:    models.CreditFinder,
+			Contact: []string{"xyz@example.com"},
 		},
 	}
 
