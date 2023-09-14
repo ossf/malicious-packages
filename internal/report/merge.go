@@ -125,13 +125,17 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 		creditList = append(creditList, c)
 	}
 	// Sort to make the credit ordering stable.
-	slices.SortFunc(creditList, func(a, b models.Credit) bool {
+	slices.SortFunc(creditList, func(a, b models.Credit) int {
 		if a.Name < b.Name {
-			return true
+			return -1
 		} else if a.Name == b.Name {
-			return a.Type < b.Type
+			if a.Type < b.Type {
+				return -1
+			} else if a.Type == b.Type {
+				return 0
+			}
 		}
-		return false
+		return 1
 	})
 	return creditList
 }
