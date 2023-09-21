@@ -15,8 +15,8 @@ Attacks against open source ecosystems are gaining popularity. Typosquatting,
 dependency confusion, account takeovers, etc are happening more frequently each
 year.
 
-While some protection can be found through various security solutions, there
-does not exist any comprehensive database of malicious packages published to
+While some protection can be found through various security solutions, there is
+no comprehensive database of malicious packages published to
 open source package repositories.
 
 ### Objective
@@ -94,7 +94,7 @@ Please include the following:
 - The affected ecosystem and package.
 - Which versions are false positives, if specific versions are false
   positives.
-- Any relelvant links.
+- Any relevant links.
 
 We will then either:
 
