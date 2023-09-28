@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/osv-scanner/pkg/models"
+
 	"github.com/ossf/malicious-packages/internal/report"
 )
 
@@ -29,7 +30,6 @@ func TestValidateVuln_Valid(t *testing.T) {
 		},
 	}
 	err := report.ValidateVuln(vuln)
-
 	if err != nil {
 		t.Errorf("ValidateVuln() = %v; want nil", err)
 	}
@@ -220,5 +220,4 @@ func TestValidateVuln_Fail_InvalidRange(t *testing.T) {
 			}
 		})
 	}
-
 }
