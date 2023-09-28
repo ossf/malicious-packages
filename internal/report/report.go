@@ -81,16 +81,26 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 
 	// TODO: validate schema version is >= 1.4.0
 
+	// Must have one and only one Affected entry.
 	if len(r.raw.Affected) == 0 {
 		return fmt.Errorf("%w: no affected packages listed", ErrInvalidOSV)
 	}
 	if len(r.raw.Affected) > 1 {
 		return fmt.Errorf("%w: multiple affected entries", ErrUnexpectedOSV)
 	}
+
+	// Ecosystem must be set, and must be in the predefined set of ecosystems.
+	// Note: the OSV schema allows for ecosystems to append information after a
+	// colon (':') character.
 	r.Ecosystem = string(r.raw.Affected[0].Package.Ecosystem)
 	if r.Ecosystem == "" {
 		return fmt.Errorf("%w: package ecosystem is missing", ErrInvalidOSV)
 	}
+	if e, _, _ := strings.Cut(r.Ecosystem, ":"); !slices.Contains(models.Ecosystems, models.Ecosystem(e)) {
+		return fmt.Errorf("%w: package ecosystem '%s' is invalid", ErrInvalidOSV, e)
+	}
+
+	// Package name must be set.
 	r.Name = r.raw.Affected[0].Package.Name
 	if r.Name == "" {
 		return fmt.Errorf("%w: package name is missing", ErrInvalidOSV)
