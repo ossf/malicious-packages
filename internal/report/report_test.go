@@ -230,3 +230,11 @@ func TestAliasID_Duplicate(t *testing.T) {
 		t.Errorf("Aliases = %v; want %s", got, want)
 	}
 }
+
+func TestInvalidReport(t *testing.T) {
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "PyPI"}}]}`
+	_, err := report.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error")
+	}
+}
