@@ -17,7 +17,8 @@ The additions described in this document have two primary functions:
 1. Managing the database
 
 To understand how the standard OSV fields are used, see the
-[Contributing Guide](https://github.com/ossf/malicious-packages/blob/main/CONTRIBUTING.md) for documentation.
+[Contributing Guide](https://github.com/ossf/malicious-packages/blob/main/CONTRIBUTING.md)
+for documentation.
 
 # Database Specific Format Overview
 
@@ -29,6 +30,11 @@ elaborated in the next section. All strings contain UTF-8 text.
 {
     /* ... other OSV fields ... */
     "database_specific": {
+		"iocs": {
+			"domains": [ string ],
+			"urls": [ string ],
+			"ip_addresses": [ string ],
+		},
 	    "malicious-packages-origins" : [ {
 			"source": string,
 			"sha256": string,
@@ -37,11 +43,6 @@ elaborated in the next section. All strings contain UTF-8 text.
 			"ranges": [ /* OSV range object */ ],
 			"versions": [ string ]
 		} ],
-		"iocs": {
-			"domains": [ string ],
-			"urls": [ string ],
-			"ip_addresses": [ string ],
-		},
 		/* ... other database specific entries ... */
     }
 }
@@ -49,12 +50,23 @@ elaborated in the next section. All strings contain UTF-8 text.
 
 # Field Details
 
+# iocs fields (under development)
+
+The `iocs` field is a JSON object that stores indicators of compromise about
+a given malicious package.
+
+This area of the database specific schema is under active development and
+subject to change.
+
 ## malicious-packages-origins fields
 
 The `malicious-packages-origins` field is a JSON array containing objects that
-is used to manage the malicious packages database. Each entry in the array
-describes one origin OSV report that was ingested and merged together to produce
-this individual OSV report.
+is used internally to manage the malicious packages database. This data has
+little value to consumers of OSV malware.
+
+Each entry in the `malicious-packages-origins` array describes one origin OSV
+report that was ingested and merged together to produce this individual OSV
+report.
 
 The field is used to help attribute each source and allow for the automated
 ingestion command ([./cmd/ingest](https://github.com/ossf/malicious-packages/tree/main/cmd/ingest))
@@ -68,7 +80,8 @@ contains a key identifying the specific source where an origin OSV was found.
 This key should be specified in the [`./config/config.yaml`](https://github.com/ossf/malicious-packages/blob/main/config/config.yaml) file.
 
 The `sha256` field contains a hash of the origin OSV file using the SHA256
-algorithm. The `source` and `sha256` fields tuple should be a universally unique identifier of an origin OSV file.
+algorithm. The `source` and `sha256` fields tuple should be a universally unique
+identifier of an origin OSV file.
 
 For origins that have an OSV `id` set, the `modified_time` and `id` are stored
 as well to allow for updates to the be detected in the OSV.
@@ -122,11 +135,3 @@ The `versions` field is optional. It is a copy of the versions field from the
 `affected[].versions` field in the origin OSV.
 
 See https://ossf.github.io/osv-schema/#affectedversions-field.
-
-# iocs fields (under development)
-
-The `iocs` field is a JSON object that stores indicators of compromise about
-a given malicious package.
-
-This area of the database specific schema is under active development and
-subject to change.
