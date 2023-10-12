@@ -28,14 +28,14 @@ elaborated in the next section. All strings contain UTF-8 text.
 
 ```json
 {
-    /* ... other OSV fields ... */
-    "database_specific": {
+	/* ... other OSV fields ... */
+	"database_specific": {
 		"iocs": {
 			"domains": [ string ],
 			"urls": [ string ],
 			"ip_addresses": [ string ],
 		},
-	    "malicious-packages-origins" : [ {
+		"malicious-packages-origins" : [ {
 			"source": string,
 			"sha256": string,
 			"import_time": string,
@@ -44,7 +44,7 @@ elaborated in the next section. All strings contain UTF-8 text.
 			"versions": [ string ]
 		} ],
 		/* ... other database specific entries ... */
-    }
+	}
 }
 ```
 
