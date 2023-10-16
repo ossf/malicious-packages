@@ -50,6 +50,9 @@ Out-of-scope:
 ### Prior Work
 
 - GitHub's [Advisory Database (filtered by malware)](https://github.com/advisories?query=type%3Amalware), for the NPM ecosystem.
+- https://github.com/lxyeternal/pypi_malregistry (PyPI)
+- https://github.com/cybertier/Backstabbers-Knife-Collection (PyPI and npm), by Marc Ohm et al.
+- https://github.com/datadog/malicious-software-packages-dataset (PyPI), by Datadog
 
 ## Get Involved
 
