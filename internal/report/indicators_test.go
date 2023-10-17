@@ -22,7 +22,6 @@ func TestIndicatorsUnmarshalJSON(t *testing.T) {
 
 	var got report.Indicators
 	err := got.UnmarshalJSON([]byte(in))
-
 	if err != nil {
 		t.Fatalf("Unmarshal() = %v; want nil", err)
 	}
