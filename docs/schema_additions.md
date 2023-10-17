@@ -33,7 +33,7 @@ elaborated in the next section. All strings contain UTF-8 text.
 		"iocs": {
 			"domains": [ string ],
 			"urls": [ string ],
-			"ip_addresses": [ string ],
+			"ips": [ string ],
 		},
 		"malicious-packages-origins" : [ {
 			"source": string,
@@ -50,13 +50,32 @@ elaborated in the next section. All strings contain UTF-8 text.
 
 # Field Details
 
-# iocs fields (under development)
+## iocs fields (under development)
 
 The `iocs` field is a JSON object that stores indicators of compromise about
 a given malicious package.
 
 This area of the database specific schema is under active development and
 subject to change.
+
+### iocs.domains[] field
+
+The `domains` field is a JSON array of containing domains (e.g. `example.com`)
+formatted as ASCII strings. Unicode domains must be converted to Punycode.
+
+### iocs.ips[] field
+
+The `ips` field is a JSON array of strings containing either IPv4 or IPv6
+addresses or CIDR blocks. For example `10.1.2.3`, `10.1.2.0/24`,
+`2001:db8:a0b:12f0::1`, `2001:db8:a0b:12f0::1/32`.
+
+### iocs.urls[] field
+
+The `urls` field is a JSON array containing arbitrary URLs strings. For each URL
+a scheme/authority should be present.
+
+If the URL contains only a host (e.g. `example.com`), then add the host to
+either `domains` or `ips` field instead.
 
 ## malicious-packages-origins fields
 
@@ -92,44 +111,44 @@ malicious packages repository.
 Finally, the `ranges` and `versions` fields are copies of the
 `affected[0].ranges` and `affected[0].versions` from the origin OSV.
 
-# malicious-packages-origins[].source field
+### malicious-packages-origins[].source field
 
 The `source` field contains a string identifying the specific source that
 contributed the origin OSV. Can only contain numbers, lowercase characters a-z,
 and dashes (regexp: `^[a-z0-9-]+$`). The `source` field must be present.
 
-# malicious-packages-origins[].sha256 field
+### malicious-packages-origins[].sha256 field
 
 The `sha256` field is a string containing a SHA256 hash of the origin OSV
 serialized as a hexadecimal string. Valid characters are 0-9, a-f. The `sha256`
 field must be present.
 
-# malicious-packages-origins[].import_time field
+### malicious-packages-origins[].import_time field
 
 The `import_time` field gives the time the origin OSV should be considered to
 have been ingested, as an RFC3339-formatted timestamp in UTC (ending in "Z").
 The `import_time` field should be present.
 
-# malicious-packages-origins[].id field
+### malicious-packages-origins[].id field
 
 The `id` field is optional. It stores a copy of the ID field in the origin OSV
 as a string, if it was present. When used in conjunction with `modified_time` it
 can be used to identify updates to the origin OSV that need to be consumed.
 
-# malicious-packages-origins[].modified_time field
+### malicious-packages-origins[].modified_time field
 
 The `modified_time` field stores a copy of the modified time from the origin
 OSV, as an RFC3339-formatted timestamp in UTC (ending in "Z"). The
 `modified_time` field should be present.
 
-# malicious-packages-origins[].ranges field
+### malicious-packages-origins[].ranges field
 
 The ranges field is optional. It is a copy of the ranges field from the
 `affected[].ranges` field in the origin OSV.
 
 See https://ossf.github.io/osv-schema/#affectedranges-field.
 
-# malicious-packages-origins[].versions field
+### malicious-packages-origins[].versions field
 
 The `versions` field is optional. It is a copy of the versions field from the
 `affected[].versions` field in the origin OSV.
