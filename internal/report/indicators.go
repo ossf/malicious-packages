@@ -24,11 +24,8 @@ type Indicators struct {
 
 // UnmarshalJSON implements the json.Unmashaler interface.
 //
-// The implementation ensures that the resulting parsed data is valid for the
-// purposes of tracking malicious packages.
-//
-// The implementation also extracts the database specific data tracking the
-// origins the report.
+// The implementation ensures that the indicators-of-compromise field (iocs) is
+// populated correctly and common problems can be detected.
 func (i *Indicators) UnmarshalJSON(b []byte) error {
 	type raw Indicators
 	var r raw
