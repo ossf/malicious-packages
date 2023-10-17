@@ -49,6 +49,7 @@ var (
 
 type databaseSpecific struct {
 	Origins []*OriginRef `json:"malicious-packages-origins"`
+	IOCs    Indicators   `json:"iocs"`
 }
 
 type dbSpecificVuln struct {
