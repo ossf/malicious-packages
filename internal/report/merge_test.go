@@ -91,15 +91,45 @@ func TestMerge_Ranges(t *testing.T) {
 		Type: models.RangeEcosystem,
 		Events: []models.Event{
 			{
-				Introduced: "c",
+				Introduced: "a",
+			},
+			{
+				Fixed: "c",
 			},
 		},
 	}
 	r3 := models.Range{
+		Type: models.RangeSemVer,
+		Events: []models.Event{
+			{
+				Introduced: "a",
+			},
+		},
+	}
+	r4 := models.Range{
+		Type: models.RangeSemVer,
+		Events: []models.Event{
+			{
+				Introduced: "a",
+			},
+		},
+	}
+	r5 := models.Range{
 		Type: models.RangeEcosystem,
 		Events: []models.Event{
 			{
-				Fixed: "d",
+				Introduced: "a",
+			},
+			{
+				Fixed: "c",
+			},
+		},
+	}
+	r6 := models.Range{
+		Type: models.RangeEcosystem,
+		Events: []models.Event{
+			{
+				Introduced: "a",
 			},
 		},
 	}
@@ -108,13 +138,16 @@ func TestMerge_Ranges(t *testing.T) {
 	r.Vuln().Affected[0].Ranges = []models.Range{
 		r1,
 		r2,
+		r3,
 	}
 	other := testReport(models.EcosystemNPM, "example")
 	other.Vuln().Affected[0].Ranges = []models.Range{
-		r3,
+		r4,
+		r5,
+		r6,
 	}
 	want := []models.Range{
-		r1, r2, r3,
+		r1, r2, r3, r6,
 	}
 
 	if err := r.Merge(other); err != nil {

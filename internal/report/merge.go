@@ -17,6 +17,7 @@ package report
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
@@ -45,7 +46,7 @@ func (r *Report) Merge(other *Report) error {
 		return fmt.Errorf("failed to normalize other report: %w", err)
 	}
 
-	r.raw.Affected[0].Ranges = append(r.raw.Affected[0].Ranges, other.raw.Affected[0].Ranges...)
+	r.raw.Affected[0].Ranges = combineRanges(r.raw.Affected[0].Ranges, other.raw.Affected[0].Ranges)
 	r.raw.Affected[0].Versions = mergeSlices(r.raw.Affected[0].Versions, other.raw.Affected[0].Versions)
 	r.raw.Affected[0].Severity = nil
 	r.raw.Affected[0].DatabaseSpecific = combineDatabaseSpecific(r.raw.Affected[0].DatabaseSpecific, other.raw.Affected[0].DatabaseSpecific)
@@ -138,6 +139,59 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 		return 1
 	})
 	return creditList
+}
+
+func rangeEventParse(r models.Range) (introduced, lastAffected, fixed string, limit []string) {
+	for _, e := range r.Events {
+		switch {
+		case e.Introduced != "":
+			introduced = e.Introduced
+		case e.Fixed != "":
+			fixed = e.Fixed
+		case e.LastAffected != "":
+			lastAffected = e.LastAffected
+		case e.Limit != "":
+			limit = append(limit, e.Limit)
+		}
+	}
+	if len(limit) == 0 {
+		limit = []string{"*"}
+	}
+	slices.Sort(limit)
+	return
+}
+
+func rangeEqual(r1, r2 models.Range) bool {
+	if !(r1.Type == r2.Type && r1.Repo == r2.Repo) {
+		// Basic details are not the same.
+		return false
+	}
+	intro1, lastAff1, fixed1, limit1 := rangeEventParse(r1)
+	intro2, lastAff2, fixed2, limit2 := rangeEventParse(r2)
+	if !(intro1 == intro2 && lastAff1 == lastAff2 && fixed1 == fixed2 && slices.Equal(limit1, limit2)) {
+		// Events are not the same.
+		return false
+	}
+	// Either we don't have any database specific entries, or they are entirely equal.
+	return (len(r1.DatabaseSpecific) == 0 && len(r2.DatabaseSpecific) == 0) || reflect.DeepEqual(r1, r2)
+}
+
+// combineRanges combines and reduces one or more range slices.
+//
+// The function assumes the input ranges are valid OSV ranges. If two or more
+// ranges are identical, only one will be included.
+func combineRanges(rangeSets ...[]models.Range) []models.Range {
+	var rangeList []models.Range
+	for _, rs := range rangeSets {
+		for _, r := range rs {
+			if !slices.ContainsFunc(rangeList, func(existing models.Range) bool {
+				return rangeEqual(r, existing)
+			}) {
+				rangeList = append(rangeList, r)
+			}
+		}
+	}
+	return rangeList
 }
 
 func mergeSlices[K comparable](ss ...[]K) []K {
