@@ -143,13 +143,14 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 
 func rangeEventParse(r models.Range) (introduced, lastAffected, fixed string, limit []string) {
 	for _, e := range r.Events {
-		if e.Introduced != "" {
+		switch {
+		case e.Introduced != "":
 			introduced = e.Introduced
-		} else if e.Fixed != "" {
+		case e.Fixed != "":
 			fixed = e.Fixed
-		} else if e.LastAffected != "" {
+		case e.LastAffected != "":
 			lastAffected = e.LastAffected
-		} else if e.Limit != "" {
+		case e.Limit != "":
 			limit = append(limit, e.Limit)
 		}
 	}
@@ -160,7 +161,7 @@ func rangeEventParse(r models.Range) (introduced, lastAffected, fixed string, li
 	return
 }
 
-func rangeEqual(r1 models.Range, r2 models.Range) bool {
+func rangeEqual(r1, r2 models.Range) bool {
 	if !(r1.Type == r2.Type && r1.Repo == r2.Repo) {
 		// Basic details are not the same.
 		return false
