@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/storage v1.34.1
-	github.com/aws/aws-sdk-go v1.47.2
+	github.com/aws/aws-sdk-go v1.47.4
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.42.0
 	github.com/google/osv-scanner v1.4.3
 	github.com/google/renameio v1.0.1
