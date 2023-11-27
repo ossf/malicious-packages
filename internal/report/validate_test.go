@@ -35,6 +35,32 @@ func TestValidateVuln_Valid(t *testing.T) {
 	}
 }
 
+func TestValidateVuln_Valid_SemVer(t *testing.T) {
+	vuln := &models.Vulnerability{
+		Affected: []models.Affected{
+			{
+				Package: models.Package{
+					Ecosystem: models.EcosystemCratesIO,
+					Name:      "example",
+				},
+				Ranges: []models.Range{
+					{
+						Type: models.RangeSemVer,
+						Events: []models.Event{
+							{Introduced: "0"},
+							{Fixed: "1.0.0"},
+						},
+					},
+				},
+			},
+		},
+	}
+	err := report.ValidateVuln(vuln)
+	if err != nil {
+		t.Errorf("ValidateVuln() = %v; want nil", err)
+	}
+}
+
 func TestValidateVuln_Fail_NoAffected(t *testing.T) {
 	vuln := &models.Vulnerability{}
 	err := report.ValidateVuln(vuln)
@@ -148,6 +174,15 @@ func TestValidateVuln_Fail_InvalidRange(t *testing.T) {
 			},
 		},
 		{
+			name: "invalid semver type",
+			r: models.Range{
+				Type: models.RangeSemVer,
+				Events: []models.Event{
+					{Introduced: "0"},
+				},
+			},
+		},
+		{
 			name: "no events",
 			r: models.Range{
 				Type: models.RangeEcosystem,
@@ -192,7 +227,7 @@ func TestValidateVuln_Fail_InvalidRange(t *testing.T) {
 		{
 			name: "fixed and last affected",
 			r: models.Range{
-				Type: models.RangeSemVer,
+				Type: models.RangeEcosystem,
 				Events: []models.Event{
 					{Introduced: "0"},
 					{LastAffected: "1"},
