@@ -22,12 +22,14 @@ func ValidateVuln(v *models.Vulnerability) error {
 	// Ecosystem must be set, and must be in the predefined set of ecosystems.
 	// Note: the OSV schema allows for ecosystems to append information after a
 	// colon (':') character.
-	ecosystem := string(v.Affected[0].Package.Ecosystem)
-	if ecosystem == "" {
+	ecosystemFull := string(v.Affected[0].Package.Ecosystem)
+	if ecosystemFull == "" {
 		return fmt.Errorf("%w: package ecosystem is missing", ErrInvalidOSV)
 	}
-	if e, _, _ := strings.Cut(ecosystem, ":"); !slices.Contains(models.Ecosystems, models.Ecosystem(e)) {
-		return fmt.Errorf("%w: package ecosystem '%s' is invalid", ErrInvalidOSV, e)
+	e, _, _ := strings.Cut(ecosystemFull, ":")
+	ecosystem := models.Ecosystem(e)
+	if !slices.Contains(models.Ecosystems, ecosystem) {
+		return fmt.Errorf("%w: package ecosystem %q is invalid", ErrInvalidOSV, ecosystem)
 	}
 
 	// Package name must be set.
@@ -37,7 +39,7 @@ func ValidateVuln(v *models.Vulnerability) error {
 
 	// Validate the ranges are correct.
 	for _, rng := range v.Affected[0].Ranges {
-		if err := validateRange(rng); err != nil {
+		if err := validateRange(rng, ecosystem); err != nil {
 			return err
 		}
 	}
@@ -45,19 +47,41 @@ func ValidateVuln(v *models.Vulnerability) error {
 	return nil
 }
 
+// semverEcosystem is an allowlist indicating which ecosystems are allowed to
+// have a range type of "SEMVER".
+//
+// The source of this list is:
+// https://github.com/google/osv.dev/blob/master/osv/ecosystems/_ecosystems.py
+//
+// Unfortunately this information is not specified in the OSV schema, or
+// enforced by the OSV API presently.
+var semverEcosystem = map[models.Ecosystem]struct{}{
+	models.EcosystemBitnami:  {},
+	models.EcosystemCratesIO: {},
+	models.EcosystemGo:       {},
+	models.EcosystemHex:      {},
+	models.EcosystemNPM:      {},
+	models.EcosystemSwiftURL: {},
+}
+
 // validateRange ensures r conforms to the OSV Schema. This also ensures code
 // that processes ranges can assume the data is well structured.
 //
 // See https://ossf.github.io/osv-schema/#affectedranges-field for details.
-func validateRange(r models.Range) error {
+func validateRange(r models.Range, ecosystem models.Ecosystem) error {
 	// The range type is required.
 	if r.Type == "" {
 		return fmt.Errorf("%w: range must have a type specified", ErrInvalidOSV)
 	}
 	// The range type can be either ECOSYSTEM, SEMVER or GIT.
 	if !slices.Contains([]models.RangeType{models.RangeEcosystem, models.RangeSemVer, models.RangeGit}, r.Type) {
-		return fmt.Errorf("%w: range type '%s' is invalid", ErrInvalidOSV, r.Type)
+		return fmt.Errorf("%w: range type %q is invalid", ErrInvalidOSV, r.Type)
 	}
+	// Ensure the ecosystem supports SEMVER if it is being used.
+	if _, semverOK := semverEcosystem[ecosystem]; r.Type == models.RangeSemVer && !semverOK {
+		return fmt.Errorf("%w: ecosystem %q does not support SEMVER ranges", ErrInvalidOSV, ecosystem)
+	}
+
 	var hasFixed bool
 	var hasLastAffected bool
 	var hasIntroduced bool
