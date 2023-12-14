@@ -101,7 +101,7 @@ Please include the following:
 
 We will then either:
 
-- Move the entire report into the `./withdrawn/` directory and add the
+- Move the entire report into the `./osv/withdrawn/` directory and add the
   `withdrawn` time to the report - if the whole report is a false positive.
 - Move the affected versions into a `database_specific` array
   indicating that which versions were false positives - if
