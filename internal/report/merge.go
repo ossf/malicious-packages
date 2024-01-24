@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
-	"golang.org/x/exp/slices"
 )
 
 var ErrMergeFailure = errors.New("merge failure")

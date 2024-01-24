@@ -17,11 +17,11 @@ package report_test
 import (
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/malicious-packages/internal/report"
 )
