@@ -2,10 +2,10 @@ package report
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/google/osv-scanner/pkg/models"
-	"golang.org/x/exp/slices"
 )
 
 // ValidateVuln ensures that v conforms to the the OSV Schema, and to the

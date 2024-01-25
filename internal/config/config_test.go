@@ -18,10 +18,9 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"testing"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/malicious-packages/internal/config"
 	"github.com/ossf/malicious-packages/internal/source"
