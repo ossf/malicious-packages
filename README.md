@@ -29,7 +29,7 @@ These public reports help protect the open source community, and provide a data
 source for the security community to improve their ability to find and detect
 new open source malware.
 
-### Scope
+## Scope
 
 What is in scope?
 
@@ -52,7 +52,7 @@ Out-of-scope:
 - vulnerability reports
 - compromised infrastructure
 
-### Definition of a Malicious Package
+## Definition of a Malicious Package
 
 - an open source package public available in a package registry
 - and either:
@@ -60,7 +60,7 @@ Out-of-scope:
   - exfiltrates an identifier that can be directly used to launch an attack
     against the victim (e.g. username for phishing or password bruteforcing)
 
-#### Dependency and manifest confusion
+### Dependency and manifest confusion
 
 [Dependency confusion](https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610)
 and [manifest confusion](https://blog.vlt.sh/blog/the-massive-hole-in-the-npm-ecosystem)
@@ -77,7 +77,7 @@ Dependency confusion are effectively the same as an account takeover where an
 attacker is replaces a package's code with their own. This means even trivial or
 empty dependency confusion packages would require incident response.
 
-#### Spam and typosquating
+### Spam and typosquating
 
 Spam, typosquatting are not malicious, unless the package itself exhibits
 malicious behavior as-per the definition above.
@@ -90,7 +90,7 @@ Typosquatting packages may be hard to distinguish from dependency confusion. As
 a result, these reports are allowed to be present in the malicious packages
 repository.
 
-#### Reverse engineering protection (e.g. obfuscation)
+### Reverse engineering protection (e.g. obfuscation)
 
 Reverse engineering protections are not malicious, unless it exhibits malicious
 behavior as-per the definition above.
@@ -99,7 +99,7 @@ Obfuscation, debugger evasion, and other reverse engineering protection
 techniques, are used by both developers seeking to protect their source code
 and attackers seeking to evade detection.
 
-#### Telemetry
+### Telemetry
 
 Telemetry, on its own, is not malicious.
 
@@ -108,13 +108,6 @@ performance of the package.
 
 However, if telemetry is abused to exfiltrate and steal sensitive data, or
 provide remote access, this can be considered malicious.
-
-### Prior Work
-
-- GitHub's [Advisory Database (filtered by malware)](https://github.com/advisories?query=type%3Amalware), for the NPM ecosystem.
-- https://github.com/lxyeternal/pypi_malregistry (PyPI)
-- https://dasfreak.github.io/Backstabbers-Knife-Collection/ (PyPI and npm), by Marc Ohm et al.
-- https://github.com/datadog/malicious-software-packages-dataset (PyPI), by Datadog
 
 ## Get Involved
 
@@ -170,6 +163,13 @@ We will then either:
   some versions are malicious and some are false positives.
 
 **Note:** support for handling false positives is TBC.
+
+## Prior and Related Work
+
+- GitHub's [Advisory Database (filtered by malware)](https://github.com/advisories?query=type%3Amalware), for the NPM ecosystem.
+- https://github.com/lxyeternal/pypi_malregistry (PyPI)
+- https://dasfreak.github.io/Backstabbers-Knife-Collection/ (PyPI and npm), by Marc Ohm et al.
+- https://github.com/datadog/malicious-software-packages-dataset (PyPI), by Datadog
 
 ## Governance
 
