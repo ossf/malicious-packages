@@ -35,17 +35,79 @@ What is in scope?
 
 - any package that belongs to an ecosystem supported by the
   [OSV Schema](https://ossf.github.io/osv-schema/)
-- malicious packages published under typosquatting or dependency
-  confusion type attacks
+- malicious packages published under typosquatting type attacks
 - malicious packages published through account takeover
-- prebuilt binaries for a package that are malicious
+- malicious prebuilt binaries downloaded or installed with a package
 - security researcher activity
+- dependency and manifest confusion
+
+Borderline:
+
+- typosquatting, or spam packages that are empty or trivial, while not
+  malicious, are allowed to be present in the dataset
 
 Out-of-scope:
 
+- non-malicious packages
 - vulnerability reports
 - compromised infrastructure
-- non-malicious packages
+
+### Definition of a Malicious Package
+
+- an open source package public available in a package registry
+- and either:
+  - when installed or used, would require some sort of incident response; or
+  - exfiltrates an identifier that can be directly used to launch an attack
+    against the victim (e.g. username for phishing or password bruteforcing)
+
+#### Dependency and manifest confusion
+
+[Dependency confusion](https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610)
+and [manifest confusion](https://blog.vlt.sh/blog/the-massive-hole-in-the-npm-ecosystem)
+are techniques that exploit quirks in the behavior of package systems and how
+they are used within organizations. Packages using these attacks are malicious.
+
+Very occasionally someone may unintentionally encounter these quirks, but
+these are infrequent.
+
+Manifest confusion requires someone to bypass the NPM command line tool and
+deliberately provide an altered manifest.
+
+Dependency confusion are effectively the same as an account takeover where an
+attacker is replaces a package's code with their own. This means even trivial or
+empty dependency confusion packages would require incident response.
+
+#### Spam and typosquating
+
+Spam, typosquatting are not malicious, unless the package itself exhibits
+malicious behavior as-per the definition above.
+
+These types of packages are often empty, or consist of only useless trivial
+functionality. While these packages are not malicious, they are a nuisance and
+generally unwanted.
+
+Typosquatting packages may be hard to distinguish from dependency confusion. As
+a result, these reports are allowed to be present in the malicious packages
+repository.
+
+#### Reverse engineering protection (e.g. obfuscation)
+
+Reverse engineering protections are not malicious, unless it exhibits malicious
+behavior as-per the definition above.
+
+Obfuscation, debugger evasion, and other reverse engineering protection
+techniques, are used by both developers seeking to protect their source code
+and attackers seeking to evade detection.
+
+#### Telemetry
+
+Telemetry, on its own, is not malicious.
+
+Many open source packages use telemetry to track installs or the behavior and
+performance of the package.
+
+However, if telemetry is abused to exfiltrate and steal sensitive data, or
+provide remote access, this can be considered malicious.
 
 ### Prior Work
 
