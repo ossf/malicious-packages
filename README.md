@@ -74,7 +74,7 @@ Manifest confusion requires someone to bypass the NPM command line tool and
 deliberately provide an altered manifest.
 
 Dependency confusion are effectively the same as an account takeover where an
-attacker is replaces a package's code with their own. This means even trivial or
+attacker replaces a package's code with their own. This means even trivial or
 empty dependency confusion packages would require incident response.
 
 ### Spam and typosquating
