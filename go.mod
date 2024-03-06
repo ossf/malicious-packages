@@ -5,7 +5,7 @@ go 1.21
 require (
 	cloud.google.com/go/storage v1.39.0
 	github.com/aws/aws-sdk-go v1.50.30
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.1
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.3
 	github.com/google/osv-scanner v1.6.1
 	github.com/google/renameio v1.0.1
 	gocloud.dev v0.36.0
@@ -28,8 +28,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.7.2 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.11.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.18.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.5 // indirect
