@@ -108,7 +108,7 @@ func (r *Report) SetDetails(user string, sourceDetailsSet ...map[*OriginRef]stri
 	if user != "" {
 		res = strings.TrimSpace(user) + "\n"
 	}
-	res = res + detailHeader
+	res += detailHeader
 	bestOrigins := make(map[string]*OriginRef)
 	var sources []string
 	detailMap := make(map[*OriginRef]string)
@@ -140,7 +140,7 @@ func (r *Report) SetDetails(user string, sourceDetailsSet ...map[*OriginRef]stri
 	for _, s := range sources {
 		o := bestOrigins[s]
 		d := detailMap[o]
-		res = res + fmt.Sprintf(detailSectionHeader, o.Source, o.SHASum) + strings.TrimSpace(d) + "\n"
+		res += fmt.Sprintf(detailSectionHeader, o.Source, o.SHASum) + strings.TrimSpace(d) + "\n"
 	}
 	// Assign!
 	r.raw.Details = res
