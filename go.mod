@@ -1,12 +1,13 @@
 module github.com/ossf/malicious-packages
 
 go 1.21
+toolchain go1.22.2
 
 require (
 	cloud.google.com/go/storage v1.40.0
 	github.com/aws/aws-sdk-go v1.51.22
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1
-	github.com/google/osv-scanner v1.6.1
+	github.com/google/osv-scanner v1.7.1
 	github.com/google/renameio v1.0.1
 	gocloud.dev v0.37.0
 	gopkg.in/yaml.v3 v3.0.1
