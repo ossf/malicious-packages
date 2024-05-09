@@ -227,7 +227,7 @@ func canonicalizeName(name string, ecosystem models.Ecosystem) string {
 		// The canonical form for crates.io names is lowercase with dashes
 		// replaced by underscores.
 		// See: https://github.com/rust-lang/crates.io/blob/master/migrations/20150319224700_dumped_migration_93/up.sql
-		return strings.Replace(strings.ToLower(name), "-", "_", -1)
+		return strings.ReplaceAll(strings.ToLower(name), "-", "_")
 	case models.EcosystemPyPI:
 		// Replace runs of [-_.] with a single "-", then lowercase everything.
 		// See: https://github.com/pypa/pip/blob/24.0/src/pip/_vendor/packaging/utils.py
