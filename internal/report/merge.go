@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
@@ -30,7 +31,7 @@ func (r *Report) Merge(other *Report) error {
 	if r.Ecosystem != other.Ecosystem {
 		return fmt.Errorf("%w: attempting to merge report from different ecosystem (%s != %s)", ErrMergeFailure, r.Ecosystem, other.Ecosystem)
 	}
-	if r.Name != other.Name {
+	if !equalName(r.Name, other.Name, r.Ecosystem) {
 		return fmt.Errorf("%w: attempting to merge report with different name (%s != %s)", ErrMergeFailure, r.Name, other.Name)
 	}
 	// Merging must be done before ID assignment.
@@ -58,6 +59,9 @@ func (r *Report) Merge(other *Report) error {
 	r.raw.Aliases = mergeSlices(r.raw.Aliases, other.raw.Aliases)
 	r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related)
 	r.raw.Severity = nil
+
+	// Ensure we don't have any links back to ourselves.
+	r.FilterSelf()
 
 	// Description merging.
 	userDetails, sourceDetails, err := r.ParseDetails()
@@ -101,6 +105,16 @@ func (r *Report) Merge(other *Report) error {
 	r.raw.DatabaseSpecific = combineDatabaseSpecific(r.raw.DatabaseSpecific, other.raw.DatabaseSpecific)
 
 	return nil
+}
+
+func equalName(a, b, ecosystem string) bool {
+	switch models.Ecosystem(ecosystem) {
+	case models.EcosystemNuGet:
+		// NuGet names are case insensitive.
+		return strings.EqualFold(a, b)
+	default:
+		return a == b
+	}
 }
 
 func combineCredits(creditSets ...[]models.Credit) []models.Credit {
