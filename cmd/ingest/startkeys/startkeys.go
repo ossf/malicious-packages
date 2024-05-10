@@ -21,18 +21,17 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// StartKeys maps each source ID and prefix to the key that ingestion will start
-// from.
+// StartKeys maps each source ID to the key that ingestion will start from.
 //
 // A nil value of StartKeys supports Get, Set and IsDirty, but have no effect.
 type StartKeys struct {
-	keys  map[string]map[string]string
+	keys  map[string]string
 	dirty bool
 }
 
 // New creates a new instance of StartKeys.
 func New() *StartKeys {
-	return &StartKeys{keys: make(map[string]map[string]string)}
+	return &StartKeys{keys: make(map[string]string)}
 }
 
 // ReadYAML populates the data from the supplied reader containing YAML content.
@@ -45,38 +44,32 @@ func (sk *StartKeys) ReadYAML(r io.Reader) error {
 	return nil
 }
 
-// Get returns the corresponding start key for the supplied id and prefix. If
-// the key is not present an empty string will be returned.
+// Get returns the corresponding start key for the supplied ID. If the key is
+// not present an empty string will be returned.
 //
-// An empty string will also be returned for a nil StartKeys.
-func (sk *StartKeys) Get(id, prefix string) string {
+// An emptry string will also be returned for a nil StartKeys.
+func (sk *StartKeys) Get(id string) string {
 	if sk == nil {
 		return ""
 	}
-	if k, ok := sk.keys[id]; ok {
-		return k[prefix]
-	}
-	return ""
+	return sk.keys[id]
 }
 
-// Set stores the key for the supplied id and prefix. If the key results in a
-// value changing IsDirty() will return true.
+// Set stores the key for the supplied ID. If the key results in a value changing
+// IsDirty() will return true.
 //
 // The function will no-op if StartKeys is nil.
-func (sk *StartKeys) Set(id, prefix, key string) {
+func (sk *StartKeys) Set(id, key string) {
 	if sk == nil {
 		return
 	}
 	if key == "" {
 		return
 	}
-	if _, ok := sk.keys[id]; !ok {
-		sk.keys[id] = make(map[string]string)
-	}
-	if sk.keys[id][prefix] == key {
+	if sk.keys[id] == key {
 		return
 	}
-	sk.keys[id][prefix] = key
+	sk.keys[id] = key
 	sk.dirty = true
 }
 

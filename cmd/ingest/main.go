@@ -91,10 +91,10 @@ func main() {
 					LookbackEntries: 0,
 				}
 			}
-			// Override the source bucket and prefixes with a file:// handler so
-			// the local files are consumed instead.
+			// Override the source bucket and prefix with a file:// handler so the
+			// local files are consumed instead.
 			src.Bucket = fmt.Sprintf("file://%s", lp)
-			src.Prefixes = []string{}
+			src.Prefix = ""
 		}
 		sources = []*source.Source{src}
 	}
@@ -121,14 +121,12 @@ func main() {
 
 	ctx := context.Background()
 	for _, s := range sources {
-		for _, prefix := range s.GetPrefixes() {
-			end, err := ingestReports(ctx, s, prefix, c, keys.Get(s.ID, prefix))
-			if err != nil {
-				// Abort here since the repo is now in a dirty state.
-				log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err) //nolint:gocritic
-			}
-			keys.Set(s.ID, prefix, end)
+		end, err := ingestReports(ctx, s, c, keys.Get(s.ID))
+		if err != nil {
+			// Abort here since the repo is now in a dirty state.
+			log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err) //nolint:gocritic
 		}
+		keys.Set(s.ID, end)
 	}
 
 	// Atomically write updated start keys...
@@ -137,10 +135,10 @@ func main() {
 	}
 }
 
-func ingestReports(ctx context.Context, s *source.Source, prefix string, c *config.Config, start string) (string, error) {
-	log.Printf("[%s] Processing... (bucket: %s, prefix: %s)", s.ID, s.Bucket, prefix)
+func ingestReports(ctx context.Context, s *source.Source, c *config.Config, start string) (string, error) {
+	log.Printf("[%s] Processing... (bucket: %s, prefix: %s)", s.ID, s.Bucket, s.Prefix)
 	saveCount := 0
-	end, err := sourceio.Walk(ctx, s, prefix, start, func(ctx context.Context, key string, rdr io.Reader) error {
+	end, err := sourceio.Walk(ctx, s, start, func(ctx context.Context, key string, rdr io.Reader) error {
 		// Generate a hash while we consume the report so we can detect duplicates.
 		h := sha256.New()
 		rdr = io.TeeReader(rdr, h)
