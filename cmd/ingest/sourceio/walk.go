@@ -66,7 +66,7 @@ func beforeListFunc(start string) func(as func(interface{}) bool) error {
 // key with a reader for consuming the entry.
 //
 // If start is not empty, entries will be consumed from start.
-func Walk(ctx context.Context, s *source.Source, start string, walkFn func(ctx context.Context, key string, r io.Reader) error) (string, error) {
+func Walk(ctx context.Context, s *source.Source, prefix, start string, walkFn func(ctx context.Context, key string, r io.Reader) error) (string, error) {
 	// Ignore sources that have no bucket set.
 	if s.Bucket == "" {
 		return "", nil
@@ -93,7 +93,7 @@ func Walk(ctx context.Context, s *source.Source, start string, walkFn func(ctx c
 	}
 
 	iter := bkt.List(&blob.ListOptions{
-		Prefix:     s.Prefix,
+		Prefix:     prefix,
 		BeforeList: beforeListFunc(start),
 	})
 	for {
