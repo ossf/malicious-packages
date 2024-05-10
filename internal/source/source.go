@@ -28,11 +28,11 @@ var (
 )
 
 type Source struct {
-	ID              string `yaml:"id"`
-	Bucket          string `yaml:"bucket"`
-	Prefix          string `yaml:"prefix"`
-	LookbackEntries int    `yaml:"lookback-entries"`
-	AliasID         bool   `yaml:"alias-id"`
+	ID              string   `yaml:"id"`
+	Bucket          string   `yaml:"bucket"`
+	Prefixes        []string `yaml:"prefixes"`
+	LookbackEntries int      `yaml:"lookback-entries"`
+	AliasID         bool     `yaml:"alias-id"`
 }
 
 func validateID(id string) error {
@@ -57,4 +57,11 @@ func (s *Source) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*s = Source(*raw)
 	return nil
+}
+
+func (s *Source) GetPrefixes() []string {
+	if len(s.Prefixes) == 0 {
+		return []string{""}
+	}
+	return s.Prefixes
 }
