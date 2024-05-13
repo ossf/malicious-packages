@@ -77,6 +77,44 @@ func TestNormalize_WithID(t *testing.T) {
 	}
 }
 
+func TestNormalize_CanonicalizeName(t *testing.T) {
+	tests := []struct {
+		eco  models.Ecosystem
+		name string
+		want string
+	}{
+		{
+			eco:  models.EcosystemPyPI,
+			name: "This--Is__A1..Test_-.Example",
+			want: "this-is-a1-test-example",
+		},
+		{
+			eco:  models.EcosystemCratesIO,
+			name: "This-Is-A1_Test_Example",
+			want: "this_is_a1_test_example",
+		},
+		{
+			eco:  models.EcosystemRubyGems,
+			name: "This-is_a1.test_Example",
+			want: "This-is_a1.test_Example",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := testReport(test.eco, test.name)
+
+			if err := r.Normalize(); err != nil {
+				t.Fatalf("Normalize() = %v; want no error", err)
+			}
+
+			if got := r.Name; got != test.want {
+				t.Errorf("Name = %v; want %v", got, test.want)
+			}
+		})
+	}
+}
+
 func TestNormalize_Summary(t *testing.T) {
 	r := testReport(models.EcosystemRubyGems, "example")
 
@@ -228,6 +266,34 @@ func TestAliasID_Duplicate(t *testing.T) {
 	want := []string{"TEST-1234-4", "OTHER-5432-1"}
 	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
 		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestFilterSelf(t *testing.T) {
+	r := testReport(models.EcosystemPyPI, "example")
+	r.Vuln().ID = "TEST-1234-4"
+	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
+	r.Vuln().References = []models.Reference{
+		{
+			Type: models.ReferenceArticle,
+			URL:  "path/to/TEST-1234-4.json",
+		},
+		{
+			Type: models.ReferenceReport,
+			URL:  "https://example.org/",
+		},
+	}
+
+	r.FilterSelf()
+
+	wantAliases := []string{"OTHER-5432-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, wantAliases) {
+		t.Errorf("Aliases = %v; want %s", got, wantAliases)
+	}
+
+	wantReferences := []models.Reference{{Type: models.ReferenceReport, URL: "https://example.org/"}}
+	if got := r.Vuln().References; !slices.Equal(got, wantReferences) {
+		t.Errorf("References = %v; want %s", got, wantReferences)
 	}
 }
 

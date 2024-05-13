@@ -34,6 +34,14 @@ func TestMerge_MismatchName(t *testing.T) {
 	}
 }
 
+func TestMerge_NuGetName(t *testing.T) {
+	r := testReport(models.EcosystemNuGet, "example.Utility.Test")
+	other := testReport(models.EcosystemNuGet, "Example.utility.TEST")
+	if err := r.Merge(other); err != nil {
+		t.Fatalf("Merge() = %v; want no error", err)
+	}
+}
+
 func TestMerge_MismatchEcosystem(t *testing.T) {
 	r := testReport(models.EcosystemNPM, "example1")
 	other := testReport(models.EcosystemPyPI, "example2")
@@ -222,9 +230,10 @@ func TestMerge_NoEcosystemSpecificData(t *testing.T) {
 
 func TestMerge_Aliases(t *testing.T) {
 	r := testReport(models.EcosystemNPM, "example")
+	r.Vuln().ID = "id"
 	r.Vuln().Aliases = []string{"z", "b", "c"}
 	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Aliases = []string{"b", "c", "d"}
+	other.Vuln().Aliases = []string{"b", "c", "d", "id"}
 
 	want := []string{"z", "b", "c", "d"}
 
@@ -271,10 +280,15 @@ func TestMerge_References(t *testing.T) {
 		Type: models.ReferenceArticle,
 		URL:  "https://example.com/advisory",
 	}
+	ref5 := models.Reference{
+		Type: models.ReferenceReport,
+		URL:  "https://example.com/id.json",
+	}
 	r := testReport(models.EcosystemNPM, "example")
+	r.Vuln().ID = "id"
 	r.Vuln().References = []models.Reference{ref1, ref2, ref3}
 	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().References = []models.Reference{ref2, ref3, ref4}
+	other.Vuln().References = []models.Reference{ref2, ref3, ref4, ref5}
 
 	want := []models.Reference{ref1, ref2, ref3, ref4}
 
