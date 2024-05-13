@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/google/osv-scanner/pkg/models"
 )
@@ -158,6 +159,23 @@ func (r *Report) AliasID() {
 	r.raw.Aliases = append(r.raw.Aliases, r.raw.ID)
 }
 
+// FilterSelf will remove any refences to this report based on its ID from
+// aliases or references.
+//
+// If no ID has been assigned, this function is a no-op.
+func (r *Report) FilterSelf() {
+	if r.raw.ID == "" {
+		// No ID.
+		return
+	}
+	r.raw.Aliases = slices.DeleteFunc(r.raw.Aliases, func(s string) bool {
+		return r.raw.ID == s
+	})
+	r.raw.References = slices.DeleteFunc(r.raw.References, func(ref models.Reference) bool {
+		return strings.HasSuffix(ref.URL, fmt.Sprintf("/%s.json", r.raw.ID))
+	})
+}
+
 // IsWithdrawn returns whether or not the report has been withdrawn.
 func (r *Report) IsWithdrawn() bool {
 	return !r.raw.Withdrawn.IsZero()
@@ -173,6 +191,8 @@ func (r *Report) Normalize() error {
 		// Only normalize reports which currently don't have an ID assigned.
 		return nil
 	}
+
+	r.Name = canonicalizeName(r.Name, models.Ecosystem(r.Ecosystem))
 
 	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
@@ -194,6 +214,40 @@ func (r *Report) Normalize() error {
 	}
 
 	return nil
+}
+
+// canonicalizeName transforms name to conform to the canonical value for the
+// given ecosystem.
+// If package names for an ecosystem may contain mixed case, but are compared
+// as case insensitive, then equalName should be changed to preserve the case
+// of the first package seen.
+func canonicalizeName(name string, ecosystem models.Ecosystem) string {
+	switch ecosystem {
+	case models.EcosystemCratesIO:
+		// The canonical form for crates.io names is lowercase with dashes
+		// replaced by underscores.
+		// See: https://github.com/rust-lang/crates.io/blob/master/migrations/20150319224700_dumped_migration_93/up.sql
+		return strings.ReplaceAll(strings.ToLower(name), "-", "_")
+	case models.EcosystemPyPI:
+		// Replace runs of [-_.] with a single "-", then lowercase everything.
+		// See: https://github.com/pypa/pip/blob/24.0/src/pip/_vendor/packaging/utils.py
+		// See: https://www.python.org/dev/peps/pep-0503/
+		run := false
+		return strings.Map(func(r rune) rune {
+			if r == '-' || r == '_' || r == '.' {
+				if run {
+					return -1
+				}
+				run = true
+				return '-'
+			}
+			run = false
+			return unicode.ToLower(r)
+		}, name)
+	default:
+		// Reasonable default is to do nothing
+		return name
+	}
 }
 
 func stripUnexpectedValues(obj map[string]any) map[string]any {
