@@ -51,14 +51,20 @@ Out-of-scope:
 - non-malicious packages
 - vulnerability reports
 - compromised infrastructure
+- offensive security tools, unless they execute malicious payloads on install
 
 ## Definition of a Malicious Package
 
-- an open source package public available in a package registry
+Below is the definition of what this repository considers a malicious package.
+
+- an open source package publicly available in a package registry
 - and either:
   - when installed or used, would require some sort of incident response; or
   - exfiltrates an identifier that can be directly used to launch an attack
     against the victim (e.g. username for phishing or password bruteforcing)
+- and also either:
+  - violates the terms of the package registry; or
+  - would be reasonably considered to require removal from the package registry
 
 ### Dependency and manifest confusion
 
@@ -68,7 +74,7 @@ are techniques that exploit quirks in the behavior of package systems and how
 they are used within organizations. Packages using these attacks are malicious.
 
 Very occasionally someone may unintentionally encounter these quirks, but
-these are infrequent.
+this is considered infrequent.
 
 Manifest confusion requires someone to bypass the NPM command line tool and
 deliberately provide an altered manifest.
@@ -82,9 +88,9 @@ empty dependency confusion packages would require incident response.
 Spam, typosquatting are not malicious, unless the package itself exhibits
 malicious behavior as-per the definition above.
 
-These types of packages are often empty, or consist of only useless trivial
-functionality. While these packages are not malicious, they are a nuisance and
-generally unwanted.
+These types of packages are often empty (i.e. no functional code), or consist of
+only useless trivial functionality (e.g. printing a message). While these
+packages are not malicious, they are a nuisance and generally unwanted.
 
 Typosquatting packages may be hard to distinguish from dependency confusion. As
 a result, these reports are allowed to be present in the malicious packages
@@ -108,6 +114,19 @@ performance of the package.
 
 However, if telemetry is abused to exfiltrate and steal sensitive data, or
 provide remote access, this can be considered malicious.
+
+### Offensive Security Tools
+
+Offensive security tools, libraries, hacking tools, etc are not malicious.
+
+While an offensive security tool being discovered in an environment may
+indicate the presence of compromise, the package itself is not itself malicious.
+
+These packages don't necessarily violate the terms of the registries hosting
+them, and are often used by security researchers.
+
+However, offensive security tools that execute malicious payloads during
+installation are considered malicious packages.
 
 ## Get Involved
 
@@ -161,6 +180,9 @@ We will then either:
 - Move the affected versions into a `database_specific` array
   indicating that which versions were false positives - if
   some versions are malicious and some are false positives.
+
+Finally, reports that have been added to the malicious packages repository will
+not be removed.
 
 **Note:** support for handling false positives is TBC.
 
