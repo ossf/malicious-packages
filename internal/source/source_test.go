@@ -116,3 +116,17 @@ func TestInvalidSource(t *testing.T) {
 		t.Errorf("Decode() = %v; want an error", err)
 	}
 }
+
+func TestSource_Enabled(t *testing.T) {
+	s := &source.Source{
+		ID:              "test",
+		LookbackEntries: 10,
+	}
+	if !s.Enabled() {
+		t.Fatalf("Enabled() = false; want true")
+	}
+	s.DisabledForReason = "testing"
+	if s.Enabled() {
+		t.Fatalf("Enabled() = true; want false")
+	}
+}
