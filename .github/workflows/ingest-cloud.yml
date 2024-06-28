@@ -31,6 +31,22 @@ jobs:
     - name: GCP Credential Workaround
       run: |
         echo '{ "type": "service_account" }' > .dummy_adc.json
+    
+    # Setup v2 credentials for accessing AWS S3 buckets. Each set of credentials
+    # is given its own profile which is then set in the config using the
+    # "profile=PROFILENAME" query parameter in the source's bucket URL.
+    - name: AWS Credentials
+      run: |
+        mkdir "$HOME/.aws"
+        envsubst >"$HOME/.aws/credentials" <<EOF
+        [reversinglabs]
+        aws_access_key_id = $RL_AWS_ACCESS_KEY_ID
+        aws_secret_access_key = $RL_AWS_SECRET_ACCESS_KEY
+        EOF
+        echo '[profile reversinglabs]' > $HOME/.aws/config"
+      env:
+        RL_AWS_ACCESS_KEY_ID: ${{ secrets.REVERSINGLABS_AWS_KEY_ID }}
+        RL_AWS_SECRET_ACCESS_KEY: ${{ secrets.REVERSINGLABS_AWS_KEY_SECRET }}
 
     - name: Ingest OSV
       run: |
