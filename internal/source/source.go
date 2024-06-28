@@ -28,11 +28,12 @@ var (
 )
 
 type Source struct {
-	ID              string   `yaml:"id"`
-	Bucket          string   `yaml:"bucket"`
-	Prefixes        []string `yaml:"prefixes"`
-	LookbackEntries int      `yaml:"lookback-entries"`
-	AliasID         bool     `yaml:"alias-id"`
+	ID                string   `yaml:"id"`
+	Bucket            string   `yaml:"bucket"`
+	Prefixes          []string `yaml:"prefixes"`
+	LookbackEntries   int      `yaml:"lookback-entries"`
+	AliasID           bool     `yaml:"alias-id"`
+	DisabledForReason string   `yaml:"disabled-for-reason"`
 }
 
 func validateID(id string) error {
@@ -64,4 +65,8 @@ func (s *Source) GetPrefixes() []string {
 		return []string{""}
 	}
 	return s.Prefixes
+}
+
+func (s *Source) Enabled() bool {
+	return s.DisabledForReason == ""
 }

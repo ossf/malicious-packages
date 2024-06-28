@@ -121,6 +121,10 @@ func main() {
 
 	ctx := context.Background()
 	for _, s := range sources {
+		if !s.Enabled() {
+			log.Printf("[%s] Skipping: %s", s.ID, s.DisabledForReason)
+			continue
+		}
 		for _, prefix := range s.GetPrefixes() {
 			end, err := ingestReports(ctx, s, prefix, c, keys.Get(s.ID, prefix))
 			if err != nil {
