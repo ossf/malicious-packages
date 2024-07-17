@@ -5,7 +5,7 @@ go 1.21.11
 toolchain go1.22.4
 
 require (
-	cloud.google.com/go/storage v1.42.0
+	cloud.google.com/go/storage v1.43.0
 	github.com/aws/aws-sdk-go v1.54.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.56.1
 	github.com/google/osv-scanner v1.8.1
@@ -15,8 +15,8 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.114.0 // indirect
-	cloud.google.com/go/auth v0.5.1 // indirect
+	cloud.google.com/go v0.115.0 // indirect
+	cloud.google.com/go/auth v0.6.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.8 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/google/wire v0.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.5 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
@@ -64,10 +64,10 @@ require (
 	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/api v0.183.0 // indirect
-	google.golang.org/genproto v0.0.0-20240528184218-531527333157 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/api v0.187.0 // indirect
+	google.golang.org/genproto v0.0.0-20240624140628-dc46fd24d27d // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240617180043-68d350f18fd4 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240624140628-dc46fd24d27d // indirect
 	google.golang.org/grpc v1.64.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 )
