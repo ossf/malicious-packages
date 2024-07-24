@@ -6,7 +6,7 @@ toolchain go1.22.4
 
 require (
 	cloud.google.com/go/storage v1.43.0
-	github.com/aws/aws-sdk-go v1.54.6
+	github.com/aws/aws-sdk-go v1.55.1
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.56.1
 	github.com/google/osv-scanner v1.8.1
 	github.com/google/renameio v1.0.1
