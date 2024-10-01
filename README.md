@@ -57,11 +57,13 @@ Out-of-scope:
 
 Below is the definition of what this repository considers a malicious package.
 
-- an open source package publicly available in a package registry
+- a package publicly available in a package registry
 - and either:
-  - when installed or used, would require some sort of incident response; or
-  - exfiltrates an identifier that can be directly used to launch an attack
-    against the victim (e.g. username for phishing or password bruteforcing)
+  - when installed or used, would require some sort of incident response due to
+    the loss of confidentiality, availability and/or integrity; or
+  - exfiltrates an identifier that can be directly used to launch a subsequent 
+    attack against the victim (e.g. username for phishing or password
+    bruteforcing)
 - and also either:
   - violates the terms of the package registry; or
   - would be reasonably considered to require removal from the package registry
@@ -114,6 +116,16 @@ performance of the package.
 
 However, if telemetry is abused to exfiltrate and steal sensitive data, or
 provide remote access, this can be considered malicious.
+
+### Protestware
+
+Protestware is not malicious if it does not affect the availability, integrity
+or confidentiality of the systems the package is run on. For example, a message
+logged to a console may be annoying to a developer, but is not malicious.
+
+However, protestware that destroys files, slows performance, or otherwise
+affects availability, integrity or confidentiality as part of the protest may be
+considered malicious.
 
 ### Offensive Security Tools
 
