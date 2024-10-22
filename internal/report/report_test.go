@@ -25,6 +25,7 @@ import (
 	"github.com/google/osv-scanner/pkg/models"
 
 	"github.com/ossf/malicious-packages/internal/report"
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 func testReport(ecosystem models.Ecosystem, name string) *report.Report {
@@ -294,6 +295,34 @@ func TestFilterSelf(t *testing.T) {
 	wantReferences := []models.Reference{{Type: models.ReferenceReport, URL: "https://example.org/"}}
 	if got := r.Vuln().References; !slices.Equal(got, wantReferences) {
 		t.Errorf("References = %v; want %s", got, wantReferences)
+	}
+}
+
+func TestApplyFilters(t *testing.T) {
+	r := testReport(models.EcosystemPyPI, "example")
+	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().Aliases = []string{"OTHER-5432-1", "ANOTHER-9999-123"}
+	r.Vuln().Related = []string{"OTHER-6789-1", "OTHER-9999-456", "ANOTHER-9999-789"}
+
+	f1, err := reportfilter.New("aliases", "^OTHER-")
+	if err != nil {
+		t.Fatalf("reportfilter.New() = error; want no error")
+	}
+	f2, err := reportfilter.New("related", "^ANOTHER-")
+	if err != nil {
+		t.Fatalf("reportfilter.New() = error; want no error")
+	}
+	fs := reportfilter.Filters{f1, f2}
+	r.ApplyFilter(fs)
+
+	wantAliases := []string{"ANOTHER-9999-123"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, wantAliases) {
+		t.Errorf("Aliases = %v; want %v", got, wantAliases)
+	}
+
+	wantRelated := []string{"OTHER-6789-1", "OTHER-9999-456"}
+	if got := r.Vuln().Related; !slices.Equal(got, wantRelated) {
+		t.Errorf("Related = %v; want %v", got, wantRelated)
 	}
 }
 

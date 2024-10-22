@@ -117,6 +117,15 @@ func TestInvalidSource(t *testing.T) {
 	}
 }
 
+func TestInvalidFilter(t *testing.T) {
+	dec := yaml.NewDecoder(bytes.NewBuffer([]byte("id: a\nfilters:\n - field: not_a_valid_field")))
+	var s *source.Source
+	err := dec.Decode(&s)
+	if err == nil {
+		t.Errorf("Decode() = %v; want an error", err)
+	}
+}
+
 func TestSource_Enabled(t *testing.T) {
 	s := &source.Source{
 		ID:              "test",
