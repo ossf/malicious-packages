@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/ossf/malicious-packages/internal/reportfilter"
 	"gopkg.in/yaml.v3"
+
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 var (
