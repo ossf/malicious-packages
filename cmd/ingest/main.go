@@ -184,6 +184,9 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 		// Ensure the incoming report does not have an ID.
 		r.StripID()
 
+		// Apply filters against the report.
+		r.ApplyFilter(s.Filter())
+
 		// Prepare the destination path, creating it if needed.
 		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))
 		log.Printf("[%s]   dest = %s", s.ID, dest)
