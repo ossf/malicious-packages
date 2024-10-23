@@ -60,6 +60,8 @@ func (rf *removeFilter) Apply(v *models.Vulnerability) {
 }
 
 // Filters is a slice of filters that itself implements the Filter interface.
+//
+// Filters are applied in the order they appear in the slice.
 type Filters []Filter
 
 func (fs Filters) Apply(v *models.Vulnerability) {
