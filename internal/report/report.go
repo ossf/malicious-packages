@@ -27,6 +27,8 @@ import (
 	"unicode"
 
 	"github.com/google/osv-scanner/pkg/models"
+
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 const (
@@ -142,6 +144,11 @@ func (r *Report) ID() string {
 // StripID removes the ID for the report.
 func (r *Report) StripID() {
 	r.raw.ID = ""
+}
+
+// ApplyFilter applies the filter to the report.
+func (r *Report) ApplyFilter(f reportfilter.Filter) {
+	f.Apply(r.raw)
 }
 
 // AliasID will add the ID for the report into the aliases section.

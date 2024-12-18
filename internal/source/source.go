@@ -20,12 +20,19 @@ import (
 	"regexp"
 
 	"gopkg.in/yaml.v3"
+
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 var (
 	ErrInvalidID  = errors.New("invalid source id")
 	validIDRegExp = regexp.MustCompile("[a-z0-9-]+")
 )
+
+type Filter struct {
+	Field   string
+	Pattern string
+}
 
 type Source struct {
 	ID                string   `yaml:"id"`
@@ -34,6 +41,10 @@ type Source struct {
 	LookbackEntries   int      `yaml:"lookback-entries"`
 	AliasID           bool     `yaml:"alias-id"`
 	DisabledForReason string   `yaml:"disabled-for-reason"`
+	Filters           []Filter `yaml:"filters"`
+
+	// Internal cache populated during parsing.
+	filters reportfilter.Filters
 }
 
 func validateID(id string) error {
@@ -46,6 +57,18 @@ func validateID(id string) error {
 	return nil
 }
 
+func generateFilterSet(filters []Filter) (reportfilter.Filters, error) {
+	fs := reportfilter.Filters{}
+	for _, f := range filters {
+		rf, err := reportfilter.New(f.Field, f.Pattern)
+		if err != nil {
+			return nil, fmt.Errorf("report filter: %w", err)
+		}
+		fs = append(fs, rf)
+	}
+	return fs, nil
+}
+
 // UnmarshalYAML implements the yaml.Unmarshaler interface.
 func (s *Source) UnmarshalYAML(value *yaml.Node) error {
 	type RawSource Source
@@ -56,6 +79,11 @@ func (s *Source) UnmarshalYAML(value *yaml.Node) error {
 	if err := validateID(raw.ID); err != nil {
 		return err
 	}
+	fs, err := generateFilterSet(raw.Filters)
+	if err != nil {
+		return err
+	}
+	raw.filters = fs
 	*s = Source(*raw)
 	return nil
 }
@@ -65,6 +93,10 @@ func (s *Source) GetPrefixes() []string {
 		return []string{""}
 	}
 	return s.Prefixes
+}
+
+func (s *Source) Filter() reportfilter.Filter {
+	return s.filters
 }
 
 func (s *Source) Enabled() bool {
