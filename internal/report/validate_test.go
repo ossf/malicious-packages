@@ -15,6 +15,7 @@ func TestValidateVuln_Valid(t *testing.T) {
 				Package: models.Package{
 					Ecosystem: models.EcosystemDebian + ":7",
 					Name:      "example",
+					Purl:      "pkg:deb/debian/example",
 				},
 				Ranges: []models.Range{
 					{
@@ -246,6 +247,70 @@ func TestValidateVuln_Fail_InvalidRange(t *testing.T) {
 							Name:      "example",
 						},
 						Ranges: []models.Range{test.r},
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if err == nil {
+				t.Error("ValidateVuln() == nil; want err")
+			}
+		})
+	}
+}
+
+func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
+	tests := []struct {
+		name string
+		p    models.Package
+	}{
+		{
+			name: "purl parse error",
+			p: models.Package{
+				Ecosystem: models.EcosystemNPM,
+				Name:      "example",
+				Purl:      "not_a_purl",
+			},
+		},
+		{
+			name: "ecosystem mismatch",
+			p: models.Package{
+				Ecosystem: models.EcosystemNPM,
+				Name:      "example",
+				Purl:      "pkg:pypi/example",
+			},
+		},
+		{
+			name: "name mismatch",
+			p: models.Package{
+				Ecosystem: models.EcosystemNPM,
+				Name:      "example1",
+				Purl:      "pkg:npm/example2",
+			},
+		},
+		{
+			name: "namespace mismatch 1",
+			p: models.Package{
+				Ecosystem: models.EcosystemNPM,
+				Name:      "@org/example",
+				Purl:      "pkg:npm/example",
+			},
+		},
+		{
+			name: "namespace mismatch 2",
+			p: models.Package{
+				Ecosystem: models.EcosystemNPM,
+				Name:      "example",
+				Purl:      "pkg:npm/%40org/example",
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			vuln := &models.Vulnerability{
+				Affected: []models.Affected{
+					{
+						Package:  test.p,
+						Versions: []string{"0"},
 					},
 				},
 			}

@@ -121,6 +121,10 @@ func main() {
 
 	ctx := context.Background()
 	for _, s := range sources {
+		if !s.Enabled() {
+			log.Printf("[%s] Skipping: %s", s.ID, s.DisabledForReason)
+			continue
+		}
 		for _, prefix := range s.GetPrefixes() {
 			end, err := ingestReports(ctx, s, prefix, c, keys.Get(s.ID, prefix))
 			if err != nil {
@@ -179,6 +183,9 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 
 		// Ensure the incoming report does not have an ID.
 		r.StripID()
+
+		// Apply filters against the report.
+		r.ApplyFilter(s.Filter())
 
 		// Prepare the destination path, creating it if needed.
 		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))

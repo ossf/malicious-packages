@@ -33,8 +33,16 @@ func ValidateVuln(v *models.Vulnerability) error {
 	}
 
 	// Package name must be set.
-	if v.Affected[0].Package.Name == "" {
+	name := v.Affected[0].Package.Name
+	if name == "" {
 		return fmt.Errorf("%w: package name is missing", ErrInvalidOSV)
+	}
+
+	// If a PURL is set, ensure that it matches the package.
+	if v.Affected[0].Package.Purl != "" {
+		if err := validatePURL(ecosystem, name, v.Affected[0].Package.Purl); err != nil {
+			return err
+		}
 	}
 
 	// Validate the ranges are correct.
@@ -121,5 +129,23 @@ func validateRange(r models.Range, ecosystem models.Ecosystem) error {
 	if !hasIntroduced {
 		return fmt.Errorf("%w: no introduced event type", ErrInvalidOSV)
 	}
+	return nil
+}
+
+// validatePURL ensures that a PURL matches the supplied name and ecosystem.
+func validatePURL(ecosystem models.Ecosystem, name, purl string) error {
+	p, err := models.PURLToPackage(purl)
+	if err != nil {
+		return fmt.Errorf("%w: failed parsing PURL %q: %w", ErrInvalidOSV, purl, err)
+	}
+
+	if p.Ecosystem != string(ecosystem) {
+		return fmt.Errorf("%w: purl %q ecosystem %q does not match %q", ErrInvalidOSV, purl, p.Ecosystem, ecosystem)
+	}
+
+	if p.Name != name {
+		return fmt.Errorf("%w: purl %q name %q does not match %q", ErrInvalidOSV, purl, p.Name, name)
+	}
+
 	return nil
 }
