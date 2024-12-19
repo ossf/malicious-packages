@@ -107,6 +107,12 @@ Obfuscation, debugger evasion, and other reverse engineering protection
 techniques, are used by both developers seeking to protect their source code
 and attackers seeking to evade detection.
 
+Malicious obfuscated packages may be hard to distinguish from non-malicious
+obfuscated packages. As a result, reports are allowed in the malicious package
+repository for obfuscated packages, even if they are not clearly malicious, when
+they belong to an ecosystem where obfuscation is forbidden in their terms of use
+(e.g. PyPI, Crates.IO).
+
 ### Telemetry
 
 Telemetry, on its own, is not malicious.
