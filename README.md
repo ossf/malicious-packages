@@ -29,30 +29,122 @@ These public reports help protect the open source community, and provide a data
 source for the security community to improve their ability to find and detect
 new open source malware.
 
-### Scope
+## Scope
 
 What is in scope?
 
 - any package that belongs to an ecosystem supported by the
   [OSV Schema](https://ossf.github.io/osv-schema/)
-- malicious packages published under typosquatting or dependency
-  confusion type attacks
+- malicious packages published under typosquatting type attacks
 - malicious packages published through account takeover
-- prebuilt binaries for a package that are malicious
+- malicious prebuilt binaries downloaded or installed with a package
 - security researcher activity
+- dependency and manifest confusion
+
+Borderline:
+
+- typosquatting, or spam packages that are empty or trivial, while not
+  malicious, are allowed to be present in the dataset
 
 Out-of-scope:
 
+- non-malicious packages
 - vulnerability reports
 - compromised infrastructure
-- non-malicious packages
+- offensive security tools, unless they execute malicious payloads on install
 
-### Prior Work
+## Definition of a Malicious Package
 
-- GitHub's [Advisory Database (filtered by malware)](https://github.com/advisories?query=type%3Amalware), for the NPM ecosystem.
-- https://github.com/lxyeternal/pypi_malregistry (PyPI)
-- https://dasfreak.github.io/Backstabbers-Knife-Collection/ (PyPI and npm), by Marc Ohm et al.
-- https://github.com/datadog/malicious-software-packages-dataset (PyPI), by Datadog
+Below is the definition of what this repository considers a malicious package.
+
+- a package publicly available in a package registry
+- and either:
+  - when installed or used, would require some sort of incident response due to
+    the loss of confidentiality, availability and/or integrity; or
+  - exfiltrates an identifier that can be directly used to launch a subsequent 
+    attack against the victim (e.g. username for phishing or password
+    bruteforcing)
+- and also either:
+  - violates the terms of the package registry; or
+  - would be reasonably considered to require removal from the package registry
+
+### Dependency and manifest confusion
+
+[Dependency confusion](https://medium.com/@alex.birsan/dependency-confusion-4a5d60fec610)
+and [manifest confusion](https://blog.vlt.sh/blog/the-massive-hole-in-the-npm-ecosystem)
+are techniques that exploit quirks in the behavior of package systems and how
+they are used within organizations. Packages using these attacks are malicious.
+
+Very occasionally someone may unintentionally encounter these quirks, but
+this is considered infrequent.
+
+Manifest confusion requires someone to bypass the NPM command line tool and
+deliberately provide an altered manifest.
+
+Dependency confusion are effectively the same as an account takeover where an
+attacker replaces a package's code with their own. This means even trivial or
+empty dependency confusion packages would require incident response.
+
+### Spam and typosquating
+
+Spam, typosquatting are not malicious, unless the package itself exhibits
+malicious behavior as-per the definition above.
+
+These types of packages are often empty (i.e. no functional code), or consist of
+only useless trivial functionality (e.g. printing a message). While these
+packages are not malicious, they are a nuisance and generally unwanted.
+
+Typosquatting packages may be hard to distinguish from dependency confusion. As
+a result, these reports are allowed to be present in the malicious packages
+repository.
+
+### Reverse engineering protection (e.g. obfuscation)
+
+Reverse engineering protections are not malicious, unless it exhibits malicious
+behavior as-per the definition above.
+
+Obfuscation, debugger evasion, and other reverse engineering protection
+techniques, are used by both developers seeking to protect their source code
+and attackers seeking to evade detection.
+
+Malicious obfuscated packages may be hard to distinguish from non-malicious
+obfuscated packages. As a result, reports are allowed in the malicious package
+repository for obfuscated packages, even if they are not clearly malicious, when
+they belong to an ecosystem where obfuscation is forbidden in their terms of use
+(e.g. PyPI, Crates.IO).
+
+### Telemetry
+
+Telemetry, on its own, is not malicious.
+
+Many open source packages use telemetry to track installs or the behavior and
+performance of the package.
+
+However, if telemetry is abused to exfiltrate and steal sensitive data, or
+provide remote access, this can be considered malicious.
+
+### Protestware
+
+Protestware is not malicious if it does not affect the availability, integrity
+or confidentiality of the systems the package is run on. For example, a message
+logged to a console may be annoying to a developer, but is not malicious.
+
+However, protestware that destroys files, slows performance, or otherwise
+affects availability, integrity or confidentiality as part of the protest may be
+considered malicious.
+
+### Offensive Security Tools
+
+Offensive security tools, libraries, hacking tools, etc are not malicious.
+
+While an offensive security tool being discovered in an environment may
+indicate the presence of compromise, the package itself is not itself malicious.
+
+These packages don't necessarily violate the terms of the registries hosting
+them, and are often used by security researchers.
+
+However, offensive security tools that execute malicious payloads during
+installation are considered malicious packages.
 
 ## Get Involved
 
@@ -107,7 +199,17 @@ We will then either:
   indicating that which versions were false positives - if
   some versions are malicious and some are false positives.
 
+Finally, reports that have been added to the malicious packages repository will
+not be removed.
+
 **Note:** support for handling false positives is TBC.
+
+## Prior and Related Work
+
+- GitHub's [Advisory Database (filtered by malware)](https://github.com/advisories?query=type%3Amalware), for the NPM ecosystem.
+- https://github.com/lxyeternal/pypi_malregistry (PyPI)
+- https://dasfreak.github.io/Backstabbers-Knife-Collection/ (PyPI and npm), by Marc Ohm et al.
+- https://github.com/datadog/malicious-software-packages-dataset (PyPI), by Datadog
 
 ## Governance
 
