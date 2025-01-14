@@ -2,8 +2,6 @@ module github.com/ossf/malicious-packages
 
 go 1.23.4
 
-toolchain go1.22.4
-
 require (
 	cloud.google.com/go/storage v1.48.0
 	github.com/aws/aws-sdk-go v1.55.5
