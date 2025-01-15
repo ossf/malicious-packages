@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	cloud.google.com/go/storage v1.48.0
 	github.com/aws/aws-sdk-go v1.55.5
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.72.2
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.72.3
 	github.com/google/osv-scanner v1.8.1
 	github.com/google/renameio v1.0.1
 	gocloud.dev v0.40.0
