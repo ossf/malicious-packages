@@ -26,7 +26,13 @@ jobs:
         repository: ossf/osv-schema
         ref: ed713ef6511fa4113c89e25ea5e3da5291c6f05d
         path: osv-schema
+    - name: Loosen ID check
+      # This check allows for "id" to missing or an empty string, which allows
+      # PRs for new OSV reports to pass validation. If ID is not empty it will
+      # be validated as per the schema.
+      run: |
+        yq -p=json -o=json '.properties.id |= { "oneOf" : [ . , { "type": "string", "pattern": "^$" } ] } | .required |= filter(. != "id")' osv-schema/validation/schema.json > schema.json
     - name: Check against schema
       run: |
         go install github.com/santhosh-tekuri/jsonschema/cmd/jv@v0.7.0
-        find osv -name "MAL-*.json" -exec jv osv-schema/validation/schema.json {} +
+        find osv -name "MAL-*.json" -exec jv schema.json {} +
