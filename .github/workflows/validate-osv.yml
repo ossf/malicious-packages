@@ -52,3 +52,40 @@ jobs:
       run: |
         go install github.com/santhosh-tekuri/jsonschema/cmd/jv@v0.7.0
         find osv -name "MAL-*.json" -exec jv schema.json {} +
+
+  no-deletes:
+    runs-on: ubuntu-latest
+    if: ${{ github.base_ref != '' }}
+    steps:
+    - name: Checkout target
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        ref: ${{ github.base_ref }}
+        path: existing
+    - name: Checkout this branch
+      uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      with:
+        path: changed
+    - name: Check for deleted reports
+      run: |
+        # Extract all the OSV IDs from the existing and changed version of the repo.
+        find existing/osv -name "MAL-*.json" -exec yq -r '.id' {} + > existing-ids.txt
+        find changed/osv -name "MAL-*.json" -exec yq -r '.id' {} + > changed-ids.txt
+
+        # The following command finds all the IDs that are in existing-ids.txt, but
+        # not in changed-ids.txt.
+        # This is acheived by joining the two sets together and returning only
+        # the IDs that are not in both sets. This will include deleted and added
+        # IDs. These are then joined with the existing IDs and only the duplicate
+        # values are returned - outputting the deleted IDs.
+        REMOVED_IDS=`cat existing-ids.txt changed-ids.txt | sort | uniq -u | cat existing-ids.txt - | sort | uniq -d | paste -sd',' -`
+        echo "::debug ::Result of check = '$REMOVED_IDS'"
+
+        if [ -z "$REMOVED_IDS" ]; then
+          echo "::notice ::No removed reports detected."
+        else
+          echo "### Deleted Reports Detected" >> $GITHUB_STEP_SUMMARY
+          echo "IDs removed: $REMOVED_IDS" >> $GITHUB_STEP_SUMMARY
+          echo "::error ::Report(s) deleted."
+          exit 1
+        fi
