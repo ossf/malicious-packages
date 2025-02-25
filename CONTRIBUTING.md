@@ -43,15 +43,36 @@ Optional:
 We accept new reports of malicious packages that are within [scope](README.md#scope),
 and updates to any existing report in the database.
 
-**Note:** This process is new and untested, it will change and evolve
-over time. We welcome [suggestions](https://github.com/ossf/malicious-packages/issues/new)
-on how the process can be improved.
+**Note:** This process is still evolving. We welcome
+[suggestions](https://github.com/ossf/malicious-packages/issues/new) on how the
+process can be improved.
+
+### The ideal report
+
+Please familiarize yourself with the [OSV Schema](https://ossf.github.io/osv-schema/).
+
+An ideal malicious report being added has the following properties:
+
+- `affected` must have a single entry, for a single package.
+  `affected[0].ranges` or `affacted[0].versions` is populated for the specific
+  malicious versions.
+- `details` provides useful information about the malicious package, such as:
+  - why is it considered malicious?
+  - what does it do? (info stealer, remote shell, crypto miner, dropper, etc)
+  - how is the payload triggered? (on install, on import, function call, etc)
+  - what campaign does it belong to?
+- `credits` or `references` has at least one entry indicating where the report
+  came from.
+- `database_specific.iocs` contains any meaningful indicators of compromise. See
+  the [schema additions](docs/schema_additions.md) for more details on adding
+  IoCs.
+- `id` and `summary` are not present.
 
 ### Via Pull Request
 
 #### New Individual Report
 
-1. If needed, create the directory under `./malicious/` for the report
+1. If needed, create the directory under `./osv/malicious/` for the report
    to live in.
     - Directories are formatted `[ecosystem]/[package_name]`, with no
       escaping of slashes.
@@ -63,8 +84,9 @@ on how the process can be improved.
    `[name]` can be replaced with any arbitrary text.
 1. Populate the JSON file conforming to the [OSV Schema](https://ossf.github.io/osv-schema/)
    format and the [notes below](#osv-schema-notes).
-1. Commit and push the change to a fork and submit a Pull Request.
-    - Please fix any validation errors.
+1. Commit and push the change to a fork.
+1. Ensure validation actions run successfully.
+1. Create a PR.
 
 #### Bulk Import
 
