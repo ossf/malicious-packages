@@ -15,9 +15,13 @@
 package report
 
 import (
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/osv-scanner/pkg/models"
+
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 const originRefKey = "malicious-packages-origins"
@@ -30,6 +34,33 @@ type OriginRef struct {
 	ModifiedTime time.Time      `json:"modified_time"`
 	Ranges       []models.Range `json:"ranges,omitempty"`
 	Versions     []string       `json:"versions,omitempty"`
+}
+
+// UnmarshalJSON implements the json.Unmashaler interface.
+//
+// The implementation ensures that the resulting parsed data is valid for the
+// purposes of tracking malicious packages.
+func (o *OriginRef) UnmarshalJSON(b []byte) error {
+	type raw OriginRef
+	var r raw
+	if err := json.Unmarshal(b, &r); err != nil {
+		return err
+	}
+
+	if r.Source == "" {
+		return fmt.Errorf("%w: missing source", ErrUnexpectedOSV)
+	}
+
+	if r.SHASum == "" {
+		return fmt.Errorf("%w: missing sha256", ErrUnexpectedOSV)
+	}
+
+	if err := source.ValidateID(r.Source); err != nil {
+		return fmt.Errorf("%w: invalid source ID %q: %w", ErrUnexpectedOSV, r.Source, err)
+	}
+
+	*o = OriginRef(r)
+	return nil
 }
 
 func (r *Report) getOrigin(sourceID, shasum string) *OriginRef {
