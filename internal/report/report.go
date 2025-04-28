@@ -93,6 +93,11 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 	r.Ecosystem = string(r.raw.Affected[0].Package.Ecosystem)
 	r.Name = r.raw.Affected[0].Package.Name
 
+	// Ensure the details can be parsed.
+	if _, _, err := r.ParseDetails(); err != nil {
+		return fmt.Errorf("%w: invalid details: %w", ErrInvalidDetails, err)
+	}
+
 	return nil
 }
 

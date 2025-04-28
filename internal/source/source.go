@@ -47,7 +47,7 @@ type Source struct {
 	filters reportfilter.Filters
 }
 
-func validateID(id string) error {
+func ValidateID(id string) error {
 	if id == "" {
 		return fmt.Errorf("%w: id must be set", ErrInvalidID)
 	}
@@ -76,7 +76,7 @@ func (s *Source) UnmarshalYAML(value *yaml.Node) error {
 	if err := value.Decode(raw); err != nil {
 		return err
 	}
-	if err := validateID(raw.ID); err != nil {
+	if err := ValidateID(raw.ID); err != nil {
 		return err
 	}
 	fs, err := generateFilterSet(raw.Filters)
