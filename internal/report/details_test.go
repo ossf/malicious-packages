@@ -13,24 +13,35 @@
 // limitations under the License.
 
 //nolint:goconst
-package report_test
+package report
 
 import (
-	"bytes"
 	"errors"
-	"fmt"
 	"reflect"
-	"strings"
 	"testing"
 
-	"github.com/ossf/malicious-packages/internal/report"
+	"github.com/google/osv-scanner/pkg/models"
 )
 
-func reportWithDetail(details string) *report.Report {
-	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "npm", "name": "example"},"versions":["1"]}], "details": "%s" }`
-	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, strings.ReplaceAll(details, "\"", "\\\""))))
-	if err != nil {
-		panic(err)
+func reportWithDetail(details string) *Report {
+	v := &models.Vulnerability{
+		SchemaVersion: "1.5.0",
+		Summary:       "test report",
+		Details:       details,
+		Affected: []models.Affected{
+			{
+				Package: models.Package{
+					Ecosystem: "npm",
+					Name:      "example",
+				},
+				Versions: []string{"1"},
+			},
+		},
+	}
+	r := &Report{
+		raw:       v,
+		Name:      "example",
+		Ecosystem: "npm",
 	}
 	return r
 }
@@ -50,7 +61,7 @@ func TestParseDetails_EmptyNoOrigins(t *testing.T) {
 }
 
 func TestParseDetails_EmptyOneHeader(t *testing.T) {
-	r := reportWithDetail(`\n---\n_-= Per source details. Do not edit below this line.=-_\n`)
+	r := reportWithDetail("\n---\n_-= Per source details. Do not edit below this line.=-_\n")
 	gotUser, gotSources, err := r.ParseDetails()
 	if err != nil {
 		t.Fatalf("ParseDetails() = %v; want no error", err)
@@ -64,15 +75,15 @@ func TestParseDetails_EmptyOneHeader(t *testing.T) {
 }
 
 func TestParseDetails_TwoHeaders(t *testing.T) {
-	r := reportWithDetail(`hello\n\n---\n_-= Per source details. Do not edit below this line.=-_\nworld\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n!`)
+	r := reportWithDetail("hello\n\n---\n_-= Per source details. Do not edit below this line.=-_\nworld\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n!")
 	_, _, err := r.ParseDetails()
-	if err == nil || !errors.Is(err, report.ErrInvalidDetails) {
-		t.Fatalf("ParseDetails() = %v; want %v", err, report.ErrInvalidDetails)
+	if err == nil || !errors.Is(err, ErrInvalidDetails) {
+		t.Fatalf("ParseDetails() = %v; want %v", err, ErrInvalidDetails)
 	}
 }
 
 func TestParseDetails_NoHeader(t *testing.T) {
-	r := reportWithDetail(`\n\n\n   here is an\namazing\nreport   \n\n\n`)
+	r := reportWithDetail("\n\n\n   here is an\namazing\nreport   \n\n\n")
 	wantUser := "here is an\namazing\nreport"
 	gotUser, gotSources, err := r.ParseDetails()
 	if err != nil {
@@ -87,7 +98,7 @@ func TestParseDetails_NoHeader(t *testing.T) {
 }
 
 func TestParseDetails_WithHeader(t *testing.T) {
-	r := reportWithDetail(`here is an\namazing\nreport\n\n---\n_-= Per source details. Do not edit below this line.=-_\n`)
+	r := reportWithDetail("here is an\namazing\nreport\n\n---\n_-= Per source details. Do not edit below this line.=-_\n")
 	wantUser := "here is an\namazing\nreport"
 	gotUser, gotSources, err := r.ParseDetails()
 	if err != nil {
@@ -102,35 +113,35 @@ func TestParseDetails_WithHeader(t *testing.T) {
 }
 
 func TestParseDetails_InvalidSourceSection(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n  ...\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\ninvalid`)
+	r := reportWithDetail("user contributed report\n  ...\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\ninvalid")
 	_, _, err := r.ParseDetails()
-	if err == nil || !errors.Is(err, report.ErrInvalidDetails) {
-		t.Fatalf("ParseDetails() = %v; want %v", err, report.ErrInvalidDetails)
+	if err == nil || !errors.Is(err, ErrInvalidDetails) {
+		t.Fatalf("ParseDetails() = %v; want %v", err, ErrInvalidDetails)
 	}
 }
 
 func TestParseDetails_Sources_NoOrigin(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n")
 	_, _, err := r.ParseDetails()
-	if err == nil || !errors.Is(err, report.ErrInvalidDetails) {
-		t.Fatalf("ParseDetails() = %v; want %v", err, report.ErrInvalidDetails)
+	if err == nil || !errors.Is(err, ErrInvalidDetails) {
+		t.Fatalf("ParseDetails() = %v; want %v", err, ErrInvalidDetails)
 	}
 }
 
 func TestParseDetails_Sources_WrongOrigin(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n")
 	r.AddOrigin("test-source", "01234567")
 	_, _, err := r.ParseDetails()
-	if err == nil || !errors.Is(err, report.ErrInvalidDetails) {
-		t.Fatalf("ParseDetails() = %v; want %v", err, report.ErrInvalidDetails)
+	if err == nil || !errors.Is(err, ErrInvalidDetails) {
+		t.Fatalf("ParseDetails() = %v; want %v", err, ErrInvalidDetails)
 	}
 }
 
 func TestParseDetails_Sources_OneEmpty(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n")
 	o := r.AddOrigin("test-source", "deadbeef")
 	wantUser := "user contributed report"
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*OriginRef]string{
 		o: "",
 	}
 	gotUser, gotSources, err := r.ParseDetails()
@@ -146,10 +157,10 @@ func TestParseDetails_Sources_OneEmpty(t *testing.T) {
 }
 
 func TestParseDetails_Sources_Single(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n\nthis\nis a\ntest.   \n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n\nthis\nis a\ntest.   \n")
 	o := r.AddOrigin("test-source", "deadbeef")
 	wantUser := "user contributed report"
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*OriginRef]string{
 		o: "this\nis a\ntest.",
 	}
 	gotUser, gotSources, err := r.ParseDetails()
@@ -165,11 +176,11 @@ func TestParseDetails_Sources_Single(t *testing.T) {
 }
 
 func TestParseDetails_Sources_Two(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\nsource one\n\n## Source: another-test-source (abcdef123)\n\nsource two  \n\n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\nsource one\n\n## Source: another-test-source (abcdef123)\n\nsource two  \n\n")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "user contributed report"
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*OriginRef]string{
 		o1: "source one",
 		o2: "source two",
 	}
@@ -186,11 +197,11 @@ func TestParseDetails_Sources_Two(t *testing.T) {
 }
 
 func TestParseDetails_Sources_TwoOneEmpty(t *testing.T) {
-	r := reportWithDetail(`user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n\n## Source: another-test-source (abcdef123)\n\nsource two  \n\n`)
+	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n\n## Source: another-test-source (abcdef123)\n\nsource two  \n\n")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "user contributed report"
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*OriginRef]string{
 		o1: "",
 		o2: "source two",
 	}
@@ -227,7 +238,7 @@ func TestSetDetails_UserContributionOnly(t *testing.T) {
 func TestSetDetails_SingleSource(t *testing.T) {
 	r := reportWithDetail("")
 	o := r.AddOrigin("test-source", "deadbeef")
-	r.SetDetails("user contribution", map[*report.OriginRef]string{
+	r.SetDetails("user contribution", map[*OriginRef]string{
 		o: "source one",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\nsource one\n"
@@ -240,9 +251,9 @@ func TestSetDetails_TwoSources(t *testing.T) {
 	r := reportWithDetail("")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
-	r.SetDetails("user contribution", map[*report.OriginRef]string{
+	r.SetDetails("user contribution", map[*OriginRef]string{
 		o1: "source one",
-	}, map[*report.OriginRef]string{
+	}, map[*OriginRef]string{
 		o2: "source two",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: another-test-source (abcdef123)\nsource two\n\n## Source: test-source (deadbeef)\nsource one\n"
@@ -255,9 +266,9 @@ func TestSetDetails_TwoSourcesOneEmpty(t *testing.T) {
 	r := reportWithDetail("")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
-	r.SetDetails("user contribution", map[*report.OriginRef]string{
+	r.SetDetails("user contribution", map[*OriginRef]string{
 		o1: "",
-	}, map[*report.OriginRef]string{
+	}, map[*OriginRef]string{
 		o2: "source two",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: another-test-source (abcdef123)\nsource two\n"
@@ -271,9 +282,9 @@ func TestSetDetails_SameSourceChooseLongest(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("test-source", "abcdef123")
 	o3 := r.AddOrigin("test-source", "00000000")
-	r.SetDetails("user contribution", map[*report.OriginRef]string{
+	r.SetDetails("user contribution", map[*OriginRef]string{
 		o3: "short report",
-	}, map[*report.OriginRef]string{
+	}, map[*OriginRef]string{
 		o1: "this report is longer",
 		o2: "this is a report",
 	})
@@ -288,7 +299,7 @@ func TestSetAndParse(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "this\nis a\nreport."
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*OriginRef]string{
 		o1: "source\none\ndetails",
 		o2: "source two\n\ndetails as well.",
 	}
