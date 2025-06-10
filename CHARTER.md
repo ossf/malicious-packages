@@ -1,6 +1,6 @@
 # Project Charter (the “Charter”) for OpenSSF Malicious Packages 
 
-***Created June 10, 2025***
+***Created June 11, 2025***
 
 This Charter sets forth the responsibilities and procedures for technical contribution to, and oversight of, the OpenSSF Malicious Packages open source project, which has been established as OpenSSF Malicious Packages a Series of LF Projects, LLC (the “Project”). LF Projects, LLC (“LF Projects”) is a Delaware series limited liability company. All contributors (including committers, maintainers, and other technical positions) and other participants in the Project (collectively, “Collaborators”) must comply with the terms of this Charter.
 
