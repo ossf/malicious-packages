@@ -5,7 +5,7 @@ go 1.24
 require (
 	cloud.google.com/go/storage v1.55.0
 	github.com/aws/aws-sdk-go v1.55.7
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.82.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.83.0
 	github.com/google/osv-scanner v1.9.2
 	github.com/google/renameio v1.0.1
 	gocloud.dev v0.42.0
