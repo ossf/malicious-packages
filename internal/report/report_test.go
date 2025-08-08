@@ -22,9 +22,10 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
 	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
-	"github.com/ossf/osv-schema/bindings/go/osvschema"
 )
 
 func testReport(ecosystem osvschema.Ecosystem, name string) *report.Report {
