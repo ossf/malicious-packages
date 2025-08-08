@@ -18,8 +18,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ossf/malicious-packages/internal/reportfilter"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 func TestNew_PatternError(t *testing.T) {

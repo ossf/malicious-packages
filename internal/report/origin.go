@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ossf/malicious-packages/internal/source"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/source"
 )
 
 const originRefKey = "malicious-packages-origins"

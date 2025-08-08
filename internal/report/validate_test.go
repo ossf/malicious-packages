@@ -3,8 +3,9 @@ package report_test
 import (
 	"testing"
 
-	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestValidateVuln_Valid(t *testing.T) {

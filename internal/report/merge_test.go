@@ -21,8 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestMerge_MismatchName(t *testing.T) {

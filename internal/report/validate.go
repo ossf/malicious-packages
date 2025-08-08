@@ -39,7 +39,7 @@ func ValidateVuln(v *osvschema.Vulnerability) error {
 	// Ecosystem must be set, and must be in the predefined set of ecosystems.
 	// Note: the OSV schema allows for ecosystems to append information after a
 	// colon (':') character.
-	ecosystemFull := string(v.Affected[0].Package.Ecosystem)
+	ecosystemFull := v.Affected[0].Package.Ecosystem
 	if ecosystemFull == "" {
 		return fmt.Errorf("%w: package ecosystem is missing", ErrInvalidOSV)
 	}
@@ -168,12 +168,14 @@ func validatePURL(ecosystem osvschema.Ecosystem, name, purl string) error {
 }
 
 // used like so: purlEcosystems[PkgURL.Type][PkgURL.Namespace]
-// * means it should match any namespace string
+// "*" means it should match any namespace string.
 var purlEcosystems = map[string]map[string]osvschema.Ecosystem{
 	"apk":   {"alpine": osvschema.EcosystemAlpine},
 	"cargo": {"*": osvschema.EcosystemCratesIO},
-	"deb": {"debian": osvschema.EcosystemDebian,
-		"ubuntu": osvschema.EcosystemUbuntu},
+	"deb": {
+		"debian": osvschema.EcosystemDebian,
+		"ubuntu": osvschema.EcosystemUbuntu,
+	},
 	"hex":      {"*": osvschema.EcosystemHex},
 	"golang":   {"*": osvschema.EcosystemGo},
 	"maven":    {"*": osvschema.EcosystemMaven},

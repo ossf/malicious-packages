@@ -26,8 +26,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ossf/malicious-packages/internal/reportfilter"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
 const (
@@ -89,7 +90,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	r.Ecosystem = string(r.raw.Affected[0].Package.Ecosystem)
+	r.Ecosystem = r.raw.Affected[0].Package.Ecosystem
 	r.Name = r.raw.Affected[0].Package.Name
 
 	// Ensure the details can be parsed.
