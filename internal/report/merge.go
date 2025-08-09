@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 )
 
 var ErrMergeFailure = errors.New("merge failure")
@@ -108,8 +108,8 @@ func (r *Report) Merge(other *Report) error {
 }
 
 func equalName(a, b, ecosystem string) bool {
-	switch models.Ecosystem(ecosystem) {
-	case models.EcosystemNuGet:
+	switch osvschema.Ecosystem(ecosystem) {
+	case osvschema.EcosystemNuGet:
 		// NuGet names are case insensitive.
 		return strings.EqualFold(a, b)
 	default:
@@ -117,15 +117,15 @@ func equalName(a, b, ecosystem string) bool {
 	}
 }
 
-func combineCredits(creditSets ...[]models.Credit) []models.Credit {
+func combineCredits(creditSets ...[]osvschema.Credit) []osvschema.Credit {
 	credits := make(map[struct {
-		t models.CreditType
+		t osvschema.CreditType
 		n string
-	}]models.Credit)
+	}]osvschema.Credit)
 	for _, cs := range creditSets {
 		for _, c := range cs {
 			k := struct {
-				t models.CreditType
+				t osvschema.CreditType
 				n string
 			}{t: c.Type, n: c.Name}
 			if existing, ok := credits[k]; ok {
@@ -135,12 +135,12 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 			credits[k] = c
 		}
 	}
-	var creditList []models.Credit
+	var creditList []osvschema.Credit
 	for _, c := range credits {
 		creditList = append(creditList, c)
 	}
 	// Sort to make the credit ordering stable.
-	slices.SortFunc(creditList, func(a, b models.Credit) int {
+	slices.SortFunc(creditList, func(a, b osvschema.Credit) int {
 		if a.Name < b.Name {
 			return -1
 		} else if a.Name == b.Name {
@@ -155,7 +155,7 @@ func combineCredits(creditSets ...[]models.Credit) []models.Credit {
 	return creditList
 }
 
-func rangeEventParse(r models.Range) (introduced, lastAffected, fixed string, limit []string) {
+func rangeEventParse(r osvschema.Range) (introduced, lastAffected, fixed string, limit []string) {
 	for _, e := range r.Events {
 		switch {
 		case e.Introduced != "":
@@ -175,7 +175,7 @@ func rangeEventParse(r models.Range) (introduced, lastAffected, fixed string, li
 	return
 }
 
-func rangeEqual(r1, r2 models.Range) bool {
+func rangeEqual(r1, r2 osvschema.Range) bool {
 	if !(r1.Type == r2.Type && r1.Repo == r2.Repo) {
 		// Basic details are not the same.
 		return false
@@ -194,11 +194,11 @@ func rangeEqual(r1, r2 models.Range) bool {
 //
 // The function assumes the input ranges are valid OSV ranges. If two or more
 // ranges are identical, only one will be included.
-func combineRanges(rangeSets ...[]models.Range) []models.Range {
-	var rangeList []models.Range
+func combineRanges(rangeSets ...[]osvschema.Range) []osvschema.Range {
+	var rangeList []osvschema.Range
 	for _, rs := range rangeSets {
 		for _, r := range rs {
-			if !slices.ContainsFunc(rangeList, func(existing models.Range) bool {
+			if !slices.ContainsFunc(rangeList, func(existing osvschema.Range) bool {
 				return rangeEqual(r, existing)
 			}) {
 				rangeList = append(rangeList, r)

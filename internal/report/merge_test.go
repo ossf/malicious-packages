@@ -21,38 +21,38 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
 	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestMerge_MismatchName(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example1")
-	other := testReport(models.EcosystemNPM, "example2")
+	r := testReport(osvschema.EcosystemNPM, "example1")
+	other := testReport(osvschema.EcosystemNPM, "example2")
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
 		t.Fatalf("Merge() = %v; want %v", err, report.ErrMergeFailure)
 	}
 }
 
 func TestMerge_NuGetName(t *testing.T) {
-	r := testReport(models.EcosystemNuGet, "example.Utility.Test")
-	other := testReport(models.EcosystemNuGet, "Example.utility.TEST")
+	r := testReport(osvschema.EcosystemNuGet, "example.Utility.Test")
+	other := testReport(osvschema.EcosystemNuGet, "Example.utility.TEST")
 	if err := r.Merge(other); err != nil {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 }
 
 func TestMerge_MismatchEcosystem(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example1")
-	other := testReport(models.EcosystemPyPI, "example2")
+	r := testReport(osvschema.EcosystemNPM, "example1")
+	other := testReport(osvschema.EcosystemPyPI, "example2")
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
 		t.Fatalf("Merge() = %v; want %v", err, report.ErrMergeFailure)
 	}
 }
 
 func TestMerge_WithID(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
-	other := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().ID = "MAL-1234-abcd"
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
@@ -61,9 +61,9 @@ func TestMerge_WithID(t *testing.T) {
 }
 
 func TestMerge_CommonOrigin(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.AddOrigin("test-origin", "deadbeef")
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.AddOrigin("test-origin", "deadbeef")
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
@@ -72,8 +72,8 @@ func TestMerge_CommonOrigin(t *testing.T) {
 }
 
 func TestMerge_NormalizationFail(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
-	other := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	// Other is not expected to have multiple origins (i.e. never merged before)
 	other.AddOrigin("test-origin", "deadbeef")
 	other.AddOrigin("another-origin", "00000000")
@@ -84,9 +84,9 @@ func TestMerge_NormalizationFail(t *testing.T) {
 }
 
 func TestMerge_Ranges(t *testing.T) {
-	r1 := models.Range{
-		Type: models.RangeEcosystem,
-		Events: []models.Event{
+	r1 := osvschema.Range{
+		Type: osvschema.RangeEcosystem,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
@@ -95,9 +95,9 @@ func TestMerge_Ranges(t *testing.T) {
 			},
 		},
 	}
-	r2 := models.Range{
-		Type: models.RangeEcosystem,
-		Events: []models.Event{
+	r2 := osvschema.Range{
+		Type: osvschema.RangeEcosystem,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
@@ -106,25 +106,25 @@ func TestMerge_Ranges(t *testing.T) {
 			},
 		},
 	}
-	r3 := models.Range{
-		Type: models.RangeSemVer,
-		Events: []models.Event{
+	r3 := osvschema.Range{
+		Type: osvschema.RangeSemVer,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
 		},
 	}
-	r4 := models.Range{
-		Type: models.RangeSemVer,
-		Events: []models.Event{
+	r4 := osvschema.Range{
+		Type: osvschema.RangeSemVer,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
 		},
 	}
-	r5 := models.Range{
-		Type: models.RangeEcosystem,
-		Events: []models.Event{
+	r5 := osvschema.Range{
+		Type: osvschema.RangeEcosystem,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
@@ -133,28 +133,28 @@ func TestMerge_Ranges(t *testing.T) {
 			},
 		},
 	}
-	r6 := models.Range{
-		Type: models.RangeEcosystem,
-		Events: []models.Event{
+	r6 := osvschema.Range{
+		Type: osvschema.RangeEcosystem,
+		Events: []osvschema.Event{
 			{
 				Introduced: "a",
 			},
 		},
 	}
 
-	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Affected[0].Ranges = []models.Range{
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Affected[0].Ranges = []osvschema.Range{
 		r1,
 		r2,
 		r3,
 	}
-	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Affected[0].Ranges = []models.Range{
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Affected[0].Ranges = []osvschema.Range{
 		r4,
 		r5,
 		r6,
 	}
-	want := []models.Range{
+	want := []osvschema.Range{
 		r1, r2, r3, r6,
 	}
 
@@ -168,9 +168,9 @@ func TestMerge_Ranges(t *testing.T) {
 }
 
 func TestMerge_Versions(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Affected[0].Versions = []string{"z", "b", "c"}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Affected[0].Versions = []string{"b", "c", "d"}
 
 	want := []string{"z", "b", "c", "d"}
@@ -185,17 +185,17 @@ func TestMerge_Versions(t *testing.T) {
 }
 
 func TestMerge_NoSeverities(t *testing.T) {
-	sev := models.Severity{
-		Type:  models.SeverityCVSSV3,
+	sev := osvschema.Severity{
+		Type:  osvschema.SeverityCVSSV3,
 		Score: "9.8",
 	}
 
-	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Severity = []models.Severity{sev}
-	r.Vuln().Affected[0].Severity = []models.Severity{sev}
-	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Severity = []models.Severity{sev}
-	other.Vuln().Affected[0].Severity = []models.Severity{sev}
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Severity = []osvschema.Severity{sev}
+	r.Vuln().Affected[0].Severity = []osvschema.Severity{sev}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Severity = []osvschema.Severity{sev}
+	other.Vuln().Affected[0].Severity = []osvschema.Severity{sev}
 
 	if err := r.Merge(other); err != nil {
 		t.Fatalf("Merge() = %v; want no error", err)
@@ -210,11 +210,11 @@ func TestMerge_NoSeverities(t *testing.T) {
 }
 
 func TestMerge_NoEcosystemSpecificData(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Affected[0].EcosystemSpecific = map[string]any{
 		"test1": "test",
 	}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Affected[0].EcosystemSpecific = map[string]any{
 		"test2": "test",
 	}
@@ -229,10 +229,10 @@ func TestMerge_NoEcosystemSpecificData(t *testing.T) {
 }
 
 func TestMerge_Aliases(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().ID = "id"
 	r.Vuln().Aliases = []string{"z", "b", "c"}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Aliases = []string{"b", "c", "d", "id"}
 
 	want := []string{"z", "b", "c", "d"}
@@ -247,9 +247,9 @@ func TestMerge_Aliases(t *testing.T) {
 }
 
 func TestMerge_Related(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Related = []string{"z", "b", "c"}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Related = []string{"b", "c", "d"}
 
 	want := []string{"z", "b", "c", "d"}
@@ -264,33 +264,33 @@ func TestMerge_Related(t *testing.T) {
 }
 
 func TestMerge_References(t *testing.T) {
-	ref1 := models.Reference{
-		Type: models.ReferenceAdvisory,
+	ref1 := osvschema.Reference{
+		Type: osvschema.ReferenceAdvisory,
 		URL:  "https://example.com/advisory",
 	}
-	ref2 := models.Reference{
-		Type: models.ReferenceFix,
+	ref2 := osvschema.Reference{
+		Type: osvschema.ReferenceFix,
 		URL:  "https://example.com/fix",
 	}
-	ref3 := models.Reference{
-		Type: models.ReferenceReport,
+	ref3 := osvschema.Reference{
+		Type: osvschema.ReferenceReport,
 		URL:  "https://example.com/report",
 	}
-	ref4 := models.Reference{
-		Type: models.ReferenceArticle,
+	ref4 := osvschema.Reference{
+		Type: osvschema.ReferenceArticle,
 		URL:  "https://example.com/advisory",
 	}
-	ref5 := models.Reference{
-		Type: models.ReferenceReport,
+	ref5 := osvschema.Reference{
+		Type: osvschema.ReferenceReport,
 		URL:  "https://example.com/id.json",
 	}
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().ID = "id"
-	r.Vuln().References = []models.Reference{ref1, ref2, ref3}
-	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().References = []models.Reference{ref2, ref3, ref4, ref5}
+	r.Vuln().References = []osvschema.Reference{ref1, ref2, ref3}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().References = []osvschema.Reference{ref2, ref3, ref4, ref5}
 
-	want := []models.Reference{ref1, ref2, ref3, ref4}
+	want := []osvschema.Reference{ref1, ref2, ref3, ref4}
 
 	if err := r.Merge(other); err != nil {
 		t.Fatalf("Merge() = %v; want no error", err)
@@ -302,27 +302,27 @@ func TestMerge_References(t *testing.T) {
 }
 
 func TestMerge_Credits(t *testing.T) {
-	c1 := models.Credit{
+	c1 := osvschema.Credit{
 		Name:    "John Appleseed",
-		Type:    models.CreditFinder,
+		Type:    osvschema.CreditFinder,
 		Contact: []string{"john.appleseed@example.com"},
 	}
-	c2 := models.Credit{
+	c2 := osvschema.Credit{
 		Name:    "Jane Doe",
-		Type:    models.CreditReporter,
+		Type:    osvschema.CreditReporter,
 		Contact: []string{"janedoe123@example.com"},
 	}
-	c3 := models.Credit{
+	c3 := osvschema.Credit{
 		Name:    "Anonymous Coward",
-		Type:    models.CreditOther,
+		Type:    osvschema.CreditOther,
 		Contact: []string{"no-reply@example.com"},
 	}
-	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Credits = []models.Credit{c1, c2}
-	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Credits = []models.Credit{c2, c3}
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Credits = []osvschema.Credit{c1, c2}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Credits = []osvschema.Credit{c2, c3}
 
-	want := []models.Credit{c3, c2, c1}
+	want := []osvschema.Credit{c3, c2, c1}
 
 	if err := r.Merge(other); err != nil {
 		t.Fatalf("Merge() = %v; want no error", err)
@@ -334,35 +334,35 @@ func TestMerge_Credits(t *testing.T) {
 }
 
 func TestMerge_CreditsContactMerge(t *testing.T) {
-	c1 := models.Credit{
+	c1 := osvschema.Credit{
 		Name:    "John Appleseed",
-		Type:    models.CreditFinder,
+		Type:    osvschema.CreditFinder,
 		Contact: []string{"john.appleseed@example.com"},
 	}
-	c2 := models.Credit{
+	c2 := osvschema.Credit{
 		Name:    "XYZ",
-		Type:    models.CreditFinder,
+		Type:    osvschema.CreditFinder,
 		Contact: []string{"xyz@example.com"},
 	}
-	c3 := models.Credit{
+	c3 := osvschema.Credit{
 		Name:    "John Appleseed",
-		Type:    models.CreditFinder,
+		Type:    osvschema.CreditFinder,
 		Contact: []string{"https://twitter.com/john_appleseed_this_does_not_exist"},
 	}
-	r := testReport(models.EcosystemNPM, "example")
-	r.Vuln().Credits = []models.Credit{c1}
-	other := testReport(models.EcosystemNPM, "example")
-	other.Vuln().Credits = []models.Credit{c2, c3}
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Credits = []osvschema.Credit{c1}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Credits = []osvschema.Credit{c2, c3}
 
-	want := []models.Credit{
+	want := []osvschema.Credit{
 		{
 			Name:    "John Appleseed",
-			Type:    models.CreditFinder,
+			Type:    osvschema.CreditFinder,
 			Contact: []string{"john.appleseed@example.com", "https://twitter.com/john_appleseed_this_does_not_exist"},
 		},
 		{
 			Name:    "XYZ",
-			Type:    models.CreditFinder,
+			Type:    osvschema.CreditFinder,
 			Contact: []string{"xyz@example.com"},
 		},
 	}
@@ -377,9 +377,9 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 }
 
 func TestMerge_DetailsParseError(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Details = "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n---\n_-= Per source details. Do not edit below this line.=-_\n"
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
 		t.Fatalf("Merge() = %v; want %v", err, report.ErrMergeFailure)
@@ -387,9 +387,9 @@ func TestMerge_DetailsParseError(t *testing.T) {
 }
 
 func TestMerge_ReportsBothHaveUserContributions(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Details = "this is my user contributed report"
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Details = "no, this is my user contributed report"
 
 	if err := r.Merge(other); err == nil || !errors.Is(err, report.ErrMergeFailure) {
@@ -399,9 +399,9 @@ func TestMerge_ReportsBothHaveUserContributions(t *testing.T) {
 
 func TestMerge_ReportUserContributions(t *testing.T) {
 	want := "this is my user contributed report"
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Details = want
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 
 	if err := r.Merge(other); err != nil {
 		t.Fatalf("Merge() = %v; want no error", err)
@@ -423,8 +423,8 @@ func TestMerge_ReportUserContributions(t *testing.T) {
 
 func TestMerge_OtherUserContributions(t *testing.T) {
 	want := "no, this is my user contributed report"
-	r := testReport(models.EcosystemNPM, "example")
-	other := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Details = want
 
 	if err := r.Merge(other); err != nil {
@@ -446,14 +446,14 @@ func TestMerge_OtherUserContributions(t *testing.T) {
 }
 
 func TestMerge_Details(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	o1 := r.AddOrigin("test-origin", "deadbeef")
 	o2 := r.AddOrigin("another-test-origin", "fffe")
 	r.SetDetails("this is a \nuser contribution", map[*report.OriginRef]string{
 		o1: "test report 1",
 		o2: "test report 2",
 	})
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	o3 := other.AddOrigin("test-origin", "00000000")
 	other.Vuln().Details = "a longer test report 1"
 
@@ -481,10 +481,10 @@ func TestMerge_Details(t *testing.T) {
 }
 
 func TestMerge_Origins(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	o1 := r.AddOrigin("test-origin", "deadbeef")
 	o2 := r.AddOrigin("another-test-origin", "fffe")
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	o3 := other.AddOrigin("test-origin", "00000000")
 
 	if err := r.Merge(other); err != nil {
@@ -498,7 +498,7 @@ func TestMerge_Origins(t *testing.T) {
 }
 
 func TestMerge_DatabaseSpecific(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().DatabaseSpecific = map[string]any{
 		"object": map[string]any{
 			"unique1": "foo",
@@ -508,7 +508,7 @@ func TestMerge_DatabaseSpecific(t *testing.T) {
 		"array":  []any{"a", "b", "c"},
 		"scalar": "test1",
 	}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().DatabaseSpecific = map[string]any{
 		"object": map[string]any{
 			"unique2": "foo",
@@ -540,7 +540,7 @@ func TestMerge_DatabaseSpecific(t *testing.T) {
 }
 
 func TestMerge_AffectedDatabaseSpecific(t *testing.T) {
-	r := testReport(models.EcosystemNPM, "example")
+	r := testReport(osvschema.EcosystemNPM, "example")
 	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
 		"object": map[string]any{
 			"unique1": "foo",
@@ -549,7 +549,7 @@ func TestMerge_AffectedDatabaseSpecific(t *testing.T) {
 		"array":  []any{"a", "b"},
 		"scalar": "test1",
 	}
-	other := testReport(models.EcosystemNPM, "example")
+	other := testReport(osvschema.EcosystemNPM, "example")
 	other.Vuln().Affected[0].DatabaseSpecific = map[string]any{
 		"object": map[string]any{
 			"unique2": "foo",
@@ -616,9 +616,9 @@ func TestMerge_PublishTimes(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := testReport(models.EcosystemNPM, "example")
+			r := testReport(osvschema.EcosystemNPM, "example")
 			r.Vuln().Published = test.report
-			other := testReport(models.EcosystemNPM, "example")
+			other := testReport(osvschema.EcosystemNPM, "example")
 			other.Vuln().Published = test.other
 
 			if err := r.Merge(other); err != nil {

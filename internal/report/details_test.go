@@ -20,17 +20,17 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 )
 
 func reportWithDetail(details string) *Report {
-	v := &models.Vulnerability{
+	v := &osvschema.Vulnerability{
 		SchemaVersion: "1.5.0",
 		Summary:       "test report",
 		Details:       details,
-		Affected: []models.Affected{
+		Affected: []osvschema.Affected{
 			{
-				Package: models.Package{
+				Package: osvschema.Package{
 					Ecosystem: "npm",
 					Name:      "example",
 				},

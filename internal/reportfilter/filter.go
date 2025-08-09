@@ -19,7 +19,7 @@ import (
 	"regexp"
 	"slices"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 )
 
 var supportedFields = []string{
@@ -28,7 +28,7 @@ var supportedFields = []string{
 }
 
 type Filter interface {
-	Apply(*models.Vulnerability)
+	Apply(*osvschema.Vulnerability)
 }
 
 // New creates and returns the filter associated with the supplied arguments.
@@ -50,7 +50,7 @@ type removeFilter struct {
 	re    *regexp.Regexp
 }
 
-func (rf *removeFilter) Apply(v *models.Vulnerability) {
+func (rf *removeFilter) Apply(v *osvschema.Vulnerability) {
 	switch rf.field {
 	case "aliases":
 		v.Aliases = slices.DeleteFunc(v.Aliases, rf.re.MatchString)
@@ -64,7 +64,7 @@ func (rf *removeFilter) Apply(v *models.Vulnerability) {
 // Filters are applied in the order they appear in the slice.
 type Filters []Filter
 
-func (fs Filters) Apply(v *models.Vulnerability) {
+func (fs Filters) Apply(v *osvschema.Vulnerability) {
 	for _, f := range fs {
 		f.Apply(v)
 	}
