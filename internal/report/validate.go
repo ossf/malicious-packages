@@ -190,20 +190,25 @@ var purlEcosystems = map[string]map[string]osvschema.Ecosystem{
 func getPURLEcosystem(pkgURL packageurl.PackageURL) osvschema.Ecosystem {
 	ecoMap, ok := purlEcosystems[pkgURL.Type]
 	if !ok {
+		// We couldn't find a mapping between the PURL and OSV ecosystems.
 		return osvschema.Ecosystem("")
 	}
 
-	wildcardRes, hasWildcard := ecoMap["*"]
-	if hasWildcard {
-		return wildcardRes
+	// An exact namespace match was found. This takes priority so return it
+	// first.
+	if ecosystem, ok := ecoMap[pkgURL.Namespace]; ok {
+		return ecosystem
 	}
 
-	ecosystem, ok := ecoMap[pkgURL.Namespace]
-	if !ok {
-		return osvschema.Ecosystem("")
+	// The ecosystem has a wildcard namespace. The wildcard ecosystem will
+	// always be returned if nothing better exists.
+	if wildcardEco, hasWildcard := ecoMap["*"]; hasWildcard {
+		return wildcardEco
 	}
 
-	return ecosystem
+	// If we reached the end we don't have an OSV ecosystem for the given
+	// PURL namespace.
+	return osvschema.Ecosystem("")
 }
 
 func purlToPackage(purl string) (osvschema.Package, error) {

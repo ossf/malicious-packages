@@ -272,11 +272,19 @@ func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
 			},
 		},
 		{
-			name: "ecosystem mismatch",
+			name: "ecosystem mismatch 1",
 			p: osvschema.Package{
 				Ecosystem: string(osvschema.EcosystemNPM),
 				Name:      "example",
 				Purl:      "pkg:pypi/example",
+			},
+		},
+		{
+			name: "ecosystem mismatch 2",
+			p: osvschema.Package{
+				Ecosystem: string(osvschema.EcosystemNPM),
+				Name:      "example",
+				Purl:      "pkg:oci/example",
 			},
 		},
 		{
@@ -301,6 +309,14 @@ func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
 				Ecosystem: string(osvschema.EcosystemNPM),
 				Name:      "example",
 				Purl:      "pkg:npm/%40org/example",
+			},
+		},
+		{
+			name: "namespace mismatch 2",
+			p: osvschema.Package{
+				Ecosystem: string(osvschema.EcosystemDebian) + ":7",
+				Name:      "example",
+				Purl:      "pkg:deb/notdebian/example",
 			},
 		},
 	}
