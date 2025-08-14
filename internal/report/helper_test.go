@@ -14,11 +14,11 @@
 
 package report
 
-import "github.com/google/osv-scanner/pkg/models"
+import "github.com/ossf/osv-schema/bindings/go/osvschema"
 
 // Vuln is a test helper method that provides access to the underlying raw
 // vulnerability object.
-func (r *Report) Vuln() *models.Vulnerability {
+func (r *Report) Vuln() *osvschema.Vulnerability {
 	return r.raw
 }
 

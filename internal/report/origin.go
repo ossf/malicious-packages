@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
 	"github.com/ossf/malicious-packages/internal/source"
 )
@@ -27,13 +27,13 @@ import (
 const originRefKey = "malicious-packages-origins"
 
 type OriginRef struct {
-	Source       string         `json:"source"`
-	SHASum       string         `json:"sha256"`
-	ImportTime   time.Time      `json:"import_time"`
-	ID           string         `json:"id,omitempty"`
-	ModifiedTime time.Time      `json:"modified_time"`
-	Ranges       []models.Range `json:"ranges,omitempty"`
-	Versions     []string       `json:"versions,omitempty"`
+	Source       string            `json:"source"`
+	SHASum       string            `json:"sha256"`
+	ImportTime   time.Time         `json:"import_time"`
+	ID           string            `json:"id,omitempty"`
+	ModifiedTime time.Time         `json:"modified_time"`
+	Ranges       []osvschema.Range `json:"ranges,omitempty"`
+	Versions     []string          `json:"versions,omitempty"`
 }
 
 // UnmarshalJSON implements the json.Unmashaler interface.

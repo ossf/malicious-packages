@@ -22,13 +22,13 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
 	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
-func testReport(ecosystem models.Ecosystem, name string) *report.Report {
+func testReport(ecosystem osvschema.Ecosystem, name string) *report.Report {
 	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}}]}`
 	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
 	if err != nil {
@@ -70,7 +70,7 @@ func TestPath(t *testing.T) {
 }
 
 func TestNormalize_WithID(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().ID = "MAL-1234-5678"
 
 	if err := r.Normalize(); err != nil {
@@ -80,22 +80,22 @@ func TestNormalize_WithID(t *testing.T) {
 
 func TestNormalize_CanonicalizeName(t *testing.T) {
 	tests := []struct {
-		eco  models.Ecosystem
+		eco  osvschema.Ecosystem
 		name string
 		want string
 	}{
 		{
-			eco:  models.EcosystemPyPI,
+			eco:  osvschema.EcosystemPyPI,
 			name: "This--Is__A1..Test_-.Example",
 			want: "this-is-a1-test-example",
 		},
 		{
-			eco:  models.EcosystemCratesIO,
+			eco:  osvschema.EcosystemCratesIO,
 			name: "This-Is-A1_Test_Example",
 			want: "this_is_a1_test_example",
 		},
 		{
-			eco:  models.EcosystemRubyGems,
+			eco:  osvschema.EcosystemRubyGems,
 			name: "This-is_a1.test_Example",
 			want: "This-is_a1.test_Example",
 		},
@@ -117,7 +117,7 @@ func TestNormalize_CanonicalizeName(t *testing.T) {
 }
 
 func TestNormalize_Summary(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 
 	if err := r.Normalize(); err != nil {
 		t.Fatalf("Normalize() = %v; want no error", err)
@@ -130,7 +130,7 @@ func TestNormalize_Summary(t *testing.T) {
 }
 
 func TestNormalize_TooManyOrigins(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.AddOrigin("test-origin", "deadbeef")
 	r.AddOrigin("another-test-origin", "00000000")
 
@@ -140,7 +140,7 @@ func TestNormalize_TooManyOrigins(t *testing.T) {
 }
 
 func TestNormalize_DetailHeaderPresent(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.SetDetails("user")
 
 	if err := r.Normalize(); err == nil || !errors.Is(err, report.ErrNormalizing) {
@@ -149,7 +149,7 @@ func TestNormalize_DetailHeaderPresent(t *testing.T) {
 }
 
 func TestNormalize_DatabaseSpecificStrip(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().DatabaseSpecific = map[string]any{
 		"object":    map[string]any{"a": "b"},
 		"array":     []any{"a", 1},
@@ -171,7 +171,7 @@ func TestNormalize_DatabaseSpecificStrip(t *testing.T) {
 }
 
 func TestNormalize_AffectedDatabaseSpecificStrip(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
 		"object":    map[string]any{"a": "b"},
 		"array":     []any{"a", 1},
@@ -193,7 +193,7 @@ func TestNormalize_AffectedDatabaseSpecificStrip(t *testing.T) {
 }
 
 func TestNormalize_NoOrigin_DetailsUnchanged(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().Details = "  please do\nnot touch  "
 
 	if err := r.Normalize(); err != nil {
@@ -207,7 +207,7 @@ func TestNormalize_NoOrigin_DetailsUnchanged(t *testing.T) {
 }
 
 func TestNormalize_Origin_DetailsChanged(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().Details = "  please move\nmy details  "
 	r.AddOrigin("test-origin", "deadbeef")
 
@@ -222,7 +222,7 @@ func TestNormalize_Origin_DetailsChanged(t *testing.T) {
 }
 
 func TestStripID(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().ID = "TEST-1234-1"
 
 	r.StripID()
@@ -233,7 +233,7 @@ func TestStripID(t *testing.T) {
 }
 
 func TestAliasID(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().ID = "TEST-1234-2"
 
 	r.AliasID()
@@ -245,7 +245,7 @@ func TestAliasID(t *testing.T) {
 }
 
 func TestAliasID_ExistingAliases(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().ID = "TEST-1234-3"
 	r.Vuln().Aliases = []string{"OTHER-5432-1"}
 
@@ -258,7 +258,7 @@ func TestAliasID_ExistingAliases(t *testing.T) {
 }
 
 func TestAliasID_Duplicate(t *testing.T) {
-	r := testReport(models.EcosystemRubyGems, "example")
+	r := testReport(osvschema.EcosystemRubyGems, "example")
 	r.Vuln().ID = "TEST-1234-4"
 	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
 
@@ -271,16 +271,16 @@ func TestAliasID_Duplicate(t *testing.T) {
 }
 
 func TestFilterSelf(t *testing.T) {
-	r := testReport(models.EcosystemPyPI, "example")
+	r := testReport(osvschema.EcosystemPyPI, "example")
 	r.Vuln().ID = "TEST-1234-4"
 	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
-	r.Vuln().References = []models.Reference{
+	r.Vuln().References = []osvschema.Reference{
 		{
-			Type: models.ReferenceArticle,
+			Type: osvschema.ReferenceArticle,
 			URL:  "path/to/TEST-1234-4.json",
 		},
 		{
-			Type: models.ReferenceReport,
+			Type: osvschema.ReferenceReport,
 			URL:  "https://example.org/",
 		},
 	}
@@ -292,14 +292,14 @@ func TestFilterSelf(t *testing.T) {
 		t.Errorf("Aliases = %v; want %s", got, wantAliases)
 	}
 
-	wantReferences := []models.Reference{{Type: models.ReferenceReport, URL: "https://example.org/"}}
+	wantReferences := []osvschema.Reference{{Type: osvschema.ReferenceReport, URL: "https://example.org/"}}
 	if got := r.Vuln().References; !slices.Equal(got, wantReferences) {
 		t.Errorf("References = %v; want %s", got, wantReferences)
 	}
 }
 
 func TestApplyFilters(t *testing.T) {
-	r := testReport(models.EcosystemPyPI, "example")
+	r := testReport(osvschema.EcosystemPyPI, "example")
 	r.Vuln().ID = "TEST-1234-1"
 	r.Vuln().Aliases = []string{"OTHER-5432-1", "ANOTHER-9999-123"}
 	r.Vuln().Related = []string{"OTHER-6789-1", "OTHER-9999-456", "ANOTHER-9999-789"}
