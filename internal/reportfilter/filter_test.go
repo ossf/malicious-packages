@@ -18,7 +18,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
@@ -38,7 +38,7 @@ func TestNew_UnsupportedFieldError(t *testing.T) {
 }
 
 func TestRemoveFilter(t *testing.T) {
-	vuln := &models.Vulnerability{
+	vuln := &osvschema.Vulnerability{
 		ID: "MAL-0123-45678",
 		Aliases: []string{
 			"A-1",
@@ -53,7 +53,7 @@ func TestRemoveFilter(t *testing.T) {
 			"C-2025-789",
 		},
 	}
-	want := &models.Vulnerability{
+	want := &osvschema.Vulnerability{
 		ID: "MAL-0123-45678",
 		Aliases: []string{
 			"B-1",
