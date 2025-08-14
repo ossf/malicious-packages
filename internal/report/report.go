@@ -26,7 +26,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
@@ -60,7 +60,7 @@ type dbSpecificVuln struct {
 }
 
 type Report struct {
-	raw       *models.Vulnerability
+	raw       *osvschema.Vulnerability
 	origins   []*OriginRef
 	Ecosystem string
 	Name      string
@@ -90,7 +90,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	r.Ecosystem = string(r.raw.Affected[0].Package.Ecosystem)
+	r.Ecosystem = r.raw.Affected[0].Package.Ecosystem
 	r.Name = r.raw.Affected[0].Package.Name
 
 	// Ensure the details can be parsed.
@@ -183,7 +183,7 @@ func (r *Report) FilterSelf() {
 	r.raw.Aliases = slices.DeleteFunc(r.raw.Aliases, func(s string) bool {
 		return r.raw.ID == s
 	})
-	r.raw.References = slices.DeleteFunc(r.raw.References, func(ref models.Reference) bool {
+	r.raw.References = slices.DeleteFunc(r.raw.References, func(ref osvschema.Reference) bool {
 		return strings.HasSuffix(ref.URL, fmt.Sprintf("/%s.json", r.raw.ID))
 	})
 }
@@ -204,7 +204,7 @@ func (r *Report) Normalize() error {
 		return nil
 	}
 
-	r.Name = canonicalizeName(r.Name, models.Ecosystem(r.Ecosystem))
+	r.Name = canonicalizeName(r.Name, osvschema.Ecosystem(r.Ecosystem))
 
 	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
@@ -233,14 +233,14 @@ func (r *Report) Normalize() error {
 // If package names for an ecosystem may contain mixed case, but are compared
 // as case insensitive, then equalName should be changed to preserve the case
 // of the first package seen.
-func canonicalizeName(name string, ecosystem models.Ecosystem) string {
+func canonicalizeName(name string, ecosystem osvschema.Ecosystem) string {
 	switch ecosystem {
-	case models.EcosystemCratesIO:
+	case osvschema.EcosystemCratesIO:
 		// The canonical form for crates.io names is lowercase with dashes
 		// replaced by underscores.
 		// See: https://github.com/rust-lang/crates.io/blob/master/migrations/20150319224700_dumped_migration_93/up.sql
 		return strings.ReplaceAll(strings.ToLower(name), "-", "_")
-	case models.EcosystemPyPI:
+	case osvschema.EcosystemPyPI:
 		// Replace runs of [-_.] with a single "-", then lowercase everything.
 		// See: https://github.com/pypa/pip/blob/24.0/src/pip/_vendor/packaging/utils.py
 		// See: https://www.python.org/dev/peps/pep-0503/

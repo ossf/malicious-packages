@@ -5,12 +5,29 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/google/osv-scanner/pkg/models"
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"github.com/package-url/packageurl-go"
 )
+
+var supportedEcosystems = []osvschema.Ecosystem{
+	osvschema.EcosystemAlpine,
+	osvschema.EcosystemCratesIO,
+	osvschema.EcosystemDebian,
+	osvschema.EcosystemGo,
+	osvschema.EcosystemHex,
+	osvschema.EcosystemMaven,
+	osvschema.EcosystemNPM,
+	osvschema.EcosystemNuGet,
+	osvschema.EcosystemOSSFuzz,
+	osvschema.EcosystemPackagist,
+	osvschema.EcosystemPyPI,
+	osvschema.EcosystemRubyGems,
+	osvschema.EcosystemUbuntu,
+}
 
 // ValidateVuln ensures that v conforms to the the OSV Schema, and to the
 // specific constraints expected by the repository.
-func ValidateVuln(v *models.Vulnerability) error {
+func ValidateVuln(v *osvschema.Vulnerability) error {
 	// A malicious packages vuln must have one and only one Affected entry.
 	if len(v.Affected) == 0 {
 		return fmt.Errorf("%w: no affected packages listed", ErrInvalidOSV)
@@ -22,13 +39,13 @@ func ValidateVuln(v *models.Vulnerability) error {
 	// Ecosystem must be set, and must be in the predefined set of ecosystems.
 	// Note: the OSV schema allows for ecosystems to append information after a
 	// colon (':') character.
-	ecosystemFull := string(v.Affected[0].Package.Ecosystem)
+	ecosystemFull := v.Affected[0].Package.Ecosystem
 	if ecosystemFull == "" {
 		return fmt.Errorf("%w: package ecosystem is missing", ErrInvalidOSV)
 	}
 	e, _, _ := strings.Cut(ecosystemFull, ":")
-	ecosystem := models.Ecosystem(e)
-	if !slices.Contains(models.Ecosystems, ecosystem) {
+	ecosystem := osvschema.Ecosystem(e)
+	if !slices.Contains(supportedEcosystems, ecosystem) {
 		return fmt.Errorf("%w: package ecosystem %q is invalid", ErrInvalidOSV, ecosystem)
 	}
 
@@ -63,30 +80,30 @@ func ValidateVuln(v *models.Vulnerability) error {
 //
 // Unfortunately this information is not specified in the OSV schema, or
 // enforced by the OSV API presently.
-var semverEcosystem = map[models.Ecosystem]struct{}{
-	models.EcosystemBitnami:  {},
-	models.EcosystemCratesIO: {},
-	models.EcosystemGo:       {},
-	models.EcosystemHex:      {},
-	models.EcosystemNPM:      {},
-	models.EcosystemSwiftURL: {},
+var semverEcosystem = map[osvschema.Ecosystem]struct{}{
+	osvschema.EcosystemBitnami:  {},
+	osvschema.EcosystemCratesIO: {},
+	osvschema.EcosystemGo:       {},
+	osvschema.EcosystemHex:      {},
+	osvschema.EcosystemNPM:      {},
+	osvschema.EcosystemSwiftURL: {},
 }
 
 // validateRange ensures r conforms to the OSV Schema. This also ensures code
 // that processes ranges can assume the data is well structured.
 //
 // See https://ossf.github.io/osv-schema/#affectedranges-field for details.
-func validateRange(r models.Range, ecosystem models.Ecosystem) error {
+func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 	// The range type is required.
 	if r.Type == "" {
 		return fmt.Errorf("%w: range must have a type specified", ErrInvalidOSV)
 	}
 	// The range type can be either ECOSYSTEM, SEMVER or GIT.
-	if !slices.Contains([]models.RangeType{models.RangeEcosystem, models.RangeSemVer, models.RangeGit}, r.Type) {
+	if !slices.Contains([]osvschema.RangeType{osvschema.RangeEcosystem, osvschema.RangeSemVer, osvschema.RangeGit}, r.Type) {
 		return fmt.Errorf("%w: range type %q is invalid", ErrInvalidOSV, r.Type)
 	}
 	// Ensure the ecosystem supports SEMVER if it is being used.
-	if _, semverOK := semverEcosystem[ecosystem]; r.Type == models.RangeSemVer && !semverOK {
+	if _, semverOK := semverEcosystem[ecosystem]; r.Type == osvschema.RangeSemVer && !semverOK {
 		return fmt.Errorf("%w: ecosystem %q does not support SEMVER ranges", ErrInvalidOSV, ecosystem)
 	}
 
@@ -133,8 +150,8 @@ func validateRange(r models.Range, ecosystem models.Ecosystem) error {
 }
 
 // validatePURL ensures that a PURL matches the supplied name and ecosystem.
-func validatePURL(ecosystem models.Ecosystem, name, purl string) error {
-	p, err := models.PURLToPackage(purl)
+func validatePURL(ecosystem osvschema.Ecosystem, name, purl string) error {
+	p, err := purlToPackage(purl)
 	if err != nil {
 		return fmt.Errorf("%w: failed parsing PURL %q: %w", ErrInvalidOSV, purl, err)
 	}
@@ -148,4 +165,76 @@ func validatePURL(ecosystem models.Ecosystem, name, purl string) error {
 	}
 
 	return nil
+}
+
+// used like so: purlEcosystems[PkgURL.Type][PkgURL.Namespace]
+// "*" means it should match any namespace string.
+var purlEcosystems = map[string]map[string]osvschema.Ecosystem{
+	"apk":   {"alpine": osvschema.EcosystemAlpine},
+	"cargo": {"*": osvschema.EcosystemCratesIO},
+	"deb": {
+		"debian": osvschema.EcosystemDebian,
+		"ubuntu": osvschema.EcosystemUbuntu,
+	},
+	"hex":      {"*": osvschema.EcosystemHex},
+	"golang":   {"*": osvschema.EcosystemGo},
+	"maven":    {"*": osvschema.EcosystemMaven},
+	"nuget":    {"*": osvschema.EcosystemNuGet},
+	"npm":      {"*": osvschema.EcosystemNPM},
+	"composer": {"*": osvschema.EcosystemPackagist},
+	"generic":  {"*": osvschema.EcosystemOSSFuzz},
+	"pypi":     {"*": osvschema.EcosystemPyPI},
+	"gem":      {"*": osvschema.EcosystemRubyGems},
+}
+
+func getPURLEcosystem(pkgURL packageurl.PackageURL) osvschema.Ecosystem {
+	ecoMap, ok := purlEcosystems[pkgURL.Type]
+	if !ok {
+		// We couldn't find a mapping between the PURL and OSV ecosystems.
+		return osvschema.Ecosystem("")
+	}
+
+	// An exact namespace match was found. This takes priority so return it
+	// first.
+	if ecosystem, ok := ecoMap[pkgURL.Namespace]; ok {
+		return ecosystem
+	}
+
+	// The ecosystem has a wildcard namespace. The wildcard ecosystem will
+	// always be returned if nothing better exists.
+	if wildcardEco, hasWildcard := ecoMap["*"]; hasWildcard {
+		return wildcardEco
+	}
+
+	// If we reached the end we don't have an OSV ecosystem for the given
+	// PURL namespace.
+	return osvschema.Ecosystem("")
+}
+
+func purlToPackage(purl string) (osvschema.Package, error) {
+	parsedPURL, err := packageurl.FromString(purl)
+	if err != nil {
+		return osvschema.Package{}, err
+	}
+	ecosystem := getPURLEcosystem(parsedPURL)
+
+	// PackageInfo expects the full namespace in the name for ecosystems that specify it.
+	name := parsedPURL.Name
+	if parsedPURL.Namespace != "" {
+		switch ecosystem {
+		case osvschema.EcosystemMaven:
+			// Maven uses : to separate namespace and package
+			name = parsedPURL.Namespace + ":" + parsedPURL.Name
+		case osvschema.EcosystemDebian, osvschema.EcosystemAlpine, osvschema.EcosystemUbuntu:
+			// Debian and Alpine repeats their namespace in PURL, so don't add it to the name
+			name = parsedPURL.Name
+		default:
+			name = parsedPURL.Namespace + "/" + parsedPURL.Name
+		}
+	}
+
+	return osvschema.Package{
+		Name:      name,
+		Ecosystem: string(ecosystem),
+	}, nil
 }
