@@ -60,7 +60,7 @@ func main() {
 	log.Println("Processing OSV files...")
 	stats := make(map[string]map[string]int)
 	if err := processRepo(c, stats); err != nil {
-		log.Fatalf("Failed to process repo: %v", err) //nolint:gocritic
+		log.Fatalf("Failed to process repo: %v", err)
 	}
 
 	if *csvFlag != "" {
