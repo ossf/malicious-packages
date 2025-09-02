@@ -137,7 +137,7 @@ func (r *Report) WriteJSON(w io.Writer) error {
 //
 // This dir must be considered unsafe and checked before usage.
 func (r *Report) Path() string {
-	// ToLower is problematic...
+	// TODO: handle path casing better when it becomes a problem.
 	return filepath.Join(cleanEcosystem(r.Ecosystem), strings.ToLower(r.Name))
 }
 
