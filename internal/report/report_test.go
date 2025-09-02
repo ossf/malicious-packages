@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"slices"
 	"testing"
+	"time"
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
@@ -331,5 +332,15 @@ func TestInvalidReport(t *testing.T) {
 	_, err := report.ReadJSON(bytes.NewBufferString(rJSON))
 	if err == nil {
 		t.Error("ReadJSON = nil; want an error")
+	}
+}
+
+func TestPublished(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+	now := time.Now().UTC()
+	r.Vuln().Published = now
+
+	if got := r.Published(); !got.Equal(now) {
+		t.Errorf("Published() = %v; want %v", got, now)
 	}
 }
