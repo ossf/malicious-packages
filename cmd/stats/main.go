@@ -21,9 +21,10 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -58,6 +59,7 @@ func main() {
 	}
 
 	log.Println("Processing OSV files...")
+	// ecosystem -> month -> count
 	stats := make(map[string]map[string]int)
 	if err := processRepo(c, stats); err != nil {
 		log.Fatalf("Failed to process repo: %v", err)
@@ -84,8 +86,10 @@ func formatMonth(t time.Time) string {
 	return date[:7] + "-01"
 }
 
-func hasID(prefix, name string) bool {
-	base := filepath.Base(name)
+// hasID returns true if base starts with "{prefix}-", but does not start with
+// "{prefix}-0000-". This ensures only reports with IDs assigned are included
+// in stats.
+func hasID(prefix, base string) bool {
 	return strings.HasPrefix(base, fmt.Sprintf("%s-", prefix)) && !strings.HasPrefix(base, fmt.Sprintf("%s-0000-", prefix))
 }
 
@@ -102,7 +106,7 @@ func processRepo(c *config.Config, stats map[string]map[string]int) error {
 		if !reportio.IsPossibleReport(info.Name(), info.Type()) {
 			return nil
 		}
-		if !hasID(c.IDPrefix, path) {
+		if !hasID(c.IDPrefix, info.Name()) {
 			// Skip any file that doesn't match our ID pattern.
 			return nil
 		}
@@ -123,9 +127,6 @@ func processReport(path string, stats map[string]map[string]int) error {
 
 	if _, ok := stats[ecosystem]; !ok {
 		stats[ecosystem] = make(map[string]int)
-	}
-	if _, ok := stats[ecosystem][month]; !ok {
-		stats[ecosystem][month] = 0
 	}
 	stats[ecosystem][month]++
 
@@ -161,19 +162,9 @@ func writeCSV(path string, stats map[string]map[string]int) error {
 		return fmt.Errorf("failed to write header: %w", err)
 	}
 
-	var ecosystems []string
-	for eco := range stats {
-		ecosystems = append(ecosystems, eco)
-	}
-	sort.Strings(ecosystems)
-
+	ecosystems := slices.Sorted(maps.Keys(stats))
 	for _, eco := range ecosystems {
-		var months []string
-		for month := range stats[eco] {
-			months = append(months, month)
-		}
-		sort.Strings(months)
-
+		months := slices.Sorted(maps.Keys(stats[eco]))
 		for _, month := range months {
 			count := stats[eco][month]
 			row := []string{
