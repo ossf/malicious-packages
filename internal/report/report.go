@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
@@ -136,6 +137,7 @@ func (r *Report) WriteJSON(w io.Writer) error {
 //
 // This dir must be considered unsafe and checked before usage.
 func (r *Report) Path() string {
+	// TODO: handle path casing better when it becomes a problem.
 	return filepath.Join(cleanEcosystem(r.Ecosystem), strings.ToLower(r.Name))
 }
 
@@ -191,6 +193,11 @@ func (r *Report) FilterSelf() {
 // IsWithdrawn returns whether or not the report has been withdrawn.
 func (r *Report) IsWithdrawn() bool {
 	return !r.raw.Withdrawn.IsZero()
+}
+
+// Published returns the published time for the report.
+func (r *Report) Published() time.Time {
+	return r.raw.Published
 }
 
 func cleanEcosystem(in string) string {
