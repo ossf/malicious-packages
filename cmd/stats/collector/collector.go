@@ -130,9 +130,9 @@ func (c *Collector) ForCSV() [][]string {
 		if v == 0 {
 			continue
 		}
-		row := make([]string, len(c.dims))
+		row := make([]string, len(c.dims)+1)
 		copy(row, keys)
-		row = append(row, strconv.Itoa(v))
+		row[len(row)-1] = strconv.Itoa(v)
 		res = append(res, row)
 	}
 	return res
