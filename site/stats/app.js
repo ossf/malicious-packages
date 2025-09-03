@@ -17,10 +17,12 @@ const processData = (cumulative) => {
     const ecosystems = Object.keys(originalData);
     const allMonths = [...new Set(ecosystems.flatMap(eco => Object.keys(originalData[eco])))].sort();
 
+    const totalSeries = ecosystems.length + 1; // +1 for total
+
     const datasets = ecosystems.map((eco, index) => {
-        const hue = (index * 360) / ecosystems.length;
-        const color = `hsl(${hue} 70% 50%)`;
-        const bgColor = `hsl(${hue} 70% 50% / 33%)`
+        const hue = (index * 360) / totalSeries;
+        const color = `hsl(${hue}, 70%, 50%)`;
+        const bgColor = `hsla(${hue}, 70%, 50%, 0.5)`;
         let cumulativeCount = 0;
         const dataPoints = allMonths.map(month => {
             const monthValue = originalData[eco][month] || 0;
@@ -39,6 +41,28 @@ const processData = (cumulative) => {
             fill: false,
             hidden: false,
         };
+    });
+
+    // Add total series
+    const totalData = allMonths.map((month, i) => {
+        let monthTotal = 0;
+        for (const dataset of datasets) {
+            monthTotal += dataset.data[i];
+        }
+        return monthTotal;
+    });
+
+    const totalHue = (ecosystems.length * 360) / totalSeries;
+    const totalColor = `hsl(${totalHue}, 70%, 50%)`;
+    const totalBgColor = `hsla(${totalHue}, 70%, 50%, 0.5)`;
+
+    datasets.push({
+        label: 'Total',
+        data: totalData,
+        borderColor: totalColor,
+        backgroundColor: totalBgColor,
+        fill: false,
+        hidden: true, // Hidden by default
     });
 
     return {
