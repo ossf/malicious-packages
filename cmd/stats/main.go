@@ -69,7 +69,7 @@ func main() {
 		cols = append(cols, *dateGroupFlag)
 	}
 	dateGroup := dateGroupMap[*dateGroupFlag]
-	collector := collector.New("published reports", cols...)
+	reportCounts := collector.New("published reports", cols...)
 
 	if *configFlag == "" {
 		log.Fatalf("-config flag is required")
@@ -94,7 +94,7 @@ func main() {
 		if *dateGroupFlag != "" {
 			keys = append(keys, r.Published().UTC().Format(dateGroup.format)+dateGroup.suffix)
 		}
-		collector.Inc(keys...)
+		reportCounts.Inc(keys...)
 	}
 
 	if err := processRepo(c, process); err != nil {
@@ -103,13 +103,13 @@ func main() {
 
 	if *csvFlag != "" {
 		log.Printf("Writing CSV to %s...", *csvFlag)
-		if err := writeCSV(*csvFlag, collector.ForCSV()); err != nil {
+		if err := writeCSV(*csvFlag, reportCounts.ForCSV()); err != nil {
 			log.Fatalf("Failed to write CSV: %v", err)
 		}
 	}
 	if *jsonFlag != "" {
 		log.Printf("Writing JSON to %s...", *jsonFlag)
-		if err := writeJSON(*jsonFlag, collector.ForJSON()); err != nil {
+		if err := writeJSON(*jsonFlag, reportCounts.ForJSON()); err != nil {
 			log.Fatalf("Failed to write JSON: %v", err)
 		}
 	}
