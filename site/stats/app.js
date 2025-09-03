@@ -1,34 +1,68 @@
+let chart = null;
+let originalData = null;
+
 const fetchData = async () => {
     try {
         const response = await fetch('all.json');
-        return await response.json();
+        originalData = await response.json();
+        renderChart();
     } catch (error) {
         console.error('Error fetching data:', error);
     }
 };
 
-const renderChart = (data) => {
-    const ecosystems = Object.keys(data);
-    const allMonths = [...new Set(ecosystems.flatMap(eco => Object.keys(data[eco])))].sort();
+const processData = (cumulative) => {
+    if (!originalData) return { labels: [], datasets: [] };
+
+    const ecosystems = Object.keys(originalData);
+    const allMonths = [...new Set(ecosystems.flatMap(eco => Object.keys(originalData[eco])))].sort();
 
     const datasets = ecosystems.map((eco, index) => {
-        const color = `hsl(${(index * 360) / ecosystems.length}, 70%, 50%)`;
+        const hue = (index * 360) / ecosystems.length;
+        const color = `hsl(${hue} 70% 50%)`;
+        const bgColor = `hsl(${hue} 70% 50% / 33%)`
+        let cumulativeCount = 0;
+        const dataPoints = allMonths.map(month => {
+            const monthValue = originalData[eco][month] || 0;
+            if (cumulative) {
+                cumulativeCount += monthValue;
+                return cumulativeCount;
+            }
+            return monthValue;
+        });
+
         return {
             label: eco,
-            data: allMonths.map(month => data[eco][month] || 0),
+            data: dataPoints,
             borderColor: color,
-            backgroundColor: color + '33', // Add some transparency
+            backgroundColor: bgColor,
             fill: false,
-            hidden: false, // Initially all visible
+            hidden: false,
         };
     });
 
+    return {
+        labels: allMonths.map(m => m.substring(0, 7)),
+        datasets: datasets,
+    };
+};
+
+const renderChart = () => {
+    const isStacked = document.getElementById('stacked-switch').checked;
+    const isCumulative = document.getElementById('cumulative-switch').checked;
+
+    const { labels, datasets } = processData(isCumulative);
+
+    if (chart) {
+        chart.destroy();
+    }
+
     const ctx = document.getElementById('stats-chart').getContext('2d');
-    const chart = new Chart(ctx, {
+    chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: allMonths.map(m => m.substring(0, 7)), // Format as YYYY-MM
-            datasets: datasets,
+            labels: labels,
+            datasets: datasets.map(d => ({ ...d, fill: isStacked })),
         },
         options: {
             responsive: true,
@@ -38,7 +72,7 @@ const renderChart = (data) => {
                     text: 'Malicious Package Reports Published per Month'
                 },
                 legend: {
-                    display: false // We will use a custom legend
+                    display: false
                 }
             },
             scales: {
@@ -53,7 +87,8 @@ const renderChart = (data) => {
                         display: true,
                         text: 'Number of Reports'
                     },
-                    beginAtZero: true
+                    beginAtZero: true,
+                    stacked: isStacked,
                 }
             }
         }
@@ -91,9 +126,8 @@ const renderCustomLegend = (chart) => {
     });
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const data = await fetchData();
-    if (data) {
-        renderChart(data);
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('stacked-switch').addEventListener('change', renderChart);
+    document.getElementById('cumulative-switch').addEventListener('change', renderChart);
+    fetchData();
 });
