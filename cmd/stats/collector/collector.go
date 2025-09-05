@@ -15,7 +15,6 @@
 package collector
 
 import (
-	"iter"
 	"maps"
 	"slices"
 	"strconv"
@@ -57,46 +56,7 @@ func (c *Collector) count(keys []string) int {
 	return c.counts[strings.Join(keys, ",")]
 }
 
-func (c *Collector) iterKeys() iter.Seq[[]string] {
-	return func(yield func([]string) bool) {
-		if len(c.dims) == 0 {
-			return
-		}
-
-		// Perpare the dimension keys.
-		dimKeys := make([][]string, len(c.dims))
-		for i := range c.dims {
-			keys := slices.Sorted(maps.Keys(c.dimKeys[i]))
-			if len(keys) == 0 {
-				// If any dimension has no keys, the cartesian product is empty.
-				return
-			}
-			dimKeys[i] = keys
-		}
-
-		// Recursively generate each combination of keys.
-		var generate func(current []string, dimIdx int) bool
-		generate = func(current []string, dimIdx int) bool {
-			if dimIdx == len(dimKeys) {
-				return yield(current)
-			}
-			for _, key := range dimKeys[dimIdx] {
-				if !generate(append(current, key), dimIdx+1) {
-					return false
-				}
-			}
-			return true
-		}
-		generate(make([]string, 0, len(dimKeys)), 0)
-	}
-}
-
-func (c *Collector) ForJSON() any {
-	if len(c.counts) == 0 {
-		return nil
-	}
-
-	// Perpare the dimension keys.
+func (c *Collector) sortedDimKeys() [][]string {
 	dimKeys := make([][]string, len(c.dims))
 	for i := range c.dims {
 		keys := slices.Sorted(maps.Keys(c.dimKeys[i]))
@@ -105,6 +65,18 @@ func (c *Collector) ForJSON() any {
 			return nil
 		}
 		dimKeys[i] = keys
+	}
+	return dimKeys
+}
+
+func (c *Collector) ForJSON() any {
+	if len(c.counts) == 0 {
+		return nil
+	}
+
+	dimKeys := c.sortedDimKeys()
+	if dimKeys == nil {
+		return nil
 	}
 
 	var builder func([]string) any
@@ -142,15 +114,27 @@ func (c *Collector) ForCSV() [][]string {
 		return append(res, []string{strconv.Itoa(c.count([]string{}))})
 	}
 
-	for keys := range c.iterKeys() {
-		v := c.count(keys)
-		if v == 0 {
-			continue
-		}
-		row := make([]string, len(c.dims)+1)
-		copy(row, keys)
-		row[len(row)-1] = strconv.Itoa(v)
-		res = append(res, row)
+	dimKeys := c.sortedDimKeys()
+	if dimKeys == nil {
+		return res
 	}
+
+	// Recursively build each CSV row.
+	var builder func([]string)
+	builder = func(keys []string) {
+		if len(keys) == len(dimKeys) {
+			// Stopping case: we have all the keys, so grab the value and a row.
+			v := c.count(keys)
+			if v != 0 {
+				res = append(res, append(keys, strconv.Itoa(v)))
+			}
+			return
+		}
+		for _, key := range dimKeys[len(keys)] {
+			builder(append(keys, key))
+		}
+	}
+	builder([]string{})
+
 	return res
 }
