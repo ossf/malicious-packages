@@ -2,7 +2,6 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// You may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 //     https://www.apache.org/licenses/LICENSE-2.0
@@ -58,7 +57,7 @@ func (c *Collector) count(keys []string) int {
 	return c.counts[strings.Join(keys, ",")]
 }
 
-func (c *Collector) enumKeys() iter.Seq[[]string] {
+func (c *Collector) iterKeys() iter.Seq[[]string] {
 	return func(yield func([]string) bool) {
 		if len(c.dims) == 0 {
 			return
@@ -97,30 +96,36 @@ func (c *Collector) ForJSON() any {
 		return nil
 	}
 
-	if len(c.dims) == 0 {
-		return c.count([]string{})
+	// Perpare the dimension keys.
+	dimKeys := make([][]string, len(c.dims))
+	for i := range c.dims {
+		keys := slices.Sorted(maps.Keys(c.dimKeys[i]))
+		if len(keys) == 0 {
+			// If any dimension has no keys, the cartesian product is empty.
+			return nil
+		}
+		dimKeys[i] = keys
 	}
 
-	res := make(map[string]any)
-	for keys := range c.enumKeys() {
-		v := c.count(keys)
-		if v == 0 {
-			continue
+	var builder func([]string) any
+	builder = func(keys []string) any {
+		if len(keys) == len(dimKeys) {
+			// We have all the dimensions, get the value.
+			return c.count(keys)
 		}
-
-		// Construct the map of maps.
-		innerRes := res
-		for _, key := range keys[:len(keys)-1] {
-			if _, ok := innerRes[key]; !ok {
-				innerRes[key] = make(map[string]any)
+		// Otherwise recursively call builder to construct a map.
+		keyVals := make(map[string]any)
+		for _, key := range dimKeys[len(keys)] {
+			val := builder(append(keys, key))
+			if v, ok := val.(int); ok && v == 0 {
+				// Ignore zero int values, if they are returned.
+				continue
 			}
-			innerRes = innerRes[key].(map[string]any)
+			keyVals[key] = builder(append(keys, key))
 		}
-
-		// Use the final key to store the value.
-		innerRes[keys[len(keys)-1]] = v
+		return keyVals
 	}
-	return res
+	return builder([]string{})
 }
 
 func (c *Collector) ForCSV() [][]string {
@@ -137,7 +142,7 @@ func (c *Collector) ForCSV() [][]string {
 		return append(res, []string{strconv.Itoa(c.count([]string{}))})
 	}
 
-	for keys := range c.enumKeys() {
+	for keys := range c.iterKeys() {
 		v := c.count(keys)
 		if v == 0 {
 			continue
