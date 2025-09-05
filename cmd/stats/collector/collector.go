@@ -16,6 +16,7 @@
 package collector
 
 import (
+	"iter"
 	"maps"
 	"slices"
 	"strconv"
@@ -24,10 +25,10 @@ import (
 
 // Collector is used to help collect counts across zero or more dimensions.
 type Collector struct {
-	name   string
-	dims   []string
-	keys   []map[string]struct{}
-	counts map[string]int
+	name    string
+	dims    []string
+	dimKeys []map[string]struct{}
+	counts  map[string]int
 }
 
 // New creates an instance of Collector for counting the named metric across
@@ -39,7 +40,7 @@ func New(name string, dims ...string) *Collector {
 		counts: make(map[string]int),
 	}
 	for range dims {
-		c.keys = append(c.keys, make(map[string]struct{}))
+		c.dimKeys = append(c.dimKeys, make(map[string]struct{}))
 	}
 	return c
 }
@@ -48,7 +49,7 @@ func New(name string, dims ...string) *Collector {
 // defined dimensions.
 func (c *Collector) Inc(keys ...string) {
 	for i, key := range keys {
-		c.keys[i][key] = struct{}{}
+		c.dimKeys[i][key] = struct{}{}
 	}
 	c.counts[strings.Join(keys, ",")]++
 }
@@ -57,25 +58,38 @@ func (c *Collector) count(keys []string) int {
 	return c.counts[strings.Join(keys, ",")]
 }
 
-func (c *Collector) enumKeys() [][]string {
-	var keyParts [][]string
-	for i := range c.dims {
-		dimKeys := slices.Sorted(maps.Keys(c.keys[i]))
-		if len(keyParts) == 0 {
-			for _, key := range dimKeys {
-				keyParts = append(keyParts, []string{key})
-			}
-			continue
+func (c *Collector) enumKeys() iter.Seq[[]string] {
+	return func(yield func([]string) bool) {
+		if len(c.dims) == 0 {
+			return
 		}
-		newKeyParts := [][]string{}
-		for _, parts := range keyParts {
-			for _, key := range dimKeys {
-				newKeyParts = append(newKeyParts, append(parts, key))
+
+		// Perpare the dimension keys.
+		dimKeys := make([][]string, len(c.dims))
+		for i := range c.dims {
+			keys := slices.Sorted(maps.Keys(c.dimKeys[i]))
+			if len(keys) == 0 {
+				// If any dimension has no keys, the cartesian product is empty.
+				return
 			}
+			dimKeys[i] = keys
 		}
-		keyParts = newKeyParts
+
+		// Recursively generate each combination of keys.
+		var generate func(current []string, dimIdx int) bool
+		generate = func(current []string, dimIdx int) bool {
+			if dimIdx == len(dimKeys) {
+				return yield(current)
+			}
+			for _, key := range dimKeys[dimIdx] {
+				if !generate(append(current, key), dimIdx+1) {
+					return false
+				}
+			}
+			return true
+		}
+		generate(make([]string, 0, len(dimKeys)), 0)
 	}
-	return keyParts
 }
 
 func (c *Collector) ForJSON() any {
@@ -83,13 +97,12 @@ func (c *Collector) ForJSON() any {
 		return nil
 	}
 
-	allKeys := c.enumKeys()
-	if len(allKeys) == 0 {
+	if len(c.dims) == 0 {
 		return c.count([]string{})
 	}
 
 	res := make(map[string]any)
-	for _, keys := range allKeys {
+	for keys := range c.enumKeys() {
 		v := c.count(keys)
 		if v == 0 {
 			continue
@@ -118,14 +131,13 @@ func (c *Collector) ForCSV() [][]string {
 		return res
 	}
 
-	allKeys := c.enumKeys()
-	if len(allKeys) == 0 {
+	if len(c.dims) == 0 {
 		// The keys are all empty, but we have a value. This means that there is
 		// is only a single value.
 		return append(res, []string{strconv.Itoa(c.count([]string{}))})
 	}
 
-	for _, keys := range allKeys {
+	for keys := range c.enumKeys() {
 		v := c.count(keys)
 		if v == 0 {
 			continue
