@@ -21,28 +21,55 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
-	"maps"
 	"os"
 	"path/filepath"
-	"slices"
-	"strconv"
 	"strings"
-	"time"
 
+	"github.com/ossf/malicious-packages/cmd/stats/collector"
 	"github.com/ossf/malicious-packages/internal/config"
 	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportio"
 )
 
+var dateGroupMap = map[string]struct {
+	format string
+	suffix string
+}{
+	"month": {
+		format: "2006-01",
+		suffix: "-01",
+	},
+	"year": {
+		format: "2006",
+		suffix: "-01-01",
+	},
+}
+
 func main() {
 	csvFlag := flag.String("csv", "stats.csv", "the filepath to write the CSV file")
 	jsonFlag := flag.String("json", "", "the filepath to write the JSON file")
 	configFlag := flag.String("config", "", "the filepath to the YAML config file")
+	dateGroupFlag := flag.String("by-date", "month", "what granularity to group by date. Can be one of 'month', 'year', or empty to disable grouping")
+	ecoGroupFlag := flag.Bool("by-ecosystem", true, "whether to group by ecosystem. Enabled by default")
 	flag.Parse()
 
 	if *csvFlag == "" && *jsonFlag == "" {
 		log.Fatalf("-csv or -json flag is required")
 	}
+
+	cols := []string{}
+	if *ecoGroupFlag {
+		cols = append(cols, "ecosystem")
+	}
+
+	if *dateGroupFlag != "" {
+		if _, ok := dateGroupMap[*dateGroupFlag]; !ok {
+			log.Fatalf("-by-date must be either empty, 'month', or 'year'")
+		}
+		cols = append(cols, *dateGroupFlag)
+	}
+	dateGroup := dateGroupMap[*dateGroupFlag]
+	reportCounts := collector.New("published reports", cols...)
 
 	if *configFlag == "" {
 		log.Fatalf("-config flag is required")
@@ -59,31 +86,35 @@ func main() {
 	}
 
 	log.Println("Processing OSV files...")
-	// ecosystem -> month -> count
-	stats := make(map[string]map[string]int)
-	if err := processRepo(c, stats); err != nil {
+	process := func(r *report.Report) {
+		keys := []string{}
+		if *ecoGroupFlag {
+			keys = append(keys, r.Ecosystem)
+		}
+		if *dateGroupFlag != "" {
+			keys = append(keys, r.Published().UTC().Format(dateGroup.format)+dateGroup.suffix)
+		}
+		reportCounts.Inc(keys...)
+	}
+
+	if err := processRepo(c, process); err != nil {
 		log.Fatalf("Failed to process repo: %v", err)
 	}
 
 	if *csvFlag != "" {
 		log.Printf("Writing CSV to %s...", *csvFlag)
-		if err := writeCSV(*csvFlag, stats); err != nil {
+		if err := writeCSV(*csvFlag, reportCounts.ForCSV()); err != nil {
 			log.Fatalf("Failed to write CSV: %v", err)
 		}
 	}
 	if *jsonFlag != "" {
 		log.Printf("Writing JSON to %s...", *jsonFlag)
-		if err := writeJSON(*jsonFlag, stats); err != nil {
+		if err := writeJSON(*jsonFlag, reportCounts.ForJSON()); err != nil {
 			log.Fatalf("Failed to write JSON: %v", err)
 		}
 	}
 
 	log.Println("Done.")
-}
-
-func formatMonth(t time.Time) string {
-	date := t.UTC().Format("2006-01-02")
-	return date[:7] + "-01"
 }
 
 // hasID returns true if base starts with "{prefix}-", but does not start with
@@ -93,7 +124,7 @@ func hasID(prefix, base string) bool {
 	return strings.HasPrefix(base, fmt.Sprintf("%s-", prefix)) && !strings.HasPrefix(base, fmt.Sprintf("%s-0000-", prefix))
 }
 
-func processRepo(c *config.Config, stats map[string]map[string]int) error {
+func processRepo(c *config.Config, process func(*report.Report)) error {
 	err := filepath.WalkDir(c.MaliciousPath, fs.WalkDirFunc(func(path string, info fs.DirEntry, err error) error {
 		if os.IsNotExist(err) {
 			return filepath.SkipDir
@@ -110,30 +141,25 @@ func processRepo(c *config.Config, stats map[string]map[string]int) error {
 			// Skip any file that doesn't match our ID pattern.
 			return nil
 		}
-		return processReport(path, stats)
+		return processReport(path, process)
 	}))
 	return err
 }
 
-func processReport(path string, stats map[string]map[string]int) error {
+func processReport(path string, process func(*report.Report)) error {
 	log.Printf("Processing %s", path)
 
 	r, err := report.FromFile(path)
 	if err != nil {
 		return fmt.Errorf("failed loading report %s: %w", path, err)
 	}
-	ecosystem := r.Ecosystem
-	month := formatMonth(r.Published())
 
-	if _, ok := stats[ecosystem]; !ok {
-		stats[ecosystem] = make(map[string]int)
-	}
-	stats[ecosystem][month]++
+	process(r)
 
 	return nil
 }
 
-func writeJSON(path string, stats map[string]map[string]int) error {
+func writeJSON(path string, stats any) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
@@ -148,7 +174,7 @@ func writeJSON(path string, stats map[string]map[string]int) error {
 	return nil
 }
 
-func writeCSV(path string, stats map[string]map[string]int) error {
+func writeCSV(path string, stats [][]string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
@@ -158,25 +184,10 @@ func writeCSV(path string, stats map[string]map[string]int) error {
 	w := csv.NewWriter(f)
 	defer w.Flush()
 
-	if err := w.Write([]string{"ecosystem", "month", "published reports"}); err != nil {
-		return fmt.Errorf("failed to write header: %w", err)
-	}
-
-	ecosystems := slices.Sorted(maps.Keys(stats))
-	for _, eco := range ecosystems {
-		months := slices.Sorted(maps.Keys(stats[eco]))
-		for _, month := range months {
-			count := stats[eco][month]
-			row := []string{
-				eco,
-				month,
-				strconv.Itoa(count),
-			}
-			if err := w.Write(row); err != nil {
-				return fmt.Errorf("failed to write row: %w", err)
-			}
+	for _, row := range stats {
+		if err := w.Write(row); err != nil {
+			return fmt.Errorf("failed to write row: %w", err)
 		}
 	}
-
 	return nil
 }
