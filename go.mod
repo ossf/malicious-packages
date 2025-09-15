@@ -1,6 +1,6 @@
 module github.com/ossf/malicious-packages
 
-go 1.24.0
+go 1.24.7
 
 require (
 	cloud.google.com/go/storage v1.56.1
@@ -9,6 +9,7 @@ require (
 	github.com/ossf/osv-schema/bindings/go v0.0.0-20250807060700-6989eadb93f1
 	github.com/package-url/packageurl-go v0.1.3
 	gocloud.dev v0.43.0
+	golang.org/x/sync v0.17.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -71,7 +72,6 @@ require (
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.12.0 // indirect
