@@ -172,7 +172,7 @@ func rangeEventParse(r osvschema.Range) (introduced, lastAffected, fixed string,
 		limit = []string{"*"}
 	}
 	slices.Sort(limit)
-	return
+	return introduced, lastAffected, fixed, limit
 }
 
 func rangeEqual(r1, r2 osvschema.Range) bool {
