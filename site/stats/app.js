@@ -128,8 +128,7 @@ const renderCustomLegend = (chart) => {
     chart.data.datasets.forEach((dataset, index) => {
         const legendItem = document.createElement('div');
         legendItem.classList.add('legend-item');
-        legendItem.style.backgroundColor = dataset.hidden ? '#f0f0f0' : '#fff';
-        legendItem.style.textDecoration = dataset.hidden ? 'line-through' : 'none';
+        legendItem.classList.toggle('item-hidden', dataset.hidden);
 
         const colorBox = document.createElement('span');
         colorBox.classList.add('legend-color');
@@ -141,8 +140,7 @@ const renderCustomLegend = (chart) => {
         legendItem.onclick = () => {
             const meta = chart.getDatasetMeta(index);
             meta.hidden = !meta.hidden;
-            legendItem.style.backgroundColor = meta.hidden ? '#f0f0f0' : '#fff';
-            legendItem.style.textDecoration = meta.hidden ? 'line-through' : 'none';
+            legendItem.classList.toggle('item-hidden', meta.hidden);
             chart.update();
         };
 
