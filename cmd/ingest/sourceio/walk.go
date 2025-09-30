@@ -23,7 +23,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	s3v2 "github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"gocloud.dev/blob"
 
 	"github.com/ossf/malicious-packages/internal/source"
@@ -40,15 +39,6 @@ func beforeListFunc(start string) func(as func(interface{}) bool) error {
 		if as(&gcsQ) {
 			gcsQ.StartOffset = start
 			return nil
-		}
-		var aws1Q *s3.ListObjectsV2Input
-		if as(&aws1Q) {
-			aws1Q.StartAfter = &start
-			return nil
-		}
-		var aws1LegacyQ *s3.ListObjectsInput
-		if as(&aws1LegacyQ) {
-			aws1LegacyQ.Marker = &start
 		}
 		var aws2Q *s3v2.ListObjectsV2Input
 		if as(&aws2Q) {
