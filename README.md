@@ -1,5 +1,8 @@
 # OpenSSF Malicious Packages
 
+[![Total Malicious Package Reports](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fossf.github.io%2Fmalicious-packages%2Fstats%2Ftotal.json&search=%5B0-9%5D%2B&style=flat&label=Malicious%20Package%20Reports&color=%23c32700&cacheSeconds=3600)](https://ossf.github.io/malicious-packages/stats/)
+
+
 This repository is a collection of reports of malicious packages identified in
 Open Source package repositories, consumable via the
 [Open Source Vulnerability (OSV)](https://osv.dev) format.
@@ -145,6 +148,13 @@ them, and are often used by security researchers.
 
 However, offensive security tools that execute malicious payloads during
 installation are considered malicious packages.
+
+## Statistics
+
+Statistics on the number of reports in the repository are automatically updated
+daily.
+
+View them at [ossf.github.io/malicious-packages/stats](https://ossf.github.io/malicious-packages/stats/).
 
 ## Get Involved
 
