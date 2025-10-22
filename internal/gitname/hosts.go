@@ -1,0 +1,108 @@
+package gitname
+
+import (
+	"net/url"
+	"strings"
+)
+
+type gitHostHandler struct {
+	CheckPath    func(string) bool
+	CanonScheme  string
+	CanonPath    func(string) string
+	KeepUser     bool
+	EnsureGitExt bool
+}
+
+func (h *gitHostHandler) Canon(u *url.URL) {
+	// Replace the scheme if we have an override.
+	if h.CanonScheme != "" {
+		u.Scheme = h.CanonScheme
+	}
+
+	// Fix the path.
+	u.Path = h.CanonPath(u.Path)
+
+	// Strip the user if we should not keep it.
+	if !h.KeepUser {
+		u.User = nil
+	}
+
+	// Ensure the .git extension is always present.
+	if !strings.HasSuffix(u.Path, ".git") {
+		u.Path = u.Path + ".git"
+	}
+}
+
+var defaultGitHost = &gitHostHandler{
+	CheckPath:    checkOrgRepoPath,
+	CanonScheme:  "https",
+	CanonPath:    strings.ToLower,
+	KeepUser:     false,
+	EnsureGitExt: true,
+}
+
+var sensitiveRepoGitHost = &gitHostHandler{
+	CheckPath:    checkOrgRepoPath,
+	CanonScheme:  "https",
+	CanonPath:    canonLowerOrgPath,
+	KeepUser:     false,
+	EnsureGitExt: true,
+}
+
+var gitHosts = map[string]*gitHostHandler{
+	".googlesource.com": defaultGitHost,
+	"github.com":        defaultGitHost,
+	"gitlab.com":        defaultGitHost,
+	"bitbucket.org":     defaultGitHost,
+	"codeberg.org":      defaultGitHost,
+	"gitee.com":         sensitiveRepoGitHost,
+	"gitee.cn":          sensitiveRepoGitHost,
+}
+
+func handlerForHost(host string) *gitHostHandler {
+	if handler, ok := gitHosts[host]; ok {
+		return handler
+	}
+	for suffix, handler := range gitHosts {
+		if suffix[0] != '.' {
+			// The suffix must start with a "." to ensure subdomains are
+			// matched correctly.
+			continue
+		}
+		if strings.HasSuffix(host, suffix) {
+			return handler
+		}
+	}
+	return nil
+}
+
+// checkOrgRepoPath ensures that the path being supplied only has two path
+// components.
+func checkOrgRepoPath(path string) bool {
+	tail := strings.TrimLeft(path, "/")
+	parts := strings.SplitN(tail, "/", 2)
+	if len(parts) != 2 {
+		return false
+	}
+	for _, p := range parts {
+		if len(p) == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// canonLowerOrg lowercases the first path component in the supplied path.
+func canonLowerOrgPath(path string) string {
+	parts := strings.Split(path, "/")
+	for i := 0; i < len(parts); i++ {
+		p := parts[i]
+		if len(p) == 0 {
+			// Skip empty parts.
+			continue
+		}
+		parts[i] = strings.ToLower(p)
+		break
+	}
+	return strings.Join(parts, "/")
+}

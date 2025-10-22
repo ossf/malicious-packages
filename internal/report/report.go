@@ -29,6 +29,7 @@ import (
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
+	"github.com/ossf/malicious-packages/internal/gitname"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
@@ -217,6 +218,8 @@ func (r *Report) Normalize() error {
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
 	r.raw.DatabaseSpecific = stripUnexpectedValues(r.raw.DatabaseSpecific)
 
+	// clean up repo URLs
+
 	if len(r.origins) > 1 {
 		return fmt.Errorf("%w: normalizing must be done before merge", ErrNormalizing)
 	}
@@ -263,6 +266,8 @@ func canonicalizeName(name string, ecosystem osvschema.Ecosystem) string {
 			run = false
 			return unicode.ToLower(r)
 		}, name)
+	case ecosystemGit:
+		return gitname.CanonForStorage(name)
 	default:
 		// Reasonable default is to do nothing
 		return name
