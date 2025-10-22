@@ -90,6 +90,20 @@ If `.affected[0].package` is not present then the following rules apply for Git 
   * It must have the `repo` field populated with the specific Git repository, and must equal the `repo` field in every other entry.  
   * There must be a plausible commit ID present in the range. `"introduced": "0"` is to be avoided for repositories as name recycling is possible on services like GitHub. However, if the repository has been pulled, the repository name is sufficiently distinct, and no data is available, `"introduced": "0"` may be considered acceptable.
 
+### Repo Canonicalization
+
+Canonicalizing a git URL is non-trivial. Git supports both scp-like repository names (e.g. `git@host:path.git`) and URL repository names (e.g. `ssh://git@host/path.git`).
+
+Furthermore, popular git hosting services like GitHub, GitLab, etc support both HTTPS and SSH based transports. This means that multiple repository names can point to the same repository. For example `https://github.com/org/repo.git`, `ssh://git@github.com/org/repo.git` and `git@github.com:org/repo.git` all refer to the same repository.
+
+To handle this scenario git URLs will need to be canonicalized as best as possible to ensure reports can be merged successfully.
+
+For common Git hosting services this will involve transforming repository names to https-based Git URLs. Organization/user and repository names will be lowercased to avoid case-sensitivity issues.
+
+For less-common Git-based hosting services, repositories will only be converted to a URL style repository naming structure, from scp-like SSH  names.
+
+It is expected that issues around the canonicalization of less-common Git-based hosting services will be infrequent, as attackers tend to favour popular services.
+
 ### Directory Structure
 
 Basic structure:
@@ -98,7 +112,7 @@ Basic structure:
 
 The `git` directory is a pseudo ecosystem used to group all Git source repository based reports together.
 
-The directory following contains the git URL without the scheme (e.g. "https://" or "git://") and without any ".git" suffix.
+The directory following contains a canonicalized git URL without the scheme (e.g. "https://" or "git://") and without any ".git" suffix.
 
 #### Case handling
 
