@@ -11,6 +11,8 @@ import (
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"github.com/package-url/packageurl-go"
+
+	"github.com/ossf/malicious-packages/internal/gitname"
 )
 
 var supportedEcosystems = []osvschema.Ecosystem{
@@ -150,16 +152,16 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 		return fmt.Errorf("%w: ecosystem %q does not support SEMVER ranges", ErrInvalidOSV, ecosystem)
 	}
 	// Ensure the type is GIT if ecosystem is empty.
-	if ecosystem == ecosystemGit {
-		if r.Type != osvschema.RangeGit {
-			return fmt.Errorf("%w: GIT ranges must be used for git-based reports", ErrUnexpectedOSV)
-		}
+	if ecosystem == ecosystemGit && r.Type != osvschema.RangeGit {
+		return fmt.Errorf("%w: GIT ranges must be used for git-based reports", ErrUnexpectedOSV)
+	}
+	// Validate the repo if the type is GIT.
+	if r.Type == osvschema.RangeGit {
 		if r.Repo == "" {
-			// More expansive validation could be done on the remote repository.
-			// Git supports both URLs (e.g. https://user@host/path/to/repo.git)
-			// and SCP paths (e.g. git@github.com:path/to/repo.git). While URLs
-			// are fairly easy to validate, SCP paths are less straight forward.
-			return fmt.Errorf("%w: git-base reports must have a repository set", ErrUnexpectedOSV)
+			return fmt.Errorf("%w: GIT ranges must have a repository set", ErrUnexpectedOSV)
+		}
+		if err := gitname.Validate(r.Repo); err != nil {
+			return fmt.Errorf("%w: invalid git repository: %w", ErrInvalidOSV, err)
 		}
 	}
 
@@ -170,6 +172,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 	for _, e := range r.Events {
 		var c int
 		var val string
+		allowZero := false
 		if e.Fixed != "" {
 			c++
 			hasFixed = true
@@ -179,6 +182,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 			c++
 			hasIntroduced = true
 			val = e.Introduced
+			allowZero = true
 		}
 		if e.LastAffected != "" {
 			c++
@@ -199,7 +203,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 		}
 		// Ensure the range contains a valid Git commit ID, if it is a Git range.
 		if r.Type == osvschema.RangeGit {
-			if err := validateGitCommtID(val); err != nil {
+			if err := validateGitCommtID(val, allowZero); err != nil {
 				return err
 			}
 		}
@@ -218,7 +222,10 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 
 // validateGitCommtID ensures that candidate is a validly formatted git commit
 // ID hash. Git commit IDs are a hex-encoded SHA1 or SHA256 hash.
-func validateGitCommtID(candidate string) error {
+func validateGitCommtID(candidate string, allowZero bool) error {
+	if allowZero && candidate == "0" {
+		return nil
+	}
 	sum, err := hex.DecodeString(candidate)
 	if err != nil {
 		return fmt.Errorf("%w: git hash %q is not valid hexidecimal: %w", ErrInvalidOSV, candidate, err)
