@@ -13,6 +13,8 @@ type gitHostHandler struct {
 	EnsureGitExt bool
 }
 
+// Canon canonicalizes the supplied url for a specific git hosting service
+// based on the configuration in the gitHostHandler.
 func (h *gitHostHandler) Canon(u *url.URL) {
 	// Replace the scheme if we have an override.
 	if h.CanonScheme != "" {
@@ -33,6 +35,8 @@ func (h *gitHostHandler) Canon(u *url.URL) {
 	}
 }
 
+// defaultGitHost covers common git hosting services that have a url structure
+// of "example.com/org/repo.git", where "org" and "repo" are case-insensitive.
 var defaultGitHost = &gitHostHandler{
 	CheckPath:    checkOrgRepoPath,
 	CanonScheme:  "https",
@@ -41,6 +45,8 @@ var defaultGitHost = &gitHostHandler{
 	EnsureGitExt: true,
 }
 
+// sensitiveRepoGitHost is similar to defaultGitHost, except it preserves the
+// case on the "repo" part of the URL.
 var sensitiveRepoGitHost = &gitHostHandler{
 	CheckPath:    checkOrgRepoPath,
 	CanonScheme:  "https",
@@ -61,6 +67,7 @@ var gitHosts = map[string]*gitHostHandler{
 
 func handlerForHost(host string) *gitHostHandler {
 	if handler, ok := gitHosts[host]; ok {
+		// There is a direct match, so return the handler immediately.
 		return handler
 	}
 	for suffix, handler := range gitHosts {
@@ -70,6 +77,7 @@ func handlerForHost(host string) *gitHostHandler {
 			continue
 		}
 		if strings.HasSuffix(host, suffix) {
+			// The suffix matches the given host, so return the handler.
 			return handler
 		}
 	}

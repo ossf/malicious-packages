@@ -5,6 +5,12 @@ import (
 	"strings"
 )
 
+// Canon will canonicalize the a git repository name as returned by Parse.
+//
+// The method adjusts it's behaviour based on the hostname to ensure that
+// URLs are correctly canonicalized for each git hosting provider.
+//
+// Any password present in the URL will be stripped.
 func Canon(name *url.URL) *url.URL {
 	u := *name // shallow copy
 
@@ -23,6 +29,14 @@ func Canon(name *url.URL) *url.URL {
 	return &u
 }
 
+// CanonForStorage canonicalizes the git repository name and ensures that it
+// is nicely formatted for use in output.
+//
+// The scheme is dropped from the URL.
+// If the username is "git" it is dropped.
+// The ".git" suffix is removed.
+//
+// If the repository name is invalid, the string is returned without changes.
 func CanonForStorage(name string) string {
 	u, err := Parse(name)
 	if err != nil {

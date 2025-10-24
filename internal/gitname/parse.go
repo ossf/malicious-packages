@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// ErrInvalidGitRepo is wrapped by any errors returned by Parse.
 var ErrInvalidGitRepo = errors.New("invalid git repository")
 
 var validGitRemoteSchemes = []string{
@@ -17,6 +18,10 @@ var validGitRemoteSchemes = []string{
 	"git",
 }
 
+// Parse parses a git repository name into a url.URL. If the name cannot be
+// parsed an error will be returned, and the url will be nil.
+//
+// Both URL and SCP-like git repository names are supported.
 func Parse(name string) (*url.URL, error) {
 	u, err := url.Parse(name)
 	if err != nil {

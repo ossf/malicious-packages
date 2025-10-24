@@ -160,7 +160,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 		if r.Repo == "" {
 			return fmt.Errorf("%w: GIT ranges must have a repository set", ErrUnexpectedOSV)
 		}
-		if err := gitname.Validate(r.Repo); err != nil {
+		if _, err := gitname.Parse(r.Repo); err != nil {
 			return fmt.Errorf("%w: invalid git repository: %w", ErrInvalidOSV, err)
 		}
 	}
