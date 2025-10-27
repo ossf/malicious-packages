@@ -17,6 +17,7 @@ jobs:
     permissions:
       actions: read
       contents: write
+      id-token: write
 
     steps:
     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -31,7 +32,23 @@ jobs:
     - name: GCP Credential Workaround
       run: |
         echo '{ "type": "service_account" }' > .dummy_adc.json
-    
+
+    # Configure the AWS IAM role configured in the Linux Foundation OSSF using
+    # OIDC.
+    # This role can be used by third-parties to grant access to the
+    # malicious packages repository for ingesting reports.
+    # This step will only succeed when run from the "main" branch or "aws-integration"
+    # branch on the ossf/malicious-packages repository.
+    - name: Configure AWS Credentials using IAM role
+      id: awscreds
+      uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
+      with:
+        audience: sts.amazonaws.com
+        aws-region: us-east-1
+        role-to-assume: arn:aws:iam::006974884227:role/malicious-packages-github-workflows
+        output-credentials: true
+        output-env-credentials: false
+
     # Setup v2 credentials for accessing AWS S3 buckets. Each set of credentials
     # is given its own profile which is then set in the config using the
     # "profile=PROFILENAME" query parameter in the source's bucket URL.
@@ -39,14 +56,25 @@ jobs:
       run: |
         mkdir "$HOME/.aws"
         envsubst >"$HOME/.aws/credentials" <<EOF
+        [ossf]
+        aws_access_key_id = {{ steps.awscreds.outputs.aws-access-key-id }}
+        aws_secret_access_key = {{ steps.awscreds.outputs.aws-secret-access-key }}
+        aws_session_token = {{ steps.awscreds.outputs.aws-session-token }}
+
         [reversinglabs]
         aws_access_key_id = $RL_AWS_ACCESS_KEY_ID
         aws_secret_access_key = $RL_AWS_SECRET_ACCESS_KEY
         EOF
-        echo '[profile reversinglabs]' > "$HOME/.aws/config"
+        echo '[profile ossf]' > "$HOME/.aws/config"
+        echo '[profile reversinglabs]' >> "$HOME/.aws/config"
       env:
         RL_AWS_ACCESS_KEY_ID: ${{ secrets.REVERSINGLABS_AWS_KEY_ID }}
         RL_AWS_SECRET_ACCESS_KEY: ${{ secrets.REVERSINGLABS_AWS_KEY_SECRET }}
+
+    - name: Test access to new S3 bucket
+      run: |
+        aws s3 ls --profile ossf s3://inspector-ossf-malicious-packages-report-us-east-1-482079863061
+        aws s3 cp --profile ossf s3://inspector-ossf-malicious-packages-report-us-east-1-482079863061/hello_world.txt -
 
     - name: Ingest OSV
       run: |
