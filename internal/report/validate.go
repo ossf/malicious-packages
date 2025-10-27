@@ -1,7 +1,7 @@
 package report
 
 import (
-	"crypto/sha1" // nolint:gosec // only used for constants
+	"crypto/sha1" //nolint:gosec // only used for constants
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
