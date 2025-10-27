@@ -24,14 +24,19 @@ var validGitRemoteSchemes = []string{
 // Both URL and SCP-like git repository names are supported.
 func Parse(name string) (*url.URL, error) {
 	u, err := url.Parse(name)
+	if err == nil {
+		// Apply some further validation to the parsed URL for of the repo.
+		err = validateURLRepo(u)
+	}
 	if err != nil {
+		// Assume if we still have an error we *might* have an SSH-based repo.
 		u, err = parseSSH(name)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if !slices.Contains(validGitRemoteSchemes, u.Scheme) {
-		return nil, fmt.Errorf("%w: unsupported git scheme", ErrInvalidGitRepo)
+	if handler := handlerForHost(u.Host); handler != nil && !handler.CheckPath(u.Path) {
+		return nil, fmt.Errorf("%w: invalid path for host %q", ErrInvalidGitRepo, u.Host)
 	}
 	return u, nil
 }
@@ -88,4 +93,17 @@ func parseSSH(name string) (*url.URL, error) {
 	}
 
 	return u, nil
+}
+
+func validateURLRepo(u *url.URL) error {
+	if !slices.Contains(validGitRemoteSchemes, u.Scheme) {
+		return fmt.Errorf("%w: unsupported git scheme", ErrInvalidGitRepo)
+	}
+	if u.Host == "" {
+		return fmt.Errorf("%w: empty host", ErrInvalidGitRepo)
+	}
+	if u.Path == "" || u.Path == "/" {
+		return fmt.Errorf("%w: empty path", ErrInvalidGitRepo)
+	}
+	return nil
 }

@@ -30,7 +30,7 @@ func (h *gitHostHandler) Canon(u *url.URL) {
 	}
 
 	// Ensure the .git extension is always present.
-	if !strings.HasSuffix(u.Path, ".git") {
+	if h.EnsureGitExt && !strings.HasSuffix(u.Path, ".git") {
 		u.Path += ".git"
 	}
 }
@@ -55,8 +55,17 @@ var sensitiveRepoGitHost = &gitHostHandler{
 	EnsureGitExt: true,
 }
 
+// googlesourceGitHost is specifically for .googlesource.com git repositories.
+var googlesourceGitHost = &gitHostHandler{
+	CheckPath:    checkRepoOnlyPath,
+	CanonScheme:  "https",
+	CanonPath:    strings.ToLower,
+	KeepUser:     false,
+	EnsureGitExt: false,
+}
+
 var gitHosts = map[string]*gitHostHandler{
-	".googlesource.com": defaultGitHost,
+	".googlesource.com": googlesourceGitHost,
 	"github.com":        defaultGitHost,
 	"gitlab.com":        defaultGitHost,
 	"bitbucket.org":     defaultGitHost,
@@ -84,16 +93,26 @@ func handlerForHost(host string) *gitHostHandler {
 	return nil
 }
 
+// checkRepoOnlyPath ensures that the path being supplied only has one path
+// component.
+func checkRepoOnlyPath(path string) bool {
+	return checkPathParts(path, 1)
+}
+
 // checkOrgRepoPath ensures that the path being supplied only has two path
 // components.
 func checkOrgRepoPath(path string) bool {
+	return checkPathParts(path, 2)
+}
+
+func checkPathParts(path string, partCount int) bool {
 	tail := strings.TrimLeft(path, "/")
-	parts := strings.SplitN(tail, "/", 2)
-	if len(parts) != 2 {
+	parts := strings.Split(tail, "/")
+	if len(parts) != partCount {
 		return false
 	}
 	for _, p := range parts {
-		if len(p) == 0 {
+		if p == "" {
 			return false
 		}
 	}
