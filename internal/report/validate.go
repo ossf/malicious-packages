@@ -1,7 +1,7 @@
 package report
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" // nolint:gosec // only used for constants
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -228,7 +228,7 @@ func validateGitCommtID(candidate string, allowZero bool) error {
 	}
 	sum, err := hex.DecodeString(candidate)
 	if err != nil {
-		return fmt.Errorf("%w: git hash %q is not valid hexidecimal: %w", ErrInvalidOSV, candidate, err)
+		return fmt.Errorf("%w: git hash %q is not valid hexadecimal: %w", ErrInvalidOSV, candidate, err)
 	}
 	if l := len(sum); l != sha256.Size && l != sha1.Size {
 		return fmt.Errorf("%w: git hash %q has unexpected length", ErrInvalidOSV, candidate)

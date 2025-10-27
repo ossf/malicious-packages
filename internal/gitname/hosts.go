@@ -31,7 +31,7 @@ func (h *gitHostHandler) Canon(u *url.URL) {
 
 	// Ensure the .git extension is always present.
 	if !strings.HasSuffix(u.Path, ".git") {
-		u.Path = u.Path + ".git"
+		u.Path += ".git"
 	}
 }
 

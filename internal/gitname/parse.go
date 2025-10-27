@@ -39,35 +39,31 @@ func Parse(name string) (*url.URL, error) {
 func parseSSH(name string) (*url.URL, error) {
 	// Hunt for the end of an IPv6 address first, to avoid matching the colons
 	// in the IPv6 path itself.
-	ipv6_end := strings.Index(name, "]:")
-	path_idx := 0
+	ipv6End := strings.Index(name, "]:")
+	pathIdx := 0
 
-	if ipv6_end >= 0 {
+	if ipv6End >= 0 {
 		// Skip the separator "]:"
-		path_idx = ipv6_end + 2
+		pathIdx = ipv6End + 2
 	} else {
 		i := strings.Index(name, ":")
 		if i < 0 {
-			// No path seperator.
 			return nil, fmt.Errorf("%w: no path separator", ErrInvalidGitRepo)
 		}
 		// Skip the separator ":"
-		path_idx = i + 1
+		pathIdx = i + 1
 	}
 
-	path := name[path_idx:]
+	path := name[pathIdx:]
 	if len(path) == 0 {
-		// No path.
 		return nil, fmt.Errorf("%w: empty path", ErrInvalidGitRepo)
 	} else if path[0] == '/' {
-		// Absolute path is unsupported.
 		return nil, fmt.Errorf("%w: absolute path", ErrInvalidGitRepo)
 	}
 	// TODO: should we force a ".git" suffix?
 
-	user_host := name[0 : path_idx-1]
-	if len(user_host) == 0 {
-		// No host or user
+	userHost := name[0 : pathIdx-1]
+	if len(userHost) == 0 {
 		return nil, fmt.Errorf("%w: no user or host", ErrInvalidGitRepo)
 	}
 
@@ -75,19 +71,17 @@ func parseSSH(name string) (*url.URL, error) {
 	// Git scp-like repository.
 	raw := "ssh://"
 
-	user_end := strings.LastIndex(user_host, "@")
+	userEnd := strings.LastIndex(userHost, "@")
 	switch {
-	case user_end == 0:
-		// Empty user
+	case userEnd == 0:
 		return nil, fmt.Errorf("%w: empty user", ErrInvalidGitRepo)
-	case user_end == len(user_host)-1:
-		// Empty host
+	case userEnd == len(userHost)-1:
 		return nil, fmt.Errorf("%w: empty host", ErrInvalidGitRepo)
 	default:
-		raw = raw + user_host
+		raw += userHost
 	}
 
-	raw = raw + "/" + path
+	raw += "/" + path
 	u, err := url.Parse(raw)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrInvalidGitRepo, err)
