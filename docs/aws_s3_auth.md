@@ -23,9 +23,7 @@ third party AWS account and the OpenSSF AWS account.
 
 ## Third Party Authorization
 
-The external third party, who's AWS S3 bucket needs to be accessed to ingest reports, must grant the `ListBucket` permission on the bucket and `GetObject` on the contents of the S3 bucket using the ARN above.
-
-*Note:* I am unclear about which ARN should be used, but I assume it is the "Assumed Role ARN" above.
+The external third party, who's AWS S3 bucket needs to be accessed to ingest reports, must grant the `ListBucket` permission on the bucket and `GetObject` on the contents of the S3 bucket using the "Role ARN" above.
 
 ## OpenSSF IAM Role Authorization
 
