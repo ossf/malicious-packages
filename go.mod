@@ -1,6 +1,6 @@
 module github.com/ossf/malicious-packages
 
-go 1.24.7
+go 1.25.3
 
 require (
 	cloud.google.com/go/storage v1.57.0
