@@ -19,14 +19,14 @@ dependency confusion, account takeovers, etc are happening more frequently each
 year.
 
 While some protection can be found through various security solutions, there is
-no comprehensive database of malicious packages published to open source package
-registries.
+no comprehensive database of malicious packages published to
+open source package repositories.
 
 ### Objective
 
 The aim of this project and repository is to be a comprehensive, high quality,
-open source database of reports of malicious packages and source repositories
-published to open source registries.
+open source database of reports of malicious packages published on open source
+package repositories.
 
 These public reports help protect the open source community, and provide a data
 source for the security community to improve their ability to find and detect
@@ -37,34 +37,30 @@ new open source malware.
 What is in scope?
 
 - any package that belongs to an ecosystem supported by the
-  [OSV Schema](https://ossf.github.io/osv-schema/), or any public open source
-  git repository
-- malicious packages or repos published under typosquatting type attacks
-- malicious packages or repos published through account takeover
-- malicious prebuilt binaries downloaded or installed with a package or repo
+  [OSV Schema](https://ossf.github.io/osv-schema/)
+- malicious packages published under typosquatting type attacks
+- malicious packages published through account takeover
+- malicious prebuilt binaries downloaded or installed with a package
 - security researcher activity
 - dependency and manifest confusion
 
 Borderline:
 
-- typosquatting, or spam packages or repos that are empty or trivial, while not
+- typosquatting, or spam packages that are empty or trivial, while not
   malicious, are allowed to be present in the dataset
 
 Out-of-scope:
 
-- non-malicious packages or repos
+- non-malicious packages
 - vulnerability reports
 - compromised infrastructure
 - offensive security tools, unless they execute malicious payloads on install
 
-## Definition of Malicious
+## Definition of a Malicious Package
 
-Below is the definition of what this repository considers a malicious package
-or repository.
+Below is the definition of what this repository considers a malicious package.
 
-- ether:
-  - a package publicly available in a package registry; or
-  - a git repository publicly accessible on the internet
+- a package publicly available in a package registry
 - and either:
   - when installed or used, would require some sort of incident response due to
     the loss of confidentiality, availability and/or integrity; or
