@@ -62,7 +62,9 @@ Out-of-scope:
 Below is the definition of what this repository considers a malicious package
 or repository.
 
-- a package publicly available in a package registry, or a repository
+- ether:
+  - a package publicly available in a package registry; or
+  - a git repository publicly accessible on the internet
 - and either:
   - when installed or used, would require some sort of incident response due to
     the loss of confidentiality, availability and/or integrity; or
