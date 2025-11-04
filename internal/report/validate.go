@@ -201,7 +201,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 		}
 		// Ensure the range contains a valid Git commit ID, if it is a Git range.
 		if r.Type == osvschema.RangeGit {
-			if err := validateGitCommtID(val, allowZero); err != nil {
+			if err := validateGitCommitID(val, allowZero); err != nil {
 				return err
 			}
 		}
@@ -218,9 +218,9 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 	return nil
 }
 
-// validateGitCommtID ensures that candidate is a validly formatted git commit
+// validateGitCommitID ensures that candidate is a validly formatted git commit
 // ID hash. Git commit IDs are a hex-encoded SHA1 or SHA256 hash.
-func validateGitCommtID(candidate string, allowZero bool) error {
+func validateGitCommitID(candidate string, allowZero bool) error {
 	if allowZero && candidate == "0" {
 		return nil
 	}

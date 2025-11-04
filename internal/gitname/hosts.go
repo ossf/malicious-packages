@@ -64,6 +64,10 @@ var googlesourceGitHost = &gitHostHandler{
 	EnsureGitExt: false,
 }
 
+// gitHosts maps either entire host matches or host suffixes to a gitHostHandler
+// instance.
+// Any key starting with a "." will be checked as a suffix. The order the
+// suffixes are checked is random.
 var gitHosts = map[string]*gitHostHandler{
 	".googlesource.com": googlesourceGitHost,
 	"github.com":        defaultGitHost,
@@ -105,10 +109,12 @@ func checkOrgRepoPath(path string) bool {
 	return checkPathParts(path, 2)
 }
 
-func checkPathParts(path string, partCount int) bool {
+// checkPathParts ensures that path only contains count number of components.
+// Initial slashes are ignored. Component parts must not be empty.
+func checkPathParts(path string, count int) bool {
 	tail := strings.TrimLeft(path, "/")
 	parts := strings.Split(tail, "/")
-	if len(parts) != partCount {
+	if len(parts) != count {
 		return false
 	}
 	for _, p := range parts {
@@ -119,7 +125,7 @@ func checkPathParts(path string, partCount int) bool {
 	return true
 }
 
-// canonLowerOrg lowercases the first path component in the supplied path.
+// canonLowerOrgPath lowercases the first path component in the supplied path.
 func canonLowerOrgPath(path string) string {
 	parts := strings.Split(path, "/")
 	for i := 0; i < len(parts); i++ {
