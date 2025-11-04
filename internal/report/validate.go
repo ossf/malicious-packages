@@ -49,16 +49,14 @@ func ValidateVuln(v *osvschema.Vulnerability) error {
 		return err
 	}
 
-	// If the ecosystem is git-based, ensure that the versions is empty, but
-	// ranges are populated.
-	if ecosystem == ecosystemGit {
-		if len(v.Affected[0].Versions) > 0 {
-			return fmt.Errorf("%w: git-based reports can not contain versions", ErrUnexpectedOSV)
-		}
-
-		if len(v.Affected[0].Ranges) == 0 {
-			return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
-		}
+	if ecosystem == ecosystemGit && len(v.Affected[0].Ranges) == 0 {
+		// Git-based reports must have at least one range so we know the
+		// repository the report is for.
+		return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
+	} else if len(v.Affected[0].Versions) == 0 && len(v.Affected[0].Ranges) == 0 {
+		// All other reports require either at least one version or at least
+		// one range.
+		return fmt.Errorf("%w: at least one range or one version must be specified", ErrUnexpectedOSV)
 	}
 
 	// Validate the ranges are correct.
@@ -74,8 +72,8 @@ func ValidateVuln(v *osvschema.Vulnerability) error {
 
 	// If we are Git-based, ensure all the repos are the same for the ranges.
 	if ecosystem == ecosystemGit && len(repoSet) > 1 {
-		repos := maps.Keys(repoSet)
-		return fmt.Errorf("%w: git-based report has multiple repos: %v", ErrUnexpectedOSV, repos)
+		repos := slices.Collect(maps.Keys(repoSet))
+		return fmt.Errorf("%w: git-based report has multiple repos: %s", ErrUnexpectedOSV, repos)
 	}
 
 	return nil
