@@ -28,7 +28,7 @@ There are a few key reasons why malicious source repositories belong in the Mali
 
 Firstly, having malicious repository reports in the Malicious Packages repository maintains a clear single source for these reports. This helps both consumers and producers of reports as they have a single origin.
 
-Secondly, keeping them together avoids fragmenting the OSV ID "MAL" prefix space. If the malicious repository reports were in a new repository would likely need a separate ID prefix. By keeping the "MAL" prefix across all reports consumers can clearly identify malicious from vulnerability reports.
+Secondly, keeping them together avoids fragmenting the OSV ID "MAL" prefix space. If the malicious repository reports were in a new repository, they would likely need a separate ID prefix. By keeping the "MAL" prefix across all reports consumers can clearly identify malicious reports from vulnerability reports.
 
 Finally, keeping all the malicious reports together makes it easier to manage the tool and automation needed to manage the data set.
 
@@ -83,12 +83,13 @@ The primary change is to make `.affected[0].package` optional for Malicious Pack
 
 If `.affected[0].package` is not present then the following rules apply for Git based repositories.
 
-* `.affected[0].versions` must not be present.  
+* `.affected[0].versions` can be present and contain tags, but not preferred as they can be mutated.  
 * `.affected[0].ranges` must have at least one entry.  
 * For each `range` entry:  
   * It must have `type: "GIT"`.  
   * It must have the `repo` field populated with the specific Git repository, and must equal the `repo` field in every other entry.  
-  * There must be a plausible commit ID present in the range. `"introduced": "0"` is to be avoided for repositories as name recycling is possible on services like GitHub. However, if the repository has been pulled, the repository name is sufficiently distinct, and no data is available, `"introduced": "0"` may be considered acceptable.
+  * There must be a plausible commit ID present in the range. `"introduced": "0"` is to be avoided for repositories as name recycling is possible on services like GitHub. However, if the repository has been pulled, the repository name is sufficiently distinct, and no data is available, `"introduced": "0"` may be considered acceptable.  
+    If `"introduced": "0"` has been used and the repository name is recycled for a non-malicious repository `"fixed": "{initial new commit id}"` can be used to mark the new repository as not malicious.
 
 ### Repo Canonicalization
 
@@ -100,7 +101,7 @@ To handle this scenario git URLs will need to be canonicalized as best as possib
 
 For common Git hosting services this will involve transforming repository names to https-based Git URLs. Organization/user and repository names will be lowercased to avoid case-sensitivity issues.
 
-For less-common Git-based hosting services, repositories will only be converted to a URL style repository naming structure, from scp-like SSH  names.
+For less-common Git-based hosting services, repositories will only be converted to a URL style repository naming structure, from scp-like SSH names.
 
 It is expected that issues around the canonicalization of less-common Git-based hosting services will be infrequent, as attackers tend to favour popular services.
 
@@ -154,7 +155,7 @@ Attack proof-of-concepts and offensive hacking tools are frequently created usin
 
 However it is also [common for attackers](https://www.vulncheck.com/blog/fake-repos-deliver-malicious-implant) to hide malicious payloads in proof-of-concept repositories, etc. Repositories which hide malicious payloads attacking security researchers are suitable for inclusion.
 
-### Source Based Package Managers and Complimentary Reports
+### Source Based Package Managers and Complementary Reports
 
 Some ecosystems are built around source-based package management tools. Popular examples include Go, Composer/Packagist, and Swift.
 
@@ -164,4 +165,8 @@ From a consumer's perspective it should not matter whether they are attempting t
 
 Ideally, any malicious repo report for one of these ecosystems, *should* be accompanied by a corresponding malicious package report (and visa-versa).
 
-However, ensuring complimentary reports are published in the repository is considered beyond the scope of this design. Contributors can be encouraged to submit both reports, but making this a harder requirement becomes challenging, particularly when refs are mutated, repositories are removed or force pushed, or commits are orphaned.
+However, ensuring complementary reports are published in the repository is considered beyond the scope of this design. Contributors can be encouraged to submit both reports, but making this a harder requirement becomes challenging, particularly when refs are mutated, repositories are removed or force pushed, or commits are orphaned.
+
+## Rolling Out
+
+To ensure any downstream consumers can handle reports without a `.affected[0].package` a single report will be introduced to the repository (e.g. bolt-db) before any new reports are added to ensure integrators have a chance to update their parsers.
