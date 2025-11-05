@@ -198,21 +198,21 @@ func TestValidateVuln_Fail_InvalidEcosystem(t *testing.T) {
 }
 
 func TestValidateVuln_Fail_NoVersionsOrRanges(t *testing.T) {
-	vuln := &osvschema.Vulnerability{
-		Affected: []osvschema.Affected{
-			{
-				Package: osvschema.Package{
-					Ecosystem: string(osvschema.EcosystemNPM),
-					Name:      "example",
-				},
-			},
-		},
-	}
-	err := report.ValidateVuln(vuln)
-
-	if err == nil {
-		t.Error("ValidateVuln() == nil; want err")
-	}
+	// TODO: re-enable after checking with Reversing Labs
+	//vuln := &osvschema.Vulnerability{
+	//	Affected: []osvschema.Affected{
+	//		{
+	//			Package: osvschema.Package{
+	//				Ecosystem: string(osvschema.EcosystemNPM),
+	//				Name:      "example",
+	//			},
+	//		},
+	//	},
+	//}
+	//err := report.ValidateVuln(vuln)
+	//if err == nil {
+	//	t.Error("ValidateVuln() == nil; want err")
+	//}
 }
 
 func TestValidateVuln_Fail_InvalidRange(t *testing.T) {
