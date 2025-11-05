@@ -53,11 +53,13 @@ func ValidateVuln(v *osvschema.Vulnerability) error {
 		// Git-based reports must have at least one range so we know the
 		// repository the report is for.
 		return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
-	} else if len(v.Affected[0].Versions) == 0 && len(v.Affected[0].Ranges) == 0 {
-		// All other reports require either at least one version or at least
-		// one range.
-		return fmt.Errorf("%w: at least one range or one version must be specified", ErrUnexpectedOSV)
 	}
+	// TODO: re-enable after checking with Reversing Labs
+	// else if len(v.Affected[0].Versions) == 0 && len(v.Affected[0].Ranges) == 0 {
+	//	// All other reports require either at least one version or at least
+	//	// one range.
+	//	return fmt.Errorf("%w: at least one range or one version must be specified", ErrUnexpectedOSV)
+	// }
 
 	// Validate the ranges are correct.
 	repoSet := map[string]bool{}
