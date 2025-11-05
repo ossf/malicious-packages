@@ -197,8 +197,8 @@ func TestValidateVuln_Fail_InvalidEcosystem(t *testing.T) {
 	}
 }
 
+//nolint:gocritic  // TODO: re-enable test after checking with Reversing Labs
 func TestValidateVuln_Fail_NoVersionsOrRanges(t *testing.T) {
-	// TODO: re-enable after checking with Reversing Labs
 	//vuln := &osvschema.Vulnerability{
 	//	Affected: []osvschema.Affected{
 	//		{

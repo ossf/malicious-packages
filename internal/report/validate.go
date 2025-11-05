@@ -59,7 +59,7 @@ func ValidateVuln(v *osvschema.Vulnerability) error {
 	//	// All other reports require either at least one version or at least
 	//	// one range.
 	//	return fmt.Errorf("%w: at least one range or one version must be specified", ErrUnexpectedOSV)
-	//}
+	// }
 
 	// Validate the ranges are correct.
 	repoSet := map[string]bool{}
