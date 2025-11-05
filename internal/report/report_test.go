@@ -30,7 +30,7 @@ import (
 )
 
 func testReport(ecosystem osvschema.Ecosystem, name string) *report.Report {
-	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}}]}`
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["0"]}]}`
 	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
 	if err != nil {
 		panic(err)

@@ -29,6 +29,7 @@ import (
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 
+	"github.com/ossf/malicious-packages/internal/gitname"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
 
@@ -91,8 +92,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	r.Ecosystem = r.raw.Affected[0].Package.Ecosystem
-	r.Name = r.raw.Affected[0].Package.Name
+	r.Name, r.Ecosystem = r.fetchNameAndEcosystem(r.raw)
 
 	// Ensure the details can be parsed.
 	if _, _, err := r.ParseDetails(); err != nil {
@@ -205,6 +205,21 @@ func cleanEcosystem(in string) string {
 	return strings.ToLower(out)
 }
 
+func (r *Report) fetchNameAndEcosystem(v *osvschema.Vulnerability) (string, string) {
+	// Assumes that the vulnerability "v" has already been validated.
+	pkg := v.Affected[0].Package
+
+	// If package is entirely empty, assume we are using a git-based ecosystem.
+	var zeroPkg osvschema.Package
+	if pkg == zeroPkg {
+		name := r.raw.Affected[0].Ranges[0].Repo
+		// Run the name through the canonicalization so it is always consistent.
+		return gitname.CanonForStorage(name), string(ecosystemGit)
+	}
+
+	return pkg.Name, pkg.Ecosystem
+}
+
 func (r *Report) Normalize() error {
 	if r.raw.ID != "" {
 		// Only normalize reports which currently don't have an ID assigned.
@@ -230,6 +245,18 @@ func (r *Report) Normalize() error {
 		r.SetDetails("", map[*OriginRef]string{
 			r.origins[0]: r.raw.Details,
 		})
+	}
+
+	// If any ranges have the type GIT, then canonicalize the repository.
+	ranges := r.raw.Affected[0].Ranges
+	for i := range ranges {
+		if ranges[i].Type == osvschema.RangeGit {
+			repo, err := gitname.Parse(ranges[i].Repo)
+			if err != nil {
+				return fmt.Errorf("%w: git repository invalid: %w", ErrNormalizing, err)
+			}
+			ranges[i].Repo = gitname.Canon(repo).String()
+		}
 	}
 
 	return nil
@@ -263,6 +290,9 @@ func canonicalizeName(name string, ecosystem osvschema.Ecosystem) string {
 			run = false
 			return unicode.ToLower(r)
 		}, name)
+	case ecosystemGit:
+		// CanonForStorage is called for the name earlier during UnmarshalJSON
+		return name
 	default:
 		// Reasonable default is to do nothing
 		return name
