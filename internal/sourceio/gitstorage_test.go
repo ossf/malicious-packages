@@ -121,6 +121,7 @@ func TestGitStorage_Walk_WithStart(t *testing.T) {
 }
 
 func initRepo(t *testing.T, dir string) *git.Worktree {
+	t.Helper()
 	r, err := git.PlainInit(dir, false)
 	if err != nil {
 		t.Fatalf("PlainInit() = %v; want no error", err)
@@ -136,14 +137,14 @@ func initRepo(t *testing.T, dir string) *git.Worktree {
 func commitFilesToWorkTree(t *testing.T, dir string, files map[string]string, w *git.Worktree, message string) plumbing.Hash {
 	t.Helper()
 	for name, content := range files {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0600); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o600); err != nil {
 			t.Fatalf("WriteFile(%q) = %v; want no error", name, err)
 		}
 		if _, err := w.Add(name); err != nil {
 			t.Fatalf("Add(%q) = %v; want no error", name, err)
 		}
 	}
-	hash, err := w.Commit("Initial commit", &git.CommitOptions{
+	hash, err := w.Commit(message, &git.CommitOptions{
 		Author: &object.Signature{Name: "Test User", Email: "test@example.com", When: time.Now()},
 	})
 	if err != nil {
