@@ -22,11 +22,13 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ossf/malicious-packages/internal/reportfilter"
+	"github.com/ossf/malicious-packages/internal/sourceio"
 )
 
 var (
-	ErrInvalidID  = errors.New("invalid source id")
-	validIDRegExp = regexp.MustCompile("[a-z0-9-]+")
+	ErrInvalidSource = errors.New("invalid source")
+	ErrInvalidID     = fmt.Errorf("%w: id", ErrInvalidSource)
+	validIDRegExp    = regexp.MustCompile("[a-z0-9-]+")
 )
 
 type Filter struct {
@@ -35,13 +37,12 @@ type Filter struct {
 }
 
 type Source struct {
-	ID                string   `yaml:"id"`
-	Bucket            string   `yaml:"bucket"`
-	Prefixes          []string `yaml:"prefixes"`
-	LookbackEntries   int      `yaml:"lookback-entries"`
-	AliasID           bool     `yaml:"alias-id"`
-	DisabledForReason string   `yaml:"disabled-for-reason"`
-	Filters           []Filter `yaml:"filters"`
+	ID                string                  `yaml:"id"`
+	Storage           sourceio.StorageWrapper `yaml:"storage"`
+	Prefixes          []string                `yaml:"prefixes"`
+	AliasID           bool                    `yaml:"alias-id"`
+	DisabledForReason string                  `yaml:"disabled-for-reason"`
+	Filters           []Filter                `yaml:"filters"`
 
 	// Internal cache populated during parsing.
 	filters reportfilter.Filters
@@ -49,10 +50,10 @@ type Source struct {
 
 func ValidateID(id string) error {
 	if id == "" {
-		return fmt.Errorf("%w: id must be set", ErrInvalidID)
+		return fmt.Errorf("%w: must be set", ErrInvalidID)
 	}
 	if testID := validIDRegExp.FindString(id); id != testID {
-		return fmt.Errorf("%w: id must match the regex /%s/", ErrInvalidID, validIDRegExp.String())
+		return fmt.Errorf("%w: must match the regex /%s/", ErrInvalidID, validIDRegExp.String())
 	}
 	return nil
 }
@@ -62,7 +63,7 @@ func generateFilterSet(filters []Filter) (reportfilter.Filters, error) {
 	for _, f := range filters {
 		rf, err := reportfilter.New(f.Field, f.Pattern)
 		if err != nil {
-			return nil, fmt.Errorf("report filter: %w", err)
+			return nil, fmt.Errorf("%w: report filter: %w", ErrInvalidSource, err)
 		}
 		fs = append(fs, rf)
 	}

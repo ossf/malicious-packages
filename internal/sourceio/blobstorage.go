@@ -24,9 +24,22 @@ import (
 	"cloud.google.com/go/storage"
 	s3v2 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"gocloud.dev/blob"
-
-	"github.com/ossf/malicious-packages/internal/source"
 )
+
+type BlobStorage struct {
+	Bucket          string `yaml:"bucket"`
+	LookbackEntries int    `yaml:"lookback-entries"`
+}
+
+// StorageType implements the Storage interface.
+func (s *BlobStorage) StorageType() StorageType {
+	return StorageTypeBlob
+}
+
+// String implements the Storage interface.
+func (s *BlobStorage) String() string {
+	return fmt.Sprintf("blob: %q", s.Bucket)
+}
 
 // beforeListFunc will return a function that can be passed in for the
 // BeforeList field in the blob.ListOptions.
@@ -52,11 +65,8 @@ func beforeListFunc(start string) func(as func(interface{}) bool) error {
 	}
 }
 
-// Walk iterates through the entries in the source and calls walkFn for each
-// key with a reader for consuming the entry.
-//
-// If start is not empty, entries will be consumed from start.
-func Walk(ctx context.Context, s *source.Source, prefix, start string, walkFn func(ctx context.Context, key string, r io.Reader) error) (string, error) {
+// Walk implements the Storage interface.
+func (s *BlobStorage) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
 	// Ignore sources that have no bucket set.
 	if s.Bucket == "" {
 		return "", nil

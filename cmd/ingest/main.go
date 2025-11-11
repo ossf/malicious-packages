@@ -29,12 +29,12 @@ import (
 	_ "gocloud.dev/blob/gcsblob"
 	_ "gocloud.dev/blob/s3blob"
 
-	"github.com/ossf/malicious-packages/cmd/ingest/sourceio"
 	"github.com/ossf/malicious-packages/cmd/ingest/startkeys"
 	"github.com/ossf/malicious-packages/internal/config"
 	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportio"
 	"github.com/ossf/malicious-packages/internal/source"
+	"github.com/ossf/malicious-packages/internal/sourceio"
 )
 
 var tempDir string
@@ -87,13 +87,14 @@ func main() {
 			// We have a path, so if there is no source we create one.
 			if src == nil {
 				src = &source.Source{
-					ID:              *sourceFlag,
-					LookbackEntries: 0,
+					ID: *sourceFlag,
 				}
 			}
 			// Override the source bucket and prefixes with a file:// handler so
 			// the local files are consumed instead.
-			src.Bucket = fmt.Sprintf("file://%s", lp)
+			src.Storage = sourceio.Wrap(&sourceio.BlobStorage{
+				Bucket: fmt.Sprintf("file://%s", lp),
+			})
 			src.Prefixes = []string{}
 		}
 		sources = []*source.Source{src}
@@ -142,9 +143,9 @@ func main() {
 }
 
 func ingestReports(ctx context.Context, s *source.Source, prefix string, c *config.Config, start string) (string, error) {
-	log.Printf("[%s] Processing... (bucket: %s, prefix: %s)", s.ID, s.Bucket, prefix)
+	log.Printf("[%s] Processing... (storage: %s, prefix: %s, start: %s)", s.ID, s.Storage.String(), prefix, start)
 	saveCount := 0
-	end, err := sourceio.Walk(ctx, s, prefix, start, func(ctx context.Context, key string, rdr io.Reader) error {
+	end, err := s.Storage.Walk(ctx, prefix, start, func(ctx context.Context, key string, rdr io.Reader) error {
 		// Generate a hash while we consume the report so we can detect duplicates.
 		h := sha256.New()
 		rdr = io.TeeReader(rdr, h)
