@@ -35,6 +35,7 @@ type GitStorage struct {
 	Branch     string `yaml:"branch"`
 }
 
+// StorageType implements the Storage interface.
 func (s *GitStorage) StorageType() StorageType {
 	return StorageTypeGit
 }
@@ -44,6 +45,7 @@ func (s *GitStorage) String() string {
 	return fmt.Sprintf("git: '%s - %s'", s.Repository, s.Branch)
 }
 
+// Walk implements the Storage interface.
 func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
 	if s.Repository == "" {
 		return "", fmt.Errorf("no repository specified")
