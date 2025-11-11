@@ -19,8 +19,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ossf/malicious-packages/internal/sourceio"
 	"gopkg.in/yaml.v3"
+
+	"github.com/ossf/malicious-packages/internal/sourceio"
 )
 
 func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {

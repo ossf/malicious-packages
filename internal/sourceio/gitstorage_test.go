@@ -26,6 +26,7 @@ import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+
 	"github.com/ossf/malicious-packages/internal/sourceio"
 )
 
@@ -135,7 +136,7 @@ func initRepo(t *testing.T, dir string) *git.Worktree {
 func commitFilesToWorkTree(t *testing.T, dir string, files map[string]string, w *git.Worktree, message string) plumbing.Hash {
 	t.Helper()
 	for name, content := range files {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0600); err != nil {
 			t.Fatalf("WriteFile(%q) = %v; want no error", name, err)
 		}
 		if _, err := w.Add(name); err != nil {

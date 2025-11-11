@@ -75,7 +75,7 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 	// both retrieve the files at HEAD, and diff against "start" if it is set.
 	headCommit, err := repo.CommitObject(ref.Hash())
 	if err != nil {
-		return "", fmt.Errorf("Failed getting head commit object: %w", err)
+		return "", fmt.Errorf("failed getting head commit object: %w", err)
 	}
 
 	tree, err := headCommit.Tree()
@@ -83,18 +83,18 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 		return "", fmt.Errorf("failed getting head tree: %w", err)
 	}
 
-	var files iter.Seq[string] = nil
+	var files iter.Seq[string]
 	if start != "" {
 		// We have a starting commit, so grab the commit object so we can
 		// diff against the HEAD commit.
 		startCommit, err := repo.CommitObject(plumbing.NewHash(start))
 		if err != nil {
 			// TODO: consider falling back to treeIterator if we have an error.
-			return "", fmt.Errorf("Failed getting %q commit object: %w", start, err)
+			return "", fmt.Errorf("failed getting %q commit object: %w", start, err)
 		}
 
 		// Determine the files that were added or modified since "start".
-		files, err = deltaFileIterator(ctx, startCommit, headCommit, repo)
+		files, err = deltaFileIterator(ctx, startCommit, headCommit)
 		if err != nil {
 			return "", fmt.Errorf("delta iterator: %w", err)
 		}
@@ -126,7 +126,7 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 	return ref.Hash().String(), nil
 }
 
-func deltaFileIterator(ctx context.Context, from, to *object.Commit, repo *git.Repository) (iter.Seq[string], error) {
+func deltaFileIterator(ctx context.Context, from, to *object.Commit) (iter.Seq[string], error) {
 	patch, err := from.PatchContext(ctx, to)
 	if err != nil {
 		return nil, fmt.Errorf("failed calculating patch: %w", err)

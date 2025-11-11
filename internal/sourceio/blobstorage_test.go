@@ -23,8 +23,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ossf/malicious-packages/internal/sourceio"
 	_ "gocloud.dev/blob/fileblob"
+
+	"github.com/ossf/malicious-packages/internal/sourceio"
 )
 
 func TestBlobStorage_Walk(t *testing.T) {
