@@ -50,6 +50,14 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 				Branch:     "notmain",
 			},
 		},
+		{
+			name:     "git default branch",
+			contents: "type: git\nrepository: https://example.com/repo.git",
+			want: &sourceio.GitStorage{
+				Repository: "https://example.com/repo.git",
+				Branch:     "main",
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

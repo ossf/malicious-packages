@@ -64,7 +64,9 @@ func unmarshalStorageYAML(st StorageType, value *yaml.Node) (Storage, error) {
 		}
 		return &b, nil
 	case StorageTypeGit:
-		var g GitStorage
+		g := GitStorage{
+			Branch: defaultGitBranch,
+		}
 		if err := value.Decode(&g); err != nil {
 			return nil, err
 		}

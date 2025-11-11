@@ -51,7 +51,7 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 		return "", fmt.Errorf("no repository specified")
 	}
 	if s.Branch == "" {
-		s.Branch = defaultGitBranch
+		return "", fmt.Errorf("no branch specified")
 	}
 
 	// Clone the supplied repository into memory.
