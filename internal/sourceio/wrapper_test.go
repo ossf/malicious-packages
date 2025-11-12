@@ -33,6 +33,7 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 		{
 			name:     "none",
 			contents: "type: ''",
+			want:     &sourceio.NoneStorage{},
 		},
 		{
 			name:     "blob",
