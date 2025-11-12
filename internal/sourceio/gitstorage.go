@@ -33,6 +33,8 @@ const defaultGitBranch = "main"
 type GitStorage struct {
 	Repository string `yaml:"repository"`
 	Branch     string `yaml:"branch"`
+
+	repo *git.Repository
 }
 
 // StorageType implements the Storage interface.
@@ -45,13 +47,12 @@ func (s *GitStorage) String() string {
 	return fmt.Sprintf("git: '%s - %s'", s.Repository, s.Branch)
 }
 
-// Walk implements the Storage interface.
-func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
+func (s *GitStorage) Open(ctx context.Context) error {
 	if s.Repository == "" {
-		return "", fmt.Errorf("no repository specified")
+		return fmt.Errorf("no repository specified")
 	}
 	if s.Branch == "" {
-		return "", fmt.Errorf("no branch specified")
+		return fmt.Errorf("no branch specified")
 	}
 
 	// Clone the supplied repository into memory.
@@ -62,18 +63,33 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 		Tags:          git.NoTags,
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed cloning '%s - %s': %w", s.Repository, s.Branch, err)
+		return fmt.Errorf("failed cloning '%s - %s': %w", s.Repository, s.Branch, err)
+	}
+
+	s.repo = repo
+	return nil
+}
+
+func (s *GitStorage) Close() error {
+	s.repo = nil
+	return nil
+}
+
+// Walk implements the Storage interface.
+func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
+	if s.repo == nil {
+		return "", fmt.Errorf("open not called")
 	}
 
 	// Get the branch's HEAD ref.
-	ref, err := repo.Head()
+	ref, err := s.repo.Head()
 	if err != nil {
 		return "", fmt.Errorf("failed getting head: %w", err)
 	}
 
 	// Retrieve the HEAD commit's object from the repository so we can
 	// both retrieve the files at HEAD, and diff against "start" if it is set.
-	headCommit, err := repo.CommitObject(ref.Hash())
+	headCommit, err := s.repo.CommitObject(ref.Hash())
 	if err != nil {
 		return "", fmt.Errorf("failed getting head commit object: %w", err)
 	}
@@ -87,7 +103,7 @@ func (s *GitStorage) Walk(ctx context.Context, prefix, start string, walkFn Walk
 	if start != "" {
 		// We have a starting commit, so grab the commit object so we can
 		// diff against the HEAD commit.
-		startCommit, err := repo.CommitObject(plumbing.NewHash(start))
+		startCommit, err := s.repo.CommitObject(plumbing.NewHash(start))
 		if err != nil {
 			// TODO: consider falling back to treeIterator if we have an error.
 			return "", fmt.Errorf("failed getting %q commit object: %w", start, err)

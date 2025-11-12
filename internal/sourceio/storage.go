@@ -35,6 +35,12 @@ type WalkFunc func(ctx context.Context, path string, r io.Reader) error
 // Storage provides a simple interface for iterating across a collection of
 // source OSV reports.
 type Storage interface {
+	// Open storage for walking. Must be called before Walk.
+	Open(ctx context.Context) error
+
+	// Close storage after use to free up resources.
+	Close() error
+
 	// StorageType identifies what the type of storage being used.
 	StorageType() StorageType
 
