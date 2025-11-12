@@ -29,11 +29,12 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 		name     string
 		contents string
 		want     sourceio.Storage
+		wantType sourceio.StorageType
 	}{
 		{
 			name:     "none",
 			contents: "type: ''",
-			want:     &sourceio.NoneStorage{},
+			wantType: sourceio.StorageTypeNone,
 		},
 		{
 			name:     "blob",
@@ -42,6 +43,7 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 				Bucket:          "gs://example/bucket",
 				LookbackEntries: 10,
 			},
+			wantType: sourceio.StorageTypeBlob,
 		},
 		{
 			name:     "git",
@@ -50,6 +52,7 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 				Repository: "https://example.com/repo.git",
 				Branch:     "notmain",
 			},
+			wantType: sourceio.StorageTypeGit,
 		},
 		{
 			name:     "git default branch",
@@ -58,6 +61,7 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 				Repository: "https://example.com/repo.git",
 				Branch:     "main",
 			},
+			wantType: sourceio.StorageTypeGit,
 		},
 	}
 	for _, test := range tests {
@@ -69,7 +73,10 @@ func TestStorageWrapper_UnmarshalYAML_Valid(t *testing.T) {
 			}
 			got := s.Storage
 			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("Unmrashal() parsed %#v; want %#v", got, test.want)
+				t.Errorf("Unmarshal() parsed %#v; want %#v", got, test.want)
+			}
+			if gotType := s.StorageType(); gotType != test.wantType {
+				t.Errorf("StorageType() = %v; want %v", gotType, test.wantType)
 			}
 		})
 	}
