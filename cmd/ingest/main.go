@@ -127,14 +127,14 @@ func main() {
 			continue
 		}
 		if err := s.Storage.Open(ctx); err != nil {
-			log.Fatalf("Failed to open storage for source %s: %v", s.ID, err)
+			log.Fatalf("Failed to open storage for source %s: %v", s.ID, err) //nolint:gocritic
 		}
 		defer s.Storage.Close()
 		for _, prefix := range s.GetPrefixes() {
 			end, err := ingestReports(ctx, s, prefix, c, keys.Get(s.ID, prefix))
 			if err != nil {
 				// Abort here since the repo is now in a dirty state.
-				log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err) //nolint:gocritic
+				log.Fatalf("Failed to ingest reports for source %s: %v", s.ID, err)
 			}
 			keys.Set(s.ID, prefix, end)
 		}
