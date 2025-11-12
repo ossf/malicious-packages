@@ -47,3 +47,21 @@ type Storage interface {
 	// Storage implementations must also implement the Stringer interface.
 	fmt.Stringer
 }
+
+// NoneStorage is a no-op implementation of the Storage interface.
+type NoneStorage struct{}
+
+// StorageType implements the Storage interface.
+func (s NoneStorage) StorageType() StorageType {
+	return StorageTypeNone
+}
+
+// Walk implements the Storage interface.
+func (s NoneStorage) Walk(_ context.Context, _, _ string, _ WalkFunc) (string, error) {
+	return "", nil
+}
+
+// String implements the Storage interface.
+func (s NoneStorage) String() string {
+	return "none"
+}

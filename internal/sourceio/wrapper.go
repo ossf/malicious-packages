@@ -56,7 +56,7 @@ func (s *StorageWrapper) UnmarshalYAML(value *yaml.Node) error {
 func unmarshalStorageYAML(st StorageType, value *yaml.Node) (Storage, error) {
 	switch st {
 	case StorageTypeNone:
-		return nil, nil
+		return &NoneStorage{}, nil
 	case StorageTypeBlob:
 		var b BlobStorage
 		if err := value.Decode(&b); err != nil {
