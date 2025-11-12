@@ -15,6 +15,7 @@
 package sourceio
 
 import (
+	"context"
 	"fmt"
 
 	"gopkg.in/yaml.v3"
@@ -22,6 +23,30 @@ import (
 
 type StorageWrapper struct {
 	Storage
+}
+
+// StorageType implements the Storage interface.
+func (s StorageWrapper) StorageType() StorageType {
+	if s.Storage == nil {
+		return StorageTypeNone
+	}
+	return s.Storage.StorageType()
+}
+
+// String implements the Storage interface.
+func (s StorageWrapper) String() string {
+	if s.Storage == nil {
+		return "none"
+	}
+	return s.Storage.String()
+}
+
+// Walk implements the Storage interface.
+func (s StorageWrapper) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
+	if s.Storage == nil {
+		return "", nil
+	}
+	return s.Storage.Walk(ctx, prefix, start, walkFn)
 }
 
 func Wrap(s Storage) StorageWrapper {
@@ -56,7 +81,7 @@ func (s *StorageWrapper) UnmarshalYAML(value *yaml.Node) error {
 func unmarshalStorageYAML(st StorageType, value *yaml.Node) (Storage, error) {
 	switch st {
 	case StorageTypeNone:
-		return &NoneStorage{}, nil
+		return nil, nil
 	case StorageTypeBlob:
 		var b BlobStorage
 		if err := value.Decode(&b); err != nil {
