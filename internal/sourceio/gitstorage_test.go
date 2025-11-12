@@ -45,6 +45,10 @@ func TestGitStorage_Walk(t *testing.T) {
 		Repository: dir,
 		Branch:     "master",
 	}
+	if err := s.Open(t.Context()); err != nil {
+		t.Fatalf("Open() = %v; want no error", err)
+	}
+	defer s.Close()
 	prefix := "yes-"
 	end, err := s.Walk(t.Context(), prefix, "", func(ctx context.Context, path string, r io.Reader) error {
 		if !strings.HasPrefix(path, prefix) {
@@ -91,6 +95,10 @@ func TestGitStorage_Walk_WithStart(t *testing.T) {
 		Repository: dir,
 		Branch:     "master",
 	}
+	if err := s.Open(t.Context()); err != nil {
+		t.Fatalf("Open() = %v; want no error", err)
+	}
+	defer s.Close()
 	prefix := "yes-"
 	fileCount := 0
 	wantFileCount := 2

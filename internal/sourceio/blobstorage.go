@@ -29,6 +29,8 @@ import (
 type BlobStorage struct {
 	Bucket          string `yaml:"bucket"`
 	LookbackEntries int    `yaml:"lookback-entries"`
+
+	bkt *blob.Bucket
 }
 
 // StorageType implements the Storage interface.
@@ -65,18 +67,38 @@ func beforeListFunc(start string) func(as func(interface{}) bool) error {
 	}
 }
 
+// Open implements the Storage interface.
+func (s *BlobStorage) Open(ctx context.Context) error {
+	// Ignore sources that have no bucket set.
+	if s.Bucket == "" {
+		return nil
+	}
+
+	bkt, err := blob.OpenBucket(ctx, s.Bucket)
+	if err != nil {
+		return fmt.Errorf("failed opening %s: %w", s.Bucket, err)
+	}
+	s.bkt = bkt
+	return nil
+}
+
+// Close implements the Storage interface.
+func (s *BlobStorage) Close() error {
+	if s.bkt != nil {
+		return s.bkt.Close()
+	}
+	return nil
+}
+
 // Walk implements the Storage interface.
 func (s *BlobStorage) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
 	// Ignore sources that have no bucket set.
 	if s.Bucket == "" {
 		return "", nil
 	}
-
-	bkt, err := blob.OpenBucket(ctx, s.Bucket)
-	if err != nil {
-		return "", fmt.Errorf("failed opening %s: %w", s.Bucket, err)
+	if s.bkt == nil {
+		return "", fmt.Errorf("open not called")
 	}
-	defer bkt.Close()
 
 	// lookback is used to determine the key that occurs s.LookbackEntries before
 	// the final key. This is then returned to be used as the starting offset
@@ -92,7 +114,7 @@ func (s *BlobStorage) Walk(ctx context.Context, prefix, start string, walkFn Wal
 		lookback = ring.New(s.LookbackEntries)
 	}
 
-	iter := bkt.List(&blob.ListOptions{
+	iter := s.bkt.List(&blob.ListOptions{
 		Prefix:     prefix,
 		BeforeList: beforeListFunc(start),
 	})
@@ -111,7 +133,7 @@ func (s *BlobStorage) Walk(ctx context.Context, prefix, start string, walkFn Wal
 		if start > obj.Key {
 			continue
 		}
-		r, err := bkt.NewReader(ctx, obj.Key, nil)
+		r, err := s.bkt.NewReader(ctx, obj.Key, nil)
 		if err != nil {
 			return "", fmt.Errorf("failed to open %s: %w", obj.Key, err)
 		}

@@ -49,6 +49,10 @@ func TestBlobStorage_Walk(t *testing.T) {
 	s := &sourceio.BlobStorage{
 		Bucket: "file://" + dir,
 	}
+	if err := s.Open(t.Context()); err != nil {
+		t.Fatalf("Open() = %v; want no error", err)
+	}
+	defer s.Close()
 	prefix := "yes-"
 	end, err := s.Walk(t.Context(), prefix, "", func(ctx context.Context, path string, r io.Reader) error {
 		if !strings.HasPrefix(path, prefix) {
@@ -77,6 +81,10 @@ func TestBlobStorage_Walk_Empty(t *testing.T) {
 	s := &sourceio.BlobStorage{
 		Bucket: "file://" + dir,
 	}
+	if err := s.Open(t.Context()); err != nil {
+		t.Fatalf("Open() = %v; want no error", err)
+	}
+	defer s.Close()
 	end, err := s.Walk(t.Context(), "", "", func(ctx context.Context, path string, r io.Reader) error {
 		t.Fatalf("WalkFn() called; want no call")
 		return nil
@@ -91,6 +99,10 @@ func TestBlobStorage_Walk_Empty(t *testing.T) {
 
 func TestBlobStorage_Walk_NoBucket(t *testing.T) {
 	s := &sourceio.BlobStorage{}
+	if err := s.Open(t.Context()); err != nil {
+		t.Fatalf("Open() = %v; want no error", err)
+	}
+	defer s.Close()
 	end, err := s.Walk(t.Context(), "", "", func(ctx context.Context, path string, r io.Reader) error {
 		t.Fatalf("WalkFn() called; want no call")
 		return nil

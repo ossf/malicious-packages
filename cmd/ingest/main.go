@@ -126,6 +126,10 @@ func main() {
 			log.Printf("[%s] Skipping: %s", s.ID, s.DisabledForReason)
 			continue
 		}
+		if err := s.Storage.Open(ctx); err != nil {
+			log.Fatalf("Failed to open storage for source %s: %v", s.ID, err)
+		}
+		defer s.Storage.Close()
 		for _, prefix := range s.GetPrefixes() {
 			end, err := ingestReports(ctx, s, prefix, c, keys.Get(s.ID, prefix))
 			if err != nil {
