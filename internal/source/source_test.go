@@ -109,7 +109,7 @@ func TestParseSources_ValidIDs(t *testing.T) {
 }
 
 func TestInvalidSource(t *testing.T) {
-	dec := yaml.NewDecoder(bytes.NewBuffer([]byte("id: a\nlookback-entries: six")))
+	dec := yaml.NewDecoder(bytes.NewBuffer([]byte("id: a\nstorage:\n  type:  junk")))
 	var s *source.Source
 	err := dec.Decode(&s)
 	if err == nil || errors.Is(err, source.ErrInvalidID) {
@@ -128,8 +128,7 @@ func TestInvalidFilter(t *testing.T) {
 
 func TestSource_Enabled(t *testing.T) {
 	s := &source.Source{
-		ID:              "test",
-		LookbackEntries: 10,
+		ID: "test",
 	}
 	if !s.Enabled() {
 		t.Fatalf("Enabled() = false; want true")
