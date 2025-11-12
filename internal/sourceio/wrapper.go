@@ -41,6 +41,22 @@ func (s StorageWrapper) String() string {
 	return s.Storage.String()
 }
 
+// Open implements the Storage interface.
+func (s StorageWrapper) Open(ctx context.Context) error {
+	if s.Storage == nil {
+		return nil
+	}
+	return s.Storage.Open(ctx)
+}
+
+// Close implements the Storage interface.
+func (s StorageWrapper) Close() error {
+	if s.Storage == nil {
+		return nil
+	}
+	return s.Storage.Close()
+}
+
 // Walk implements the Storage interface.
 func (s StorageWrapper) Walk(ctx context.Context, prefix, start string, walkFn WalkFunc) (string, error) {
 	if s.Storage == nil {
