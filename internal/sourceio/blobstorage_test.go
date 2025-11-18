@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:goconst
+//nolint:goconst,nolintlint
 package sourceio_test
 
 import (
