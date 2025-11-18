@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	// ecosystemGit is synthetic ecosystem used a git-based report is being
-	// processed, without any package data.
+	// ecosystemGit is synthetic ecosystem used when a git-based report is being
+	// processed, since those reports do not have any package data.
 	ecosystemGit = osvschema.Ecosystem("Git")
 
 	// ecosystemVSCode is a temporary placeholder so we can support the VSCode
