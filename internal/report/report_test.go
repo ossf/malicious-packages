@@ -55,6 +55,26 @@ func TestPath(t *testing.T) {
 			want:      "github-action/this-is-a-package",
 		},
 		{
+			name:      "vscode.extension",
+			ecosystem: "VSCode:https://open-vsx.org",
+			want:      "vscode:open-vsx.org/vscode.extension",
+		},
+		{
+			name:      "org.example:package",
+			ecosystem: "Maven:https://maven.google.com",
+			want:      "maven:maven.google.com/org.example:package",
+		},
+		{
+			name:      "package",
+			ecosystem: "Ubuntu:Pro:18.04:LTS",
+			want:      "ubuntu:pro:18.04:lts/package",
+		},
+		{
+			name:      "package",
+			ecosystem: "Photon OS:3.0",
+			want:      "photon-os:3.0/package",
+		},
+		{
 			name:      "././../../this/is-a_problematic/example/../.././",
 			ecosystem: ".//.././.../ecosystem/../..././../",
 			want:      "../this",

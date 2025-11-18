@@ -15,6 +15,17 @@ import (
 	"github.com/ossf/malicious-packages/internal/gitname"
 )
 
+const (
+	// ecosystemGit is synthetic ecosystem used a git-based report is being
+	// processed, without any package data.
+	ecosystemGit = osvschema.Ecosystem("Git")
+
+	// ecosystemVSCode is a temporary placeholder so we can support the VSCode
+	// ecosystem until we can upgrade our dependency on the osv-schema repo.
+	// TODO: remove when we have migrated to osv-schema/bindings/go/osvconstants.
+	ecosystemVSCode = osvschema.Ecosystem("VSCode")
+)
+
 var supportedEcosystems = []osvschema.Ecosystem{
 	osvschema.EcosystemAlpine,
 	osvschema.EcosystemCratesIO,
@@ -29,9 +40,8 @@ var supportedEcosystems = []osvschema.Ecosystem{
 	osvschema.EcosystemPyPI,
 	osvschema.EcosystemRubyGems,
 	osvschema.EcosystemUbuntu,
+	ecosystemVSCode,
 }
-
-const ecosystemGit = osvschema.Ecosystem("Git")
 
 // ValidateVuln ensures that v conforms to the the OSV Schema, and to the
 // specific constraints expected by the repository.
