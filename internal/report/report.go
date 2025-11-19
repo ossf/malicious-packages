@@ -49,7 +49,7 @@ var (
 	ErrNormalizing    = errors.New("normalization error")
 	ErrInvalidDetails = errors.New("invalid details")
 
-	ecosystemRE = regexp.MustCompile(`[ \/._-]+`)
+	ecosystemRE = regexp.MustCompile(`[ \/_-]+`)
 )
 
 type databaseSpecific struct {
@@ -200,7 +200,20 @@ func (r *Report) Published() time.Time {
 	return r.raw.Published
 }
 
+// urlEcosystems contains a set of OSV ecosystems that allow a registry URL
+// to be specified after the ecosystem name, separated by a colon.
+var urlEcosystems = []osvschema.Ecosystem{
+	osvschema.EcosystemMaven,
+	ecosystemVSCode,
+}
+
 func cleanEcosystem(in string) string {
+	e, extra, found := strings.Cut(in, ":")
+	if found && slices.Contains(urlEcosystems, osvschema.Ecosystem(e)) {
+		// Remove the scheme to make the URL look more pretty in the filesystem.
+		extra, _ = strings.CutPrefix(extra, "https://")
+		in = e + ":" + extra
+	}
 	out := ecosystemRE.ReplaceAllString(in, "-")
 	return strings.ToLower(out)
 }
