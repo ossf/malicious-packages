@@ -37,7 +37,7 @@ const (
 	// osvSchemaVersion is the current version of the OSV schema we are
 	// generating. OSV processed will be upgraded to this version of the OSV
 	// schema format.
-	osvSchemaVersion = "1.5.0"
+	osvSchemaVersion = "1.7.4"
 
 	// summaryFormat is the format string used to generate the summary.
 	summaryFormat = "Malicious code in %s (%s)"
