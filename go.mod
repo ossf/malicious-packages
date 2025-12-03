@@ -3,7 +3,7 @@ module github.com/ossf/malicious-packages
 go 1.25.5
 
 require (
-	cloud.google.com/go/storage v1.57.1
+	cloud.google.com/go/storage v1.57.2
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.90.2
 	github.com/go-git/go-git/v5 v5.16.3
 	github.com/google/renameio v1.0.1
