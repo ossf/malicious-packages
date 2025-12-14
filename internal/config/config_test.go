@@ -30,6 +30,7 @@ const validConfigYAML = `
 id-prefix: TEST
 malicious-path: "mal/"
 false-positive-path: "false-positives/"
+unmergable-path: "unmergables/"
 sources:
 - id: all
   bucket: file://test-bucket/
@@ -59,6 +60,9 @@ func TestReadYAML(t *testing.T) {
 	if got, want := c.FalsePositivePath, filepath.Join(wd, "false-positives"); got != want {
 		t.Errorf("FalsePositivePath = %v; want %v", got, want)
 	}
+	if got, want := c.UnmergablePath, filepath.Join(wd, "unmergables"); got != want {
+		t.Errorf("UnmergablePath = %v; want %v", got, want)
+	}
 }
 
 func TestReadYAML_Error(t *testing.T) {
@@ -77,6 +81,15 @@ func TestReadYAML_Invalid(t *testing.T) {
 
 func TestPaths(t *testing.T) {
 	got := getTestConfig().Paths()
+	want := []string{"./false/positives/", "./mal/path/", "./un/mergable/"}
+	sort.StringSlice(got).Sort() // Sort to eliminate any ordering issues.
+	if !slices.Equal(got, want) {
+		t.Errorf("c.Paths() = %v; want %v", got, want)
+	}
+}
+
+func TestActivePaths(t *testing.T) {
+	got := getTestConfig().ActivePaths()
 	want := []string{"./false/positives/", "./mal/path/"}
 	sort.StringSlice(got).Sort() // Sort to eliminate any ordering issues.
 	if !slices.Equal(got, want) {
@@ -119,6 +132,7 @@ func getTestConfig() *config.Config {
 		IDPrefix:          "FOO",
 		MaliciousPath:     "./mal/path/",
 		FalsePositivePath: "./false/positives/",
+		UnmergablePath:    "./un/mergable/",
 		Sources: []*source.Source{
 			{
 				ID: "source1",

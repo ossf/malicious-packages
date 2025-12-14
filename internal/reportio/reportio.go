@@ -132,3 +132,56 @@ func IsPossibleReport(name string, mode fs.FileMode) bool {
 	}
 	return true
 }
+
+// PreparePath ensures that the directory path exists under base. The directory
+// path is joined to base and cleaned.
+//
+// An error will be returned if the joined path is not under base, or if the
+// relative cleaned path does not match the input.
+func PreparePath(path, base string) (string, error) {
+	dest := filepath.Join(base, path)
+	if p, err := filepath.Rel(base, dest); err != nil {
+		return "", fmt.Errorf("rel check: %w", err)
+	} else if p != path {
+		return "", fmt.Errorf("path %q does not match rel path %q", path, p)
+	}
+	if err := os.MkdirAll(dest, 0o777); err != nil {
+		return "", fmt.Errorf("os.MkdirAll: %w", err)
+	}
+	return dest, nil
+}
+
+// MoveReport will relocate the report at the supplied path report, from baseSrc
+// to baseDest.
+//
+// An error will be returned if the move fails, if the destination directory
+// can not be created, or the report does not live under baseSrc.
+func MoveReport(report, baseSrc, baseDest string) error {
+	if s, err := os.Stat(report); err != nil {
+		return fmt.Errorf("existing report stat: %w", err)
+	} else if s.IsDir() {
+		return fmt.Errorf("report %q must be a file", report)
+	}
+
+	p, err := filepath.Rel(baseSrc, report)
+	if err != nil {
+		return fmt.Errorf("relative path: %w", err)
+	}
+	dir := filepath.Dir(p)
+
+	if _, err := PreparePath(dir, baseDest); err != nil {
+		return fmt.Errorf("preparing path: %w", err)
+	}
+
+	new := filepath.Join(baseDest, p)
+	if _, err := os.Stat(new); err == nil {
+		return fmt.Errorf("file already exists at %q", new)
+	} else if !os.IsNotExist(err) {
+		return fmt.Errorf("new report stat: %w", err)
+	}
+
+	if err := os.Rename(report, new); err != nil {
+		return fmt.Errorf("rename: %w", err)
+	}
+	return nil
+}

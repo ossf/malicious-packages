@@ -15,12 +15,16 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
 	"log"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/google/renameio"
@@ -82,7 +86,7 @@ func preprocessRepo(c *config.Config) error {
 		if err != nil {
 			return fmt.Errorf("relative path: %w", err)
 		}
-		reports, err := reportio.ReportsInPaths(p, c.Paths())
+		reports, err := reportio.ReportsInPaths(p, c.ActivePaths())
 		if err != nil {
 			return fmt.Errorf("failed getting reports: %w", err)
 		}
@@ -109,17 +113,22 @@ func preprocessRepo(c *config.Config) error {
 			return nil
 		}
 
-		var basis string
-		var toMerge []string
+		var existing string
 		if len(withIDs) == 1 {
-			basis = withIDs[0]
-			toMerge = noIDs
-		} else {
-			basis = noIDs[0]
-			toMerge = noIDs[1:]
+			existing = withIDs[0]
 		}
 
-		return processReports(p, basis, toMerge)
+		unmergable, err := processReports(p, existing, noIDs)
+		if err != nil {
+			return err
+		}
+		for _, report := range unmergable {
+			err := reportio.MoveReport(report, c.MaliciousPath, c.UnmergablePath)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
 	}))
 	return err
 }
@@ -129,17 +138,95 @@ func hasID(prefix, name string) bool {
 	return !strings.HasPrefix(base, fmt.Sprintf("%s-0000-", prefix))
 }
 
-func processReports(path, dest string, mergeSrcs []string) error {
+func processReports(path, existing string, new []string) ([]string, error) {
 	log.Printf("Processing %s", path)
-	log.Printf("  dest = %s", dest)
 
-	destReport, err := report.FromFile(dest)
-	if err != nil {
-		return fmt.Errorf("failed loading dest %s: %w", dest, err)
+	var dest string
+	var destReport *report.Report
+
+	// If we have an existing report, load it first. It should always be valid
+	// so we abort if the existing report has any issues.
+	if existing != "" {
+		log.Printf("  reading existing = %s", existing)
+		r, err := report.FromFile(existing)
+		if err != nil {
+			return nil, fmt.Errorf("failed loading existing %s: %w", existing, err)
+		}
+
+		// Any existing report should already be normalized, and this should not fail.
+		// If it does we have a problem.
+		log.Printf("    normalizing %s", filepath.Base(existing))
+		if err := r.Normalize(); err != nil {
+			return nil, fmt.Errorf("failed normalizing existing %s: %w", existing, err)
+		}
+		dest = existing
+		destReport = r
 	}
 
+	var unmergable []string
+	newReports := map[string]*report.Report{}
+
+	// markUnmergable is a helper to make it easy to add a filename to the
+	// set of unmergable reports, and remove the entry from newReports if it is
+	// present.
+	markUnmergable := func(message string, fps ...string) {
+		unmergable = append(unmergable, fps...)
+		for _, fp := range fps {
+			delete(newReports, fp)
+		}
+		log.Printf("    %s, skipping %s", message, strings.Join(fps, ", "))
+	}
+
+	// Load each new report one by one. If the report has any non-filesystem
+	// based issues (i.e. only json parsing, or report validation issues) then
+	// we move aside the report.
+	for _, p := range new {
+		log.Printf("  reading new = %s", p)
+		r, err := report.FromFile(p)
+		var jsonSyntaxError *json.SyntaxError
+		var jsonUmarshalTypeError *json.UnmarshalTypeError
+		if errors.As(err, &jsonSyntaxError) ||
+			errors.As(err, &jsonUmarshalTypeError) ||
+			errors.Is(err, report.ErrInvalidOSV) ||
+			errors.Is(err, report.ErrUnexpectedOSV) ||
+			errors.Is(err, report.ErrInvalidDetails) {
+			markUnmergable(fmt.Sprintf("failed reading report: %v", err), p)
+			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("failed normalizing existing %s: %w", existing, err)
+		}
+
+		// If we did not load a dest earlier, try and choose one now from the
+		// new reports.
+		// If we fail to normalize, we move aside the new report as well and try
+		// the next.
+		if destReport == nil {
+			// Attempt to normalize this report and make it the destReport. If
+			// this fails we can try the next and move asside the current one.
+			log.Printf("    normalizing %s", filepath.Base(p))
+			if err := r.Normalize(); errors.Is(err, report.ErrNormalizing) {
+				markUnmergable(fmt.Sprintf("failed normalizing: %v", err), p)
+				continue
+			} else if err != nil {
+				return nil, fmt.Errorf("failed normalizing %w", err)
+			}
+			destReport = r
+			dest = p
+		} else {
+			newReports[p] = r
+		}
+	}
+
+	// Either "existing" should have been set, or we chose a destination report
+	// from the set of "new" reports. If this is not the case, then we abort.
+	if destReport == nil || dest == "" {
+		log.Printf("  dest = no mergable report found in %s, aborting", path)
+		return unmergable, nil
+	}
+	log.Printf("  dest = %s", dest)
+
 	if destReport.IsWithdrawn() && destReport.ID() == "" {
-		if len(mergeSrcs) == 0 {
+		if len(newReports) == 0 {
 			// The destination is new and withdrawn and we aren't merging with
 			// any other reports, so remove the report because we don't already
 			// redacted reports.
@@ -148,58 +235,51 @@ func processReports(path, dest string, mergeSrcs []string) error {
 			// the report is deleted. We may eventually decide to keep reports
 			// even if they are withdrawn.
 			if err := os.Remove(dest); err != nil {
-				return fmt.Errorf("failed to remove %s: %w", dest, err)
+				return nil, fmt.Errorf("failed to remove %s: %w", dest, err)
 			}
-			return nil
+			return unmergable, nil
 		}
 		// TODO: implement withdrawn behaviour
-		return fmt.Errorf("merging new withdrawn reports is currently unsupported")
+		markUnmergable("merging new withdrawn reports is currently unsupported", append(slices.Collect(maps.Keys(newReports)), dest)...)
+		return unmergable, nil
 	}
 
-	// Ensure the base report is always normalized.
-	log.Printf("  normalizing %s", filepath.Base(dest))
-	if err := destReport.Normalize(); err != nil {
-		return fmt.Errorf("failed normalizing %s: %w", dest, err)
-	}
-
-	for _, src := range mergeSrcs {
+	for src, srcReport := range newReports {
 		log.Printf("  merging %s", filepath.Base(src))
 
-		srcReport, err := report.FromFile(src)
-		if err != nil {
-			return fmt.Errorf("failed loading src %s: %w", src, err)
-		}
-
 		if srcReport.IsWithdrawn() {
-			// TODO: implement withdrawn behaviour
-			return fmt.Errorf("merging new withdrawn reports is currently unsupported")
+			markUnmergable("merging new withdrawn reports is currently unsupported", src)
+			continue
 		}
 
-		if err := destReport.Merge(srcReport); err != nil {
-			return fmt.Errorf("failed to merge %s: %w", src, err)
+		if err := destReport.Merge(srcReport); errors.Is(err, report.ErrMergeFailure) || errors.Is(err, report.ErrNormalizing) {
+			markUnmergable(fmt.Sprintf("failed to merge: %v", err), src)
+			continue
+		} else if err != nil {
+			return nil, fmt.Errorf("failed to merge %w", err)
 		}
 	}
 
 	// Save the destination report atomically to avoid any corruption.
 	t, err := renameio.TempFile(tempDir, dest)
 	if err != nil {
-		return fmt.Errorf("failed to open %s: %w", dest, err)
+		return nil, fmt.Errorf("failed to open %s: %w", dest, err)
 	}
 	defer t.Cleanup()
 	err = destReport.WriteJSON(t)
 	if err != nil {
-		return fmt.Errorf("failed to write %s: %w", dest, err)
+		return nil, fmt.Errorf("failed to write %s: %w", dest, err)
 	}
 	if err := t.CloseAtomicallyReplace(); err != nil {
-		return fmt.Errorf("atomic save failed: %w", err)
+		return nil, fmt.Errorf("atomic save failed: %w", err)
 	}
 
 	// Clean up all the files that we merged.
-	for _, src := range mergeSrcs {
+	for src, _ := range newReports {
 		if err := os.Remove(src); err != nil {
-			return fmt.Errorf("failed to remove %s: %w", src, err)
+			return nil, fmt.Errorf("failed to remove %s: %w", src, err)
 		}
 	}
 
-	return nil
+	return unmergable, nil
 }
