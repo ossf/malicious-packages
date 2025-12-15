@@ -31,6 +31,7 @@ type Config struct {
 	IDPrefix          string           `yaml:"id-prefix"`
 	MaliciousPath     string           `yaml:"malicious-path"`
 	FalsePositivePath string           `yaml:"false-positive-path"`
+	UnmergablePath    string           `yaml:"unmergable-path"`
 	Sources           []*source.Source `yaml:"sources"`
 }
 
@@ -54,6 +55,9 @@ func (c *Config) Init() error {
 	if c.FalsePositivePath == "" {
 		return fmt.Errorf("%w: false-positive-path is required", ErrInvalidConfig)
 	}
+	if c.UnmergablePath == "" {
+		return fmt.Errorf("%w: unmergable-path is required", ErrInvalidConfig)
+	}
 	var err error
 	c.MaliciousPath, err = filepath.Abs(c.MaliciousPath)
 	if err != nil {
@@ -63,11 +67,26 @@ func (c *Config) Init() error {
 	if err != nil {
 		return fmt.Errorf("invalid false positive path: %w", err)
 	}
+	c.UnmergablePath, err = filepath.Abs(c.UnmergablePath)
+	if err != nil {
+		return fmt.Errorf("invalid unmergable path: %w", err)
+	}
 	return nil
 }
 
-// Paths returns the config paths in a single string slice.
+// Paths returns all the config paths in a single string slice.
 func (c *Config) Paths() []string {
+	ps := []string{
+		c.MaliciousPath,
+		c.FalsePositivePath,
+		c.UnmergablePath,
+	}
+	return ps
+}
+
+// ActivePaths returns only the config paths that contain active reports in
+// a single string slice.
+func (c *Config) ActivePaths() []string {
 	return []string{
 		c.MaliciousPath,
 		c.FalsePositivePath,

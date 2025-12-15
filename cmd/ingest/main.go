@@ -193,11 +193,11 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 		r.ApplyFilter(s.Filter())
 
 		// Prepare the destination path, creating it if needed.
-		dest := filepath.Clean(filepath.Join(c.MaliciousPath, path))
-		log.Printf("[%s]   dest = %s", s.ID, dest)
-		if err := os.MkdirAll(dest, 0o777); err != nil {
-			return fmt.Errorf("failed to create destination: %w", err)
+		dest, err := reportio.PreparePath(path, c.MaliciousPath)
+		if err != nil {
+			return fmt.Errorf("failed to prepare destination: %w", err)
 		}
+		log.Printf("[%s]   dest = %s", s.ID, dest)
 
 		// Create the local file and write it
 		filename := generateUnassignedFilename(c.IDPrefix, s.ID, shasum, "json")

@@ -28,6 +28,10 @@ import (
 var ErrMergeFailure = errors.New("merge failure")
 
 func (r *Report) Merge(other *Report) error {
+	// Important: all error checking *must* be done before "r" is mutated.
+	// This ensures that if an error is returned the caller can be confident
+	// that "r" has not been altered in any way.
+
 	if r.Ecosystem != other.Ecosystem {
 		return fmt.Errorf("%w: attempting to merge report from different ecosystem (%s != %s)", ErrMergeFailure, r.Ecosystem, other.Ecosystem)
 	}
@@ -46,24 +50,7 @@ func (r *Report) Merge(other *Report) error {
 	if err := other.Normalize(); err != nil {
 		return fmt.Errorf("failed to normalize other report: %w", err)
 	}
-
-	r.raw.Affected[0].Ranges = combineRanges(r.raw.Affected[0].Ranges, other.raw.Affected[0].Ranges)
-	r.raw.Affected[0].Versions = mergeSlices(r.raw.Affected[0].Versions, other.raw.Affected[0].Versions)
-	r.raw.Affected[0].Severity = nil
-	r.raw.Affected[0].DatabaseSpecific = combineDatabaseSpecific(r.raw.Affected[0].DatabaseSpecific, other.raw.Affected[0].DatabaseSpecific)
-	r.raw.Affected[0].EcosystemSpecific = nil
-
-	// Combine complex types
-	r.raw.Credits = combineCredits(r.raw.Credits, other.raw.Credits)
-	r.raw.References = mergeSlices(r.raw.References, other.raw.References)
-	r.raw.Aliases = mergeSlices(r.raw.Aliases, other.raw.Aliases)
-	r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related)
-	r.raw.Severity = nil
-
-	// Ensure we don't have any links back to ourselves.
-	r.FilterSelf()
-
-	// Description merging.
+	// Extract the details and ensure they are all correct.
 	userDetails, sourceDetails, err := r.ParseDetails()
 	if err != nil {
 		return fmt.Errorf("%w: parsing details: %w", ErrMergeFailure, err)
@@ -85,6 +72,27 @@ func (r *Report) Merge(other *Report) error {
 		// contributed details should be on the existing report.
 		return fmt.Errorf("%w: reports both have user details", ErrMergeFailure)
 	}
+
+	// Do the merging now we have completed all our error checks. All errors
+	// *must* be returned above here.
+
+	r.raw.Affected[0].Ranges = combineRanges(r.raw.Affected[0].Ranges, other.raw.Affected[0].Ranges)
+	r.raw.Affected[0].Versions = mergeSlices(r.raw.Affected[0].Versions, other.raw.Affected[0].Versions)
+	r.raw.Affected[0].Severity = nil
+	r.raw.Affected[0].DatabaseSpecific = combineDatabaseSpecific(r.raw.Affected[0].DatabaseSpecific, other.raw.Affected[0].DatabaseSpecific)
+	r.raw.Affected[0].EcosystemSpecific = nil
+
+	// Combine complex types
+	r.raw.Credits = combineCredits(r.raw.Credits, other.raw.Credits)
+	r.raw.References = mergeSlices(r.raw.References, other.raw.References)
+	r.raw.Aliases = mergeSlices(r.raw.Aliases, other.raw.Aliases)
+	r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related)
+	r.raw.Severity = nil
+
+	// Ensure we don't have any links back to ourselves.
+	r.FilterSelf()
+
+	// Description merging.
 	if userDetails == "" {
 		userDetails = otherUserDetails
 	}
