@@ -273,11 +273,18 @@ func processReports(path, existing string, new []string) ([]string, error) {
 	}
 
 	// Clean up all the files that we merged.
-	for src := range newReports {
-		if err := os.Remove(src); err != nil {
-			return nil, fmt.Errorf("failed to remove %s: %w", src, err)
-		}
+	if err := removeFiles(slices.Collect(maps.Keys(newReports))); err != nil {
+		return nil, fmt.Errorf("failed removing merged files: %w", err)
 	}
 
 	return unmergable, nil
+}
+
+func removeFiles(files []string) error {
+	for _, file := range files {
+		if err := os.Remove(file); err != nil {
+			return fmt.Errorf("remove %q: %w", file, err)
+		}
+	}
+	return nil
 }
