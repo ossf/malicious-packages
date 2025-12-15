@@ -151,19 +151,19 @@ func PreparePath(path, base string) (string, error) {
 	return dest, nil
 }
 
-// MoveReport will relocate the report at the supplied path report, from baseSrc
+// MoveReport will relocate the report at the supplied path r, from baseSrc
 // to baseDest.
 //
 // An error will be returned if the move fails, if the destination directory
 // can not be created, or the report does not live under baseSrc.
-func MoveReport(report, baseSrc, baseDest string) error {
-	if s, err := os.Stat(report); err != nil {
+func MoveReport(r, baseSrc, baseDest string) error {
+	if s, err := os.Stat(r); err != nil {
 		return fmt.Errorf("existing report stat: %w", err)
 	} else if s.IsDir() {
-		return fmt.Errorf("report %q must be a file", report)
+		return fmt.Errorf("report %q must be a file", r)
 	}
 
-	p, err := filepath.Rel(baseSrc, report)
+	p, err := filepath.Rel(baseSrc, r)
 	if err != nil {
 		return fmt.Errorf("relative path: %w", err)
 	}
@@ -173,14 +173,14 @@ func MoveReport(report, baseSrc, baseDest string) error {
 		return fmt.Errorf("preparing path: %w", err)
 	}
 
-	new := filepath.Join(baseDest, p)
-	if _, err := os.Stat(new); err == nil {
-		return fmt.Errorf("file already exists at %q", new)
+	dest := filepath.Join(baseDest, p)
+	if _, err := os.Stat(dest); err == nil {
+		return fmt.Errorf("file already exists at %q", dest)
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("new report stat: %w", err)
 	}
 
-	if err := os.Rename(report, new); err != nil {
+	if err := os.Rename(r, dest); err != nil {
 		return fmt.Errorf("rename: %w", err)
 	}
 	return nil

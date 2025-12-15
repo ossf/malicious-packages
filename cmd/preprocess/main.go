@@ -198,11 +198,9 @@ func processReports(path, existing string, new []string) ([]string, error) {
 
 		// If we did not load a dest earlier, try and choose one now from the
 		// new reports.
-		// If we fail to normalize, we move aside the new report as well and try
-		// the next.
 		if destReport == nil {
 			// Attempt to normalize this report and make it the destReport. If
-			// this fails we can try the next and move asside the current one.
+			// this fails we can try the next and move aside the current one.
 			log.Printf("    normalizing %s", filepath.Base(p))
 			if err := r.Normalize(); errors.Is(err, report.ErrNormalizing) {
 				markUnmergable(fmt.Sprintf("failed normalizing: %v", err), p)
@@ -275,7 +273,7 @@ func processReports(path, existing string, new []string) ([]string, error) {
 	}
 
 	// Clean up all the files that we merged.
-	for src, _ := range newReports {
+	for src := range newReports {
 		if err := os.Remove(src); err != nil {
 			return nil, fmt.Errorf("failed to remove %s: %w", src, err)
 		}

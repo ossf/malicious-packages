@@ -168,7 +168,7 @@ func TestMoveReport(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(baseSrc, path), 0o777); err != nil {
 		t.Fatalf("MkdirAll() = %v; want no error", err)
 	}
-	if err := os.WriteFile(filepath.Join(baseSrc, reportPath), []byte("test"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(baseSrc, reportPath), []byte("test"), 0o600); err != nil {
 		t.Fatalf("WriteFile() = %v; want no error", err)
 	}
 
@@ -206,10 +206,9 @@ func TestMoveReport_Errors(t *testing.T) {
 		filepath.Join(baseDest, reportPath),
 		filepath.Join(dir, "outside.json"),
 	} {
-		if err := os.WriteFile(name, []byte{}, 0o644); err != nil {
+		if err := os.WriteFile(name, []byte{}, 0o600); err != nil {
 			t.Fatalf("WriteFile(%q) = %v; want no error", name, err)
 		}
-
 	}
 
 	tests := []struct {
