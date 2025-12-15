@@ -142,7 +142,7 @@ func hasID(prefix, name string) bool {
 	return !strings.HasPrefix(base, fmt.Sprintf("%s-0000-", prefix))
 }
 
-func processReports(path, existing string, new []string) ([]string, error) {
+func processReports(path, existing string, added []string) ([]string, error) {
 	log.Printf("Processing %s", path)
 
 	var dest string
@@ -181,11 +181,11 @@ func processReports(path, existing string, new []string) ([]string, error) {
 		log.Printf("    %s, skipping %s", message, strings.Join(fps, ", "))
 	}
 
-	// Load each new report one by one. If the report has any non-filesystem
+	// Load each added report one by one. If the report has any non-filesystem
 	// based issues (i.e. only json parsing, or report validation issues) then
 	// we move aside the report.
-	for _, p := range new {
-		log.Printf("  reading new = %s", p)
+	for _, p := range added {
+		log.Printf("  reading added = %s", p)
 		r, err := report.FromFile(p)
 		var jsonSyntaxError *json.SyntaxError
 		var jsonUmarshalTypeError *json.UnmarshalTypeError
@@ -201,7 +201,7 @@ func processReports(path, existing string, new []string) ([]string, error) {
 		}
 
 		// If we did not load a dest earlier, try and choose one now from the
-		// new reports.
+		// added reports.
 		if destReport == nil {
 			// Attempt to normalize this report and make it the destReport. If
 			// this fails we can try the next and move aside the current one.
