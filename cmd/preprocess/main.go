@@ -38,6 +38,7 @@ var tempDir string
 
 func main() {
 	configFlag := flag.String("config", "", "the filepath to the YAML config file")
+	abortUnmergableFlag := flag.Bool("abort-unmergable", false, "abort if unmergable reports encountered")
 	flag.Parse()
 
 	if *configFlag == "" {
@@ -67,12 +68,12 @@ func main() {
 		}
 	}()
 
-	if err := preprocessRepo(c); err != nil {
+	if err := preprocessRepo(c, *abortUnmergableFlag); err != nil {
 		log.Fatalf("Failed to preprocess repo: %v", err) //nolint:gocritic
 	}
 }
 
-func preprocessRepo(c *config.Config) error {
+func preprocessRepo(c *config.Config, abortUnmergable bool) error {
 	err := filepath.WalkDir(c.MaliciousPath, fs.WalkDirFunc(func(path string, info fs.DirEntry, err error) error {
 		if os.IsNotExist(err) {
 			return filepath.SkipDir
@@ -121,6 +122,9 @@ func preprocessRepo(c *config.Config) error {
 		unmergable, err := processReports(p, existing, noIDs)
 		if err != nil {
 			return err
+		}
+		if total := len(unmergable); abortUnmergable && total > 0 {
+			return fmt.Errorf("%d unmergable report(s) are present", total)
 		}
 		for _, report := range unmergable {
 			err := reportio.MoveReport(report, c.MaliciousPath, c.UnmergablePath)
