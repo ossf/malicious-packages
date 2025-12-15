@@ -35,3 +35,7 @@ validate: ## Validate all OSV files
 .PHONY: preprocess
 preprocess: ## Preprocess repository before assigning IDs
 	go run ./cmd/preprocess -config ./config/config.yaml
+
+.PHONY: preprocess-strict
+preprocess-strict: ## Like preprocess, but aborts if unmergable reports encountered
+	go run ./cmd/preprocess -config ./config/config.yaml -abort-unmergable
