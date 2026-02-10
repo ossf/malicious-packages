@@ -5,7 +5,7 @@ go 1.25.5
 require (
 	cloud.google.com/go/storage v1.59.0
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.95.1
-	github.com/go-git/go-git/v5 v5.16.4
+	github.com/go-git/go-git/v5 v5.16.5
 	github.com/google/renameio v1.0.1
 	github.com/ossf/osv-schema/bindings/go v0.0.0-20250807060700-6989eadb93f1
 	github.com/package-url/packageurl-go v0.1.3
