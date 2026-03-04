@@ -8,6 +8,7 @@ import (
 )
 
 func TestCanon(t *testing.T) {
+	//nolint:gosec // disable check due to leaked credentials false-positive
 	tests := map[string]string{
 		"https://github.com/org/repo.git":          "https://github.com/org/repo.git",
 		"https://github.com/org/repo":              "https://github.com/org/repo.git",
