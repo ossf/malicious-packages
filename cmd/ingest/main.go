@@ -154,70 +154,84 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 		h := sha256.New()
 		rdr = io.TeeReader(rdr, h)
 
-		r, err := report.ReadJSON(rdr)
+		reader := &report.Reader{AllowMultipleAffected: s.AllowMultipleAffected}
+		src, err := reader.ReadJSON(rdr)
 		if err != nil {
 			return fmt.Errorf("failed parsing report: %w", err)
 		}
-		log.Printf("[%s] Found report: %s (%s) - %s", s.ID, r.Name, r.Ecosystem, key)
 
 		shasum := fmt.Sprintf("%x", h.Sum(nil))
-
-		// Ensure the location where the OSV is going to be stored is safe.
-		path := r.Path()
-		if err := reportio.ValidatePath(path); err != nil {
-			return fmt.Errorf("failed to validate destination: %w", err)
-		}
-
-		// Check if the origin has already been ingested.
-		if ok, err := reportio.OriginExistsInPaths(path, c.Paths(), s.ID, shasum); err != nil {
-			return fmt.Errorf("duplicate detection failed: %w", err)
-		} else if ok {
-			log.Printf("[%s]   skipping, already imported.", s.ID)
-			return nil
-		}
-
-		// Add the origin to the report so we can de-dupe in the future and
+		// Add the origin to the source report so we can de-dupe in the future and
 		// track where and when the report was ingested.
-		r.AddOrigin(s.ID, shasum)
+		src.AddOrigin(s.ID, shasum)
 
 		// If the source is asking for the ID to be aliased, then copy it into
 		// the aliases section.
 		if s.AliasID {
-			r.AliasID()
+			src.AliasID()
 		}
 
-		// Ensure the incoming report does not have an ID.
-		r.StripID()
+		// Ensure the source report does not have an ID.
+		src.StripID()
 
 		// Apply filters against the report.
-		r.ApplyFilter(s.Filter())
+		src.ApplyFilter(s.Filter())
 
-		// Prepare the destination path, creating it if needed.
-		dest, err := reportio.PreparePath(path, c.MaliciousPath)
-		if err != nil {
-			return fmt.Errorf("failed to prepare destination: %w", err)
-		}
-		log.Printf("[%s]   dest = %s", s.ID, dest)
+		reports := src.Split()
+		for _, r := range reports {
+			err := func(r *report.Report) error {
+				log.Printf("[%s] Found report: %s (%s) - %s", s.ID, r.Name, r.Ecosystem, key)
 
-		// Create the local file and write it
-		filename := generateUnassignedFilename(c.IDPrefix, s.ID, shasum, "json")
-		log.Printf("[%s]   file = %s", s.ID, filename)
-		fp := filepath.Join(dest, filename)
-		// Use renameio to generate a temp file in tempDir that is atomically
-		// moved into place after. This is not safe for concurrent use.
-		t, err := renameio.TempFile(tempDir, fp)
-		if err != nil {
-			return fmt.Errorf("failed to open %s: %w", fp, err)
+				// Ensure the location where the OSV is going to be stored is safe.
+				path := r.Path()
+				if err := reportio.ValidatePath(path); err != nil {
+					return fmt.Errorf("failed to validate destination: %w", err)
+				}
+
+				// Check if the origin has already been ingested.
+				if ok, err := reportio.OriginExistsInPaths(path, c.Paths(), s.ID, shasum); err != nil {
+					return fmt.Errorf("duplicate detection failed: %w", err)
+				} else if ok {
+					log.Printf("[%s]   skipping, already imported.", s.ID)
+					return nil
+				}
+
+				// Prepare the destination path, creating it if needed.
+				dest, err := reportio.PreparePath(path, c.MaliciousPath)
+				if err != nil {
+					return fmt.Errorf("failed to prepare destination: %w", err)
+				}
+				log.Printf("[%s]   dest = %s", s.ID, dest)
+
+				// Create the local file and write it
+				filename := generateUnassignedFilename(c.IDPrefix, s.ID, shasum, "json")
+				log.Printf("[%s]   file = %s", s.ID, filename)
+				fp := filepath.Join(dest, filename)
+
+				// Use renameio to generate a temp file in tempDir that is atomically
+				// moved into place after. This is not safe for concurrent use.
+				t, err := renameio.TempFile(tempDir, fp)
+				if err != nil {
+					return fmt.Errorf("failed to open %s: %w", fp, err)
+				}
+				defer t.Cleanup()
+
+				err = r.WriteJSON(t)
+				if err != nil {
+					return fmt.Errorf("failed to write %s: %w", fp, err)
+				}
+
+				if err := t.CloseAtomicallyReplace(); err != nil {
+					return fmt.Errorf("atomic save failed: %w", err)
+				}
+
+				saveCount++
+				return nil
+			}(r)
+			if err != nil {
+				return err
+			}
 		}
-		defer t.Cleanup()
-		err = r.WriteJSON(t)
-		if err != nil {
-			return fmt.Errorf("failed to write %s: %w", fp, err)
-		}
-		if err := t.CloseAtomicallyReplace(); err != nil {
-			return fmt.Errorf("atomic save failed: %w", err)
-		}
-		saveCount++
 		return nil
 	})
 	if err != nil {

@@ -62,13 +62,14 @@ type dbSpecificVuln struct {
 }
 
 type Report struct {
-	raw       *osvschema.Vulnerability
-	origins   []*OriginRef
-	Ecosystem string
-	Name      string
+	raw                   *osvschema.Vulnerability
+	origins               []*OriginRef
+	Ecosystem             string
+	Name                  string
+	allowMultipleAffected bool
 }
 
-// UnmarshalJSON implements the json.Unmashaler interface.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 //
 // The implementation ensures that the resulting parsed data is valid for the
 // purposes of tracking malicious packages.
@@ -88,7 +89,7 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 	// TODO: validate schema version is >= 1.4.0
 
 	// Ensure the vuln object is valid.
-	if err := ValidateVuln(r.raw); err != nil {
+	if err := validateVulnInternal(r.raw, r.allowMultipleAffected); err != nil {
 		return err
 	}
 
@@ -112,16 +113,47 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.raw)
 }
 
-func ReadJSON(r io.Reader) (*Report, error) {
-	// parse the OSV into an arbitrary struct so we don't lose any data.
-	report := &Report{}
-	dec := json.NewDecoder(r)
-	if err := dec.Decode(&(report)); err != nil {
-		// TODO: separate "syntax errors" from IO errors
-		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+func (r *Report) Split() []*Report {
+	if len(r.raw.Affected) == 0 {
+		return nil
+	}
+	if len(r.raw.Affected) == 1 {
+		return []*Report{r}
 	}
 
+	var reports []*Report
+	for _, affected := range r.raw.Affected {
+		newReport := *r.raw
+		newReport.Affected = []osvschema.Affected{affected}
+
+		rep := &Report{
+			raw:                   &newReport,
+			origins:               r.origins,
+			allowMultipleAffected: false,
+		}
+		rep.Name, rep.Ecosystem = rep.fetchNameAndEcosystem(rep.raw)
+
+		reports = append(reports, rep)
+	}
+
+	return reports
+}
+
+type Reader struct {
+	AllowMultipleAffected bool
+}
+
+func (r *Reader) ReadJSON(rdr io.Reader) (*Report, error) {
+	report := &Report{allowMultipleAffected: r.AllowMultipleAffected}
+	dec := json.NewDecoder(rdr)
+	if err := dec.Decode(report); err != nil {
+		return nil, fmt.Errorf("failed to parse JSON: %w", err)
+	}
 	return report, nil
+}
+
+func ReadJSON(r io.Reader) (*Report, error) {
+	return (&Reader{}).ReadJSON(r)
 }
 
 func (r *Report) WriteJSON(w io.Writer) error {
