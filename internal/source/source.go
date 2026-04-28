@@ -37,12 +37,13 @@ type Filter struct {
 }
 
 type Source struct {
-	ID                string                  `yaml:"id"`
-	Storage           sourceio.StorageWrapper `yaml:"storage"`
-	Prefixes          []string                `yaml:"prefixes"`
-	AliasID           bool                    `yaml:"alias-id"`
-	DisabledForReason string                  `yaml:"disabled-for-reason"`
-	Filters           []Filter                `yaml:"filters"`
+	ID                    string                  `yaml:"id"`
+	Storage               sourceio.StorageWrapper `yaml:"storage"`
+	Prefixes              []string                `yaml:"prefixes"`
+	AliasID               bool                    `yaml:"alias-id"`
+	AllowMultipleAffected bool                    `yaml:"allow-multiple-affected"`
+	DisabledForReason     string                  `yaml:"disabled-for-reason"`
+	Filters               []Filter                `yaml:"filters"`
 
 	// Internal cache populated during parsing.
 	filters reportfilter.Filters
