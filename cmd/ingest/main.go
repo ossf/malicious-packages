@@ -44,6 +44,7 @@ func main() {
 	startKeysFlag := flag.String("start-keys", "", "the filepath to a YAML file containing the keys to start from")
 	sourceFlag := flag.String("source", "", "ingest files for the specified source only")
 	localDirFlag := flag.String("dir", "", "ingest OSV reports from the given local dir. Requires -source.")
+	allowMultipleAffectedFlag := flag.Bool("allow-multiple-affected", false, "allow multiple affected entries in source reports. Requires -source.")
 	flag.Parse()
 
 	if *configFlag == "" {
@@ -97,6 +98,8 @@ func main() {
 			})
 			src.Prefixes = []string{}
 		}
+		// Override config's allow multiple affected with flag value.
+		src.AllowMultipleAffected = src.AllowMultipleAffected || *allowMultipleAffectedFlag
 		sources = []*source.Source{src}
 	}
 
