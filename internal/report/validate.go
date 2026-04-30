@@ -64,8 +64,8 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		// Ensure that if multiple affected are allowed there are no duplicate
 		// ecocystem + package name entries.
 		seen := make(map[string]bool)
-		for _, affected := range v.Affected {
-			pkg := affected.Package
+		for i := range v.Affected {
+			pkg := v.Affected[i].Package
 			name := canonicalizeName(pkg.Name, osvschema.Ecosystem(pkg.Ecosystem))
 			key := fmt.Sprintf("%s!!%s", pkg.Ecosystem, name)
 			if seen[key] {
@@ -75,13 +75,13 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		}
 	}
 
-	for _, affected := range v.Affected {
-		ecosystem, err := validatePackage(affected.Package)
+	for i := range v.Affected {
+		ecosystem, err := validatePackage(v.Affected[i].Package)
 		if err != nil {
 			return err
 		}
 
-		if ecosystem == ecosystemGit && len(affected.Ranges) == 0 {
+		if ecosystem == ecosystemGit && len(v.Affected[i].Ranges) == 0 {
 			// Git-based reports must have at least one range so we know the
 			// repository the report is for.
 			return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
@@ -89,7 +89,7 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 
 		// Validate the ranges are correct.
 		repoSet := map[string]bool{}
-		for _, rng := range affected.Ranges {
+		for _, rng := range v.Affected[i].Ranges {
 			if err := validateRange(rng, ecosystem); err != nil {
 				return err
 			}

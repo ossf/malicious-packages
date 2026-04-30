@@ -417,19 +417,11 @@ func TestReader_ReadJSON_MultipleAffected_Duplicate(t *testing.T) {
 }
 
 func TestReport_Split(t *testing.T) {
-	rJSON := `{
-		"schema_version": "1.5.0",
-		"summary": "test report",
-		"affected": [
-			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
-			{"package":{"ecosystem": "PyPI", "name": "pkg2"}, "versions": ["0"]}
-		]
-	}`
-	reader := &report.Reader{AllowMultipleAffected: true}
-	r, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
-	if err != nil {
-		t.Fatalf("ReadJSON = %v; want no error", err)
-	}
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package: osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"0"},
+	})
 
 	reports := r.Split()
 	if len(reports) != 2 {

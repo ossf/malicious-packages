@@ -122,9 +122,9 @@ func (r *Report) Split() []*Report {
 	}
 
 	var reports []*Report
-	for _, affected := range r.raw.Affected {
+	for i := range r.raw.Affected {
 		newReport := *r.raw
-		newReport.Affected = []osvschema.Affected{affected}
+		newReport.Affected = []osvschema.Affected{r.raw.Affected[i]}
 
 		rep := &Report{
 			raw:                   &newReport,
