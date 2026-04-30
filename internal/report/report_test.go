@@ -419,7 +419,7 @@ func TestReader_ReadJSON_MultipleAffected_Duplicate(t *testing.T) {
 func TestReport_Split(t *testing.T) {
 	r := testReport(osvschema.EcosystemPyPI, "pkg1")
 	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
-		Package: osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
 		Versions: []string{"0"},
 	})
 
