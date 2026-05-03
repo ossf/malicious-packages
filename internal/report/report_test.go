@@ -364,3 +364,85 @@ func TestPublished(t *testing.T) {
 		t.Errorf("Published() = %v; want %v", got, now)
 	}
 }
+
+func TestReader_ReadJSON_MultipleAffected_DefaultStrict(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg2"}, "versions": ["0"]}
+		]
+	}`
+	reader := &report.Reader{}
+	_, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error for multiple affected entries by default")
+	}
+}
+
+func TestReader_ReadJSON_MultipleAffected_Allowed(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg2"}, "versions": ["0"]}
+		]
+	}`
+	reader := &report.Reader{AllowMultipleAffected: true}
+	r, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err != nil {
+		t.Fatalf("ReadJSON = %v; want no error", err)
+	}
+	if len(r.Vuln().Affected) != 2 {
+		t.Errorf("len(Affected) = %d; want 2", len(r.Vuln().Affected))
+	}
+}
+
+func TestReader_ReadJSON_MultipleAffected_Duplicate(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["1"]}
+		]
+	}`
+	reader := &report.Reader{AllowMultipleAffected: true}
+	_, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error for duplicate affected packages")
+	}
+}
+
+func TestReport_Split(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"0"},
+	})
+
+	reports := r.Split()
+	if len(reports) != 2 {
+		t.Fatalf("len(Split()) = %d; want 2", len(reports))
+	}
+
+	if reports[0].Name != "pkg1" || reports[0].Ecosystem != "PyPI" {
+		t.Errorf("report[0] = %s/%s; want pkg1/PyPI", reports[0].Ecosystem, reports[0].Name)
+	}
+	if reports[1].Name != "pkg2" || reports[1].Ecosystem != "PyPI" {
+		t.Errorf("report[1] = %s/%s; want pkg2/PyPI", reports[1].Ecosystem, reports[1].Name)
+	}
+}
+
+func TestReport_Split_Single(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	reports := r.Split()
+	if len(reports) != 1 {
+		t.Fatalf("len(Split()) = %d; want 1", len(reports))
+	}
+	if reports[0] != r {
+		t.Errorf("Split() returned different instance; want same instance")
+	}
+}
