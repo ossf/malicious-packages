@@ -48,6 +48,7 @@ var (
 	ErrUnexpectedOSV  = errors.New("unexpected OSV")
 	ErrNormalizing    = errors.New("normalization error")
 	ErrInvalidDetails = errors.New("invalid details")
+	ErrSplitting      = errors.New("splitting error")
 
 	ecosystemRE = regexp.MustCompile(`[ \/_-]+`)
 )
@@ -113,12 +114,15 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 	return json.Marshal(r.raw)
 }
 
-func (r *Report) Split() []*Report {
+func (r *Report) Split() ([]*Report, error) {
 	if len(r.raw.Affected) == 0 {
-		return nil
+		return nil, nil
 	}
 	if len(r.raw.Affected) == 1 {
-		return []*Report{r}
+		return []*Report{r}, nil
+	}
+	if len(r.origins) > 1 {
+		return nil, fmt.Errorf("%w: cannot split report with multiple origins", ErrSplitting)
 	}
 
 	var reports []*Report
@@ -126,9 +130,23 @@ func (r *Report) Split() []*Report {
 		newReport := *r.raw
 		newReport.Affected = []osvschema.Affected{r.raw.Affected[i]}
 
+		var origins []*OriginRef
+		for _, o := range r.origins {
+			cloned := &OriginRef{
+				Source:       o.Source,
+				SHASum:       o.SHASum,
+				ImportTime:   o.ImportTime,
+				ID:           o.ID,
+				ModifiedTime: o.ModifiedTime,
+				Ranges:       newReport.Affected[0].Ranges,
+				Versions:     newReport.Affected[0].Versions,
+			}
+			origins = append(origins, cloned)
+		}
+
 		rep := &Report{
 			raw:                   &newReport,
-			origins:               r.origins,
+			origins:               origins,
 			allowMultipleAffected: false,
 		}
 		rep.Name, rep.Ecosystem = rep.fetchNameAndEcosystem(rep.raw)
@@ -136,7 +154,7 @@ func (r *Report) Split() []*Report {
 		reports = append(reports, rep)
 	}
 
-	return reports
+	return reports, nil
 }
 
 type Reader struct {

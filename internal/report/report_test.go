@@ -423,7 +423,10 @@ func TestReport_Split(t *testing.T) {
 		Versions: []string{"0"},
 	})
 
-	reports := r.Split()
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
 	if len(reports) != 2 {
 		t.Fatalf("len(Split()) = %d; want 2", len(reports))
 	}
@@ -438,11 +441,65 @@ func TestReport_Split(t *testing.T) {
 
 func TestReport_Split_Single(t *testing.T) {
 	r := testReport(osvschema.EcosystemPyPI, "pkg1")
-	reports := r.Split()
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
 	if len(reports) != 1 {
 		t.Fatalf("len(Split()) = %d; want 1", len(reports))
 	}
 	if reports[0] != r {
 		t.Errorf("Split() returned different instance; want same instance")
+	}
+}
+
+func TestReport_Split_WithOrigins(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected[0].Versions = []string{"1.0.0"}
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"2.0.0"},
+	})
+	r.AddOrigin("test-source", "deadbeef")
+
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
+	if len(reports) != 2 {
+		t.Fatalf("len(Split()) = %d; want 2", len(reports))
+	}
+
+	// Verify origins of reports[0]
+	o0 := reports[0].Origins()
+	if len(o0) != 1 {
+		t.Fatalf("len(origins[0]) = %d; want 1", len(o0))
+	}
+	if !reflect.DeepEqual(o0[0].Versions, []string{"1.0.0"}) {
+		t.Errorf("origins[0] versions = %v; want [1.0.0]", o0[0].Versions)
+	}
+
+	// Verify origins of reports[1]
+	o1 := reports[1].Origins()
+	if len(o1) != 1 {
+		t.Fatalf("len(origins[1]) = %d; want 1", len(o1))
+	}
+	if !reflect.DeepEqual(o1[0].Versions, []string{"2.0.0"}) {
+		t.Errorf("origins[1] versions = %v; want [2.0.0]", o1[0].Versions)
+	}
+}
+
+func TestReport_Split_WithTooManyOrigins(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"0"},
+	})
+	r.AddOrigin("test-source", "deadbeef")
+	r.AddOrigin("another-source", "abcdef")
+
+	_, err := r.Split()
+	if err == nil || !errors.Is(err, report.ErrSplitting) {
+		t.Fatalf("Split() = %v; want %v", err, report.ErrSplitting)
 	}
 }

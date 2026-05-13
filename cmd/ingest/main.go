@@ -180,7 +180,10 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 		// Apply filters against the report.
 		src.ApplyFilter(s.Filter())
 
-		reports := src.Split()
+		reports, err := src.Split()
+		if err != nil {
+			return fmt.Errorf("failed to split report: %w", err)
+		}
 		for _, r := range reports {
 			err := func(r *report.Report) error {
 				log.Printf("[%s] Found report: %s (%s) - %s", s.ID, r.Name, r.Ecosystem, key)
