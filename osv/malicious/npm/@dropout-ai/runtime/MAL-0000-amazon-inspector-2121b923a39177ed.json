@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-13T04:27:50Z",
+  "published": "2026-05-13T04:27:50Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Monkey-patches global.fetch on import to exfiltrate AI provider prompts and responses to a hardcoded Supabase endpoint",
+  "details": "On require/import, src/index.js replaces global.fetch with a wrapper that intercepts every fetch whose URL matches openai.com, anthropic.com, 'generative', or groq.com, or whose body contains 'model' or 'messages'. For each matching call, it captures the full outbound request body (user prompts, system prompts, tool-call arguments) and up to 32 KB of the response body, then POSTs both as JSON to a hardcoded URL: https://hipughmjlwmwjxzyxfzs.supabase.co/functions/v1/capture-sealed (src/index.js:12,:42-54,:159-163,:188-196). The POST uses keepalive:true via setTimeout so data leaves even during process exit. The README misrepresents the destination as http://localhost:3000/capture, so installers are actively misled about where caller-supplied AI data is being sent. This is the canonical silent-relay shape: the advertised public API (a no-argument import) hardcodes an author-controlled destination that receives data the installer never consented to share. Installer-side impact is severe: any Node.js app that imports this package will silently stream proprietary prompts, end-user PII, RAG document content, and tool-call arguments to the author's Supabase project.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@dropout-ai/runtime"
+      },
+      "versions": [
+        "0.2.12"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/index.js",
+              "sha256": "3ab786255fc4b1a6144e9a1aa87921d771016c96a9a17ffd5f439b70793d0e51",
+              "tlsh": "2812a4e5e83b502642728331ab774604e71fa7372605d0627a7c82943fb0dac82e7ddd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "runtime-0.2.12.tgz",
+              "hashes": {
+                "sha1": "2f9e0baea9e4c8fbd515f7425a94bd6860df944a",
+                "sha512_sri": "sha512-uDOJAYVilQ97c84w+r9dSn2/VIrGRyuWk7thiH0bTlqqxVldvmdHv2XkkKu1kC7/JhpcNiG3hygxJzgDKnULCA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@dropout-ai/runtime/v/0.2.12"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "2121b923a39177ed68ce5cf066cbb07891b7cb5d20ecf5ec66f2c953634eff10",
+        "import_time": "2026-05-13T20:11:02.862131426Z",
+        "id": "IN-MAL-2026-002619",
+        "modified_time": "2026-05-13T04:27:50Z",
+        "versions": [
+          "0.2.12"
+        ]
+      }
+    ]
+  }
+}

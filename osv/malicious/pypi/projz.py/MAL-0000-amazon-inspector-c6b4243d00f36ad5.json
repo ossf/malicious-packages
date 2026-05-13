@@ -1,0 +1,92 @@
+{
+  "modified": "2026-05-12T19:03:07Z",
+  "published": "2026-05-12T07:43:35Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "ProjZ.py deserializes attacker-controllable pickle data over plaintext HTTP and execs a bundled opaque blob at import time",
+  "details": "This package exposes installers to remote code execution through two independent, high-impact channels. First, projz/api/control/rpc.py hardcodes RPC_SERVER = 'http://deepthreads.ru' (plain HTTP) and, for every RPC call made by the client (reachable from Client._register, activate, and other user-facing flows), calls pickle.loads() on the raw HTTP response body. pickle.loads on attacker-controlled bytes is equivalent to arbitrary code execution on the installer's machine; the cleartext transport means any on-path attacker, hostile Wi-Fi/ISP, or takeover of the non-first-party domain deepthreads.ru can trivially deliver a malicious pickle and execute code in the context of whatever process uses this library. Second, projz/api/secret/__init__.py performs `exec(dill.loads(b85decode(open('data.txt').read())), secret_functions.__dict__)` at import time (triggered by the top-level `import projz` chain via client.py -\u003e api.headers -\u003e..secret). Running dill/pickle.loads then exec'ing the resulting code objects on every import, with the payload shipped as an opaque base85-encoded blob, defeats source review and is a textbook obfuscation-plus-exec evasion pattern. The combination of import-time exec of an opaque bundled blob plus pickle-over-HTTP RCE from a personal-looking.ru domain is not a pattern present in legitimate client libraries.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "ProjZ.py"
+      },
+      "versions": [
+        "2.3.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "deepthreads.ru"
+          ],
+          "evidence_files": [
+            {
+              "path": "projz/api/secret/data.txt",
+              "sha256": "3facb57b72ec5e0315d3d810e1b4086c989698cb9bcc46b3cdee4d87a928ce12",
+              "tlsh": "1c321eed849a01b02f17768c2903b677a46285030b68bf8266af53fcd90f406b1f55ed"
+            },
+            {
+              "path": "projz/api/control/rpc.py",
+              "sha256": "9c49d55ec6660feb22e28cbdeb18bfb47e16cba9d9ad4e1f0eefeba937172ff1",
+              "tlsh": "3a4154994c3bd532e372727eac22cd35f33e05036f1288b6f4ac62642f7451c9ea4565"
+            },
+            {
+              "path": "setup.py",
+              "sha256": "a9f2767e9171ccd095e1aee4f99225afa49e01c199a36bbbb2815bd5a6690163",
+              "tlsh": "96417416cf469c1168f4415ea8518826f72eab170d20716b74bc819c3fb5068c7627fc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ProjZ.py-2.3.9.tar.gz",
+              "hashes": {
+                "blake2b_256": "5de27e9f8cacc22dcb397dfd17bf26a1576eb42134f62bc5516e852dea1ad682",
+                "md5": "f778423b982287674be6e5e5cb3e0f4c",
+                "sha256": "aff3fca91b1970216aac7d9224f3c2027ce6e59f384f03dc27c6731b290943d0"
+              }
+            }
+          ],
+          "urls": [
+            "http://deepthreads.ru"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ProjZ.py/2.3.9/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c6b4243d00f36ad5ef1dfd6108ad281f84cf758795a7b58b339dab487de0e661",
+        "import_time": "2026-05-13T20:10:56.039768492Z",
+        "id": "IN-MAL-2026-002328",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "2.3.9"
+        ]
+      }
+    ]
+  }
+}
