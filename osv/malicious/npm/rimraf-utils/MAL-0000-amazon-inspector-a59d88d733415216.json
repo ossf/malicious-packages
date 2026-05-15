@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-14T19:25:11Z",
+  "published": "2026-05-14T19:25:11Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "rimraf typosquat exfiltrates npm/env/git credentials and crypto wallets to hardcoded C2 on install",
+  "details": "rimraf-utils@1.0.5 impersonates the widely-installed `rimraf` package (index.js is a dummy stub that internally identifies itself as 'lodash-js — Just a dummy module. The real payload is in postinstall.js'). On `npm install`, `scripts.postinstall` runs postinstall.js, which harvests installer-side secrets and ships them to a hardcoded bare-IP C2 over plaintext HTTP at `http://149.28.127.35:8888` (overridable via `process.env.C2_URL`).\n\nSpecific behavior in postinstall.js:\n- Reads `~/.npmrc` (npm auth tokens), `~/.env` (API keys, DB URLs, cloud credentials, payment keys, EVM private keys, webhooks), and `~/.git-credentials`.\n- Collects `os.hostname()` and `os.userInfo()` for host identification.\n- Enumerates 71 hardcoded Chrome/Brave/Edge/Firefox crypto-wallet extension IDs (MetaMask, Phantom, Coinbase, Trust, Exodus, Ledger Live, Trezor, Solflare, etc.) under the browsers' profile directories and reads each wallet's LevelDB `.log` files, regex-extracting `vault`/`seed`/`mnemonic`/`privateKey`/`encrypted`/`password` fields.\n- Recursively walks `~/Documents`, `~/Desktop`, `~/Downloads`, `~/OneDrive`, `~/Dropbox`, `~/Google Drive`, and `backup`/`keys`/`wallet`/`crypto` subtrees searching for seed-phrase and private-key patterns.\n- POSTs the aggregated JSON payload to the C2 via `http.request(...)`.\n\nThis package matches multiple unambiguous attack fingerprints simultaneously: hardcoded bare-IP plaintext-HTTP C2 invoked from a lifecycle hook; browser crypto-wallet extension-ID enumeration; seed-phrase/mnemonic home-directory scanner; and installer-secret regex extraction from `~/.npmrc`/`~/.env`/`~/.git-credentials`. The name is a typosquat of `rimraf` used as the delivery vector for the payload.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "rimraf-utils"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "c7f832a58016fd782f02a2d33fcbc955fe99c3197696fdaa5c1d0b80f1450b38",
+              "tlsh": "cf62e998eaa9021c496342bbe75775b41459e80b3581e8b4f78f03489f0964d2ef73f7"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ce74861287cb75594079212a4038a147ff6f456e01c84daf3592564434551656",
+              "tlsh": "25d0c2208a129d3314c417671a6a524566a1494b0248bc1833db015c47aa3b688ff21a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "rimraf-utils-1.0.5.tgz",
+              "hashes": {
+                "sha1": "f4844362083cd70a31e665632e86d301cf415d68",
+                "sha512_sri": "sha512-NX/GAA0X3gRsSdpoU6Zu260XJYgj7wwdvTvknw9GNIc358axa0hrdk4IaW41vDtOe7/r4OrtEBRAzGVVcEZPrQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rimraf-utils/v/1.0.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a59d88d733415216903578b3c3806d76405a23a7cca56ee355eb6725e4e930d4",
+        "import_time": "2026-05-15T07:37:17.158478544Z",
+        "id": "IN-MAL-2026-002698",
+        "modified_time": "2026-05-14T19:25:11Z",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  }
+}
