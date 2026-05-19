@@ -1,0 +1,127 @@
+{
+  "modified": "2026-05-15T07:39:09Z",
+  "published": "2026-05-14T19:25:02Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3774",
+  "summary": "Malicious code in ts-build-optimize (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (51c637ab7c13ca2f592502f3444ebb24b291422b6388563d04fb8f7ae9030d5a)\nThe package masquerades as a TypeScript helper library (README is lifted from Microsoft's tslib and references --importHelpers, __extends, __assign, and a fake github.com/microsoft/ts-build-optimize/releases URL). The shipped index.js has nothing to do with TypeScript helpers: it exports a function `buildoptimize` whose default arguments are hardcoded to fetch `https://verceljs-kappa.vercel.app/icons/23` and pass the response body directly to `eval()` (index.js:61-63 sets `uuri = \"https://verceljs-kappa.vercel.app/icons/\"`; index.js:79 executes `eval(JSON.parse(b))`; the function is exported at index.js:95). Any consumer who imports this package and calls `buildoptimize()` — which the name and README imply is a build-time optimizer — will execute arbitrary attacker-controlled JavaScript on the installer/build machine. The Vercel destination is mutable (the author can swap the payload at any time), no hash or signature is verified, and the hosting domain is unrelated to Microsoft or any legitimate tslib publisher. The C2 endpoint serves a benign 6,758-byte PNG decoy when requested without the package's hardcoded `bearrtoken: logo` HTTP header (so casual scanners and `curl` see only an image), but returns 53,347 bytes of JSON-wrapped, heavily-obfuscated JavaScript when the header is present. Static analysis of the fetched second stage (sha256 of the raw response body fd082d2406d65aa78d5f1028e11dc23e85d63f07c459fb048d08236a65590b99; sha256 of the JSON-decoded JavaScript source 47d235dad37c7fb86e231822a4c231344cbd006e58b8cb9a013b064c1a521eb8 — captured 2026-05-15, payload is mutable) shows wallet-theft and persistence functionality: references to the Exodus cryptocurrency wallet on macOS (`/Library/Application Support/exodus.wallet`) and Windows (`/AppData/Roaming/Exodus/exodus.wallet`); functions named `installWindows`, `uninstallWindows`, `installMac`, `uninstallMac`, `isInstalledWindows`, and a `macPlistPath` constant indicating per-OS persistence install/uninstall machinery; heavy use of `child_process.execSync`/`exec` to invoke shell commands; and a top-level `setInterval(main, 30000)` re-execution loop. The combination of name-squat on a widely-used Microsoft package, README impersonation, header-gated decoy, and a remote-eval primitive that delivers wallet-theft + persistence makes this an unambiguous supply-chain attack.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ts-build-optimize"
+      },
+      "versions": [
+        "1.1.5",
+        "1.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "verceljs-kappa.vercel.app"
+          ],
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "b50885542dffa20bec8feeb7da6a4af1ecc6ff404717e87f4259db4726a0fa96",
+              "tlsh": "1b5146a21c9021235672efe45707c524f775e236729182a2b99f85d02fb7694b693ccc"
+            },
+            {
+              "path": "README.md",
+              "sha256": "3dd73c87f4dd530ab871909ab17bc73af6b3499dd796893f40c879edd7a5081b",
+              "tlsh": "e891f1aa1dc6d7b9caf116933937d54cf72c902f1fa44802743d8d7a4732f4a02366aa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ts-build-optimize-1.1.5.tgz",
+              "hashes": {
+                "sha1": "ee4d8718ce4796c25cb69746ec37a81ce5fd725e",
+                "sha512_sri": "sha512-u6GZflbaoX8kpEsYY37Bo1WgOR1Q7Z/MpkDZkKRYMIkNYEC4ieK8SCKr+sMYA/gb/MwW2yi4wpgFoi2OSlAl0A=="
+              }
+            }
+          ],
+          "second_stage": [
+            {
+              "decoy_response_without_header": {
+                "content_type": "image/png",
+                "size_bytes": 6758
+              },
+              "malicious_response_with_header": {
+                "captured_at": "2026-05-15T04:46:00Z",
+                "content_type": "application/json; charset=utf-8",
+                "note": "Mutable — payload can be swapped by the operator at any time.",
+                "sha256_decoded_javascript": "47d235dad37c7fb86e231822a4c231344cbd006e58b8cb9a013b064c1a521eb8",
+                "sha256_raw_body": "fd082d2406d65aa78d5f1028e11dc23e85d63f07c459fb048d08236a65590b99",
+                "size_bytes": 53347
+              },
+              "observed_capabilities": [
+                "Exodus wallet theft (macOS path /Library/Application Support/exodus.wallet, Windows path /AppData/Roaming/Exodus/exodus.wallet)",
+                "Per-OS persistence install/uninstall (installWindows / uninstallWindows / installMac / uninstallMac / isInstalledWindows / macPlistPath)",
+                "Shell command execution via child_process.execSync and exec",
+                "30-second setInterval re-execution loop of main()"
+              ],
+              "trigger_header": "bearrtoken: logo",
+              "url": "https://verceljs-kappa.vercel.app/icons/23"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ts-build-optimize/v/1.1.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ts-build-optimize/v/1.1.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-002680",
+        "import_time": "2026-05-15T07:37:16.156447969Z",
+        "modified_time": "2026-05-14T19:25:02Z",
+        "sha256": "51c637ab7c13ca2f592502f3444ebb24b291422b6388563d04fb8f7ae9030d5a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-002681",
+        "import_time": "2026-05-15T07:37:16.233586327Z",
+        "modified_time": "2026-05-14T19:25:03Z",
+        "sha256": "d1e5153e45627510761dea66e4b56e8e22e1eab29a671cab42703c9b5a5a5902",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.6"
+        ]
+      }
+    ]
+  }
+}
