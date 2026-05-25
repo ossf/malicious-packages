@@ -1,0 +1,35 @@
+{
+  "modified": "2026-05-25T10:04:53Z",
+  "published": "2026-05-25T10:04:53Z",
+  "schema_version": "1.5.0",
+  "details": "Part of a multi-package malicious campaign by npm author `toskypi`, `eo-terminal` is a fully-featured infostealer and remote access trojan (RAT) disguised as \"terminal changelog logger utilities.\" The package README describes a completely different package (`terminal-logger-utils`), indicating a name-recycling or typosquatting attack. It is part of the same campaign as `logger-draft`.\n\nOn installation, a `postinstall` hook runs `utils.js`, which performs a sandbox check (aborts if CPU count ≤ 4 or no CPU model string), copies the 24,000-line `payload.js` to a persistent path named `MicrosoftSystem64`, registers it as a persistent service (systemd user service on Linux, LaunchAgent plist on macOS, scheduled task or `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` registry key on Windows), and launches the payload as a detached background agent — `process.exit(0)` is called immediately so the npm install completes with no visible errors.\n\n**C2 infrastructure:** Primary WebSocket/HTTP C2 at `ws://195.201.194.107:8010` (Hetzner Cloud, Germany). Stolen data is also exfiltrated to HuggingFace repository `yszf984308/system-release` via a hardcoded API token. C2 config strings are XOR-obfuscated with key `[90, 60, 126, 18, 159, 75, 109, 138]` and base64-encoded in `dist/config.js`.\n\n**Capabilities:**\n- **Keylogger** — full keystroke and password-field capture with an offline queue at `~/.pcl-data/offline-queue.jsonl` that drains automatically on C2 reconnect\n- **Clipboard harvesting** — polls every 1,000 ms via platform-native tools (`pbpaste`, `xclip`, PowerShell)\n- **Screenshot capture and live streaming** — one-shot and continuous AnyDesk-style streaming; periodic upload to HuggingFace\n- **Browser credential theft** — Login Data, Cookies, Web Data from all Chromium-family browsers; `logins.json`, `key4.db`, `cert9.db` from Firefox\n- **Crypto wallet exfiltration** — 20+ wallets including Exodus, Electrum, Phantom, Ledger Live, Trezor, Trust Wallet, Monero GUI, and Bitcoin/Litecoin/Dogecoin Core\n- **SSH backdoor** — exfiltrates `~/.ssh/` contents and appends attacker RSA key (`bink@DESKTOP-N8JGD6T`) to `authorized_keys`\n- **Shell history theft** — 15+ history file formats including `.bash_history`, `.zsh_history`, PowerShell `ConsoleHost_history.txt`, and `~/.atuin/history.db`; iterates all user home directories\n- **Environment variable harvesting** — targets API keys, tokens, and cloud credentials matching keywords such as `aws`, `github_token`, `npm_token`, `stripe`, `openai`, and `jwt`\n- **.env file theft** — reads the victim's project-root `.env` at install time\n- **Telegram session theft** — gzip-packs and uploads the full `tdata/` directory (up to 500 MB)\n- **Cloud credential theft** — `~/.aws/`, `~/.azure/`, `~/.kube/`, `~/.config/gcloud/`, `~/.docker/`, `~/.gnupg/`, `.git-credentials`, `.netrc`\n- **Recursive filesystem scan** — scans for certificates, key files, and credential-named files (`.pem`, `.key`, `.pfx`, `.kdbx`, `.ppk`, `wallet`, `mnemonic`, `seed`, etc.); uploads matches (up to 50 MB each) to HuggingFace\n- **Remote command execution** — arbitrary shell commands and full interactive terminal sessions\n- **Self-update** — polls HuggingFace for updated versions and deploys platform-native compiled binaries (`MicrosoftSystem64-win.exe`, `-linux`, `-darwin-x64`, `-darwin-arm64`)\n\n**Evasion:** The payload detaches from the npm install process immediately (no blocking output), masquerades as `MicrosoftSystem64` to blend into Windows system process names, abuses HuggingFace as a trusted exfiltration channel, and uses XOR+base64 obfuscation for all C2 config strings.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "eo-terminal"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            { "introduced": "0" }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://x.com/safedepio/status/2058848260845076651"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": ["https://safedep.io"]
+    }
+  ]
+}
