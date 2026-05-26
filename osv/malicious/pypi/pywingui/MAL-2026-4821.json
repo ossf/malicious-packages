@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T14:39:03Z",
+  "modified": "2026-05-26T16:49:26Z",
   "published": "2026-05-26T14:39:03Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4821",
   "summary": "Malicious code in pywingui (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8e7061d7b21cda355cda7d210c2e2ddee7b556762417b0463905367d359d1c03)\nOn `import pywingui`, the package unconditionally executes a runtime-guard chain (`__init__.py` → `controller/AppContext` → `core.engine` → `core.runtime_guard.RuntimeGuard().validate()`) that collects `socket.gethostname()` and `getpass.getuser()`, hashes them into a `machine_id`, and POSTs `{action:'check', app:'PYWINGUI', machine_id:...}` to a hardcoded Google Apps Script endpoint (`https://script.google.com/macros/s/AKfycbw.../exec`). The Fernet-encrypted response is cached at `~/.pywingui/runtime_v2.cache`; if the server returns `allowed=False`, import raises `AccessDenied` and the library refuses to load. The relevant logic is shipped as a compiled Windows extension (`core/runtime_guard.cp311-win32.pyd`), which obscures inspection. The destination is a third-party Apps Script, not a documented publisher domain, and the behavior is undisclosed in the package metadata. Effects on installers: (1) every machine that imports the package leaks hashed host+user identifiers to the author's endpoint on every Python process startup, (2) the library is gated by a remote kill-switch the author controls, breaking offline / air-gapped / CI environments and giving the author the ability to disable installations remotely, (3) network I/O at import time breaks sandboxed and offline pipelines. Secondary: `ui/ocr_utils.pyd` contains hardcoded references to `extraction-api.nanonets.com` and `api.ocr.space`, which would relay caller image data to third-party OCR services if those features are invoked (not import-time reachable).\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6db77876bf3b13e55750748761841f7ab77f17bd951bdc1c749e1e56d4416d7e)\npywingui 6.0.1 advertises itself as a Win32 UI automation framework but ships only Nuitka-compiled cp311-win32.pyd binaries (the 4.py files are trivial re-exports). Two undisclosed behaviors are embedded in those binaries:\n\n1) Silent relay of OCR data: ui/ocr_utils.cp311-win32.pyd embeds a hardcoded Nanonets bearer token ('Bearer bc65bc5e-1ba4-4284-96ec-3320920b32cd') and an OCR.space API key ('K83196308188957'), and config sets DEFAULT_OCR_PROVIDER='nanonets'. The OCR helpers (read_form_smart and related) upload caller-supplied window screenshots to https://extraction-api.nanonets.com/api/v1/extract/sync and https://api.ocr.space/Parse/Image using the author's own accounts, so any image the consumer OCRs through the documented API is delivered to the author's Nanonets dashboard. The README (which emphasizes Progress OpenEdge ERP automation) does not disclose this. The hardcoded third-party API keys are also redistributed to every installer.\n\n2) Undisclosed phone-home / kill-switch: core/runtime_guard.cp311-win32.pyd builds a machine fingerprint from socket.gethostname() + getpass.getuser() hashed with SHA-256 and POSTs {action:'check', app:'PYWINGUI', machine_id} to a hardcoded Google Apps Script endpoint (script.google.com/macros/s/AKfycbw_wxvGol9xUpiwvIJYSvV488bUzKt5-2n6Q9mw8_hSG9N22zUUce2hw0mbUgB4lDqB/exec). RuntimeGuard().validate() is invoked from Engine.__init__, which is constructed by the AppContext every consumer instantiates, so the beacon fires on normal first use. The result is cached Fernet-encrypted under ~/.pywingui/. README mentions no licensing or telemetry, and the server can deny access (kill-switch).\n\nThe compiled-only distribution hides both behaviors from source audit. This satisfies the silent-relay class (caller-supplied OCR data flowing to author-controlled SaaS via author credentials) and adds an undisclosed identifier-beacon with remote-disable capability.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "pywingui"
       },
       "versions": [
-        "6.0.0"
+        "6.0.0",
+        "6.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -93,6 +99,10 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/pywingui/6.0.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pywingui/6.0.1/"
     }
   ],
   "credits": [
@@ -107,13 +117,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004920",
-        "import_time": "2026-05-26T15:07:43.101013624Z",
-        "modified_time": "2026-05-26T14:39:03Z",
-        "sha256": "8e7061d7b21cda355cda7d210c2e2ddee7b556762417b0463905367d359d1c03",
         "source": "amazon-inspector",
+        "sha256": "8e7061d7b21cda355cda7d210c2e2ddee7b556762417b0463905367d359d1c03",
+        "import_time": "2026-05-26T15:07:43.101013624Z",
+        "id": "IN-MAL-2026-004920",
+        "modified_time": "2026-05-26T14:39:03Z",
         "versions": [
           "6.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6db77876bf3b13e55750748761841f7ab77f17bd951bdc1c749e1e56d4416d7e",
+        "import_time": "2026-05-26T16:47:31.475265594Z",
+        "id": "IN-MAL-2026-004926",
+        "modified_time": "2026-05-26T15:10:20Z",
+        "versions": [
+          "6.0.1"
         ]
       }
     ]
