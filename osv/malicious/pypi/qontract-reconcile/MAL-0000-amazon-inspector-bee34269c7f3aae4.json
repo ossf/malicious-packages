@@ -1,0 +1,89 @@
+{
+  "modified": "2026-05-19T19:55:07Z",
+  "published": "2026-05-19T19:55:07Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "qontract-reconcile 0.10.2.dev649 force-injects 'httpxyz' typosquat of httpx into installer dependency tree",
+  "details": "This release of qontract-reconcile uses uv's `[[tool.uv.dependency-metadata]]` mechanism in pyproject.toml to override the `pagerduty` package's declared dependencies and inject `httpxyz\u003e=0.31` — a typosquat of the widely-used `httpx` HTTP client. Every legitimate `import httpx` reference in the source tree has been mechanically rewritten to `import httpxyz`, including string literals inside comments and logger names (e.g., `reconcile/utils/runtime/environment.py` contains `# hide logging.info \"HTTP GET/POST...\" logs from httpxyz` and `logging.getLogger(\"httpxyz\").setLevel(logging.WARNING)`; `reconcile/utils/runtime/integration.py` and `reconcile/ldap_users_api/integration.py` declare `import httpxyz` at module top with `httpxyz.HTTPStatusError` / `httpxyz.Response` API references matching httpx's surface). The uniform find-and-replace across import statements, type annotations, comments, and logger-name strings is the fingerprint of an attacker rewriting a stolen source tree before republishing — not a legitimate fork. Installer impact: running the documented `uv sync` install path resolves the `httpxyz` package from PyPI into the environment; on import of the affected modules, the typosquat's code runs in-process with whatever credentials qontract-reconcile is configured with (Vault tokens, AWS credentials, GitLab tokens, Kubernetes service-account tokens — qontract-reconcile is a Red Hat AppSRE reconciler with broad cloud/secret access). The typosquat package's code was not inspected here, but namespace-hijacking a credential-heavy reconciler's HTTP client is a high-value supply-chain attack pattern.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "qontract-reconcile"
+      },
+      "versions": [
+        "0.10.2.dev649"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyproject.toml",
+              "sha256": "5423c6b7421497bdb22658b14a4837842c090fa9dc90cb145c6855f02a3b6ebc",
+              "tlsh": "e112f9a3e5535e7918c64084a4c86502e7a28a233ea2745c73ad42dc1f4dddff27e52e"
+            },
+            {
+              "path": "reconcile/utils/runtime/integration.py",
+              "sha256": "2670dd288a01901081de48085637f04142ad686985cdcfed27765138252f09a4",
+              "tlsh": "c572760bf55aee6201c70c76d45b74671a26db6b3a1a1061bcbcb57c1f89c31c2eb8d8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "qontract_reconcile-0.10.2.dev649-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "42d01082ed857bfd9c07418e79eca8a624a562a1973d68fad1f12f407f635599",
+                "md5": "2c4348d172e3305369bdf8a5d3e2dd6c",
+                "sha256": "6570e79a4b66241ac09f3fd73bb78bce66edd193369357d85572f3222e84ec2e"
+              }
+            },
+            {
+              "filename": "qontract_reconcile-0.10.2.dev649.tar.gz",
+              "hashes": {
+                "blake2b_256": "5bd66a73ed8ddd7e1fd5e3a2bc127c42063116890850d6f6d8ab5f7c3a9061b4",
+                "md5": "5ae16bb9aba7c109b7be8de6d895284e",
+                "sha256": "5900faaff91678da0bdef798053c303cf769dc1ea5c66bda01087b9ac1f4f31b"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/qontract-reconcile/0.10.2.dev649/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "bee34269c7f3aae4181b856b9b73a57abf59acc94d076d51b4fb6c14b8fc5508",
+        "import_time": "2026-05-26T05:50:19.749337507Z",
+        "id": "IN-MAL-2026-003270",
+        "modified_time": "2026-05-19T19:55:07Z",
+        "versions": [
+          "0.10.2.dev649"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "modified": "2026-05-21T09:05:08Z",
+  "published": "2026-05-21T09:05:08Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "HeroUI Pro impersonation CLI exfiltrates license keys and overwrites installed package contents from lookalike CDN",
+  "details": "Package self-brands as the official HeroUI Pro setup CLI (logo, product names 'HeroUI React Pro' / 'HeroUI Native Pro', paid-license-key flow) but ships under the unrelated npm name `hpsetup` and routes all network traffic to `hpsetup-cdn.932324.xyz` — a numeric `.xyz` domain unrelated to the real publisher (heroui.com). Two concrete installer-harm mechanisms: (1) src/download.js:23 builds `${PROXY}/api/tarball/${product.slug}/${version}?key=${userKey}` so the user's license key (HEROUI_KEY env var or CLI arg) is transmitted as a query parameter to the lookalike CDN on every CLI invocation. (2) src/download.js:54-56 streams tarballs from that same CDN through `tar-extract` and then `copyDir(dest, targetDir)` over the user's installed `@heroui-pro/react` and `heroui-native-pro` directories with no hash or signature verification — the operator of `hpsetup-cdn.932324.xyz` can ship arbitrary JavaScript into modules the user's application later `require()`s. (3) src/trust.js:4 declares `OUR_PACKAGES = [\"@heroui-pro/react\", \"heroui-native-pro\", \"@zowe/secrets-for-zowe-sdk\"]` and the CLI writes that allowlist into the user's `pnpm-workspace.yaml` (allowBuilds / onlyBuiltDependencies) and bun `trustedDependencies`; pre-trusting `@zowe/secrets-for-zowe-sdk` (a mainframe-credentials SDK with no relationship to a HeroUI UI install) silently disables postinstall-script confirmation for that unrelated package, scaffolding a follow-on attack if it ever resolves into the project. Brand impersonation + credential transmission to a non-publisher domain + arbitrary code injection into installed packages is the supply-chain-phishing shape.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.5-beta.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/trust.js",
+              "sha256": "0babe189bca6ec6f25dbd6f654928a5b30b37c563aa633281f457132a2955506",
+              "tlsh": "fb2243e854ea137895933175678b2125a731c5233008d994baedd3e83fa293582fff8c"
+            },
+            {
+              "path": "src/constants.js",
+              "sha256": "fcfe18de3bb14bb97b6ea28bc62fb78816c3386a2429d089c7618cd6d2470ac6",
+              "tlsh": "a051eb61c21605b304e378e42137e3932e7c989be97914fc3a9e979c031f8c5a67646f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.5-beta.3.tgz",
+              "hashes": {
+                "sha1": "fe8fa3542f42824baa12cfd15b8093459153fc20",
+                "sha512_sri": "sha512-uN8mKXXAqUiiAVgri6TqCtCwkj7BsuLmgSdaF7J6+vwZpfLT/OwpKMhknX9WzvQpUirDuM1ngYmBViSI9tSnqQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8f7e44a55b38e79df2319abde3ebf72194f1f709f0e7fa66fd0621cd734cab31",
+        "import_time": "2026-05-26T05:51:18.873444465Z",
+        "id": "IN-MAL-2026-003787",
+        "modified_time": "2026-05-21T09:05:08Z",
+        "versions": [
+          "4.5.5-beta.3"
+        ]
+      }
+    ]
+  }
+}

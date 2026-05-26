@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-24T05:11:20Z",
+  "published": "2026-05-24T05:11:20Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall installs persistent LAN-bound control gateway trusting publisher origins, distributes live third-party API keys, and fetches an unpinned third-party package via npx",
+  "details": "On `npm install`, `scripts/postinstall.mjs` performs several installer-harm actions. (1) Backdoor: writes `~/.openclaw/openclaw.json` configuring a local gateway with `gateway.bind: 'lan'` (LAN-reachable, not loopback), `dangerouslyDisableDeviceAuth: true`, `dangerouslyAllowHostHeaderOriginFallback: true`, and `controlUi.allowedOrigins` whitelisting `https://im.shadanai.com`, `https://shadanai.com`, and dynamic `https://18789-\u003cuserId\u003e.vnc.shadanai.com`. A fixed gateway bearer token is written to `~/.openclaw/.env`. To support cross-origin TLS, the postinstall runs `mkcert -install` unconditionally, adding a locally-generated CA to the system/browser trust store, and bakes every non-internal LAN IPv4 of the host into the certificate SANs. The combined effect: pages served from publisher-controlled `shadanai.com` origins can issue authenticated commands to the installer's local agent gateway over LAN with no device-auth challenge — a persistent publisher-controlled control plane the installer never opted into. (2) Credential distribution: a live Zhipu AI (z.ai) API key (`b0952b463c02412d874295000eb79043.CUcvwxpi0RsmbLM5`) is hardcoded in `scripts/postinstall.mjs` (L46) and written to `~/.openclaw/.env`. A second live OpenAI-format key (`sk-xRxGLtCkAhBqKdpe252aBb643c4e4d669e503dDf06D8A2D9`) for `https://one-api.shadanai.com/v1` is shipped in `gateway.json` and merged into `~/.openclaw/openclaw.json`. Every installer receives both keys in cleartext and can impersonate the publisher against those services. (3) Install-time RCE via mutable tag: postinstall executes `npx clawhub@latest install sonoscli` with `shell: true`, fetching and executing whatever the current `latest` of the third-party `clawhub` npm package publishes — no version pin, no integrity check. The maintainer of `clawhub` (or anyone who later compromises that account) gains silent code execution on every installer. Each of these is independently sufficient for block; combined, the package establishes a persistent attacker-trusted control plane on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@shadanai/openclaw"
+      },
+      "versions": [
+        "2026.5.26"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.mjs",
+              "sha256": "6b2afe7cabe8c9fe9bf103985ecf8b33e652a2c3acf6c2655f621f88006bd9d8",
+              "tlsh": "c652a2b810f5563239b1d66c119b5015b128ba03390dfd59b3dc73a13fee52842b36be"
+            },
+            {
+              "path": "gateway.json",
+              "sha256": "e5bae71e01969426f6fb504feec8ee4b1a4026f4825932f046f73af2a324567b",
+              "tlsh": "c9519728c2b80db705eab57455bd6243f620c29b4e583c2a7b8c124c5f5da3e16fa3dc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "openclaw-2026.5.26.tgz",
+              "hashes": {
+                "sha1": "c2e6d4129a9b29e78f09ce0f7f4c39ce5070d05d",
+                "sha512_sri": "sha512-dInAAz8JxkazRL1vbxUvrK01N8iEHN0SiMsXsBJFa7sIdbZZZor/aTMBf/iJE8Y10JSqPRtsy/uI27vysbaKyg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@shadanai/openclaw/v/2026.5.26"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c0e2f02ab1bb3d99de1787ed7d69f1df97bd3b2d7c18cc8ba4e5f8688f649ce9",
+        "import_time": "2026-05-26T05:52:38.714560828Z",
+        "id": "IN-MAL-2026-004461",
+        "modified_time": "2026-05-24T05:11:20Z",
+        "versions": [
+          "2026.5.26"
+        ]
+      }
+    ]
+  }
+}

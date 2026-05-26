@@ -1,0 +1,84 @@
+{
+  "modified": "2026-05-25T01:25:10Z",
+  "published": "2026-05-25T01:25:10Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "pylogkt ships an import-time C2 backdoor disguised as a logging library",
+  "details": "The package masquerades as a logging utility but every call to its logging API (log.info/debug/etc) triggers Logger._log, which on macOS hosts (paths starting with /Users or /Library) silently spawns a detached subprocess running pylogkt/_check.py. That script self-deletes from disk (os.remove(__file__)), then enters an infinite 60-second polling loop against https://pypkg.dev/project/pylogkt/json with TLS verification disabled (ssl._create_unverified_context()). The first POST exfiltrates the absolute install path (base_dir.encode()), revealing the victim's username and site-packages layout. Subsequent responses are base64-decoded and passed to os.system via `pip show \u003cdata\u003e`; the shell-escape filter allows `;`, `|`, `\u0026`, `(`, `)`, and `\u003e`, making arbitrary command injection trivial. The C2 host pypkg.dev typosquats pypi.org and uses a /project/\u003cpkg\u003e/json path that mimics PyPI's real JSON API to camouflage the traffic. This is a full-fidelity backdoor: persistent C2, self-evidence-deletion, disabled TLS, and remote command execution on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "pylogkt"
+      },
+      "versions": [
+        "0.1.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pylogkt/_check.py",
+              "sha256": "51e8d7b1631d7e4a805956a0dccbbf3e04b3f2e3b8ea2a5b4de2e73723185b9e",
+              "tlsh": "9e315366a91c00a9d383889bd820e5601737fc0f6a01ca74fadcd3a05fc957782f3a89"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pylogkt-0.1.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "7aebfcac2f1d513c0875828fb72324b3a7b46909870c65f9fdcb194788343261",
+                "md5": "5a38c151a4662f978da960003e5d9e92",
+                "sha256": "b13fc08f7531ee52649f84d886885593060febbab2b3e7e5312175c64fbf8ec3"
+              }
+            },
+            {
+              "filename": "pylogkt-0.1.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "a666696c6fde7dcdf29c8c41312408136eec8cf19e362c39a0b424d80c05b24d",
+                "md5": "30df2fe937feb3b1ef1d4851e96d15b9",
+                "sha256": "26f708bea0958cf20e27d86c14d0149db96f5863f8368bd30266c218e072b5b7"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pylogkt/0.1.2/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "aa1c9e5bf0ffd994f076a4a76395b5bcccd2716229439910912bd49aaf52f903",
+        "import_time": "2026-05-26T05:52:51.015365646Z",
+        "id": "IN-MAL-2026-004564",
+        "modified_time": "2026-05-25T01:25:10Z",
+        "versions": [
+          "0.1.2"
+        ]
+      }
+    ]
+  }
+}

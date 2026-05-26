@@ -1,0 +1,95 @@
+{
+  "modified": "2026-05-21T09:38:14Z",
+  "published": "2026-05-21T09:38:14Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "hpsetup drops attacker-controlled code into node_modules under @heroui-pro/react and persists itself in CI",
+  "details": "The CLI advertises itself as the HeroUI Pro installer (LOGO 'HP SETUP', references to 'HeroUI Pro') but fetches its payload from hpsetup-cdn.932324.xyz — a numeric.xyz host unrelated to heroui.com. src/download.js builds `${PROXY}/api/tarball/${product.slug}/${version}?key=${userKey}` and pipes the response through tar-extract directly into node_modules/@heroui-pro/react (or heroui-native-pro), then rewrites that package's package.json so main/exports point at./dist/index.js. The fetched bytes are not pinned, not hash-verified, and not from the impersonated publisher's infrastructure — any future `import '@heroui-pro/react'` in the consumer's app or CI executes whatever JS the CDN serves at that moment. After extraction, src/download.js and src/patch.js scrub the dropped package.json: any `dist/postinstall` directory is rm'd and the `scripts` field is deleted entirely, hiding lifecycle hooks from package-manager review and from forensic inspection. src/vercel.js compounds this by writing `installCommand: npx -y hpsetup@latest \u003cuserKey\u003e` into the consumer's vercel.json and appending vercel.json to.gitignore, pinning every future Vercel deploy to re-run the unpinned dropper while hiding the change from PR review. src/trust.js silently adds @zowe/secrets-for-zowe-sdk (a mainframe SDK unrelated to HeroUI) to pnpm.onlyBuiltDependencies / pnpm-workspace allowBuilds / bun trustedDependencies, authorizing that third-party package to execute install scripts in the victim project under the HeroUI cover story.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.5-beta.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/trust.js",
+              "sha256": "0babe189bca6ec6f25dbd6f654928a5b30b37c563aa633281f457132a2955506",
+              "tlsh": "fb2243e854ea137895933175678b2125a731c5233008d994baedd3e83fa293582fff8c"
+            },
+            {
+              "path": "src/vercel.js",
+              "sha256": "ba9250f1a16ffc04ef08c0d2fb9f2a03a51e1f45d8f8e5a64780f3cc7fbcf5f7",
+              "tlsh": "c441315bebbe1b312c629115844b001173a48b633504e69935fd629e5fc78acd5a32dd"
+            },
+            {
+              "path": "src/patch.js",
+              "sha256": "e7e38a5a071f0d349fdec608ac81635f733e10add7519b9389c39a3e793944b3",
+              "tlsh": "54410d1104e18b0124e13ab4857b1843b37690535659bb0036af4aec8fcf69e4aaf3dc"
+            },
+            {
+              "path": "package.json",
+              "sha256": "43b613ddd19a739efdf2d6444a552fcbcee655a87142d0d41e61f21f44ca8739",
+              "tlsh": "64e0d814c9265d7321c829b2182e14677930c98b46587c2c73e7607caf2c69f35fea6d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.5-beta.7.tgz",
+              "hashes": {
+                "sha1": "620482d1165cdb0b50c5b4ab85505f58c9f42df8",
+                "sha512_sri": "sha512-84ju8IgiZSDDqF1XFN2pHlszsA0cPZSlsjC4lgP4KQ1+QrOHv4L66ajDAJmD7zytGIossnzrvXWF9IEjbuR4EA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.7"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "56ddba5d5d70ba490441bdcbd64b502d09700e975a15830b45b87bb9fd8d4d8f",
+        "import_time": "2026-05-26T05:51:19.85393634Z",
+        "id": "IN-MAL-2026-003796",
+        "modified_time": "2026-05-21T09:38:14Z",
+        "versions": [
+          "4.5.5-beta.7"
+        ]
+      }
+    ]
+  }
+}

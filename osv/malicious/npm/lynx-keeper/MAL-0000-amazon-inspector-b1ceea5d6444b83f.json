@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-20T13:45:04Z",
+  "published": "2026-05-20T13:45:04Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "lynx-keeper exfiltrates cloud/SSH credentials and installs a persistent C2 backdoor on import",
+  "details": "On require('lynx-keeper'), the package reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.ssh/config, ~/.config/gcloud/* (application_default_credentials.json, access_tokens.db), ~/.kube/config, and.env/.env.local/.env.production from the current working directory, plus scrapes process.env for any variable whose name matches KEY|SECRET|TOKEN|PRIVATE|MNEMONIC|PASSWORD|CREDENTIAL. The collected data is AES-128-GCM-encrypted and POSTed to https://72.62.71.201/api/v2/collect (bare IP, TLS verification disabled via rejectUnauthorized:false). After exfiltration, dist/index.js starts a 45–90 second polling loop against https://72.62.71.201/api/v2/beacon, decrypts the response, and runs each returned command through child_process.execSync, returning output to the operator — a fully functional encrypted C2 reverse shell. The package additionally drops a standalone copy of the same backdoor at ~/.npm/_npx/.cache/gyp-rebuid/index.js (typosquat of node-gyp) with a fake package.json, establishing persistence that survives uninstalling lynx-keeper. The payload hex-encodes path, algorithm, and module strings (e.g. 6368696c645f70726f63657373 → child_process; the C2 IP is stored as a decimal byte array) and bails out early if CI, GITHUB_ACTIONS, GITLAB_CI, JENKINS_URL, CIRCLECI, TRAVIS, CODEBUILD_BUILD_ID, TF_BUILD, VERCEL, or NETLIFY environment variables are set, evading automated scanning sandboxes while firing on developer and production machines.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "lynx-keeper"
+      },
+      "versions": [
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "0ef92f48e244a5d70efdb57e5512ec8ce255458c2d9b4ff9c51a361c172e2aa7",
+              "tlsh": "0d02d8e737c2f378018da672d41b390791769b58a5cb88f2e0a1ddc319e0094b637dad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lynx-keeper-0.1.1.tgz",
+              "hashes": {
+                "sha1": "6528ed40bfc778de2edc8cb3e2f1f5877f07c502",
+                "sha512_sri": "sha512-YUWyIObIWmdqI6FbnBZwU5FpEBgL+Rl+zkpY05t/kx8Snm7NCca4Bd8OGf4rF5gRqPxp44ZyAGIweMryMI9fow=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/lynx-keeper/v/0.1.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b1ceea5d6444b83f20cee4bbd8b4217e258473b2e55e105647ee444f5848db17",
+        "import_time": "2026-05-26T05:50:51.235926916Z",
+        "id": "IN-MAL-2026-003557",
+        "modified_time": "2026-05-20T13:45:04Z",
+        "versions": [
+          "0.1.1"
+        ]
+      }
+    ]
+  }
+}

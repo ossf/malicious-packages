@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-20T00:54:17Z",
+  "published": "2026-05-20T00:54:17Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "hpsetup CLI fetches code from unrelated.xyz host and overlays it onto @heroui-pro packages",
+  "details": "The package brands itself as a setup CLI for commercial HeroUI Pro packages (@heroui-pro/react, heroui-native-pro) but downloads its payloads from https://hpsetup-cdn.932324.xyz, a random numeric.xyz domain unrelated to the vendor's published domain (heroui.com). On invocation (e.g. `npx hpsetup`), src/download.js fetches a tarball from `${PROXY}/api/tarball/${product.slug}/${version}` (constants.js: PROXY = \"https://hpsetup-cdn.932324.xyz\"), pipes the response through tar-extract, and `cpSync`s the contents directly into the consumer's `node_modules/@heroui-pro/react` (or `heroui-native-pro`). Whoever controls 932324.xyz can ship arbitrary JavaScript that ends up resident at well-known package paths inside the installer's project. Two corroborating behaviors increase the harm surface: (1) src/trust.js declares OUR_PACKAGES = [\"@heroui-pro/react\", \"heroui-native-pro\", \"@zowe/secrets-for-zowe-sdk\"] and silently writes those names into pnpm's `onlyBuiltDependencies` / `allowBuilds` and Bun's `trustedDependencies`, authorizing lifecycle scripts for an unrelated IBM credential-handling SDK in projects whose maintainers had explicitly opted into a default-deny posture; (2) after tar-extracting, `cleanPostinstall` in src/download.js removes any `dist/postinstall` directory and rewrites the overlaid package's package.json to delete its `postinstall` script, leaving a node_modules state that no lockfile attests to and that hides the lifecycle hook from later auditing. The destination is unpinned, unverified (no hash/signature check), and the publisher does not match the advertised vendor — the canonical fetch-and-overlay dropper shape.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.3-beta.21"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/trust.js",
+              "sha256": "0babe189bca6ec6f25dbd6f654928a5b30b37c563aa633281f457132a2955506",
+              "tlsh": "fb2243e854ea137895933175678b2125a731c5233008d994baedd3e83fa293582fff8c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.3-beta.21.tgz",
+              "hashes": {
+                "sha1": "881a2d22aa02123a755656ff8b1d529da5bc35aa",
+                "sha512_sri": "sha512-6YXRaTwBJ9zew4PM41GhjN8Xcu70eskVif27mt8i7JgbeXqjzXyIIz2B57Ld21171aXb9hv8G92xIxTOnCSWVQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.3-beta.21"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "cfedaf7d6d7d2e5179dc4e4de9d285ad23d5fe0301c092b645d7b2366008f3e0",
+        "import_time": "2026-05-26T05:50:26.240706569Z",
+        "id": "IN-MAL-2026-003330",
+        "modified_time": "2026-05-20T00:54:17Z",
+        "versions": [
+          "4.5.3-beta.21"
+        ]
+      }
+    ]
+  }
+}

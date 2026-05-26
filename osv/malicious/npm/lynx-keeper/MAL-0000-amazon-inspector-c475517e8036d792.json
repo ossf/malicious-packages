@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-22T06:33:11Z",
+  "published": "2026-05-22T06:33:11Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Credential harvester and C2 backdoor on require()",
+  "details": "On require, lynx-keeper executes a hex-obfuscated payload in dist/index.js that performs three independent attacks against the installer. (1) Mass credential theft: reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, id_ed25519 and ssh config, gcloud credentials, kubeconfig, ~/.docker/config.json, ~/.npmrc, ~/.gitconfig, project.env files, /proc/self/environ, /var/run/secrets, scrapes /home/* for the same, and filters process.env for KEY/SECRET/TOKEN/PRIVATE/MNEMONIC/PASSWORD-shaped variables. (2) Cloud IAM credential harvesting: queries AWS EC2 IMDSv1/v2 at 169.254.169.254, ECS task credentials via AWS_CONTAINER_CREDENTIALS_RELATIVE_URI at 169.254.170.2, GCP metadata.google.internal, and Azure IMDS for service-account tokens. All collected data is AES-128-GCM encrypted and POSTed to http://72.62.71.201/api/v2/collect. (3) Persistent C2 backdoor: polls https://72.62.71.201/api/v2/beacon every 45-90s and executes attacker-supplied commands via child_process.execSync, with built-in opcodes for arbitrary shell, __READ__ file reads, __FETCH__ remote download, __ENV__ env dump, __HARVEST__ re-collection, and __KILL__ self-removal. A copy of the implant is written to ~/.npm/_npx/.cache/gyp-rebuild/index.js with a fake package.json masquerading as a node-gyp cache, providing persistence after lynx-keeper is uninstalled. The payload disables TLS verification (rejectUnauthorized:false), hex-encodes every sensitive constant (IP, paths, header names, AES algorithm), and skips execution under common CI environment variables (CI, GITHUB_ACTIONS, etc.) to evade automated scanners. The package's README is the literal placeholder 'YOUR-PACKAGE-NAME' while the name and 'Lynx protocol keeper' description target Web3/DeFi developers whose machines carry high-value wallet, cloud, and SSH secrets.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "lynx-keeper"
+      },
+      "versions": [
+        "0.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "357a573b887ee9faa77f6235c86b0c71f0e7faae43641b943c31ebd6c72de32b",
+              "tlsh": "e36209aa7786e35d0990b17140ff6d0f52776b411c0a16f2f066dec16db8b60322b9ee"
+            },
+            {
+              "path": "README.md",
+              "sha256": "f9fb7844c84451223e56c263047578728f21adce53866cafa3536c5c515bccf5",
+              "tlsh": "add0223d0a01fb0345739e9f2d72e9fb702a12a41d038a080efd403a80e2e8b067600f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lynx-keeper-0.1.3.tgz",
+              "hashes": {
+                "sha1": "745f272c61082636fb61360b72d027e6469e0c67",
+                "sha512_sri": "sha512-rVXMHbXtDhdv8Ok2PJCqe4+IBHWkX5ZC6jFgJK3HvYe/B0HQgSKZZkpVxPDxQHlJE5p0kBrv4yo9qVTXFXwC2g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/lynx-keeper/v/0.1.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c475517e8036d792ed20ed340623f801b16d90e0ed9fb81ebb22b900cdb9fc65",
+        "import_time": "2026-05-26T05:52:02.636054361Z",
+        "id": "IN-MAL-2026-004156",
+        "modified_time": "2026-05-22T06:33:11Z",
+        "versions": [
+          "0.1.3"
+        ]
+      }
+    ]
+  }
+}

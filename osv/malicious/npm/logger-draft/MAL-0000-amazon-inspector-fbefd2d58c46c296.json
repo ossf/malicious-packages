@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-22T10:21:37Z",
+  "published": "2026-05-22T10:21:37Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Obfuscated postinstall drops and persists a platform-native binary",
+  "details": "package.json declares `\"postinstall\": \"node utils.cjs\"`. utils.cjs is a 261 KB obfuscator.io-style script (RC4+base64 string-array decoder, self-defending console rebinders, setInterval debugger trap) whose decoded logic selects a per-OS payload from a DOWNLOAD_MAP (win32-x64.exe, darwin-x64, darwin-arm64, linux-x64), fetches `${BINARY_BASE_URL}/${file}` with a hardcoded `Authorization: Bearer ${HF_TOKEN}` header, writes the binary as a hidden file under the user's local-data directory (LOCALAPPDATA / ~/Library/Application Support / XDG_DATA_HOME), chmods it 0o755 on POSIX, spawns it detached, and registers OS-level autostart (HKCU\\...\\Run on Windows, LaunchAgent on macOS, systemd unit on Linux). On non-Windows hosts the script re-spawns itself as a detached `node \u003cscript\u003e --child` with stdio ignored and then calls `process.exit(0)`, so `npm install` returns success while the dropper continues in the background — an explicit anti-analysis pattern designed to hide the install-time work from CI logs and lifecycle observers. The package self-describes as a terminal logger; nothing about that purpose justifies a heavily obfuscated postinstall that downloads and persists an opaque platform-native executable. Multiple independent block signals stack: heavy obfuscation in lifecycle code, mutable remote binary fetch with bearer-token auth, purpose mismatch, multi-OS persistence install, and detach-and-exit anti-observation.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "logger-draft"
+      },
+      "versions": [
+        "3.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "utils.cjs",
+              "sha256": "032586646362b7e21f8bf0b87cef3ace2a27c415a8447c52edfa81f37b51810f",
+              "tlsh": "3344a58037d6bc8217471bb7371ab5f5e52edd98b088458ef500bc58f1f9a26eae0670"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "logger-draft-3.2.0.tgz",
+              "hashes": {
+                "sha1": "b28c81c63335b8b421cd77c462512b9c1b66f5b7",
+                "sha512_sri": "sha512-VHk9uUdqsy6HSvu5KI99Ekrq4tPFj5q3QT1EbNvwN4qDsWgAuFErH3TF+hL6WNh3d2tOrW19ezA6j86eIdD8RA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/logger-draft/v/3.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "fbefd2d58c46c2967c6d1ac070fe3fef6a50b078d76ca015d184cf8ac3e9812e",
+        "import_time": "2026-05-26T05:52:05.958128048Z",
+        "id": "IN-MAL-2026-004183",
+        "modified_time": "2026-05-22T10:21:37Z",
+        "versions": [
+          "3.2.0"
+        ]
+      }
+    ]
+  }
+}

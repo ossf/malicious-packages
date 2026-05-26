@@ -1,0 +1,89 @@
+{
+  "modified": "2026-05-19T19:45:36Z",
+  "published": "2026-05-19T19:45:36Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "qontract-reconcile dev release substitutes httpx with httpxyz typosquat across imports and uv resolver overrides",
+  "details": "This dev release of qontract-reconcile replaces the legitimate `httpx` HTTP client with `httpxyz`, a typosquat of `httpx` not controlled by the package's stated publisher. Multiple modules unconditionally `import httpxyz` at module top-level, including `reconcile/utils/runtime/integration.py` (line 18) and `reconcile/ldap_users_api/integration.py` (line 14). A residual comment in `reconcile/utils/runtime/environment.py` line 67 (`# hide logging.info \"HTTP GET/POST...\" logs from httpxyz`) confirms a global httpx→httpxyz textual substitution. The `reconcile/cli.py` console-script entrypoint imports the affected runtime module, so any invocation of the `qontract-reconcile` CLI loads whatever `httpxyz` resolves to on PyPI. To force resolution of the typosquat into the environment, `pyproject.toml` lines 104-106 declare a `[[tool.uv.dependency-metadata]]` override that rewrites the legitimate `pagerduty` SDK's published dependency from `httpx` to `httpxyz\u003e=0.31`, ensuring `uv`-based installs pull the attacker-controlled package transitively even where it is not listed directly. The combination of (a) module-level imports of a typosquat, (b) resolver-metadata override coercing a legitimate transitive into the typosquat, and (c) exposure via the CLI entrypoint operationalizes a dependency-confusion attack on installers/operators of this package: arbitrary code published under the `httpxyz` name on PyPI runs at CLI startup.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "qontract-reconcile"
+      },
+      "versions": [
+        "0.10.2.dev658"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "reconcile/utils/runtime/integration.py",
+              "sha256": "2670dd288a01901081de48085637f04142ad686985cdcfed27765138252f09a4",
+              "tlsh": "c572760bf55aee6201c70c76d45b74671a26db6b3a1a1061bcbcb57c1f89c31c2eb8d8"
+            },
+            {
+              "path": "pyproject.toml",
+              "sha256": "32f3015ffefa9e7eff03dcfb10fcc951ea1088497783dc9bae66bbd9fb2a26f3",
+              "tlsh": "c512f9a3e5535e7918c64084b4c86502e7628a133ea2746c73ad42dc1f4dddfb27e92e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "qontract_reconcile-0.10.2.dev658-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "3e3f2152d37203b7d624768adb3d5906edb30eba7b08732308ef41a868998dc2",
+                "md5": "44f2c36a50b5862beca838b120b0a711",
+                "sha256": "9d02bc3830061f33912b9b1c89603ffb1c180b99911218a7bbf61cf252f6e3b5"
+              }
+            },
+            {
+              "filename": "qontract_reconcile-0.10.2.dev658.tar.gz",
+              "hashes": {
+                "blake2b_256": "f5103c3ab377e41242e532821c1e1d9ba0f34a9496e5dc3597b242581839e09f",
+                "md5": "056fa79e8aab517a6c4d908fdb8b52c0",
+                "sha256": "ba148c9fe958cde8b7a1f174ed5619d1dd26aa9a120ec5ba5f013ff32af928e9"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/qontract-reconcile/0.10.2.dev658/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a0aa508b34b3a40193a64faf2b6788a0be2b01bf40b7126279e7b303097fd5e5",
+        "import_time": "2026-05-26T05:50:19.140568404Z",
+        "id": "IN-MAL-2026-003264",
+        "modified_time": "2026-05-19T19:45:36Z",
+        "versions": [
+          "0.10.2.dev658"
+        ]
+      }
+    ]
+  }
+}

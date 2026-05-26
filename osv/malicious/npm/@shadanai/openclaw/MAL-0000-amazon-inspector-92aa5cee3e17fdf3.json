@@ -1,0 +1,85 @@
+{
+  "modified": "2026-05-19T18:05:22Z",
+  "published": "2026-05-19T18:05:22Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "@shadanai/openclaw ships a remote-control backdoor: hardcoded gateway token, disabled device auth, author-origin CORS allowlist, and silent prompt-relay",
+  "details": "This package impersonates the legitimate `openclaw` project (its README is a verbatim copy directing users to `npm install -g openclaw@latest`) and the postinstall script creates a `node_modules/openclaw -\u003e @shadanai/openme` symlink so imports of `openclaw/...` resolve to this fork. The postinstall (`scripts/postinstall.mjs`) then installs a complete remote-control surface into every installer's machine: (1) writes a hardcoded shared gateway token `OPENCLAW_GATEWAY_TOKEN=276f6078...aaef75` into `~/.openclaw/.env` and bakes it into `gateway.json`, identical for every installer; (2) writes the gateway config with `dangerouslyDisableDeviceAuth: true`, `dangerouslyAllowHostHeaderOriginFallback: true`, and an `allowedOrigins` list including `https://im.shadanai.com` and `https://shadanai.com`, so author-controlled web pages can authenticate to the installer's local OpenClaw gateway and drive its control-plane RPCs (including shell-exec tooling); (3) silently runs `mkcert -install` to inject a new root CA into the OS/browser trust stores; (4) executes `npx clawhub@latest install sonoscli` with a mutable `@latest` tag, giving the author a future remote-update channel to ship arbitrary code to all installers without republishing this package. At runtime, the bundled `gateway.json` hardcodes the default model provider to `https://one-api.shadanai.com/v1` with a hardcoded API key (`sk-xRxGLt...D9`) and sets `agents.defaults.model` to `shadan/glm-5`, silently relaying every prompt and response through the author's proxy. After box-im login, `extensions/box-im/src/owner-bootstrap.ts` calls `registerDevice(apiUrl, auth.tokenKey, reg)` against `one-api.shadanai.com` and uploads the installer's gateway token, port, and a deterministic device ID — closing the loop so the author's backend can drive the installer's local gateway. The package additionally redistributes a third-party Z.ai API key (`ZAI_API_KEY=b0952b46...bLM5`) to every installer.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@shadanai/openclaw"
+      },
+      "versions": [
+        "2026.5.16"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.mjs",
+              "sha256": "6b2afe7cabe8c9fe9bf103985ecf8b33e652a2c3acf6c2655f621f88006bd9d8",
+              "tlsh": "c652a2b810f5563239b1d66c119b5015b128ba03390dfd59b3dc73a13fee52842b36be"
+            },
+            {
+              "path": "gateway.json",
+              "sha256": "e5bae71e01969426f6fb504feec8ee4b1a4026f4825932f046f73af2a324567b",
+              "tlsh": "c9519728c2b80db705eab57455bd6243f620c29b4e583c2a7b8c124c5f5da3e16fa3dc"
+            },
+            {
+              "path": "extensions/box-im/src/owner-bootstrap.ts",
+              "sha256": "6211ba99df6f789541aa001bed9114169a7d75908fb8d830d7910e6142c01d00",
+              "tlsh": "ed82c58680f26a3615fb1a9ebbdf91226518c2833e08fca573dcc6940f5c05d52777ad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "openclaw-2026.5.16.tgz",
+              "hashes": {
+                "sha1": "d68494ee7f5c4e668cfe1ea380149bf71ac1e926",
+                "sha512_sri": "sha512-9GrJZXZAcuQUaZJVyZtDumqwtVr0ZpJF87XtjO8ace+G0QVw88/lYXcv+35izUG70czBxGzqYGNVLeoli5Z0hQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@shadanai/openclaw/v/2026.5.16"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "92aa5cee3e17fdf310ca064213d60fab3e055e33ed72f0bfee36b95cd96fe1d9",
+        "import_time": "2026-05-26T05:50:14.781834282Z",
+        "id": "IN-MAL-2026-003225",
+        "modified_time": "2026-05-19T18:05:22Z",
+        "versions": [
+          "2026.5.16"
+        ]
+      }
+    ]
+  }
+}

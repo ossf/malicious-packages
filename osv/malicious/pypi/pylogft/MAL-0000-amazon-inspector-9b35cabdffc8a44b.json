@@ -1,0 +1,89 @@
+{
+  "modified": "2026-05-22T01:54:20Z",
+  "published": "2026-05-22T01:54:20Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "pylogft ships an import-time C2 backdoor that executes attacker-supplied shell commands",
+  "details": "On `import pylogft`, the package's `__init__.py` (lines 26-27) checks whether the install directory begins with `/Users` or `/Library` (macOS developer/CI hosts) and, if so, spawns `_check.py` as a detached subprocess with stdout/stderr redirected to DEVNULL. `_check.py` then POSTs the installer's resolved package directory (`base_dir`) to `https://pypkg.dev/project/pylogft/json` — a lookalike of pypi.org / pkg.go.dev — with TLS verification explicitly disabled via `ssl._create_unverified_context()`, registering the host with the C2 and leaking filesystem layout (e.g., `/Users/\u003cvictim\u003e/...`). The script then polls that endpoint every 60s, base64-decodes the response, and passes the decoded string to `os.system(f\"pip show {package_list}\")`. The package's `shell_escape` regex permits `;`, `|`, `\u0026`, and `\u003e`, so any C2 response containing those metacharacters breaks out of the `pip show` prefix and executes arbitrary shell commands on the installer's machine. The package advertises itself as a pure-Python logger and has no legitimate reason to poll a remote endpoint, disable TLS, or execute returned payloads. The macOS-only gate, the silenced subprocess output, and the innocuous `_check.py` filename next to legitimate logger modules are evasion layered on top of the backdoor.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "pylogft"
+      },
+      "versions": [
+        "0.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pylogft/_check.py",
+              "sha256": "043036b476a071d51ecbc62ce652dddc60cf60186c7c0bac6bb78ee46d206651",
+              "tlsh": "c0310566a51c009ad383496bd420e5645737fc0b6601c6b4faec93a41fc9576c2f3589"
+            },
+            {
+              "path": "pylogft/__init__.py",
+              "sha256": "5d84e539c6bd152a0925e78f2af3438d917510a3fb56b0786633cbc8447b1d6b",
+              "tlsh": "e801257a432f5162015ec6a8a00b071037a2d587df4680f471ecbab46f87c7a11de53c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pylogft-0.1.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "839795c6af6847c91dcba5c22d15e1460c87091560ac4c81e06ccfb7adb1fee0",
+                "md5": "dfdb6589acf5c881b81e8f90b8a2b6bc",
+                "sha256": "1e830471f01f6c4b32e73d691a3ebc1d1522406758d049bd5ca7b1eb3b3455c5"
+              }
+            },
+            {
+              "filename": "pylogft-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "156dfd29edcb01757598e6f008cfa5448a7c6d2589929a3a1a6a3b34ba67e373",
+                "md5": "7c941e79de71ab82537e271966078fe0",
+                "sha256": "e09f0dcf081233e8fa06a2cf3f935c7e15bbbeb3c689221521054ad328beda1d"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pylogft/0.1.0/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "9b35cabdffc8a44bcf857b973cc7eb89b6ae691c9be8189a58a0bd30c1a55a37",
+        "import_time": "2026-05-26T05:51:58.707420973Z",
+        "id": "IN-MAL-2026-004121",
+        "modified_time": "2026-05-22T01:54:20Z",
+        "versions": [
+          "0.1.0"
+        ]
+      }
+    ]
+  }
+}

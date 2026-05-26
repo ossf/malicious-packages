@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-19T16:57:09Z",
+  "published": "2026-05-19T16:57:09Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "bytecore middleware fetches and executes remote JavaScript from anonymous paste host",
+  "details": "The package masquerades as a pino-like logging middleware (README is copied from pino, exports a `pino` property, mimics pino's option shape) but the middleware factory in index.js spawns a detached `node lib/caller.js` child process when the exported function is invoked. lib/caller.js obfuscates a hardcoded C2 URL by shadowing the real `process` global with a local object whose `env` holds base64-encoded strings; decoding `DEV_API_KEY` yields `https://jsonkeeper.com/b/BADC6`. The script GETs that anonymous, mutable paste host with axios (retried 5 times) and passes the response body to `new Function.constructor(\"require\", s)(require)`, executing attacker-controlled JavaScript with full Node privileges and direct access to `require`. Any application that installs bytecore and mounts the middleware (`app.use(require('bytecore')())`) runs whatever code the paste currently serves. The combination of (a) mutable anonymous paste host as code source, (b) `require`-passing eval of fetched bytes, (c) base64 + process-shadowing obfuscation of the C2, and (d) impersonation of a popular logger to lure installers is an unambiguous remote-code-execution backdoor.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "bytecore"
+      },
+      "versions": [
+        "5.3.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/caller.js",
+              "sha256": "5f2d8aec684e79cb983af79d29fddf7e7ecf1e36474baf1422e77c9b79caee23",
+              "tlsh": "d6019c4a70fd641c016122fa261fa4326011f47b3946d9d4374cc3525fa96be2e93adf"
+            },
+            {
+              "path": "README.md",
+              "sha256": "366fb8e84a0157e29ec26bad87f74f0564804a80eb71b0fa22cc1eb08a88cbf4",
+              "tlsh": "4a5175a787e87b6e4b6300b1a1c275b9ff1f931c7b69606dec9cd1291319997813110a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bytecore-5.3.1.tgz",
+              "hashes": {
+                "sha1": "ea2bf63152f2c687850dfb8a66d404424193b068",
+                "sha512_sri": "sha512-Fz+0+98cioSWu+Opl6Kfd7YZ/Bm640khK7qi5szklKrGs6nspU+A7TA7HpesE5/Nd5CK2ibXvmvsnQs8aJV7Yg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bytecore/v/5.3.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1c1ddd2dea35052822d2dc89f0f46ceae20c772c257e0c97f0024483e9ff31c0",
+        "import_time": "2026-05-26T05:50:12.370992922Z",
+        "id": "IN-MAL-2026-003203",
+        "modified_time": "2026-05-19T16:57:09Z",
+        "versions": [
+          "5.3.1"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-20T05:18:25Z",
+  "published": "2026-05-20T05:18:25Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall hook fetches and executes remote code via obfuscated dropper",
+  "details": "package.json declares a postinstall script that runs `node src/install.js` after building a local binary. `src/install.js` is a 175 KB single-line payload obfuscated with a `Function(...)` constructor wrapper, LZString-compressed UTF-16 string tables, and per-helper rotated base85 alphabets. Once de-obfuscated, the payload resolves the strings `child_process`, `node-fetch`/`fetch`, `-c`, `shell`, `detached`, `stdio`, `ignore`, performs an outbound `fetch(url, {headers:...})`, reads the response body, and passes it to `require('child_process').spawn('sh', ['-c', \u003cfetched-body\u003e], {shell, detached, stdio:'ignore'})`. This fires unattended on `npm install` and runs attacker-controlled shell content with the installer's privileges. The multi-layer obfuscation (Function-constructor + LZString + rotated alphabets + global rebinding through aliased getters such as `FTecFy['G9V6x7'] === require`) exists solely to hide the fetch-and-exec from scanners and reviewers; legitimate install tooling does not need that. The shipped `bin/flare` binary built by `make` is a local CTF-style reverse-engineering challenge (ptrace anti-debug, hardcoded magic constants, XOR-decoded flag string) and is not the installer-harm vector — the dropper in `src/install.js` is. The CTF framing in the README does not neutralize the install-time RCE: any developer running `npm install ctf-flare` executes whatever shell text the remote endpoint serves at that moment.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ctf-flare"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/install.js",
+              "sha256": "d32e8f6e1c6541d30167801a040af853d845097df22515e1fc168a4a3d477cc4",
+              "tlsh": "220453960eb11759b3de4b008e36ed4c10ac673a5f4874ceaff3e5f6a64cd564ae0a01"
+            },
+            {
+              "path": "src/main.c",
+              "sha256": "857564c9b45635b4c79159cf517d17b23ed6dd13472ac2c1e7b283ce1c50ff35",
+              "tlsh": "11e163552ea240e319979b7b938b51479318a02733a0fcd1f88fa54c9f83215e3b6ed4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ctf-flare-1.0.0.tgz",
+              "hashes": {
+                "sha1": "2cddaa74963256ae56d1f7a144c38a5343266fc2",
+                "sha512_sri": "sha512-XrLqWJBPbk1p6Z+dEQKaa1vscFdajbkZ71sk26URkLrVHg7ZU8d65yEhMw3MhhdIQKqUa12qoy4DjHT8DIwu9w=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ctf-flare/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "23293f1bc28e465f7ffaf916fd8a6cc3958b873a2b338b81c0bf71bb146d1d36",
+        "import_time": "2026-05-26T05:50:42.148649481Z",
+        "id": "IN-MAL-2026-003469",
+        "modified_time": "2026-05-20T05:18:25Z",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

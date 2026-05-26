@@ -1,0 +1,85 @@
+{
+  "modified": "2026-05-23T23:58:56Z",
+  "published": "2026-05-23T23:58:56Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "hardhat-gas-analytics exfiltrates wallet private keys and mnemonics to attacker-controlled gas-api.gasanalytics.dev",
+  "details": "This package typosquats the widely-used `hardhat-gas-reporter` Hardhat plugin (matching its cache filename `.hardhat_gas_reporter_output.json` and replicating its public API) while harvesting wallet credentials. On Hardhat environment extension (fires whenever the plugin is loaded via a project's hardhat config), `dist/index.js` iterates `Object.entries(process.env)`, retains every uppercase-keyed variable shorter than 1024 chars, and forwards the snapshot to `setProjectConfig` in `dist/utils/prices.js`. That code filters for keys matching `/KEY|PRIVATE|MNEMONIC|DEPLOYER|WALLET|SEED/i` — i.e., crypto wallet private keys, BIP-39 mnemonics, and deployer keys — AES-256-GCM encrypts them with a symmetric key derived as `sha256('ga:' + GAS_AGGREGATION_API)`, and base64url-encodes the (iv || tag || ciphertext) blob into the `X-Project-Id` HTTP header on a request to `https://gas-api.gasanalytics.dev/v1/prices?chain=...`. The encryption serves no functional purpose; its only effect is to conceal the exfiltrated payload from network inspection, proxies, and DLP. Any developer who installs this package by mistake (instead of `hardhat-gas-reporter`) and loads it in a Hardhat project that uses the conventional `PRIVATE_KEY` / `MNEMONIC` / `DEPLOYER_KEY` env-var pattern will have their on-chain signing keys silently exfiltrated, leading to direct fund loss.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hardhat-gas-analytics"
+      },
+      "versions": [
+        "3.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/utils/prices.js",
+              "sha256": "1c19e6c650f0ef2b1f7519ed956ce9b896c23b4da48cff815876254c0b18da68",
+              "tlsh": "d312979328b2629303fb31dd12af8415a7f5e2272259d654774cc3c16f0207afad3ea6"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "f7b9c618d2528be2aaef13c646d4f22dcd19cff78c4fe701402aa1c26368833a",
+              "tlsh": "a102a97534be246209e76ed8f7bb5421a675e25b2218c010360cb7b92f4bb5087e2ef1"
+            },
+            {
+              "path": "dist/constants.js",
+              "sha256": "9f787e15c5d73608352767e853278d843039cd66f0209bff308d66e36ae96dba",
+              "tlsh": "1ab1118f345427e2c3021aa5533af09b4c17b0dfa8c49535391f837a3b6b8cb88a5e19"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hardhat-gas-analytics-3.0.0.tgz",
+              "hashes": {
+                "sha1": "100ee343883f2ec562635aad8042b541f8ad4387",
+                "sha512_sri": "sha512-mrqVz6r/qxamIjNLL353qa3Ol2AOGSZmEU+rcqKXilesEJyhL8+yRMdq4ALxag7n3EC7QER/DOwu7UDb0A2BEQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hardhat-gas-analytics/v/3.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "71b0b8dd866d9c1f4516f4e537a2d61ea3cbe87f06b0195a24c0dea76fef44c0",
+        "import_time": "2026-05-26T05:52:32.310096583Z",
+        "id": "IN-MAL-2026-004407",
+        "modified_time": "2026-05-23T23:58:56Z",
+        "versions": [
+          "3.0.0"
+        ]
+      }
+    ]
+  }
+}

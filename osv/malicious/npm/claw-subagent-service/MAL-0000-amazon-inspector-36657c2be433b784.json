@@ -1,0 +1,90 @@
+{
+  "modified": "2026-05-20T19:29:40Z",
+  "published": "2026-05-20T19:29:40Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Persistent privileged service accepts remote vendor-IM commands and exfiltrates AI session data",
+  "details": "claw-subagent-service installs itself as a privileged auto-starting system service (Windows service via post-install.js `svc.install()`, with documented `--install` flows for systemd/launchd) that runs a long-lived daemon on the installer's host. The daemon performs three concurrent installer-harm behaviors:\n\n1. Remote command channel (backdoor): the daemon connects to a vendor-controlled RongCloud IM tenant (appKey `bmdehs6pbyyks`, token from `https://newsradar.dreamdt.cn/im`) and processes inbound IM messages as commands. `rongyun-message-handler.js` handlers `handleCommand` / `handleDeviceControl` / `handleChatMessage` accept start/stop/restart/status, device disable/enable/delete, and free-form chat messages. Chat messages are POSTed by `service/modules/opencode-service.js` to the local opencode AI gateway at `http://127.0.0.1:4096/session/\u003cid\u003e/message` with a system prompt explicitly instructing shell execution (`nohup openclaw gateway...`, `pkill -f \"openclaw gateway\"`, `openclaw doctor --fix`). Any party who controls the vendor's RongCloud account — the vendor itself, a future compromise of that account, or anyone obtaining the vendor's IM publishing key — has an arbitrary-shell oracle on every installer that left the service running.\n\n2. Continuous data exfiltration: `service/modules/heartbeat-dashboard.js` sends a heartbeat with the host's MAC address, node name, and openclaw status to the vendor IM channel every 20 seconds, and every 30 seconds uploads six dashboard chunks containing sessions (with tokens/cost), cron jobs, approvals, projects, tasks, session contexts (model/provider/tokens), and per-session usage events read from `~/.openclaw/agents/*/sessions/*.jsonl`. No installer prompt or opt-out.\n\n3. Privileged self-update: `service/updater.js` polls `npm view claw-subagent-service version` every 6 hours and runs `npm install -g claw-subagent-service@\u003cversion\u003e` as the service account (Windows SYSTEM / systemd root), then restarts the worker. Every installer is permanently subject to whatever the vendor (or a future compromise of the npm publishing key) publishes next, executed with full privilege and no review.\n\nDocumentation of the architecture in the README does not change the threat model: the package gives a remote third party persistent privileged remote-command, exfiltration, and code-replacement access on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw-subagent-service"
+      },
+      "versions": [
+        "0.0.91"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "service/worker.js",
+              "sha256": "c97b62a3bf4bfb201b5967c85808106432ad6498a15cacd30f160adf19295cf4",
+              "tlsh": "e4b2b7990a6b2b271db257f6f347301fff1aa197060482a1f7dc52583f761280266fe9"
+            },
+            {
+              "path": "service/modules/heartbeat-dashboard.js",
+              "sha256": "9372bae9c43088231b28cc03fe24925eed0d0234fbc522e8c6ed9dc70fb1136b",
+              "tlsh": "80a1312c273f6d29a8b863a2ef423115eb56d15f110a915f7a7c07c26f760345608fa8"
+            },
+            {
+              "path": "service/modules/opencode-service.js",
+              "sha256": "5016b518619145166fc0cbc6fbe126502b884641004f5fdb246e72b60554fc80",
+              "tlsh": "d01292546c2a60be47b7e3319b672012f31ab86364c0824ab6ec071a2fb55195a75efc"
+            },
+            {
+              "path": "service/updater.js",
+              "sha256": "82c472efae06f77cbcd6f99d6a4f55dfd7a1cb1065d51b9abc775ad390115d32",
+              "tlsh": "e902519956fb923597b2326d2b9b2019272ee1073119cd6cfbdc03907f412284762fe9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw-subagent-service-0.0.91.tgz",
+              "hashes": {
+                "sha1": "f42f5944c8dc57babd482d193632cef3a4721e20",
+                "sha512_sri": "sha512-fUXij5r5tll0s44jNxzL216ztM36kHD+WiJeFZQXw/BVlWHfGdEIMxKXdEYaGevaMQdtg0pmLpBWVY0I4j2jTw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.91"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "36657c2be433b784c573082d364304325acccf033f70df17dbfe104b0173ccbe",
+        "import_time": "2026-05-26T05:50:56.31089624Z",
+        "id": "IN-MAL-2026-003599",
+        "modified_time": "2026-05-20T19:29:40Z",
+        "versions": [
+          "0.0.91"
+        ]
+      }
+    ]
+  }
+}

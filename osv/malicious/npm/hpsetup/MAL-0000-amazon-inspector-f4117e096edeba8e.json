@@ -1,0 +1,85 @@
+{
+  "modified": "2026-05-21T08:35:37Z",
+  "published": "2026-05-21T08:35:37Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "hpsetup CLI fetches mutable tarballs from non-publisher.xyz CDN, exfiltrates license keys, and persists itself into Vercel build pipelines",
+  "details": "When invoked, `hpsetup` downloads tarballs from `https://hpsetup-cdn.932324.xyz/api/tarball/\u003cslug\u003e/\u003cversion\u003e?key=\u003cuserKey\u003e` (src/constants.js:16, src/download.js:23) and extracts them into `node_modules/@heroui-pro/react` and `heroui-native-pro`, which the consumer's application then `require()`s as production code. The destination is a random-numeric `.xyz` host with no apparent relationship to HeroUI's publisher domain (heroui.com); the tarballs are unsigned and not hash-verified, so whoever controls `932324.xyz` can serve arbitrary JavaScript that runs inside every consumer application. The user's paid license key is appended as a query string parameter on every fetch, relaying it to that same third-party host. The CLI also writes `@zowe/secrets-for-zowe-sdk` — an unrelated OS-keychain access SDK — into pnpm `onlyBuiltDependencies` / `pnpm-workspace.yaml` allowBuilds / Bun `trustedDependencies` (src/trust.js:5), silently granting that package's postinstall scripts unattended execution privileges on consumer machines. Finally, `configureVercel` (src/vercel.js:18-35) writes `installCommand: \"\u003cdlx\u003e hpsetup@latest \u003cuserKey\u003e\"` into `vercel.json` and appends `vercel.json` to `.gitignore`, causing every future Vercel deploy to re-fetch the mutable `hpsetup@latest` and pass the license key in argv — a change hidden from code review. The combination of mutable-CDN code delivery from a non-publisher domain, third-party allowlist injection, and gitignored auto-update persistence gives whoever controls 932324.xyz a durable channel to ship arbitrary code into every consumer's application and CI.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.5-beta.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/trust.js",
+              "sha256": "0babe189bca6ec6f25dbd6f654928a5b30b37c563aa633281f457132a2955506",
+              "tlsh": "fb2243e854ea137895933175678b2125a731c5233008d994baedd3e83fa293582fff8c"
+            },
+            {
+              "path": "src/vercel.js",
+              "sha256": "fdbfb194c9b646445ff5eca5ddd2d6a898ddab625953b5b500a93cce62e8f85b",
+              "tlsh": "2641415bebfe1b313c625115844b001173a44b633108ead935fe628e5fc78acd5a32ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.5-beta.2.tgz",
+              "hashes": {
+                "sha1": "8969b74a8825789331b41bcabac7250d15e54eab",
+                "sha512_sri": "sha512-uHrqd5MvoXWvfziJsOpoS4fnafsUV9XmAHtTlJ3gnHewJTqpBzVJXXRjKA3KgCOXfLchvhYZA1QyK2rqOxX22Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f4117e096edeba8ed55669dfbd80e9bde0f1275b01f2aaa5a34f3d7ce593e43f",
+        "import_time": "2026-05-26T05:51:18.433345634Z",
+        "id": "IN-MAL-2026-003784",
+        "modified_time": "2026-05-21T08:35:37Z",
+        "versions": [
+          "4.5.5-beta.2"
+        ]
+      }
+    ]
+  }
+}

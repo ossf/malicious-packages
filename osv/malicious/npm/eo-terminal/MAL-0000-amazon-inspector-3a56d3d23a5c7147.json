@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-22T14:23:42Z",
+  "published": "2026-05-22T14:23:42Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "eo-terminal postinstall drops and persists an obfuscated remote binary",
+  "details": "package.json declares `\"postinstall\": \"node utils.cjs\"`. utils.cjs is heavily obfuscated (obfuscator.io string array of ~1300 entries, hex-named accessors, RC4+base64 decoder `_d()`, debugger/anti-console traps with a 4-second setInterval). At install time it decrypts a hidden binary URL and bearer token, GETs a platform-specific executable from that URL with `Authorization: Bearer \u003cdecoded-token\u003e`, writes it into an app-data directory, chmods it 0o755, and spawns it detached with no integrity verification. After dropping the binary it installs OS-level persistence on every platform: a Windows `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` registry value via `reg.exe ADD`, a macOS LaunchAgent plist in `~/Library/LaunchAgents/`, and a systemd user `.service` + `.timer` in `~/.config/systemd/user/` enabled via `systemctl --user enable`. Re-execution gated on a `_postinstall_complete` argument ensures persistent relaunch across reboots. Package metadata further indicates deception: the published name is `eo-terminal` while README describes the package as `terminal-logger-utils` and claims 'zero runtime dependencies' contradicting the 9 dependencies declared in package.json. The combination of obfuscated install-time URL and token, opaque remote binary execution, multi-OS persistence, and name/README mismatch is unambiguous attacker behavior.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "eo-terminal"
+      },
+      "versions": [
+        "3.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "utils.cjs",
+              "sha256": "032586646362b7e21f8bf0b87cef3ace2a27c415a8447c52edfa81f37b51810f",
+              "tlsh": "3344a58037d6bc8217471bb7371ab5f5e52edd98b088458ef500bc58f1f9a26eae0670"
+            },
+            {
+              "path": "package.json",
+              "sha256": "2ddad967348f58730d12e96989e0c70633157d3ab847202868f2c8bb90146f27",
+              "tlsh": "84018928ce248e331ac811a558b5024198b94d674d54fc0833f3632d4fad6bf60fe22e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "eo-terminal-3.2.0.tgz",
+              "hashes": {
+                "sha1": "4d3c09a7dbb07e0022350c559d5d48b216c41dc7",
+                "sha512_sri": "sha512-fz1uZ/aQHNqLKbxDpLbsTXrbSeyzwcC7mrDXrs3T4u47Y5WEWvMO2kh6e0gHb0E6yj18UT6nr3bf05AnyrykKw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/eo-terminal/v/3.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "3a56d3d23a5c71474129a52aa4fc3a0e529cfd4bdfda56752be09694399bd127",
+        "import_time": "2026-05-26T05:52:10.136494813Z",
+        "id": "IN-MAL-2026-004214",
+        "modified_time": "2026-05-22T14:23:42Z",
+        "versions": [
+          "3.2.0"
+        ]
+      }
+    ]
+  }
+}

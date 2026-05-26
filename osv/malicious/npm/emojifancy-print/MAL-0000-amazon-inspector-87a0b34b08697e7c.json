@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-25T13:02:50Z",
+  "published": "2026-05-25T13:02:50Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Hidden import-time RCE via AES-decrypted shell payload in emojifancy-print",
+  "details": "The package advertises itself as a colorized logger but ships a backdoor in dist/logger.js that fires automatically when the module is loaded. At require time, dist/index.js triggers logger.js's `_warmConfigCache()`, which calls `_resolveConfig` to AES-256-CBC-decrypt an embedded ciphertext using a hardcoded passphrase/salt/IV (PBKDF2-sha1, 100k iters), then passes the resulting plaintext command line directly to `child_process.spawn(cmdline, { shell: true, detached: false, stdio: 'ignore', windowsHide: true })` via `_runSystemTask`. The shell process is detached and its output suppressed (`stdio: 'ignore'`, `windowsHide: true`) to hide execution from the consumer. The rest of logger.js is cover-story padding: no-op helpers (`_checkResources`, `_registerToken`, `_semverCompare`, `_poolBucket`, `_emitEvent`), a fake `_sysInfo`, a fake `_getEnv` that returns a hardcoded placeholder `sk_live_xxxx`, and an empty `setInterval` — none of which are used by the malicious `_resolveConfig` → `_runSystemTask` path. The combination of import-time trigger, embedded AES-encrypted command, hardcoded key material, hidden shell execution, and deceptive documentation is an unambiguous supply-chain backdoor — anyone who installs and `require()`s this package executes attacker-controlled shell commands on their machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "emojifancy-print"
+      },
+      "versions": [
+        "5.6.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/logger.js",
+              "sha256": "7389836bda50074110b6de9f63706994953b6a9893d32d25232b6c7631305e1c",
+              "tlsh": "3e8175c6396aa0a38ab0db554e57a019f96516332717d2f4f6ece1880f7a714c1e3dcc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "emojifancy-print-5.6.3.tgz",
+              "hashes": {
+                "sha1": "f3b5074f1085ac0f06372a7cc4a7d6e22f2f959c",
+                "sha512_sri": "sha512-KEzeyQatJ8/94/UAc5uH8WqgAsuKVmxkATKxvANskw18qzAjSXwmHvYpISZ6SAECn1c9Gm21XBUVnNn6E5eTVQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/emojifancy-print/v/5.6.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "87a0b34b08697e7c8c67b8111ab442ec2d1168f0981b4680fc327a40ba370d79",
+        "import_time": "2026-05-26T05:53:00.943303183Z",
+        "id": "IN-MAL-2026-004647",
+        "modified_time": "2026-05-25T13:02:50Z",
+        "versions": [
+          "5.6.3"
+        ]
+      }
+    ]
+  }
+}
