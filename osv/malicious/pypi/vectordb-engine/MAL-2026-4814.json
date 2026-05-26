@@ -1,0 +1,76 @@
+{
+  "modified": "2026-05-26T13:08:58Z",
+  "published": "2026-05-26T13:08:58Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4814",
+  "summary": "Malicious code in vectordb-engine (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0)\nDuring `pip install`, a custom `build_ext` step in `src/vectordb_engine_build.py` runs an obfuscated payload that performs targeted reconnaissance and exfiltration. Before doing anything else, it SHA-256-hashes the lowercased machine hostname against an obfuscated salt and compares the digest against three hardcoded allowed-hash constants; if the hostname does not match, the process calls `exit()` — the canonical shape of a targeted supply-chain implant that lies dormant on non-victim machines. On matching hosts, the script collects hostname, FQDN, OS, architecture, Python version, and OS username, concatenates them with `|` separators, XOR-encrypts the blob with a hardcoded key, hex-encodes the result, and issues an HTTPS GET to `https://vectordbengine.blob.core.windows.net/kernels/?v=\u003cencoded-fingerprint\u003e`. A separate function reads environment variables whose names are concealed behind a base85+XOR+zlib decoder (`_ORQFVrfoaIJyX4SjOvpEI`) and folds the values into the same exfil pipeline, consistent with scraping CI/cloud secrets without leaving readable identifiers in the source. `urllib3.disable_warnings()` is invoked to suppress TLS warnings. The package metadata uses placeholder publisher identity (`VectorDB Contributors`, `support@vectordb-engine.io`) and constructs a cover-story URL `https://releases.vectordb-engine.io/kernels` that is built into a string but never actually requested — it exists only as a decoy alongside the real Azure blob exfil endpoint. Each of (hostname-allowlist gating with `exit()` fallback, obfuscated env-var-name scraper feeding a network exfil, host-fingerprint XOR-encoded into a query string against attacker-controlled storage, decoy-domain cover story with placeholder publisher metadata) is independently sufficient evidence of a targeted attack; their joint presence leaves no benign interpretation.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "vectordb-engine"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/vectordb_engine_build.py",
+              "sha256": "0a2aa6695bdd2be1a18c38cf3d938bb52d795f13739f736d9ba8f3dc7d9e6c70",
+              "tlsh": "80c2b226dc5a682121b3d55e8ca6f063fb690743970e58257abc0314af321a5d3f1ebf"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vectordb_engine-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "45516a6f9c2e7a3c5293e36bc659637b6bdaa9e38efe79a131b8f5178e52754d",
+                "md5": "e6ec863ab98ad77d0c222b51932e32ea",
+                "sha256": "883518dae64216fca4ecdcf8c16100aff193a54eea3b17bc8dbb6f38f8caeb5e"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/vectordb-engine/1.0.0/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004910",
+        "import_time": "2026-05-26T13:32:46.958207847Z",
+        "modified_time": "2026-05-26T13:08:58Z",
+        "sha256": "42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
