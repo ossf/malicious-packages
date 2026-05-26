@@ -1,0 +1,90 @@
+{
+  "modified": "2026-05-26T07:00:10Z",
+  "published": "2026-05-26T07:00:10Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Remote-controlled daemon with hardcoded IM C2, host telemetry exfiltration, and auto-update persistence",
+  "details": "On install, this package registers a persistent privileged daemon (Windows service 'claw-subagent-service' / 'OpenClaw Guard' running under SYSTEM with auto-start and aggressive crash-restart) that connects to a hardcoded RongCloud IM channel at newsradar.dreamdt.cn/im using a hardcoded appKey ('bmdehs6pbyyks'). The daemon listens for COMMAND / DEVICE_CONTROL / CONFIG_FIX messages from that channel and dispatches them into spawn()/exec(), including shell invocations such as `bash -c 'openclaw doctor --fix'` (service/modules/rongyun-message-handler.js, service/modules/script-executor.js). Anyone able to publish on that IM channel can execute arbitrary commands on every installed host — this is a backdoor by construction. Independently, the daemon exfiltrates host telemetry on a 20s heartbeat and 30s dashboard cycle: MAC address, node id, OpenClaw session/project/task lists, and per-message usage records read from `~/.openclaw/agents/\u003cid\u003e/sessions/*.jsonl` (service/modules/heartbeat-dashboard.js, service/modules/dashboard-collector.js). No opt-in or notice. A third mechanism (service/updater.js) polls npm every 6 hours and runs `npm install -g claw-subagent-service@\u003clatest\u003e` followed by a worker restart, so any future publisher-account compromise propagates fleet-wide without further installer consent. The combination — install-time persistent SYSTEM service + remote command channel keyed to a publisher-controlled IM appKey + continuous host telemetry + 6-hour auto-update — produces tangible attacker benefit (persistent RCE on every installer host) and constitutes a supply-chain backdoor regardless of the package's stated purpose.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw-subagent-service"
+      },
+      "versions": [
+        "0.0.151"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "service/modules/rongyun-message-handler.js",
+              "sha256": "2a6c7f6b9145d8f7d0d9db20c2d5273ffd0bbc46df62c8be4302fef04b6ce633",
+              "tlsh": "1082555e1afd182e447192a9af133136db02e71f710392ae7ebc5bc42f750949849fb4"
+            },
+            {
+              "path": "service/modules/heartbeat-dashboard.js",
+              "sha256": "e4b4f1dac7ddac8e57f993f854d3880a794bae105eb5e745ed84c0d9354c05de",
+              "tlsh": "45b1422c273f6d29a8b863a5ef423115eb56d25f110a925f7a7c07c22f764345608fb8"
+            },
+            {
+              "path": "service/updater.js",
+              "sha256": "82c472efae06f77cbcd6f99d6a4f55dfd7a1cb1065d51b9abc775ad390115d32",
+              "tlsh": "e902519956fb923597b2326d2b9b2019272ee1073119cd6cfbdc03907f412284762fe9"
+            },
+            {
+              "path": "scripts/post-install.js",
+              "sha256": "01039e872d90cd6cc6cddc73f2ff657f146844126ea86eea8cfd15b017dcf0a7",
+              "tlsh": "fec10f9804fe43b02973405a2b5b101a3d5bd943324cfa9dbaed439e6fc261486e35fe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw-subagent-service-0.0.151.tgz",
+              "hashes": {
+                "sha1": "056d17ebce47742a09ad910fb86fe06a9c2b9a2d",
+                "sha512_sri": "sha512-rEsHjieqeqBSw+k9b6pwPQasloKSl9AljOb5BnwedovVXPnHoEk/+QgoJOoVnC5vMw5LkdbF5Z6lX3fMAkBZGQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.151"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1062890dca012ff08aec1ffeec8afd26460c4ae0cfd633b137f799c3067c91ea",
+        "import_time": "2026-05-26T07:48:28.165131685Z",
+        "id": "IN-MAL-2026-004853",
+        "modified_time": "2026-05-26T07:00:10Z",
+        "versions": [
+          "0.0.151"
+        ]
+      }
+    ]
+  }
+}

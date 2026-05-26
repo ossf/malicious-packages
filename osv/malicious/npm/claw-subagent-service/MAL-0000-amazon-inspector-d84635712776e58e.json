@@ -1,0 +1,95 @@
+{
+  "modified": "2026-05-26T07:00:29Z",
+  "published": "2026-05-26T07:00:29Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Persistent root/SYSTEM service with remote IM command channel and unpinned 6h auto-updater",
+  "details": "On install, the package registers a privileged auto-restarting system service (Windows SCM as SYSTEM via node-windows + bundled clawsubagentservice.exe, Linux systemd unit with ExecStart as root, macOS LaunchDaemon). The daemon connects outbound to a RongCloud IM channel (appKey bmdehs6pbyyks, token-refresh endpoint https://newsradar.dreamdt.cn/im) and dispatches inbound IM messages to a shell executor: COMMAND messages reach service/modules/script-executor.js which runs `spawn('bash', ['-c', command])` (or `cmd /c` on Windows), CONFIG_FIX runs `openclaw doctor --fix`, CHAT_MESSAGE is forwarded to a local AI gateway at 127.0.0.1:4096 whose system prompt grants shell-execution authority, and DEVICE_CONTROL.disable/delete uninstalls the service. Whoever controls the operator side of the IM channel obtains arbitrary shell execution as root/SYSTEM on every enrolled host. A separate Updater (service/updater.js) runs `npm install -g claw-subagent-service@\u003clatest\u003e` every 6 hours unattended, replacing the running privileged binary with whatever is currently latest on the registry; a publish-credential compromise yields root on every installer within 6h with no re-consent. The Worker also shells out `npm install -g opencode-ai@latest` as root when opencode is missing, extending the privileged surface to a third-party unpinned package. HeartbeatManager and DashboardReporter stream MAC address, hostname, listening ports, OpenClaw AI session contents (~/.openclaw/agents/*/sessions/*.jsonl: model/provider/tokens/cost), project and task data to the IM operator every 20-30 seconds.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw-subagent-service"
+      },
+      "versions": [
+        "0.0.146"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "service/updater.js",
+              "sha256": "82c472efae06f77cbcd6f99d6a4f55dfd7a1cb1065d51b9abc775ad390115d32",
+              "tlsh": "e902519956fb923597b2326d2b9b2019272ee1073119cd6cfbdc03907f412284762fe9"
+            },
+            {
+              "path": "service/modules/opencode-starter.js",
+              "sha256": "30b07d0fed08658a11000aa7b58a5dd2812b2162e7f7f1648621c551d08b9a9e",
+              "tlsh": "60b1fe48d02621bf1e71a770a727803fd65db0234a81db69bfde07503f322a91602ee9"
+            },
+            {
+              "path": "service/modules/rongyun-message-handler.js",
+              "sha256": "2a6c7f6b9145d8f7d0d9db20c2d5273ffd0bbc46df62c8be4302fef04b6ce633",
+              "tlsh": "1082555e1afd182e447192a9af133136db02e71f710392ae7ebc5bc42f750949849fb4"
+            },
+            {
+              "path": "service/modules/dashboard-collector.js",
+              "sha256": "e57dee50e8ab1fa17c230882899a8bfb5bed46e935be0bb22b3e3dab9cb6e3a8",
+              "tlsh": "5072b95ca83362358771a3645b775529fb26e23333424295bbbc82847f71c24d2a6fec"
+            },
+            {
+              "path": "scripts/post-install.js",
+              "sha256": "01039e872d90cd6cc6cddc73f2ff657f146844126ea86eea8cfd15b017dcf0a7",
+              "tlsh": "fec10f9804fe43b02973405a2b5b101a3d5bd943324cfa9dbaed439e6fc261486e35fe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw-subagent-service-0.0.146.tgz",
+              "hashes": {
+                "sha1": "c712bab099315ad7cd7facfdb270da0c27c2b4c3",
+                "sha512_sri": "sha512-jeAARkWv7LZPlKxHaZGW4dp/rR8ovtKnb1vYPgEVISn1zblGfRc+FgiyR0WXDUq3YERqosbjaysqls0fFxx3Jw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.146"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d84635712776e58ee8c8027284ddb58636d5e492f73f40aaf85ca8ffb1bbfa62",
+        "import_time": "2026-05-26T07:48:28.206103557Z",
+        "id": "IN-MAL-2026-004854",
+        "modified_time": "2026-05-26T07:00:29Z",
+        "versions": [
+          "0.0.146"
+        ]
+      }
+    ]
+  }
+}
