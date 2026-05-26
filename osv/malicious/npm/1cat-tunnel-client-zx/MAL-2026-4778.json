@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T06:10:33Z",
+  "modified": "2026-05-26T09:19:11Z",
   "published": "2026-05-26T06:10:33Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4778",
   "summary": "Malicious code in 1cat-tunnel-client-zx (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (616be417e8ec33626ef98fe1056bfbd52142e3c44ed4e3158ca5f58ae7cf7331)\nThe package's postinstall hook (`node install.js`) fetches a platform-specific native binary from `http://156.226.174.161:8888/binaries/tunnel-client-*` over plain HTTP, writes it to disk, chmods it 0755, and the package's CLI subsequently spawns it. The URL is unpinned (no version, no hash, no signature), the destination is a bare IP rather than a publisher-owned or known runtime CDN, and the transport is unencrypted. Any on-path attacker, or whoever controls 156.226.174.161, can deliver arbitrary native code to every installer's machine on `npm install`, with no tamper detection. This is the canonical install-time-rce dropper shape: lifecycle-script fetch + non-publisher infrastructure + no TLS + no integrity verification + immediate execution.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (796f1b18c13a38088b4e48d75575eb92b23af5d91cdfaf6a82717f0fabbc7a79)\nOn `npm install`, the package's postinstall hook (`node install.js`) fetches a platform-specific executable from `http://156.226.174.161:8888/binaries/tunnel-client-*` over plaintext HTTP, writes it to the package's `bin/` directory, and `chmod 0755`s it. The download URL is hardcoded to a bare IP address, uses cleartext HTTP (no TLS), is not pinned to a version, and the fetched bytes are never hash- or signature-verified before being made executable. The `cli.js` fallback performs the same unverified download on first CLI invocation if the binary is missing. Any on-path network attacker between the installer and 156.226.174.161 — or any future operator of that IP — can substitute arbitrary native code that will then run on the installer's machine. The destination is not a known runtime CDN, not the package publisher's own infrastructure, and the package's stated purpose (a tunnel client) does not justify forgoing TLS or integrity verification. Separately, the README ships plaintext admin credentials for the author's own tunnel server, which is author self-harm and not the basis for this block.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "1cat-tunnel-client-zx"
       },
       "versions": [
-        "1.0.2"
+        "1.0.2",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/1cat-tunnel-client-zx/v/1.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/1cat-tunnel-client-zx/v/1.0.3"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004846",
-        "import_time": "2026-05-26T06:26:13.484100154Z",
-        "modified_time": "2026-05-26T06:10:33Z",
-        "sha256": "616be417e8ec33626ef98fe1056bfbd52142e3c44ed4e3158ca5f58ae7cf7331",
         "source": "amazon-inspector",
+        "sha256": "616be417e8ec33626ef98fe1056bfbd52142e3c44ed4e3158ca5f58ae7cf7331",
+        "import_time": "2026-05-26T06:26:13.484100154Z",
+        "id": "IN-MAL-2026-004846",
+        "modified_time": "2026-05-26T06:10:33Z",
         "versions": [
           "1.0.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "796f1b18c13a38088b4e48d75575eb92b23af5d91cdfaf6a82717f0fabbc7a79",
+        "import_time": "2026-05-26T09:17:31.501395946Z",
+        "id": "IN-MAL-2026-004863",
+        "modified_time": "2026-05-26T07:54:58Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]
