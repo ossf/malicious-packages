@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T13:08:58Z",
+  "modified": "2026-05-26T22:57:06Z",
   "published": "2026-05-26T13:08:58Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4814",
   "summary": "Malicious code in vectordb-engine (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0)\nDuring `pip install`, a custom `build_ext` step in `src/vectordb_engine_build.py` runs an obfuscated payload that performs targeted reconnaissance and exfiltration. Before doing anything else, it SHA-256-hashes the lowercased machine hostname against an obfuscated salt and compares the digest against three hardcoded allowed-hash constants; if the hostname does not match, the process calls `exit()` — the canonical shape of a targeted supply-chain implant that lies dormant on non-victim machines. On matching hosts, the script collects hostname, FQDN, OS, architecture, Python version, and OS username, concatenates them with `|` separators, XOR-encrypts the blob with a hardcoded key, hex-encodes the result, and issues an HTTPS GET to `https://vectordbengine.blob.core.windows.net/kernels/?v=\u003cencoded-fingerprint\u003e`. A separate function reads environment variables whose names are concealed behind a base85+XOR+zlib decoder (`_ORQFVrfoaIJyX4SjOvpEI`) and folds the values into the same exfil pipeline, consistent with scraping CI/cloud secrets without leaving readable identifiers in the source. `urllib3.disable_warnings()` is invoked to suppress TLS warnings. The package metadata uses placeholder publisher identity (`VectorDB Contributors`, `support@vectordb-engine.io`) and constructs a cover-story URL `https://releases.vectordb-engine.io/kernels` that is built into a string but never actually requested — it exists only as a decoy alongside the real Azure blob exfil endpoint. Each of (hostname-allowlist gating with `exit()` fallback, obfuscated env-var-name scraper feeding a network exfil, host-fingerprint XOR-encoded into a query string against attacker-controlled storage, decoy-domain cover story with placeholder publisher metadata) is independently sufficient evidence of a targeted attack; their joint presence leaves no benign interpretation.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0)\nDuring `pip install`, a custom `build_ext` step in `src/vectordb_engine_build.py` runs an obfuscated payload that performs targeted reconnaissance and exfiltration. Before doing anything else, it SHA-256-hashes the lowercased machine hostname against an obfuscated salt and compares the digest against three hardcoded allowed-hash constants; if the hostname does not match, the process calls `exit()` — the canonical shape of a targeted supply-chain implant that lies dormant on non-victim machines. On matching hosts, the script collects hostname, FQDN, OS, architecture, Python version, and OS username, concatenates them with `|` separators, XOR-encrypts the blob with a hardcoded key, hex-encodes the result, and issues an HTTPS GET to `https://vectordbengine.blob.core.windows.net/kernels/?v=\u003cencoded-fingerprint\u003e`. A separate function reads environment variables whose names are concealed behind a base85+XOR+zlib decoder (`_ORQFVrfoaIJyX4SjOvpEI`) and folds the values into the same exfil pipeline, consistent with scraping CI/cloud secrets without leaving readable identifiers in the source. `urllib3.disable_warnings()` is invoked to suppress TLS warnings. The package metadata uses placeholder publisher identity (`VectorDB Contributors`, `support@vectordb-engine.io`) and constructs a cover-story URL `https://releases.vectordb-engine.io/kernels` that is built into a string but never actually requested — it exists only as a decoy alongside the real Azure blob exfil endpoint. Each of (hostname-allowlist gating with `exit()` fallback, obfuscated env-var-name scraper feeding a network exfil, host-fingerprint XOR-encoded into a query string against attacker-controlled storage, decoy-domain cover story with placeholder publisher metadata) is independently sufficient evidence of a targeted attack; their joint presence leaves no benign interpretation.\n\n## Source: kam193 (b1908db5bd2b5d1d4a5ab9238d71d6da0147994c2bb812e1ffb7e0e90626e2b4)\nDuring installation, in the build step, the code performs machine fingerprinting and only in a highly targeted environment, downloads a likely-malicious shared library. The code seems to actually be incomplete.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-vectordb-engine\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote executable.\n\n\n - targetted-attack\n\n\n - obfuscation\n",
   "affected": [
     {
       "package": {
@@ -48,6 +48,10 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/vectordb-engine/1.0.0/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/vectordb-engine"
     }
   ],
   "credits": [
@@ -57,16 +61,39 @@
       "contact": [
         "actran@amazon.com"
       ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "vectordbengine.blob.core.windows.net"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004910",
-        "import_time": "2026-05-26T13:32:46.958207847Z",
-        "modified_time": "2026-05-26T13:08:58Z",
-        "sha256": "42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0",
         "source": "amazon-inspector",
+        "sha256": "42695503b90ec4adc30c038c3321d637f05038f841bcc5f463a16b891fe4e3e0",
+        "import_time": "2026-05-26T13:32:46.958207847Z",
+        "id": "IN-MAL-2026-004910",
+        "modified_time": "2026-05-26T13:08:58Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "b1908db5bd2b5d1d4a5ab9238d71d6da0147994c2bb812e1ffb7e0e90626e2b4",
+        "import_time": "2026-05-26T22:55:24.736846288Z",
+        "id": "pypi/2026-05-vectordb-engine/vectordb-engine",
+        "modified_time": "2026-05-26T21:59:35.102583Z",
         "versions": [
           "1.0.0"
         ]
