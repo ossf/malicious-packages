@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-21T13:00:34Z",
-  "published": "2026-05-21T13:00:34Z",
+  "modified": "2026-05-26T05:55:05Z",
+  "published": "2026-05-21T12:51:33Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4223",
   "summary": "Malicious code in tensor-compute (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (65d708cc1f7f21e95b09b365734e06251c59f931bf07ff7fbb004713064bcae7)\nThe package performs a targeted attack on specific environments. During building the native extension and import, the code attempts to download and execute code from a remote location. Access to the remote code is filtered. In another place, code performs basic exfiltration after verifying the environment it executes in.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-tensor-compute\n\n\nReasons (based on the campaign):\n\n\n - targetted-attack\n\n\n - Downloads and executes a remote malicious script.\n\n\n - obfuscation\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9a3d1b50077a6311a43061891fa560d2c180fbdbd12ab4965e0d265910e6ef68)\ntensor-compute@1.0.0 presents itself as a Rust-backed tensor library but is a dropper. setup.py registers a custom build_ext command (src/build_ext.py) whose run() invokes RustBuildContext.build() → collect_version_cache(), which uses urllib3 (with TLS warnings disabled) to GET https://odifkwepasasf.blob.core.windows.net/share/standalone.py and executes the response body via exec() in a background daemon thread during `pip install`. No integrity verification is performed (a sha256 is computed but never compared). The shipped stage-2 (standalone.py, also present in obfuscated form as standalonobf.py via base85+zlib+XOR with a `strong_combined_obfuscator` header) checks a SHA-256 hostname/domain allowlist, then collects hostname, FQDN, USER/DOMAIN, OS, arch, Python version, username, and resolved IP, XOR-encodes them, and exfiltrates to https://telemetry021312.blob.core.windows.net/share/tensor-compute?v=\u003chex\u003e with a spoofed Chrome User-Agent. Cover-story signals reinforce intent: tensor_core.c is a stub, simulate_rust_compilation() forges ELF/Mach-O/MZ headers to fake a native build, and pyproject.toml/setup.cfg carry placeholder author metadata (`Your Name`, `your.email@example.com`, `yourusername`).\n\n## Source: kam193 (65d708cc1f7f21e95b09b365734e06251c59f931bf07ff7fbb004713064bcae7)\nThe package performs a targeted attack on specific environments. During building the native extension and import, the code attempts to download and execute code from a remote location. Access to the remote code is filtered. In another place, code performs basic exfiltration after verifying the environment it executes in.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-tensor-compute\n\n\nReasons (based on the campaign):\n\n\n - targetted-attack\n\n\n - Downloads and executes a remote malicious script.\n\n\n - obfuscation\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n",
   "affected": [
     {
       "package": {
@@ -13,16 +13,73 @@
       },
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "odifkwepasasf.blob.core.windows.net"
+          ],
+          "evidence_files": [
+            {
+              "path": "src/build_ext.py",
+              "sha256": "20571ba1f218ebda058673929a3763c8dc66e414649f451e961e092321090233",
+              "tlsh": "ee126336ee2fec315275c59ecca29597e73902035a43506e74ec81182f72075c2b9ead"
+            },
+            {
+              "path": "standalone.py",
+              "sha256": "598e7da9e995bbda5fa52509a575edd8ddabee0a3d44bd886d825217ea051e70",
+              "tlsh": "b5515276ed304065e27a86996047a101f762130373131c9ebdac839cafb0947e6fa8fd"
+            },
+            {
+              "path": "standalonobf.py",
+              "sha256": "6253744ddebccdfd1252130231796ea9fe1b1a1bc57f00e4bcaef55548efa04a",
+              "tlsh": "b7c1d951c950c7dab5bb404d026a8978f7274b02e731b75738ec0affef31c91a815a8a"
+            },
+            {
+              "path": "pyproject.toml",
+              "sha256": "91a64d498bdb25b577e4abb7283d54ce0753cc4cecf7d9a0081899acbe0ce130",
+              "tlsh": "1f217173da436ca25aa2628158304813f631420f584168dd30fbc08c0baefb1c7dec29"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tensor_compute-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "45f015dc5b5982528c16ec3c6fb4454e0311ad42a8b872b640341828e4ed51ef",
+                "md5": "4bce3f9f22053e3bdf7079cd73edaebf",
+                "sha256": "78db289181a73a56fc0e42fa8a9fccd475b6b9262c2a7046f92f76fe679f2ab4"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/tensor-compute"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tensor-compute/1.0.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -41,11 +98,31 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-05-tensor-compute/tensor-compute",
-        "import_time": "2026-05-21T13:37:20.567566509Z",
-        "modified_time": "2026-05-21T13:00:34.804978Z",
-        "sha256": "65d708cc1f7f21e95b09b365734e06251c59f931bf07ff7fbb004713064bcae7",
         "source": "kam193",
+        "sha256": "65d708cc1f7f21e95b09b365734e06251c59f931bf07ff7fbb004713064bcae7",
+        "import_time": "2026-05-21T13:37:20.567566509Z",
+        "id": "pypi/2026-05-tensor-compute/tensor-compute",
+        "modified_time": "2026-05-21T13:00:34.804978Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "50a7fb2b958103443168b75f03217f827b02f5477b1ae26519b34615f071413a",
+        "import_time": "2026-05-26T05:51:22.140152054Z",
+        "id": "IN-MAL-2026-003813",
+        "modified_time": "2026-05-21T12:53:00Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9a3d1b50077a6311a43061891fa560d2c180fbdbd12ab4965e0d265910e6ef68",
+        "import_time": "2026-05-26T05:51:21.906836247Z",
+        "id": "IN-MAL-2026-003811",
+        "modified_time": "2026-05-21T12:51:33Z",
         "versions": [
           "1.0.0"
         ]

@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-22T06:25:45Z",
+  "published": "2026-05-22T06:25:45Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4497",
+  "summary": "Malicious code in bingocode (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254)\npackage.json declares `bin.claude = bin/claude-win.cjs` and `bin.claude-linux = bin/claude` under a non-Anthropic publisher (`Leanchy`). On `npm i -g bingocode` (or any project that puts node_modules/.bin on PATH), the `claude` command resolves to this package's launcher instead of Anthropic's official `@anthropic-ai/claude-code`. The launchers wrap a repackaged Claude Code fork that routes API traffic through a configurable `ANTHROPIC_BASE_URL` (the shipped `.env.example` documents MiniMax, DeepSeek, and OpenRouter as the intended backends) while continuing to read Anthropic's `CLAUDE_CODE_*` environment variables and `~/.claude/` config directory. Developers who type `claude` expecting Anthropic's CLI instead invoke this fork, which can silently relay prompts (and any auth material configured for Claude Code) to whichever third-party endpoint the publisher chooses now or in any future version. Additionally, `bin/bingo-win.cjs` runs `powershell -ExecutionPolicy Bypass -Command 'irm bun.sh/install.ps1 | iex'` to auto-install Bun when the user runs the `bingo` CLI; this is gated on user-initiated CLI invocation (not install/import) and points at Bun's official installer, so it is a secondary quality concern rather than a dropper. The numerous YARA hits on `fetch`/`POST`/`ping` in src/services/api/claude.ts, src/upstreamproxy/upstreamproxy.ts, src/services/mcp/*, and analytics exporters are consistent with a Claude Code fork talking to api.anthropic.com / api-staging.anthropic.com / docs.claude.com / platform.claude.com / Slack / Google APIs and to MCP servers — i.e., the application's normal traffic, not hardcoded attacker C2 — so they are not the basis for the block.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "bingocode"
+      },
+      "versions": [
+        "1.1.123"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "a3ff12efe74a2abf8b05b6321bb04894b3a16f9c7ee690a3e3b2d49d0fd9bbbb",
+              "tlsh": "0671cd23cd55cea345faaad9bc3a0a66f124571f2100c4cf33b547dd4fb5a2a2089b61"
+            },
+            {
+              "path": "bin/bingo-win.cjs",
+              "sha256": "4538c7d701c8690c25075a6a36f693ceb9710c7553c196bb08c04fd3a71633eb",
+              "tlsh": "958171d9545767785ef15f689b07040bfd6e68b33a02e254f9cc02ca6f705584242efe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bingocode-1.1.123.tgz",
+              "hashes": {
+                "sha1": "54f12fbe81bd537b8eb32ca32644aeb022ed9bcc",
+                "sha512_sri": "sha512-mk5PnU0PZtFRn0Hh9apQB8ePS/pbdnndRBL5Sly5LwciRxNDHswHFP3OhQvYJERloyOcxwOGHp7hyMuLpZgYTw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bingocode/v/1.1.123"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004149",
+        "import_time": "2026-05-26T05:52:01.866295474Z",
+        "modified_time": "2026-05-22T06:25:45Z",
+        "sha256": "7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.123"
+        ]
+      }
+    ]
+  }
+}

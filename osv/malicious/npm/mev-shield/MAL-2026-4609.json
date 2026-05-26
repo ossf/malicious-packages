@@ -1,0 +1,90 @@
+{
+  "modified": "2026-05-22T01:55:57Z",
+  "published": "2026-05-22T01:55:57Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4609",
+  "summary": "Malicious code in mev-shield (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9783d5e48d62da6de516b1cf5d36474143528a9c6f33a86892ee558266a4e5ec)\nThe package advertises itself as an 'MEV protection layer for Ethereum trading bots' but does the opposite. On `npm install`, a postinstall script base64-decodes the URL `http://165.22.200.211:8545` (an attacker-controlled Ethereum JSON-RPC endpoint, labeled 'honeypot RPC' in the package's own comments) and writes it into the installer's `.env` across multiple RPC variables (ETHEREUM_RPC, ETH_RPC, WEB3_RPC, RPC_ENDPOINT). On `require()`, `config-manager.js` further mutates the consumer's project files in place: it prepends `RPC_URL=http://165.22.200.211:8545` to scripts in `package.json`, injects the same env entry into `docker-compose.yml`, and rewrites `rpc_url` fields in any `config.json` / `bot-config.json` / `settings.json` / `config/trading.json` it finds in the working directory. An `optimizeRPC()` 'benchmark' is rigged so the attacker IP always wins regardless of measured latency (`// THE MAGIC: Our honeypot always \"wins\"`). Persistence is layered on top: a `preuninstall` keepalive script intentionally leaves the honeypot RPC in `.env` after the package is removed, and a `git-hooks.js` module installs a `.git/hooks/pre-commit` hook that re-executes `node -e \"require('mev-shield');\"` on every commit to re-inject the malicious RPC if it has been cleaned up. The postinstall payload is deliberately obfuscated with base64 and `_0x`-prefixed identifiers, with a self-incriminating comment 'Obfuscated module loader - makes static analysis harder'. Net effect on installers: every pending Ethereum transaction submitted by the consumer's trading bot is routed through the attacker, enabling frontrunning and sandwich attacks against the installer's funds, and the redirection survives uninstall.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "mev-shield"
+      },
+      "versions": [
+        "1.4.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/postinstall.js",
+              "sha256": "2815ae1de675a6e5130271543cc9b2c0a22a300ac52070aec2e559d138de6db8",
+              "tlsh": "ca41c8922fd861a329913aa7ea8f1811975a5b013308e501d5fff2d71ced4c09b1bdbd"
+            },
+            {
+              "path": "src/config-manager.js",
+              "sha256": "375ee7c33327e7112f323cfb1ef4a567e715df3fe49b1f81d16eaf59bbb06abf",
+              "tlsh": "abd1846244e9d1a117a262a5834bb0102a66c2633218f9c6b9de82cc1fdd31486f7ffc"
+            },
+            {
+              "path": "src/git-hooks.js",
+              "sha256": "ce8ab0b5b21e9b481baa8f0ebb8e8571b5295080662a1f0856425162ce5df571",
+              "tlsh": "0b41cf7759d651b12ca18183838f60186399c2930e40f915b45ee9bf0fcd68c5776efe"
+            },
+            {
+              "path": "src/rpc-optimizer.js",
+              "sha256": "a80334cd1d0b9e1e7754f910db26ee42b0cd9d327c2a24b12a9f644507b7aa91",
+              "tlsh": "639175e618b470b20a1228d8f78b685697699243671cf057fe8d4262cf0f48cb679ded"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mev-shield-1.4.2.tgz",
+              "hashes": {
+                "sha1": "9a98c9b78dbea0ac724100e4b25672fdebd5edce",
+                "sha512_sri": "sha512-c1Og6ValAE8Pf22hpW97rID6T+7Xn6XA5AnZOiRhgCCaCw3/6zDtpTLqA+mUm8km9rugk5oRx4JQcOrZNw4Sgg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mev-shield/v/1.4.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004122",
+        "import_time": "2026-05-26T05:51:58.814254638Z",
+        "modified_time": "2026-05-22T01:55:57Z",
+        "sha256": "9783d5e48d62da6de516b1cf5d36474143528a9c6f33a86892ee558266a4e5ec",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.2"
+        ]
+      }
+    ]
+  }
+}

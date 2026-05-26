@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-21T16:13:53Z",
-  "published": "2026-05-21T16:13:53Z",
+  "modified": "2026-05-26T05:55:05Z",
+  "published": "2026-05-21T14:18:26Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4227",
   "summary": "Malicious code in lognest (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (8a52e16511fcccbee8bfd9e44dca8d6a3b5927bd5e66cf6fc7b849900c71ed9f)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (481f45cde243009853b52b584fb6a1af2eae31e637912c8b78f18a8d7ee0d9d0)\nOn `import lognest`, the package's __init__.py spawns a detached background subprocess running a sibling `_check.py` (lognest/__init__.py:25 `subprocess.Popen([sys.executable, os.path.join(base_dir, \"_check.py\")], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)`). That script enters an infinite loop POSTing to `https://pypkg.dev/project/logger/json` — a lookalike of pypi.org — with TLS verification explicitly disabled via `ssl._create_unverified_context()` (lognest/_check.py:22). On the first request it exfiltrates the absolute install path (`Path(__file__).resolve().parent`) which typically encodes the installer's username, virtualenv layout, or CI runner path (lognest/_check.py:18). Server responses are base64-decoded and dispatched on background threads (lognest/_check.py:31), giving the operator a persistent C2 channel for delivering second-stage payloads to any process that imports the package. None of this behavior matches the package's advertised purpose as a logger. The combination of import-time background process, lookalike non-publisher host, TLS-disable, install-path exfiltration, and base64-decoded response dispatch is an unambiguous attacker-controlled remote-execution channel.\n\n## Source: kam193 (8a52e16511fcccbee8bfd9e44dca8d6a3b5927bd5e66cf6fc7b849900c71ed9f)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
   "affected": [
     {
       "package": {
@@ -17,16 +17,86 @@
         "0.1.2",
         "0.1.3",
         "0.1.4"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lognest/_check.py",
+              "sha256": "23ab0bb61ba5774786fe04c4881d5a899d7ac78b8fb7f6a8dd9e788ca71fa93c",
+              "tlsh": "85114416a82c00d5e387494ad411bb142337fc0f6342c2b0feac93e40fc857281f3146"
+            },
+            {
+              "path": "lognest/__init__.py",
+              "sha256": "9dd16d837ce61afa1dff11455e7788bfc02242657cd7caec7922f1e61109f02a",
+              "tlsh": "6d01c0aa871f2166415ec6a8600707202792c5c7df0680f471dca3b82f8b97b15dd46d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lognest-0.1.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "e93600169d01ebb3fbbc2431d90c0c77cd55833e8bb9ed92f61528b5ce53f113",
+                "md5": "c22d43636f8071ca64ec1b55861fcb65",
+                "sha256": "337ed7b24acffe7479097a3bd646595d7cb4932975686ff70aec7d9bdcf0fef4"
+              }
+            },
+            {
+              "filename": "lognest-0.1.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "cd44a81bbcc39d896caafb2d512280e5f7683260564a1cdc24e18fdd96ad47f7",
+                "md5": "36cf3da9e2c81a3e9754c454936df112",
+                "sha256": "4394e5f9b23ca6570f818ee72fb7908786f794c26d7c25308671c4aee1de5522"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/lognest"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/lognest/0.1.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/lognest/0.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/lognest/0.1.3/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -47,17 +117,47 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-05-lognest/lognest",
-        "import_time": "2026-05-21T17:24:41.679520582Z",
-        "modified_time": "2026-05-21T16:13:53.9023Z",
-        "sha256": "8a52e16511fcccbee8bfd9e44dca8d6a3b5927bd5e66cf6fc7b849900c71ed9f",
         "source": "kam193",
+        "sha256": "8a52e16511fcccbee8bfd9e44dca8d6a3b5927bd5e66cf6fc7b849900c71ed9f",
+        "import_time": "2026-05-21T17:24:41.679520582Z",
+        "id": "pypi/2026-05-lognest/lognest",
+        "modified_time": "2026-05-21T16:13:53.9023Z",
         "versions": [
           "0.1.0",
           "0.1.1",
           "0.1.2",
           "0.1.3",
           "0.1.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8bf5b7affdac26cee7e47cb0c56901faeb02d82c49aa5fb7b1f868b83a9d3fd5",
+        "import_time": "2026-05-26T05:51:28.514632828Z",
+        "id": "IN-MAL-2026-003865",
+        "modified_time": "2026-05-21T14:18:26Z",
+        "versions": [
+          "0.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1e3cfa27d08fbc958fff6e818a6ea1b9c36dce3c695a115fa40e5199fe4b87aa",
+        "import_time": "2026-05-26T05:51:28.694020713Z",
+        "id": "IN-MAL-2026-003866",
+        "modified_time": "2026-05-21T14:18:46Z",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "481f45cde243009853b52b584fb6a1af2eae31e637912c8b78f18a8d7ee0d9d0",
+        "import_time": "2026-05-26T05:51:29.639551003Z",
+        "id": "IN-MAL-2026-003874",
+        "modified_time": "2026-05-21T15:18:51Z",
+        "versions": [
+          "0.1.3"
         ]
       }
     ]

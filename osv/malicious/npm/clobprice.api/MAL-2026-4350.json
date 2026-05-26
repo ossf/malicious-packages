@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T00:00:00Z",
-  "published": "2026-05-26T00:00:00Z",
+  "modified": "2026-05-26T05:55:02Z",
+  "published": "2026-05-25T12:03:49Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4350",
   "summary": "Malicious code in clobprice.api (npm)",
-  "details": "A campaign of npm packages sharing a common dropper (`clob.js`) that downloads and persistently installs a Windows executable from IPFS on `postinstall`. The dropper fetches the binary from IPFS CID `bafybeif3zkapj364ofnrvbty7oj5h5ufpxlp4s62usk3ulxrru35e3gssa` via multiple public gateways (Pinata, Cloudflare, ipfs.io), drops it to `%LOCALAPPDATA%`, registers Windows Registry persistence under `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` using a hidden VBScript wrapper (window style 0, no taskbar entry), launches the payload immediately, and reports the victim's public IP address to a hardcoded C2 server via HTTP POST. macOS and Linux stubs are present but not yet configured. Developer artifacts bundled in `config/meta_data.json` leak the attacker's build path: `E:\\getting IP and check list\\clob-downloader\\`.\n\n`clobprice.api` bundles `windows defender host.exe` (≈4 MB) directly in the package tarball and also attempts to fetch an identical copy from IPFS at install time. Its `postinstall` script runs `clob.js`, which drops the executable to `%LOCALAPPDATA%\\windows defender host.exe`. The C2 beacon transmits the victim's public IP to `http://45.8.22.112:2026/api/urls`.",
+  "details": "A campaign of npm packages sharing a common dropper (`clob.js`) that downloads and persistently installs a Windows executable from IPFS on `postinstall`. The dropper fetches the binary from IPFS CID `bafybeif3zkapj364ofnrvbty7oj5h5ufpxlp4s62usk3ulxrru35e3gssa` via multiple public gateways (Pinata, Cloudflare, ipfs.io), drops it to `%LOCALAPPDATA%`, registers Windows Registry persistence under `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` using a hidden VBScript wrapper (window style 0, no taskbar entry), launches the payload immediately, and reports the victim's public IP address to a hardcoded C2 server via HTTP POST. macOS and Linux stubs are present but not yet configured. Developer artifacts bundled in `config/meta_data.json` leak the attacker's build path: `E:\\getting IP and check list\\clob-downloader\\`.\n\n`clobprice.api` bundles `windows defender host.exe` (≈4 MB) directly in the package tarball and also attempts to fetch an identical copy from IPFS at install time. Its `postinstall` script runs `clob.js`, which drops the executable to `%LOCALAPPDATA%\\windows defender host.exe`. The C2 beacon transmits the victim's public IP to `http://45.8.22.112:2026/api/urls`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c4ebda12a1fdf81e5621aa5e045e6286238df134c83d896dd177c60abbedf7d0)\npackage.json declares `postinstall: node clob.js` and the package's own description states 'Downloads clob2.0.exe on install'. On install, clob.js downloads a Windows PE from anonymous IPFS gateways (violet-tricky-quelea-562.mypinata.cloud, cloudflare-ipfs.com, gateway.pinata.cloud, ipfs.io; CID bafybeif3zkapj364ofnrvbty7oj5h5ufpxlp4s62usk3ulxrru35e3gssa) without any hash or signature verification, writes it to %LOCALAPPDATA% as 'windows defender host.exe' to impersonate a Microsoft component, and silently launches it hidden via a VBS launcher invoked through `wscript //nologo` with window style 0. A 4,035,072-byte file literally named 'windows defender host.exe' (sha256 300a7dea05c2a588757010ad314fa55cb8ef3acebaa284f58a5cd0fd39bce478) is also bundled in the tarball root as a fallback payload. Persistence is established on every supported platform: Windows registers the launcher under HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run as 'clob'; macOS loads `~/Library/LaunchAgents/com.clob.agent.plist` via launchctl; Linux writes `~/.config/autostart/clob.desktop`. After dropping the binary, the script resolves the installer's public IP via api.ipify.org and POSTs it over plain HTTP to the hardcoded bare IP 45.8.22.112:2026 at `/api/urls?url=\u003cip\u003e:80`, performing victim check-in to the operator. The result is full, persistent host compromise of any machine that runs `npm install clobprice.api`.\n",
   "affected": [
     {
       "package": {
@@ -20,10 +20,83 @@
             }
           ]
         }
-      ]
+      ],
+      "versions": [
+        "2.73.2",
+        "2.73.1",
+        "2.73.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "clob.js",
+              "sha256": "2fda85894e3d8d276b4d3e974eb216dbfc89ea3be7570b52afee44080724ffb3",
+              "tlsh": "2b1282ba56f3613135b3e69d9b0b840a9207b0033249ed50fa9c73552fce12c95a1bfe"
+            },
+            {
+              "path": "README.md",
+              "sha256": "c416cd0af88256407c36a0613f189ac4257221c7206d0324f7ef5563c66f1125",
+              "tlsh": "fba1c0fe2c045a632ff1c9c67e0fad4fef19914c668e2d8874de9050632122969ec160"
+            },
+            {
+              "path": "windows defender host.exe",
+              "sha256": "300a7dea05c2a588757010ad314fa55cb8ef3acebaa284f58a5cd0fd39bce478",
+              "tlsh": "e9168d43f68592e9c0aec074c25b5237e376fc894a20679b73985b212f66b601f5f39c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "clobprice.api-2.73.2.tgz",
+              "hashes": {
+                "sha1": "68c9318197099ba704569f93d898d6137cbff19d",
+                "sha512_sri": "sha512-EiUPPSS+Tg01D8MvsIc6u9qODTdP21rhsmuYevBFRRy/fHNRjDkV3Gu5K7xgFRsuSnNgcQRvcUVMQEpogVfw8g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/clobprice.api/v/2.73.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/clobprice.api/v/2.73.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/clobprice.api/v/2.73.0"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -33,6 +106,37 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "576b0aea0f4f7f851d560f7247c254d18eee54a6cff513818495e7d2510e46c8",
+        "import_time": "2026-05-26T05:53:14.24867966Z",
+        "id": "IN-MAL-2026-004764",
+        "modified_time": "2026-05-25T19:02:19Z",
+        "versions": [
+          "2.73.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c4ebda12a1fdf81e5621aa5e045e6286238df134c83d896dd177c60abbedf7d0",
+        "import_time": "2026-05-26T05:53:09.956355486Z",
+        "id": "IN-MAL-2026-004726",
+        "modified_time": "2026-05-25T16:48:10Z",
+        "versions": [
+          "2.73.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ed566168c61c4bc4adfe633b1021969a9546e65dcc53b305b68365a868125fcb",
+        "import_time": "2026-05-26T05:52:59.814265904Z",
+        "id": "IN-MAL-2026-004637",
+        "modified_time": "2026-05-25T12:03:49Z",
+        "versions": [
+          "2.73.0"
+        ]
+      }
+    ]
   }
 }

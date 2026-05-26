@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-22T06:52:38Z",
-  "published": "2026-05-22T06:52:38Z",
+  "modified": "2026-05-26T05:55:05Z",
+  "published": "2026-05-22T01:54:01Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4253",
   "summary": "Malicious code in pylogft (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (ca79d0eb10bc090eadb383ded3d5c47143d4d0e9eaa206840d3d803fcfc4be9a)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9b35cabdffc8a44bcf857b973cc7eb89b6ae691c9be8189a58a0bd30c1a55a37)\nOn `import pylogft`, the package's `__init__.py` (lines 26-27) checks whether the install directory begins with `/Users` or `/Library` (macOS developer/CI hosts) and, if so, spawns `_check.py` as a detached subprocess with stdout/stderr redirected to DEVNULL. `_check.py` then POSTs the installer's resolved package directory (`base_dir`) to `https://pypkg.dev/project/pylogft/json` — a lookalike of pypi.org / pkg.go.dev — with TLS verification explicitly disabled via `ssl._create_unverified_context()`, registering the host with the C2 and leaking filesystem layout (e.g., `/Users/\u003cvictim\u003e/...`). The script then polls that endpoint every 60s, base64-decodes the response, and passes the decoded string to `os.system(f\"pip show {package_list}\")`. The package's `shell_escape` regex permits `;`, `|`, `\u0026`, and `\u003e`, so any C2 response containing those metacharacters breaks out of the `pip show` prefix and executes arbitrary shell commands on the installer's machine. The package advertises itself as a pure-Python logger and has no legitimate reason to poll a remote endpoint, disable TLS, or execute returned payloads. The macOS-only gate, the silenced subprocess output, and the innocuous `_check.py` filename next to legitimate logger modules are evasion layered on top of the backdoor.\n\n## Source: kam193 (ca79d0eb10bc090eadb383ded3d5c47143d4d0e9eaa206840d3d803fcfc4be9a)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
   "affected": [
     {
       "package": {
@@ -14,16 +14,72 @@
       "versions": [
         "0.1.0",
         "0.1.1"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pylogft/_check.py",
+              "sha256": "043036b476a071d51ecbc62ce652dddc60cf60186c7c0bac6bb78ee46d206651",
+              "tlsh": "c0310566a51c009ad383496bd420e5645737fc0b6601c6b4faec93a41fc9576c2f3589"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pylogft-0.1.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "40281877c028e12c40cd7d82a941201eade53e62c532d182e44be5056fa9130d",
+                "md5": "3ce0e3e272c69064710d16ee3082295a",
+                "sha256": "1645f78c284c9f2b72a1b2e3b41a35bb6bd5626119c30d8de0c6310d8129f638"
+              }
+            },
+            {
+              "filename": "pylogft-0.1.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "e136e4e54c9423c3ca383dd42df01954df88dc133727c389dcf37f14c8c65e9f",
+                "md5": "5038c76a5143bb0f9bdc9c2317a62544",
+                "sha256": "b689b78fb397a791ab4cb285468d6e3f82923fb09bb9dbafe8ea26c45ce2c65a"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/pylogft"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pylogft/0.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pylogft/0.1.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -44,14 +100,34 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-05-lognest/pylogft",
-        "import_time": "2026-05-22T07:48:05.85203417Z",
-        "modified_time": "2026-05-22T06:52:38.062189Z",
-        "sha256": "ca79d0eb10bc090eadb383ded3d5c47143d4d0e9eaa206840d3d803fcfc4be9a",
         "source": "kam193",
+        "sha256": "ca79d0eb10bc090eadb383ded3d5c47143d4d0e9eaa206840d3d803fcfc4be9a",
+        "import_time": "2026-05-22T07:48:05.85203417Z",
+        "id": "pypi/2026-05-lognest/pylogft",
+        "modified_time": "2026-05-22T06:52:38.062189Z",
         "versions": [
           "0.1.0",
           "0.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "58dcb2ccf9b9f7cfedbc46aab01b4621484ce8303c9a384e970285340f4ccf70",
+        "import_time": "2026-05-26T05:51:58.614214743Z",
+        "id": "IN-MAL-2026-004120",
+        "modified_time": "2026-05-22T01:54:01Z",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9b35cabdffc8a44bcf857b973cc7eb89b6ae691c9be8189a58a0bd30c1a55a37",
+        "import_time": "2026-05-26T05:51:58.707420973Z",
+        "id": "IN-MAL-2026-004121",
+        "modified_time": "2026-05-22T01:54:20Z",
+        "versions": [
+          "0.1.0"
         ]
       }
     ]

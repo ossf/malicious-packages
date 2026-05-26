@@ -1,0 +1,75 @@
+{
+  "modified": "2026-05-22T13:45:43Z",
+  "published": "2026-05-22T13:45:43Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4677",
+  "summary": "Malicious code in swift-optimizer (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c54f35da6df5cef65715d49fb7942aff442ee9a0cb486862031e5009277db3a)\nOn `npm install`, swift-optimizer@1.1.0 runs scripts/install-binary.js as a postinstall hook. The script is a hand-rolled JavaScript bytecode VM (~123 KB) with a base64-encoded constant pool that hides all install-time behavior — platform detection, network I/O, environment reads, file writes — from source-level scanners. Decoded behavior:\n\n1. Dropper: fetches a binary from https://telemetry021312.blob.core.windows.net/share/?v=\u003cchecksum\u003e using a spoofed Edge User-Agent, writes it to bin/swift-optimizer-\u003carch\u003e(.exe), and chmods 0755. The destination is anonymous Azure blob storage; the URL is unpinned and the bytes are not hash-verified. The destination domain has no relationship to the package's stated author/homepage. The package's main `Optimizer` API is wired to invoke this binary at runtime.\n\n2. Targeted-victim guardrail: getVersionChecksum reads process.env.USERDNSDOMAIN, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE, os.hostname(), and an internal-IP lookup, SHA-256-hashes them, and only proceeds if the digest matches one of three hardcoded values (GUARDRAIL_DIGESTS = ['9aee64bc...','1e0ad8d7...','680326dc...']). This restricts execution to pre-identified victim organizations.\n\n3. Sandbox evasion: localTestenvCheck issues an HTTPS HEAD to the RFC1918 address https://10.100.135.17/ with rejectUnauthorized:false and inspects ECONNRESET/error signals to determine whether the host is on a real corporate LAN vs. an analyst sandbox; also checks process.env.CI.\n\n4. Anti-debug: process.hrtime.bigint() timing checks set a 'deception detected' flag if execution is slowed by a debugger.\n\n5. Cover-story metadata: package.json author 'Bob Smith' with throwaway GitHub URL bobsmith012545/swift-optimizer and homepage releases.swift-optimizer.io — placeholder publisher consistent with a single-purpose attack package.\n\nThe combination of an unpinned anonymous-host binary drop, victim-domain hash allowlisting, RFC1918 sandbox probing, anti-debug, and bespoke bytecode-VM obfuscation has no legitimate explanation. This is a targeted supply-chain dropper.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "swift-optimizer"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/install-binary.js",
+              "sha256": "bd8db22ac04d1b6c6ddc80c383a1359d866fa36f70fa212229fe9e8f934d611b",
+              "tlsh": "fdc3dae0bbdaf12e806ef070c1666a407c45b8d202553dfac7f49ae05d95747c8eaea4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "swift-optimizer-1.1.0.tgz",
+              "hashes": {
+                "sha1": "cc5b4952a15c5a19cb0175a40731ea01589c4241",
+                "sha512_sri": "sha512-M5ibwo1Kw0GRBPMYRzVYADT7tzmPF4B9jLGTaRkl4XZoJsHUtlWFSuFeNvJZdy2P4cF0uhZsbVcJ8DlkjxCJdA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/swift-optimizer/v/1.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004208",
+        "import_time": "2026-05-26T05:52:09.38962043Z",
+        "modified_time": "2026-05-22T13:45:43Z",
+        "sha256": "5c54f35da6df5cef65715d49fb7942aff442ee9a0cb486862031e5009277db3a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  }
+}

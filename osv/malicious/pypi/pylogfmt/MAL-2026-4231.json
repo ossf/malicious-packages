@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-22T00:50:54Z",
+  "modified": "2026-05-26T05:55:05Z",
   "published": "2026-05-22T00:50:54Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4231",
   "summary": "Malicious code in pylogfmt (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (ba18f7e82fa8d07985ef44f6ce5a8d4b7759f2e348b6ba073bba4dd463740d8e)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (34bc39125496330ed9b38f1f6d7f06db7e150d83144f9d7e1e04552112851c4a)\nOn `import pylogfmt`, the package's __init__.py spawns a detached background subprocess (`subprocess.Popen([sys.executable, '_check.py'], stdout=DEVNULL, stderr=DEVNULL)`) that runs an infinite loop POSTing the package install path to https://pypkg.dev/project/pylogfmt/json every 60 seconds with TLS verification explicitly disabled. The HTTP response body is base64-decoded and dispatched to a worker thread (`threading.Thread(target=check, args=(package_list.decode(),))`), which is the canonical remote-payload-dispatcher shape — the operator controls returned bytes and the client decodes and feeds them into a handler. The destination domain pypkg.dev is a lookalike of pypi.org/pypa with no relation to the package's declared logging-library purpose. Output suppression (DEVNULL on both streams), undocumented behavior (README advertises only a logging helper), TLS bypass, and lookalike C2 destination together are unambiguous attack signals. Any consumer that imports pylogfmt as a library leaks their install path to attacker infrastructure on a 60-second polling interval and is one server-side change away from arbitrary remote code execution.\n\n## Source: kam193 (ba18f7e82fa8d07985ef44f6ce5a8d4b7759f2e348b6ba073bba4dd463740d8e)\nPackage silently executes remote code during import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-lognest\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote malicious script.\n",
   "affected": [
     {
       "package": {
@@ -13,16 +13,68 @@
       },
       "versions": [
         "0.1.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pylogfmt/_check.py",
+              "sha256": "bf5431f15ed16df0384db105c13709524efef7e88dc0df417e3dc6011a7b6879",
+              "tlsh": "53210216a91c00e6e3424956c811a6185337fc0f6641c6b0faed93a01fd8576c2f3686"
+            },
+            {
+              "path": "pylogfmt/__init__.py",
+              "sha256": "9d76c45fdb04524dc4f0dcbdb1b7148f336b2fcf78361bc7dc0aab2aea7bd90b",
+              "tlsh": "2c01c06a8b1f6167416ec6a8600b07206792c5c7df5a80f471dcb3b42f8b97a15dd42d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pylogfmt-0.1.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "86be5dde1fc76f3470cfdb6dff75fea205581404e0b60b187cc3546f907af3ea",
+                "md5": "8f2c1c7f071f6efb62feee412c51fbea",
+                "sha256": "29f0ec17a0528bda8df8026303f283339c045a1f0915c3e325278559a6aa8935"
+              }
+            },
+            {
+              "filename": "pylogfmt-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "f744f1e217ffa3bcaac548d218af31a4175477a32066fb60d8e73ee40183f381",
+                "md5": "7c82e7e862c8010da69c43f19cd75d23",
+                "sha256": "eccbb4d087e47b9734f84a0b70103000f98b24951c0e2f1dfb012bbc52cdc21c"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/pylogfmt"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pylogfmt/0.1.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -43,11 +95,21 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-05-lognest/pylogfmt",
-        "import_time": "2026-05-22T01:45:39.363126729Z",
-        "modified_time": "2026-05-22T00:50:54.252397Z",
-        "sha256": "ba18f7e82fa8d07985ef44f6ce5a8d4b7759f2e348b6ba073bba4dd463740d8e",
         "source": "kam193",
+        "sha256": "ba18f7e82fa8d07985ef44f6ce5a8d4b7759f2e348b6ba073bba4dd463740d8e",
+        "import_time": "2026-05-22T01:45:39.363126729Z",
+        "id": "pypi/2026-05-lognest/pylogfmt",
+        "modified_time": "2026-05-22T00:50:54.252397Z",
+        "versions": [
+          "0.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "34bc39125496330ed9b38f1f6d7f06db7e150d83144f9d7e1e04552112851c4a",
+        "import_time": "2026-05-26T05:51:57.187535619Z",
+        "id": "IN-MAL-2026-004107",
+        "modified_time": "2026-05-22T00:54:11Z",
         "versions": [
           "0.1.0"
         ]

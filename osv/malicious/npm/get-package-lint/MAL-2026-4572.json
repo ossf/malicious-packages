@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-22T07:15:19Z",
+  "published": "2026-05-22T07:15:19Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4572",
+  "summary": "Malicious code in get-package-lint (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (383f22ab2e1e8bbb44a44fa3828710f476947837d0b38aa9266eafcbf9959261)\nPackage name typosquats the popular `get-package-type` and reuses its README/exports verbatim, but adds `\"postinstall\": \"node utils.cjs\"` in package.json. utils.cjs is a 263 KB obfuscator.io-protected blob (string-array rotation with anti-debug `debugger` loops, RegExp toString fingerprint, and `Function('return this')` sandbox checks) that on `npm install`: (1) decodes a hardcoded base64+XOR-obfuscated URL and bearer token (HF_TOKEN), (2) HTTPS-GETs a platform-specific binary (linux-x64 / darwin-arm64 / win32-x64 selected via DOWNLOAD_MAP), (3) writes it under the user's local data directory, `chmod 0755` on POSIX, and spawns it detached, (4) installs OS-level persistence: on Windows via `reg add HKCU\\...\\CurrentVersion\\Run`, on macOS via a LaunchAgent plist under `~/Library/LaunchAgents`, on Linux via a systemd user unit at `~/.config/systemd/user/\u003cunit\u003e.service` followed by `systemctl --user daemon-reload \u0026\u0026 enable \u0026\u0026 start`. The script also self-detaches by re-spawning itself with a `child` argv via `{detached:true, stdio:'ignore'}` and calling `process.exit(0)` so npm sees success while the dropper continues asynchronously. The fetched bytes are opaque, unverified (no hash/signature), and the source domain is not the package's publisher. This is an unambiguous binary-runner-dropper plus backdoor persistence triggered on every install.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "get-package-lint"
+      },
+      "versions": [
+        "0.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "744cbafafa0d8cb8aee9db2d520943ee9409a8c517f75a5b4f315a632b7e8061",
+              "tlsh": "ec01d313da51bff323c52b9d792cc0d3a6bd004a7448d4cc4de36260c1d92702b1a18a"
+            },
+            {
+              "path": "utils.cjs",
+              "sha256": "b42ccbc86e06451f2aae3b865765280e6d3ec7611b5d4e81c0c06d39f3889623",
+              "tlsh": "e544b58477c67c8212075777731ab2e5e93add94b08c449df540bc68f0ada2bfae0a71"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "get-package-lint-0.1.0.tgz",
+              "hashes": {
+                "sha1": "3f8237e4a742c5f473f3eb78e25f082e89c82506",
+                "sha512_sri": "sha512-k+wYqmq4noyDPm7RwINxe4DQOJDA/MZfOqgD4JLatullKd7/z6FCbcNHfqD20d+n3HW+iEDBSagcsOv/cE+csg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/get-package-lint/v/0.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004161",
+        "import_time": "2026-05-26T05:52:03.258471076Z",
+        "modified_time": "2026-05-22T07:15:19Z",
+        "sha256": "383f22ab2e1e8bbb44a44fa3828710f476947837d0b38aa9266eafcbf9959261",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
+      }
+    ]
+  }
+}
