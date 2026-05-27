@@ -1,0 +1,159 @@
+{
+  "modified": "2026-05-26T21:14:22Z",
+  "published": "2026-05-19T18:05:22Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4441",
+  "summary": "Malicious code in @shadanai/openclaw (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c0e2f02ab1bb3d99de1787ed7d69f1df97bd3b2d7c18cc8ba4e5f8688f649ce9)\nOn `npm install`, `scripts/postinstall.mjs` performs several installer-harm actions. (1) Backdoor: writes `~/.openclaw/openclaw.json` configuring a local gateway with `gateway.bind: 'lan'` (LAN-reachable, not loopback), `dangerouslyDisableDeviceAuth: true`, `dangerouslyAllowHostHeaderOriginFallback: true`, and `controlUi.allowedOrigins` whitelisting `https://im.shadanai.com`, `https://shadanai.com`, and dynamic `https://18789-<userId>.vnc.shadanai.com`. A fixed gateway bearer token is written to `~/.openclaw/.env`. To support cross-origin TLS, the postinstall runs `mkcert -install` unconditionally, adding a locally-generated CA to the system/browser trust store, and bakes every non-internal LAN IPv4 of the host into the certificate SANs. The combined effect: pages served from publisher-controlled `shadanai.com` origins can issue authenticated commands to the installer's local agent gateway over LAN with no device-auth challenge \u2014 a persistent publisher-controlled control plane the installer never opted into. (2) Credential distribution: a live Zhipu AI (z.ai) API key (`b0952b463c02412d874295000eb79043.CUcvwxpi0RsmbLM5`) is hardcoded in `scripts/postinstall.mjs` (L46) and written to `~/.openclaw/.env`. A second live OpenAI-format key (`sk-xRxGLtCkAhBqKdpe252aBb643c4e4d669e503dDf06D8A2D9`) for `https://one-api.shadanai.com/v1` is shipped in `gateway.json` and merged into `~/.openclaw/openclaw.json`. Every installer receives both keys in cleartext and can impersonate the publisher against those services. (3) Install-time RCE via mutable tag: postinstall executes `npx clawhub@latest install sonoscli` with `shell: true`, fetching and executing whatever the current `latest` of the third-party `clawhub` npm package publishes \u2014 no version pin, no integrity check. The maintainer of `clawhub` (or anyone who later compromises that account) gains silent code execution on every installer. Each of these is independently sufficient for block; combined, the package establishes a persistent attacker-trusted control plane on the installer's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@shadanai/openclaw"
+      },
+      "versions": [
+        "2026.5.26",
+        "2026.5.16",
+        "2026.5.15-1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "34.3.16.104.in-addr.arpa"
+          ],
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.mjs",
+              "sha256": "6b2afe7cabe8c9fe9bf103985ecf8b33e652a2c3acf6c2655f621f88006bd9d8",
+              "tlsh": "c652a2b810f5563239b1d66c119b5015b128ba03390dfd59b3dc73a13fee52842b36be"
+            },
+            {
+              "path": "gateway.json",
+              "sha256": "e5bae71e01969426f6fb504feec8ee4b1a4026f4825932f046f73af2a324567b",
+              "tlsh": "c9519728c2b80db705eab57455bd6243f620c29b4e583c2a7b8c124c5f5da3e16fa3dc"
+            },
+            {
+              "path": "extensions/box-im/src/owner-bootstrap.ts",
+              "sha256": "6211ba99df6f789541aa001bed9114169a7d75908fb8d830d7910e6142c01d00",
+              "tlsh": "ed82c58680f26a3615fb1a9ebbdf91226518c2833e08fca573dcc6940f5c05d52777ad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "openclaw-2026.5.16.tgz",
+              "hashes": {
+                "sha1": "d68494ee7f5c4e668cfe1ea380149bf71ac1e926",
+                "sha512_sri": "sha512-9GrJZXZAcuQUaZJVyZtDumqwtVr0ZpJF87XtjO8ace+G0QVw88/lYXcv+35izUG70czBxGzqYGNVLeoli5Z0hQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@shadanai/openclaw/v/2026.5.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@shadanai/openclaw/v/2026.5.26"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@shadanai/openclaw/v/2026.5.15-1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004462",
+        "import_time": "2026-05-26T05:52:38.834293117Z",
+        "modified_time": "2026-05-24T05:11:21Z",
+        "sha256": "853dde236d6f3177a73acfd47ea1f5a9898f721e174a96fbd304c4c437b51373",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.26"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-003225",
+        "import_time": "2026-05-26T05:50:14.781834282Z",
+        "modified_time": "2026-05-19T18:05:22Z",
+        "sha256": "92aa5cee3e17fdf310ca064213d60fab3e055e33ed72f0bfee36b95cd96fe1d9",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-003238",
+        "import_time": "2026-05-26T05:50:16.151579387Z",
+        "modified_time": "2026-05-19T18:31:32Z",
+        "sha256": "a2a11e64e4ef3cc4efab60c79888340d9ca4e787847dda0e3291d53d0bb26dc9",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.15-1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-003226",
+        "import_time": "2026-05-26T05:50:14.884898739Z",
+        "modified_time": "2026-05-19T18:05:23Z",
+        "sha256": "bf365c77e4edb2867492cce3d207b953d00508ebb286a2760710fde87aa21c25",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-004461",
+        "import_time": "2026-05-26T05:52:38.714560828Z",
+        "modified_time": "2026-05-24T05:11:20Z",
+        "sha256": "c0e2f02ab1bb3d99de1787ed7d69f1df97bd3b2d7c18cc8ba4e5f8688f649ce9",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.26"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-003237",
+        "import_time": "2026-05-26T05:50:16.056006933Z",
+        "modified_time": "2026-05-19T18:31:31Z",
+        "sha256": "d4b7dfcaeeb4c23cf7704bc2f26b049ad4266b2f51fea4876624d31e858dcc38",
+        "source": "amazon-inspector",
+        "versions": [
+          "2026.5.15-1"
+        ]
+      }
+    ]
+  },
+  "withdrawn": "2026-05-26T21:14:22Z"
+}

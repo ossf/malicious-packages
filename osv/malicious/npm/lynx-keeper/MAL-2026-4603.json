@@ -1,16 +1,29 @@
 {
-  "modified": "2026-05-26T05:55:03Z",
+  "modified": "2026-05-26T13:23:35Z",
   "published": "2026-05-20T13:00:26Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4603",
+  "aliases": [
+    "GHSA-x7hr-g7qr-7j7p"
+  ],
   "summary": "Malicious code in lynx-keeper (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dc28f02ae68bf5a1a57af8662180d7a8a040e6f32ad87abde9acdae508070189)\nOn require, dist/index.js executes a hex-obfuscated harvester that reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.ssh/config, gcloud application_default_credentials.json, ~/.kube/config, and.env/.env.local/.env.production from the current working directory, plus all process.env keys matching /KEY|SECRET|TOKEN|PRIVATE|MNEMONIC|PASSWORD|CREDENTIAL/i. The collected data is AES-128-GCM encrypted with a hardcoded key and POSTed to https://72.62.71.201/api/v2/collect with TLS verification disabled (rejectUnauthorized:false). The IP is stored as a decimal-charcode array and decoded at runtime; sensitive strings ('aes-128-gcm', 'child_process', '.aws/credentials', '.ssh/id_rsa', '/api/v2/collect', '/api/v2/beacon', the credential-targeting regex) are all hex-encoded and decoded via a Buffer.from(...,'hex') helper. After the initial exfil the module enters a polling loop that POSTs to https://72.62.71.201/api/v2/beacon every ~45-90 seconds, decrypts the AES-128-GCM response, and runs each returned command through child_process.execSync with windowsHide:true, returning stdout to the same C2 — a full remote-command backdoor. Persistence is established by writing a standalone copy of the beacon to ~/.npm/_npx/.cache/gyp-rebuid/index.js with a fake package.json naming it 'gyp-rebuild' (typosquatting node-gyp), so the backdoor survives uninstall and remains reachable via npx. Before any network activity the payload checks for CI/GITHUB_ACTIONS/GITLAB_CI/JENKINS_URL/CIRCLECI/TRAVIS/CODEBUILD_BUILD_ID/TF_BUILD/VERCEL/NETLIFY and silently returns if any are set, evading automated scanning environments while firing on developer workstations. The package's advertised purpose (utilities for lynx.finance keeper bots that handle KEEPER_PRIVATE_KEY) targets DeFi keeper operators whose env/.env files contain hot-wallet private keys.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dc28f02ae68bf5a1a57af8662180d7a8a040e6f32ad87abde9acdae508070189)\nOn require, dist/index.js executes a hex-obfuscated harvester that reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.ssh/config, gcloud application_default_credentials.json, ~/.kube/config, and.env/.env.local/.env.production from the current working directory, plus all process.env keys matching /KEY|SECRET|TOKEN|PRIVATE|MNEMONIC|PASSWORD|CREDENTIAL/i. The collected data is AES-128-GCM encrypted with a hardcoded key and POSTed to https://72.62.71.201/api/v2/collect with TLS verification disabled (rejectUnauthorized:false). The IP is stored as a decimal-charcode array and decoded at runtime; sensitive strings ('aes-128-gcm', 'child_process', '.aws/credentials', '.ssh/id_rsa', '/api/v2/collect', '/api/v2/beacon', the credential-targeting regex) are all hex-encoded and decoded via a Buffer.from(...,'hex') helper. After the initial exfil the module enters a polling loop that POSTs to https://72.62.71.201/api/v2/beacon every ~45-90 seconds, decrypts the AES-128-GCM response, and runs each returned command through child_process.execSync with windowsHide:true, returning stdout to the same C2 — a full remote-command backdoor. Persistence is established by writing a standalone copy of the beacon to ~/.npm/_npx/.cache/gyp-rebuid/index.js with a fake package.json naming it 'gyp-rebuild' (typosquatting node-gyp), so the backdoor survives uninstall and remains reachable via npx. Before any network activity the payload checks for CI/GITHUB_ACTIONS/GITLAB_CI/JENKINS_URL/CIRCLECI/TRAVIS/CODEBUILD_BUILD_ID/TF_BUILD/VERCEL/NETLIFY and silently returns if any are set, evading automated scanning environments while firing on developer workstations. The package's advertised purpose (utilities for lynx.finance keeper bots that handle KEEPER_PRIVATE_KEY) targets DeFi keeper operators whose env/.env files contain hot-wallet private keys.\n\n## Source: ghsa-malware (61dc11fdce13daf749040523637a1de2db93542468e33b38072fb99c310949fc)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "lynx-keeper"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "0.1.1",
         "0.1.3",
@@ -18,6 +31,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -67,6 +85,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/lynx-keeper/v/0.1.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-x7hr-g7qr-7j7p"
     }
   ],
   "credits": [
@@ -81,33 +103,50 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003557",
-        "import_time": "2026-05-26T05:50:51.235926916Z",
-        "modified_time": "2026-05-20T13:45:04Z",
-        "sha256": "b1ceea5d6444b83f20cee4bbd8b4217e258473b2e55e105647ee444f5848db17",
         "source": "amazon-inspector",
+        "sha256": "b1ceea5d6444b83f20cee4bbd8b4217e258473b2e55e105647ee444f5848db17",
+        "import_time": "2026-05-26T05:50:51.235926916Z",
+        "id": "IN-MAL-2026-003557",
+        "modified_time": "2026-05-20T13:45:04Z",
         "versions": [
           "0.1.1"
         ]
       },
       {
-        "id": "IN-MAL-2026-004156",
-        "import_time": "2026-05-26T05:52:02.636054361Z",
-        "modified_time": "2026-05-22T06:33:11Z",
-        "sha256": "c475517e8036d792ed20ed340623f801b16d90e0ed9fb81ebb22b900cdb9fc65",
         "source": "amazon-inspector",
+        "sha256": "c475517e8036d792ed20ed340623f801b16d90e0ed9fb81ebb22b900cdb9fc65",
+        "import_time": "2026-05-26T05:52:02.636054361Z",
+        "id": "IN-MAL-2026-004156",
+        "modified_time": "2026-05-22T06:33:11Z",
         "versions": [
           "0.1.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-003535",
-        "import_time": "2026-05-26T05:50:48.763008179Z",
-        "modified_time": "2026-05-20T13:00:26Z",
-        "sha256": "dc28f02ae68bf5a1a57af8662180d7a8a040e6f32ad87abde9acdae508070189",
         "source": "amazon-inspector",
+        "sha256": "dc28f02ae68bf5a1a57af8662180d7a8a040e6f32ad87abde9acdae508070189",
+        "import_time": "2026-05-26T05:50:48.763008179Z",
+        "id": "IN-MAL-2026-003535",
+        "modified_time": "2026-05-20T13:00:26Z",
         "versions": [
           "0.1.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "61dc11fdce13daf749040523637a1de2db93542468e33b38072fb99c310949fc",
+        "import_time": "2026-05-26T13:21:46.74022938Z",
+        "id": "GHSA-x7hr-g7qr-7j7p",
+        "modified_time": "2026-05-26T11:56:00Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]

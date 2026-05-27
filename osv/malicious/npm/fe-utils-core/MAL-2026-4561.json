@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T00:20:52Z",
+  "modified": "2026-05-26T13:34:33Z",
   "published": "2026-05-26T00:20:52Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4561",
   "summary": "Malicious code in fe-utils-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2980651af37fb9eb2244993701bdd793ac2adf1070d3919b215fe91f0ff92eeb)\nThe package presents itself as a small utility library (debounce, throttle, isEmpty, clamp, formatNumber, storage helpers), but its default export `getPlugin` (index.js) fetches https://svganchordev.net/icons/110 and passes the response body's `data.credits` field to `new Function('require','module',...,'Promise', data.credits)`, then invokes the resulting function with a full Node.js context (require, process, Buffer, __dirname, module). The destination is an unrelated, non-CDN domain whose response body is treated as executable JavaScript with no integrity check, giving the operator of svganchordev.net arbitrary remote code execution on any host that imports and calls the default export. The README sneaks `getPlugin` into its import example alongside the documented helpers but provides no API description for it, encouraging consumers to call it. Combined with shipped dependencies oriented toward credential access (@primno/dpapi, node-machine-id, better-sqlite3), this is a staged credential-stealer / RCE backdoor, not a utility library.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6181b15ad071542a35154cffc71bc4771db039f548eabfe4100271000e4e3116)\nThe package's default-exported getPlugin function fetches https://svganchordev.net/icons/110 and passes the response's data.credits field to new Function() with require, process, Buffer, module, exports, and Promise injected — executing arbitrary attacker-controlled JavaScript with full Node privileges whenever a caller invokes the documented API. The endpoint is hardcoded to a domain unrelated to the package's stated purpose and is not referenced in README. Errors are swallowed and the request silently retried, which is consistent with covert C2 behavior. The declared dependency set (@primno/dpapi for Windows DPAPI decryption, node-machine-id, better-sqlite3 and sqlite3 for browser/credential database access, socket.io-client for persistent C2, axios/express/request) is unused by the small advertised utility surface (~30 lines of debounce/throttle/isEmpty helpers in src/utils.js) but is pre-positioned in node_modules so a remote-fetched payload can require() these capabilities without a second fetch. The combination — remote-fetch-and-eval plus a credential-harvesting toolkit pre-installed as dependencies — leaves no benign interpretation.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "fe-utils-core"
       },
       "versions": [
-        "1.0.4"
+        "1.0.4",
+        "1.0.5"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/fe-utils-core/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fe-utils-core/v/1.0.5"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004802",
-        "import_time": "2026-05-26T05:53:18.53210227Z",
-        "modified_time": "2026-05-26T00:20:52Z",
-        "sha256": "2980651af37fb9eb2244993701bdd793ac2adf1070d3919b215fe91f0ff92eeb",
         "source": "amazon-inspector",
+        "sha256": "2980651af37fb9eb2244993701bdd793ac2adf1070d3919b215fe91f0ff92eeb",
+        "import_time": "2026-05-26T05:53:18.53210227Z",
+        "id": "IN-MAL-2026-004802",
+        "modified_time": "2026-05-26T00:20:52Z",
         "versions": [
           "1.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6181b15ad071542a35154cffc71bc4771db039f548eabfe4100271000e4e3116",
+        "import_time": "2026-05-26T13:32:46.532865151Z",
+        "id": "IN-MAL-2026-004904",
+        "modified_time": "2026-05-26T11:38:38Z",
+        "versions": [
+          "1.0.5"
         ]
       }
     ]
