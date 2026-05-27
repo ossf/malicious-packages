@@ -1,0 +1,101 @@
+{
+  "modified": "2026-05-26T22:13:04Z",
+  "published": "2026-05-22T08:31:54Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4597",
+  "summary": "Malicious code in kurumi-fca (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f90450e6ca1502bf6287d945c37c4c64f59e624a4269ab8e07600a9db5e755d0)\nkurumi-fca is a Facebook Chat API library whose advertised purpose is to listen to Messenger events for the caller. Two undisclosed behaviors make it unsafe for installers:\n\n1. Silent relay of user data. After login, every incoming Messenger photo attachment is routed through a hidden uploader (`api._imgUpload`, defined as non-enumerable in index.js L376-378) to author-controlled ImgBB and ImageKit accounts. src/listenMqtt.js L455-460 invokes this for every photo delta received via `api.listenMqtt`. Callers of the documented API have no signal that attachment URLs are being re-hosted on third-party storage owned by the package author.\n\n2. Auto-self-update bypassing dependency pinning. On every `require('kurumi-fca')`, index.js L23-29 schedules `checkForFCAUpdate()`, which queries the npm registry for the latest version and, if newer, runs `execSync('npm install kurumi-fca@<latest> --save', { cwd: process.cwd() })` (checkUpdate.js L88), rewrites the consumer's package.json dependencies entry, and exits the process. Any future version the author publishes \u2014 including a compromised one \u2014 is force-installed into the consumer project on next import, defeating lockfiles and version pinning.\n\n3. Mutable out-of-band relay configuration. The relay credentials (ImgBB/ImageKit API keys) are fetched at login from `https://raw.githubusercontent.com/N1SA9EDITZ/ST-Handlers/refs/heads/main/kurumi-fcakey.json` (index.js L302-313) on a mutable `main` branch with no integrity check, letting the author re-aim the silent relay destination at any time without publishing a new package version.\n\nThe combination is a silent-relay attack with a self-rewriting installer foothold: caller-supplied data leaks to author-controlled infrastructure whose destination is controlled out-of-band, and the package guarantees its own future versions will be installed regardless of consumer-declared pins.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "kurumi-fca"
+      },
+      "versions": [
+        "1.1.8",
+        "1.1.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "4e0474a43337fb3913e1b44aa618d666b29f8866586aec4226de104f93d13904",
+              "tlsh": "2dd2c61d00fb20170977b47da79f60013926da23224ceeb5ba5c93616f48579daf3be8"
+            },
+            {
+              "path": "checkUpdate.js",
+              "sha256": "4eb763c6868b8dd733caf88b121c51428ddf87a1d9cf2f598334c601d637f418",
+              "tlsh": "bb9143c648f37638247317699b2b005523afa603b608f5bdfbdc87061f8a51884277ec"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "kurumi-fca-1.1.8.tgz",
+              "hashes": {
+                "sha1": "1824260d9e4902700a2c0c26a0e1d92be5014441",
+                "sha512_sri": "sha512-cSqNNCwVHT1OalYyXvrBu+bJLpSuIPQX4TfXIE4RiBGf6rYPyoz7GdHAzQ4KBpkHMdxaRPe0zvZ7KQFpoQatvg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/kurumi-fca/v/1.1.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/kurumi-fca/v/1.1.7"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-004172",
+        "import_time": "2026-05-26T05:52:04.606729045Z",
+        "modified_time": "2026-05-22T08:31:59Z",
+        "sha256": "7217b9a585b82d70fdeeae262cf6a613412b368722b5e3501a1a5f7b485bf3d8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-004171",
+        "import_time": "2026-05-26T05:52:04.499888529Z",
+        "modified_time": "2026-05-22T08:31:54Z",
+        "sha256": "f90450e6ca1502bf6287d945c37c4c64f59e624a4269ab8e07600a9db5e755d0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.7"
+        ]
+      }
+    ]
+  },
+  "withdrawn": "2026-05-26T22:13:04Z"
+}
