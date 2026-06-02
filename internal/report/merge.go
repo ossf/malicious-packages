@@ -32,23 +32,25 @@ func (r *Report) Merge(other *Report) error {
 	// This ensures that if an error is returned the caller can be confident
 	// that "r" has not been altered in any way.
 
+	// Merging must be done before ID assignment.
+	if other.raw.ID != "" {
+		return fmt.Errorf("%w: attempting to merge report after ID assigned", ErrMergeFailure)
+	}
+	// Ensure the other report is normalized as well. Do this before comparing
+	// names and other key fields to ensure that we are comparing like for like.
+	if err := other.Normalize(); err != nil {
+		return fmt.Errorf("failed to normalize other report: %w", err)
+	}
+
 	if r.Ecosystem != other.Ecosystem {
 		return fmt.Errorf("%w: attempting to merge report from different ecosystem (%s != %s)", ErrMergeFailure, r.Ecosystem, other.Ecosystem)
 	}
 	if !equalName(r.Name, other.Name, r.Ecosystem) {
 		return fmt.Errorf("%w: attempting to merge report with different name (%s != %s)", ErrMergeFailure, r.Name, other.Name)
 	}
-	// Merging must be done before ID assignment.
-	if other.raw.ID != "" {
-		return fmt.Errorf("%w: attempting to merge report after ID assigned", ErrMergeFailure)
-	}
 	// Bail out if the sets of origins intersect.
 	if r.HasCommonOrigin(other) {
 		return fmt.Errorf("%w: reports contain common origins", ErrMergeFailure)
-	}
-	// Ensure the other report is normalized as well.
-	if err := other.Normalize(); err != nil {
-		return fmt.Errorf("failed to normalize other report: %w", err)
 	}
 	// Extract the details and ensure they are all correct.
 	userDetails, sourceDetails, err := r.ParseDetails()
