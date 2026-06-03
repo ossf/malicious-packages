@@ -84,9 +84,18 @@ func TestPath(t *testing.T) {
 		t.Run(test.ecosystem+" "+test.name, func(t *testing.T) {
 			r := &report.Report{Name: test.name, Ecosystem: test.ecosystem}
 			if got := r.Path(); got != test.want {
-				t.Errorf("Dir() = %v; want %v", got, test.want)
+				t.Errorf("Path() = %v; want %v", got, test.want)
 			}
 		})
+	}
+}
+
+func TestPath_CanonicalizeName(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "This_-IS.A_Package")
+	got := r.Path()
+	want := "pypi/this-is-a-package"
+	if got != want {
+		t.Errorf("Path() = %v; want %v", got, want)
 	}
 }
 
@@ -99,7 +108,7 @@ func TestNormalize_WithID(t *testing.T) {
 	}
 }
 
-func TestNormalize_CanonicalizeName(t *testing.T) {
+func TestNormalize_CanonicalizePackageName(t *testing.T) {
 	tests := []struct {
 		eco  osvschema.Ecosystem
 		name string
@@ -130,8 +139,8 @@ func TestNormalize_CanonicalizeName(t *testing.T) {
 				t.Fatalf("Normalize() = %v; want no error", err)
 			}
 
-			if got := r.Name; got != test.want {
-				t.Errorf("Name = %v; want %v", got, test.want)
+			if got := r.Vuln().Affected[0].Package.Name; got != test.want {
+				t.Errorf("Affected[0].Package.Name = %v; want %v", got, test.want)
 			}
 		})
 	}

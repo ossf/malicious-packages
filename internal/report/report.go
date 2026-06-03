@@ -94,6 +94,8 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	// Populates the report-level Name and Ecosystem from the report - handling
+	// git-based reports and canonicalizing the name.
 	r.Name, r.Ecosystem = r.fetchNameAndEcosystem(r.raw)
 
 	// Ensure the details can be parsed.
@@ -280,7 +282,7 @@ func (r *Report) fetchNameAndEcosystem(v *osvschema.Vulnerability) (string, stri
 		return gitname.CanonForStorage(name), string(ecosystemGit)
 	}
 
-	return pkg.Name, pkg.Ecosystem
+	return canonicalizeName(pkg.Name, osvschema.Ecosystem(pkg.Ecosystem)), pkg.Ecosystem
 }
 
 func (r *Report) Normalize() error {
@@ -289,7 +291,12 @@ func (r *Report) Normalize() error {
 		return nil
 	}
 
-	r.Name = canonicalizeName(r.Name, osvschema.Ecosystem(r.Ecosystem))
+	// If we have a package, set the Package name to the canonicalized name
+	// set during unmarshalling the report.
+	var zeroPkg osvschema.Package
+	if r.raw.Affected[0].Package != zeroPkg {
+		r.raw.Affected[0].Package.Name = r.Name
+	}
 
 	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
