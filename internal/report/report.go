@@ -291,13 +291,6 @@ func (r *Report) Normalize() error {
 		return nil
 	}
 
-	// If we have a package, set the Package name to the canonicalized name
-	// set during unmarshalling the report.
-	var zeroPkg osvschema.Package
-	if r.raw.Affected[0].Package != zeroPkg {
-		r.raw.Affected[0].Package.Name = r.Name
-	}
-
 	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
 	r.raw.DatabaseSpecific = stripUnexpectedValues(r.raw.DatabaseSpecific)

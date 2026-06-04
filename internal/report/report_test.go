@@ -108,7 +108,7 @@ func TestNormalize_WithID(t *testing.T) {
 	}
 }
 
-func TestNormalize_CanonicalizePackageName(t *testing.T) {
+func TestCanonicalizeName(t *testing.T) {
 	tests := []struct {
 		eco  osvschema.Ecosystem
 		name string
@@ -135,12 +135,8 @@ func TestNormalize_CanonicalizePackageName(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			r := testReport(test.eco, test.name)
 
-			if err := r.Normalize(); err != nil {
-				t.Fatalf("Normalize() = %v; want no error", err)
-			}
-
-			if got := r.Vuln().Affected[0].Package.Name; got != test.want {
-				t.Errorf("Affected[0].Package.Name = %v; want %v", got, test.want)
+			if got := r.Name; got != test.want {
+				t.Errorf("Name = %v; want %v", got, test.want)
 			}
 		})
 	}
