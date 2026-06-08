@@ -1,0 +1,31 @@
+{
+  "schema_version": "1.6.0",
+  "details": "`kecak256` is a typosquat of the popular `keccak256` package (one `c` dropped) that ships a credential-stealing payload executed automatically on install.\n\nThe package spoofs the legitimate keccak256 project — author \"Miguel Mota\", matching description, README, and keywords — and includes a benign decoy hash implementation (`kecak256.js`) as `main`.\n\n`package.json` defines `scripts.postinstall`: `node init.m.js && echo DONE`, and declares `archiver`, `axios`, and `form-data` as runtime dependencies (the exfiltration toolchain).\n\n**init.m.js (launcher):** RC4 + base64 string obfuscation. On Windows it spawns a hidden PowerShell (`-WindowStyle Hidden -ExecutionPolicy Bypass`) that `Start-Process`-launches `upchk.m.js` under node; on other platforms it spawns `node upchk.m.js` detached (`{detached:true, windowsHide:true, stdio:'ignore'}`) and calls `child.unref()` to orphan the process.\n\n**upchk.m.js (stage 2, ~63 KB obfuscated):** performs an `isAdmin()` privilege check, targets browser/credential stores (observed string targets include Chrome `Login Data`, keystore, `cc_appkey`), archives collected data into `npmupdate.zip` via `archiver`, and exfiltrates it in 5 MB chunks via `axios` + `FormData` to a runtime-decoded C2 URL (`uploadFileChunks(file, sUrl, 5MB)`).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "kecak256"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [{ "introduced": "0" }]
+        }
+      ]
+    }
+  ],
+  "credits": [
+    {
+      "name": "Hugo Guillaume (Konvu)",
+      "contact": ["mailto:hugo@konvu.com"],
+      "type": "FINDER"
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/kecak256"
+    }
+  ]
+}
