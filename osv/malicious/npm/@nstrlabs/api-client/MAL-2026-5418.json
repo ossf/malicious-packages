@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-09T17:47:54Z",
+  "modified": "2026-06-09T18:52:14Z",
   "published": "2026-06-09T17:40:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5418",
   "summary": "Malicious code in @nstrlabs/api-client (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (21dda1fd78fda4debfc14241cb2f5653bb328ccbe744170341d7f5a93331dac2)\npackage.json sets `preinstall: node index.js`, which runs automatically on `npm install`. index.js collects host metadata (os.hostname(), os.userInfo().username, __dirname, process.cwd()), hex-encodes the JSON as DNS labels, and resolves them under `*.d8jbmnsqcfu78dfs8vdg34ohqhirb4pbg.oast.live` (an interactsh-style OOB DNS exfiltration channel). It additionally POSTs the same JSON payload to the bare IP `http://172.201.213.59:9090/c`. Both channels fire unconditionally at install time. The package coordinates (`@nstrlabs/api-client` at version `99.0.1`, description `security research`, no real functionality beyond the beacon) match the canonical dependency-confusion pattern: a high version number is published to the public registry to override resolution of an internal `@nstrlabs` scope, leaking installer host data from any CI/build that resolves the scope publicly.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (de7b47a7f81209dbbaff286599b46f4f030ff992b6d0c25d947cc84739b838d9)\n@nstrlabs/api-client@99.0.0 is a hollow package whose only behavior is an install-time exfiltration beacon. package.json declares `\"preinstall\": \"node index.js || true\"`, so every `npm install` automatically executes index.js, which collects `os.hostname()`, `os.userInfo().username`, `__dirname`, and `process.cwd()` and ships them through two independent channels: (1) a DNS lookup against a subdomain of `d8jbmnsqcfu78dfs8vdg34ohqhirb4pbg.oast.live` (OAST-style out-of-band callback) encoding the collected fields, and (2) an HTTP POST of the JSON payload to the hardcoded bare IP `172.201.213.59:9090/c`. Errors are swallowed with `|| true` to keep the install appearing successful. The package ships no API-client functionality; the version-bomb to 99.0.0 under the `@nstrlabs` scope, combined with the `security research` description and beacon-only payload, is the canonical dependency-confusion shape — designed to outrank a private internal `@nstrlabs/api-client` and silently identify hosts inside the target organization's build environment.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "@nstrlabs/api-client"
       },
       "versions": [
-        "99.0.1"
+        "99.0.1",
+        "99.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -55,6 +61,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@nstrlabs/api-client/v/99.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nstrlabs/api-client/v/99.0.0"
     }
   ],
   "credits": [
@@ -69,23 +79,43 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005095",
-        "import_time": "2026-06-09T17:45:54.323441979Z",
-        "modified_time": "2026-06-09T17:40:00Z",
-        "sha256": "21dda1fd78fda4debfc14241cb2f5653bb328ccbe744170341d7f5a93331dac2",
         "source": "amazon-inspector",
+        "sha256": "21dda1fd78fda4debfc14241cb2f5653bb328ccbe744170341d7f5a93331dac2",
+        "import_time": "2026-06-09T17:45:54.323441979Z",
+        "id": "IN-MAL-2026-005095",
+        "modified_time": "2026-06-09T17:40:00Z",
         "versions": [
           "99.0.1"
         ]
       },
       {
-        "id": "IN-MAL-2026-005096",
-        "import_time": "2026-06-09T17:45:54.41238204Z",
-        "modified_time": "2026-06-09T17:40:01Z",
-        "sha256": "9e0cc169216efefe96ed4724461baf56c8d7827b7322eaaca6dfdce9a3456165",
         "source": "amazon-inspector",
+        "sha256": "9e0cc169216efefe96ed4724461baf56c8d7827b7322eaaca6dfdce9a3456165",
+        "import_time": "2026-06-09T17:45:54.41238204Z",
+        "id": "IN-MAL-2026-005096",
+        "modified_time": "2026-06-09T17:40:01Z",
         "versions": [
           "99.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7d5538fb97a8a712a30d1168e70ae82650504b2e6015833086b4d95093807e53",
+        "import_time": "2026-06-09T18:50:18.18423155Z",
+        "id": "IN-MAL-2026-005131",
+        "modified_time": "2026-06-09T17:50:34Z",
+        "versions": [
+          "99.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "de7b47a7f81209dbbaff286599b46f4f030ff992b6d0c25d947cc84739b838d9",
+        "import_time": "2026-06-09T18:50:18.037807876Z",
+        "id": "IN-MAL-2026-005130",
+        "modified_time": "2026-06-09T17:50:34Z",
+        "versions": [
+          "99.0.0"
         ]
       }
     ]
