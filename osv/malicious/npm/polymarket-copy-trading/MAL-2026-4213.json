@@ -1,0 +1,96 @@
+{
+  "modified": "2026-05-26T05:55:04Z",
+  "published": "2026-05-21T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4213",
+  "summary": "Malicious code in polymarket-copy-trading (npm)",
+  "details": "A coordinated supply-chain attack comprising 9 npm packages published by maintainer `polymarketdev` (GitHub actor `texsellix`, repo `texsellix/polymarket-trading-bot`) within a ~2-minute window on 2026-05-20T23:30Z–23:32Z. All packages masquerade as legitimate Polymarket CLOB trading tools while exfiltrating Ethereum private keys to a Cloudflare Worker C2 at `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys`.\n\n**Kill chain:**\n- The `postinstall` hook (`scripts/postinstall.mjs`) probes for an interactive TTY. On non-interactive shells (CI/CD scanners), it prints \"polybot installed\" and exits to evade automated analysis.\n- **Interactive path:** displays a masked readline prompt soliciting the wallet private key.\n- **Passive path:** reads `.env` files in the current working directory and extracts the `PRIVATE_KEY` environment variable with no user interaction — developers who keep `PRIVATE_KEY` in their environment lose it silently.\n- **Local persistence:** creates `~/.polybot/` (mode 0700) containing `device.json` (UUID + creation timestamp) and `wallets.json` (Ethereum address + keccak256 fingerprint + `pushedAt` timestamp).\n- **Exfiltration:** POSTs `{ privateKey, label }` as plain JSON over HTTPS to the C2, with header `x-polybot-device: \u003cUUID\u003e` for device fingerprinting.\n\n**Distinctive fingerprint:** All 9 packages ship a byte-identical `dist/index.js` (711 KB, SHA-256 `e01b85c1437085a519217338fe4ee5ed7858c28a10f8c1477b2f1857c3386edb`) — only the `name` field in `package.json` differs across packages. The bundle wraps the real Polymarket CLOB SDK, ethers.js, Zod, pino, and WebSocket to provide working `scan` / `quote` / `trade` / `copy` commands as cover for credential theft. The banner falsely claims private keys \"stay encrypted.\"\n\n**Targeting:** `polymarket-claude-code` and `polymarket-ai-agent` are named to surface in LLM-assisted coding workflows that recommend packages without provenance evaluation.\n\n`polymarket-copy-trading` targets developers seeking copy-trading workflows. Payload is identical to the rest of the campaign.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1082ab41486ab2c4cd05cac1fc789e03e999d67f633f08f6c503121aeabe4efe)\nOn `npm install` in a TTY, scripts/postinstall.mjs auto-spawns `dist/index.js login`, which prompts the installer to paste an Ethereum/Polymarket wallet private key (validated as 0x-prefixed 32-byte hex) and then POSTs the plaintext key to https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys. The destination is an anonymous Cloudflare Workers subdomain typosquatting Polymarket's real domain (polymarket.com) — not Polymarket infrastructure. The package name `polymarket-copy-trading` and bundled CLI `polybot` are themselves designed to impersonate first-party Polymarket tooling, lowering installer suspicion at the key-entry prompt. The user-visible banner falsely tells the victim the key 'stays encrypted', while a comment block in postinstall.mjs explicitly states the Worker URL and vault details are 'intentionally kept out of the user-visible message — on a need-to-know basis', confirming deliberate concealment. Package metadata is inconsistent (repository points to one GitHub org, README references a different one, no author field, referenced subpackages absent from the tarball), matching the placeholder-metadata-plus-credential-handling attacker pattern. Anyone installing this package and completing the prompted login hands the operator full custody of their wallet, with the ability to drain USDC, CTF positions, and any other on-chain assets.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "polymarket-copy-trading"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "0.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.mjs",
+              "sha256": "2444dd0f978952e4be207c14f7dc990494a843522c08fcc1b7faa138d318d6e0",
+              "tlsh": "42915032d6440f613ce1c2ece61a15593717b13731429a763c4fb3acafce15942b2aba"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "polymarket-copy-trading-0.1.0.tgz",
+              "hashes": {
+                "sha1": "e00eafb8b65796eaf953a20e61c637d3e549d967",
+                "sha512_sri": "sha512-JTLI6ugTy99aijiP6ZSq4qhVfJ36ShPuM7IBh0DTPFdcl2rZDJlLbCL9nR8BUro8r0JTU1K6W1zO3Iw4rECdjA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-polymarket-npm-crypto-wallet-drainer/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/polymarket-copy-trading/v/0.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1082ab41486ab2c4cd05cac1fc789e03e999d67f633f08f6c503121aeabe4efe",
+        "import_time": "2026-05-26T05:51:08.284452188Z",
+        "id": "IN-MAL-2026-003700",
+        "modified_time": "2026-05-21T01:47:37Z",
+        "versions": [
+          "0.1.0"
+        ]
+      }
+    ]
+  }
+}

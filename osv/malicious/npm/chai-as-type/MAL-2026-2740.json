@@ -1,10 +1,10 @@
 {
-  "modified": "2026-04-23T20:50:50Z",
+  "modified": "2026-05-26T05:55:01Z",
   "published": "2026-04-15T22:05:03Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-2740",
   "summary": "Malicious code in chai-as-type (npm)",
-  "details": "chai-as-type is a malicious npm package that when imported downloads a C2 dropper from https://api.npoint[.]io/c26313f0733957a7d787 and executes it (similar to malware in to chai-await-test).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c48e79ab60bf33822b131a30be07b07afee7fe9feed4439ac5f43988283001ac)\nThe package chai-as-type was found to contain malicious code.\n",
+  "details": "chai-as-type is a malicious npm package that when imported downloads a C2 dropper from https://api.npoint[.]io/c26313f0733957a7d787 and executes it (similar to malware in to chai-await-test).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (75650bd9993ad4d310c42309ea4f185f9ec2bca169073315a9a1604c76830e41)\nThe package name impersonates the popular chai / chai-as-promised assertion libraries, but the code is an unrelated pino-shaped middleware whose only side effect is launching a remote-code loader. lib/caller.js issues an axios GET to https://jsonkeeper.com/b/XRGF3 (an anonymous public JSON paste host), takes the returned `data.cookie` string, constructs `new Function.constructor('require', s)`, and invokes it with the live `require` — executing arbitrary attacker-controlled JavaScript in the installer's Node process with full module access. The C2 URL is base64-encoded and stashed under fake `DEV_API_KEY` / `DEV_SECRET_KEY` keys on a locally redeclared `process` object (`aHR0cHM6Ly9qc29ua2VlcGVyLmNvbS9iL1hSR0Yz` decodes to the jsonkeeper URL); a sibling encoded URL `.../b/4NAKK` lives in lib/const.js. The loader is reached two ways: (1) when the exported `pino` middleware is invoked, index.js detaches a `child_process.spawn('node', ['lib/caller.js',...])`; (2) the package's `smoke:pino` npm script runs index.js directly. The paste-host content is mutable by the attacker at any time, so each fetch can deliver fresh payloads (credential theft, persistence, etc.) without re-publishing the package.\n",
   "affected": [
     {
       "package": {
@@ -23,14 +23,51 @@
         }
       ],
       "versions": [
-        "7.0.5"
-      ]
+        "7.0.5",
+        "1.1.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/caller.js",
+              "sha256": "d81e48769a830cd3384a4b8977ade12e5ab7583eb7cca84e7ab966d15871bd71",
+              "tlsh": "f8017b8a30fa605c015510f64b1fa4327011e4273c49e5c5378c87524fea9ae6963aed"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ee7f43af72a5000ba73b6cf630067707e9ad7269d6c17996abc13dbacfba49e0",
+              "tlsh": "09019761ce788e2300ed25824c2e0643ba719c079828fc2d32db512d4f9e9bf01bf21d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "chai-as-type-1.1.9.tgz",
+              "hashes": {
+                "sha1": "77a8fb23496806bdd27676dc15995862109cdf44",
+                "sha512_sri": "sha512-mFlnECLksRgkNcSlHuWwRq0pGQ0n1t9a8B5i4FDXOtFfciSvCSVH5EC4QV1mT3GMln5cmZAGqSokVBknlTQ8/A=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "REPORT",
       "url": "https://www.indece.com/en-US/blog/7df041ba-feb1-4d87-918b-7fc2c709d805"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chai-as-type/v/1.1.9"
     }
   ],
   "credits": [
@@ -80,6 +117,16 @@
         "modified_time": "2026-04-23T20:43:56Z",
         "versions": [
           "7.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "75650bd9993ad4d310c42309ea4f185f9ec2bca169073315a9a1604c76830e41",
+        "import_time": "2026-05-26T05:51:33.048401302Z",
+        "id": "IN-MAL-2026-003904",
+        "modified_time": "2026-05-21T16:28:40Z",
+        "versions": [
+          "1.1.9"
         ]
       }
     ]

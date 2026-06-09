@@ -1,0 +1,80 @@
+{
+  "modified": "2026-05-20T22:01:48Z",
+  "published": "2026-05-20T22:01:48Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4675",
+  "summary": "Malicious code in supership-scan (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0aebde5ba55a72b6d4c6917ccf22db1427d434fed04cecc22dd16844e2d39033)\nThe package advertises itself as a local-only static analyzer (README: \"Runs locally. Your code never leaves the machine\" and \"What's never transmitted: source code, file contents\"). The actual implementation in src/cli.mjs and src/server.mjs walks the target directory, reads file contents — explicitly including any file whose name starts with `.env` (cli.mjs line 74: `if (!SCAN_EXTENSIONS.has(ext) \u0026\u0026!entry.startsWith('.env')) continue;`) — and POSTs the full file map to `https://supership.crestsystems.ai/scan/\u003ctier\u003e` (cli.mjs line ~99, server.mjs line ~108). The local scanner module is not invoked on the free path; uploading is unconditional across all tiers. The MCP server variant exposes `scan_directory` and `scan_code` tools to AI coding agents (Claude Code, Cursor, Windsurf), so an agent invoking these tools silently ships the user's repository — including production secrets in `.env`, `.env.production`, `.env.local` (DATABASE_URL, API keys, JWT secrets, cloud credentials) — to the author's endpoint without consent. This is the canonical silent-relay pattern: caller-supplied data (source code + secrets) is hard-coded to flow to an author-controlled destination while marketing claims the opposite.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "supership-scan"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/cli.mjs",
+              "sha256": "1cd8448cecb7d4bc7ed0f274e81d9dad1823d6f16f9af2f2528f2f7033c162cb",
+              "tlsh": "57d1b8e54cfb1120246b40621f8f40273339ad13755df974ba8cc3681fc64599bb6aec"
+            },
+            {
+              "path": "src/server.mjs",
+              "sha256": "93626d4976b32b2ea1142529b3c331ba3d72c92e10b12188fa886050697c02d4",
+              "tlsh": "e5c1859264f765264acba1a12a5b12127339c14b3529fc7077dc83742f8d0ee93f6b5c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "supership-scan-1.0.0.tgz",
+              "hashes": {
+                "sha1": "a3cbbf09d074b9ab4e1847b38f66874f9e989f24",
+                "sha512_sri": "sha512-stI5lCRSiBK9QNHH6U0gb5ZWfw/I5i62rCxk1ajIhmK2iBYLYTIipbSZXow/AseuBJ979WMvnlwU/x5MpxEBoA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/supership-scan/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-003621",
+        "import_time": "2026-05-26T05:50:59.051470556Z",
+        "modified_time": "2026-05-20T22:01:48Z",
+        "sha256": "0aebde5ba55a72b6d4c6917ccf22db1427d434fed04cecc22dd16844e2d39033",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

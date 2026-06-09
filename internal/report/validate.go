@@ -46,46 +46,63 @@ var supportedEcosystems = []osvschema.Ecosystem{
 // ValidateVuln ensures that v conforms to the the OSV Schema, and to the
 // specific constraints expected by the repository.
 func ValidateVuln(v *osvschema.Vulnerability) error {
-	// A malicious packages vuln must have one and only one Affected entry.
+	return validateVulnInternal(v, false)
+}
+
+func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error {
+	// A malicious packages vuln must have one and only one Affected entry. We
+	// allow multiple only on a per-source basis, but once they are ingested they
+	// must conform to the single Affected entry rule.
 	if len(v.Affected) == 0 {
 		return fmt.Errorf("%w: no affected packages listed", ErrInvalidOSV)
 	}
 	if len(v.Affected) > 1 {
-		return fmt.Errorf("%w: multiple affected entries", ErrUnexpectedOSV)
+		if !allowMultiple {
+			// Multiple affected are not allowed, so return an error.
+			return fmt.Errorf("%w: multiple affected entries", ErrUnexpectedOSV)
+		}
+		// Ensure that if multiple affected are allowed there are no duplicate
+		// ecocystem + package name entries.
+		seen := make(map[string]bool)
+		for i := range v.Affected {
+			pkg := v.Affected[i].Package
+			name := canonicalizeName(pkg.Name, osvschema.Ecosystem(pkg.Ecosystem))
+			key := fmt.Sprintf("%s!!%s", pkg.Ecosystem, name)
+			if seen[key] {
+				return fmt.Errorf("%w: duplicate affected package %s in %s", ErrUnexpectedOSV, name, pkg.Ecosystem)
+			}
+			seen[key] = true
+		}
 	}
 
-	ecosystem, err := validatePackage(v.Affected[0].Package)
-	if err != nil {
-		return err
-	}
-
-	if ecosystem == ecosystemGit && len(v.Affected[0].Ranges) == 0 {
-		// Git-based reports must have at least one range so we know the
-		// repository the report is for.
-		return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
-	}
-	// TODO: re-enable after checking with Reversing Labs
-	// else if len(v.Affected[0].Versions) == 0 && len(v.Affected[0].Ranges) == 0 {
-	//	// All other reports require either at least one version or at least
-	//	// one range.
-	//	return fmt.Errorf("%w: at least one range or one version must be specified", ErrUnexpectedOSV)
-	// }
-
-	// Validate the ranges are correct.
-	repoSet := map[string]bool{}
-	for _, rng := range v.Affected[0].Ranges {
-		if err := validateRange(rng, ecosystem); err != nil {
+	for i := range v.Affected {
+		ecosystem, err := validatePackage(v.Affected[i].Package)
+		if err != nil {
 			return err
 		}
-		if rng.Repo != "" {
-			repoSet[rng.Repo] = true
-		}
-	}
 
-	// If we are Git-based, ensure all the repos are the same for the ranges.
-	if ecosystem == ecosystemGit && len(repoSet) > 1 {
-		repos := slices.Collect(maps.Keys(repoSet))
-		return fmt.Errorf("%w: git-based report has multiple repos: %s", ErrUnexpectedOSV, repos)
+		if ecosystem == ecosystemGit && len(v.Affected[i].Ranges) == 0 {
+			// Git-based reports must have at least one range so we know the
+			// repository the report is for.
+			return fmt.Errorf("%w: git-based report has no ranges", ErrUnexpectedOSV)
+		}
+
+		// Validate the ranges are correct.
+		repoSet := map[string]bool{}
+		for _, rng := range v.Affected[i].Ranges {
+			if err := validateRange(rng, ecosystem); err != nil {
+				return err
+			}
+			if rng.Repo != "" {
+				repoSet[rng.Repo] = true
+			}
+		}
+
+		// If we are Git-based, ensure all the repos are the same for the ranges.
+		if ecosystem == ecosystemGit && len(repoSet) > 1 {
+			repos := slices.Collect(maps.Keys(repoSet))
+			return fmt.Errorf("%w: git-based report has multiple repos: %s", ErrUnexpectedOSV, repos)
+		}
 	}
 
 	return nil

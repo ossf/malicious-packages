@@ -34,6 +34,14 @@ func TestMerge_MismatchName(t *testing.T) {
 	}
 }
 
+func TestMerge_CanonicalizeName(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "this-is-a-package")
+	other := testReport(osvschema.EcosystemPyPI, "this.IS-a_package")
+	if err := r.Merge(other); err != nil {
+		t.Fatalf("Merge() = %v; want no error", err)
+	}
+}
+
 func TestMerge_NuGetName(t *testing.T) {
 	r := testReport(osvschema.EcosystemNuGet, "example.Utility.Test")
 	other := testReport(osvschema.EcosystemNuGet, "Example.utility.TEST")

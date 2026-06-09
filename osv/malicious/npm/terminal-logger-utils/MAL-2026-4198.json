@@ -1,0 +1,145 @@
+{
+  "modified": "2026-05-26T05:55:04Z",
+  "published": "2026-05-20T06:43:15Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4198",
+  "aliases": [
+    "GHSA-h9jr-prgp-c322"
+  ],
+  "summary": "Malicious code in terminal-logger-utils (npm)",
+  "details": "terminal-logger-utils is a malicious npm package that when installed executes a postinstall hook that opens utils.cjs, an obfuscated malware dropper. The dropper checks the current system, downloads a platform-specific second-stage binary from Hugging Face, and executes it.\n\nThe second-stage payload is a bundled Node.js executable with embedded malicious JavaScript that provides keylogger, infostealer, and RAT behavior. It collects clipboard and keyboard events, tracks password-field typing, steals sensitive local data including Telegram Desktop sessions, browser login databases, crypto wallets, SSH keys, cloud configurations, environment variables, and keyword-matched files, and connects to a remote server for full machine control.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9f3e7beb4e0d682d701e7f8b2f2ee043d4cda378963b0786e75775471839bc6a)\nPackage self-describes as a zero-dependency colorized logger but ships a 264KB heavily obfuscated postinstall script (utils.cjs, invoked via package.json scripts.postinstall). On install, the script first re-spawns itself detached from npm and exits 0 so `npm install` returns success while the dropper continues silently. It then decodes a hardcoded download URL and bearer token from an obfuscator.io-style RC4/XOR string array, fetches a platform-specific binary (linux-x64, linux-arm64, darwin-x64, darwin-arm64) using `Authorization: Bearer \u003ctoken\u003e`, writes it to the user data dir as `node-logger-base64`, chmod 0755, and spawns it detached with no hash or signature verification. It then installs OS-level persistence so the binary auto-launches at every user login: a Windows HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run entry via `reg add`, a macOS LaunchAgent plist under `~/Library/LaunchAgents/`, and on Linux both a `~/.config/systemd/user/\u003cstem\u003e.service` unit (enabled via `systemctl --user`) and a `~/.config/autostart/\u003cstem\u003e.desktop` entry. None of this is documented in the README. The combination of obfuscated install-time remote-binary fetch + cross-platform persistence + self-detach evasion is an unambiguous dropper / backdoor pattern.\n\n## Source: ghsa-malware (73f1923a0299add681c39d15421a3585e277ee2b66847f8e7aeec028e6f37d22)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "terminal-logger-utils"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.1.0",
+        "1.1.1",
+        "1.1.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "34.9.16.104.in-addr.arpa"
+          ],
+          "evidence_files": [
+            {
+              "path": "utils.cjs",
+              "sha256": "b42ccbc86e06451f2aae3b865765280e6d3ec7611b5d4e81c0c06d39f3889623",
+              "tlsh": "e544b58477c67c8212075777731ab2e5e93add94b08c449df540bc68f0ada2bfae0a71"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "terminal-logger-utils-1.1.2.tgz",
+              "hashes": {
+                "sha1": "9b950063519205e7926eb27ec9cbdd0790e5c8eb",
+                "sha512_sri": "sha512-Bjb500zLWEX8JtKeLtjabzG3xgUa34LMVj4yuRtv/SP7v2nvi/+pJuDQpxrRSmsfk5UP4of5KCKpzgJbVMKDSA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.ox.security/blog/north-korean-npm-infostealer-rat/"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-h9jr-prgp-c322"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/terminal-logger-utils/v/1.1.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "OX Security",
+      "type": "FINDER",
+      "contact": [
+        "https://www.ox.security/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "73f1923a0299add681c39d15421a3585e277ee2b66847f8e7aeec028e6f37d22",
+        "import_time": "2026-05-22T16:59:25.100294648Z",
+        "id": "GHSA-h9jr-prgp-c322",
+        "modified_time": "2026-05-22T15:58:28Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7d85d445a8728a37fb4c6086f1cee659fafcd3d1ffff587d3339e0b3436231c1",
+        "import_time": "2026-05-26T05:51:15.986178862Z",
+        "id": "IN-MAL-2026-003762",
+        "modified_time": "2026-05-21T06:40:41Z",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9f3e7beb4e0d682d701e7f8b2f2ee043d4cda378963b0786e75775471839bc6a",
+        "import_time": "2026-05-26T05:51:15.849785087Z",
+        "id": "IN-MAL-2026-003761",
+        "modified_time": "2026-05-21T06:40:40Z",
+        "versions": [
+          "1.1.2"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,473 @@
+{
+  "modified": "2026-05-26T05:55:01Z",
+  "published": "2026-05-21T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4202",
+  "aliases": [
+    "GHSA-vpcq-rhwg-qph4"
+  ],
+  "summary": "Malicious code in chain-key-validator (npm)",
+  "details": "A coordinated supply-chain attack comprising 10 npm packages published by maintainer `ddjidd5640` (1623682356@qq.com) within a 48-hour window (2026-05-19T03:55Z – 2026-05-21T04:31Z). All packages masquerade as legitimate Web3/DeFi developer security tools (MCP servers) while silently exfiltrating credentials, wallet keys, shell history, SSH keys, and environment variables on install and on every MCP tool invocation. The `postinstall` hook fetches a dynamic C2 webhook URL from `https://ddjidd564.github.io/defi-security-best-practices/config.json` (hardcoded fallback: `https://webhook.site/8d334534-1c63-4f4f-a0d7-95c446c8b233`). At runtime, `scanner.js` performs a recursive credential sweep on every MCP tool call targeting cryptocurrency wallets (`~/.ethereum`, `~/.bitcoin`, `~/.solana`), SSH keys, dotfiles, and environment variables. MCP tool handlers in `index.js` are named to solicit private key material directly from the user or AI agent (e.g., `verify_key_format`: “Private key or key material to validate”).\n\n`chain-key-validator` presents itself as a blockchain key validation MCP server. The malicious `postinstall` hook was injected in version 0.2.3 — prior version 0.2.1 (published 2026-05-19) contained no hook, confirming an intentional posture-degradation update. The MCP tool `verify_key_format` explicitly solicits “Private key or key material to validate” and `benchmark_key_strength` solicits “Key material to benchmark”, then exfiltrates the supplied values to the C2. `scanner.js` is confirmed byte-for-byte identical to the version in `defi-env-auditor`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (419de9994ae46f1562c4e9fc38b7d28d2824abedb94b37b2629866de0390fccc)\nPackage poses as a 'Cryptographic Security Foundation' MCP tool that validates blockchain private keys, but is a credential harvester and wallet drainer. (1) package.json scripts.postinstall is an inline `node -e` that runs on `npm install` and reads ~/.ssh, ~/.ethereum, ~/.bitcoin, ~/.env, ~/.bash_history, ~/.zsh_history, ~/.git-credentials, captures hostname/user/cwd, and POSTs them to a webhook resolved from https://ddjidd564.github.io/defi-security-best-practices/config.json. (2) scanner.js (loaded from index.js) recursively walks the home directory and platform keystore paths (~/.ethereum, ~/.solana, AppData, Library/Application Support), regex-matches private keys and BIP-39 mnemonics, reads ~/.npmrc, ~/.gitconfig, ~/.git-credentials, shell history, and environment variables matching key/secret/token/password/mnemonic/seed, then POSTs the harvest to the same dynamically-resolved webhook. (3) The MCP `tools/call` handler in index.js unconditionally forwards the caller's `arguments` — including the private key the user is asked to 'validate' — to the attacker webhook before returning a fake validation result, making the package's advertised function a silent relay of user-supplied secrets. The webhook URL is fetched at runtime from a github.io config so the attacker can rotate exfil endpoints without republishing.\n\n## Source: ghsa-malware (c5b4ea56f64eb148a353f31b94282d23361630d0e4bb8a9a233d62f3fc63a295)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "chain-key-validator"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.3.0",
+        "1.2.3",
+        "1.2.2",
+        "1.2.1",
+        "0.2.2",
+        "1.2.0",
+        "0.2.4",
+        "1.3.6",
+        "0.2.3",
+        "1.3.7",
+        "1.3.8",
+        "1.3.9",
+        "1.3.1",
+        "4.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "ddjidd564.github.io"
+          ],
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "a89df0fa6c00b80d93e70a9fce02edccce2bb718f80c3d533b6f41dddfa0cfb9",
+              "tlsh": "9431a6d1c7a4dae70bc44ac9a6b142426a16a803f5007c8cf3dd405e9fcca57d63e9ec"
+            },
+            {
+              "path": "scanner.js",
+              "sha256": "c14236cff55c89f3e6ac2ff19d2917efe318100d5ca061937ca386ef48a1e1bb",
+              "tlsh": "5762179a23f5603087c3d6e58a479005633bf0a23645ded4bb8c92686f4173493e7bed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "chain-key-validator-1.2.2.tgz",
+              "hashes": {
+                "sha1": "2d8bcfc3b0b72d15607e7b98bf9d3ddfdc020272",
+                "sha512_sri": "sha512-yCw/QdRNQhwy5knS5zT0JRUFDB5YJTCFX4YkTLNc2XCpt53tVtJnoxPssYEcyFC6TxLsiGx9rlvbiglyap2L3A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://x.com/safedepio/status/2057325717453697057"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-vpcq-rhwg-qph4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.2.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.2.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/0.2.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.2.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/0.2.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.2.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/0.2.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/1.3.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-key-validator/v/4.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "c5b4ea56f64eb148a353f31b94282d23361630d0e4bb8a9a233d62f3fc63a295",
+        "import_time": "2026-05-22T03:24:54.645926641Z",
+        "id": "GHSA-vpcq-rhwg-qph4",
+        "modified_time": "2026-05-22T02:43:06Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d2626ecefc7c3da423e5dc7a794bb83bdae7a70aa8380f0bba9600f8750a7572",
+        "import_time": "2026-05-26T05:51:38.675525398Z",
+        "id": "IN-MAL-2026-003949",
+        "modified_time": "2026-05-21T17:59:07Z",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "de9549afaf4b110d4a994b7e8a56c90b4a4b43e6c8be4d3a279c34c1f3972aae",
+        "import_time": "2026-05-26T05:51:37.285795555Z",
+        "id": "IN-MAL-2026-003937",
+        "modified_time": "2026-05-21T17:23:30Z",
+        "versions": [
+          "1.2.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "19db8fcf6cbb95fc5cf62b4a035f18cecb6d8bff7c4a1a643a51c54c33ed3dd8",
+        "import_time": "2026-05-26T05:51:33.883317377Z",
+        "id": "IN-MAL-2026-003908",
+        "modified_time": "2026-05-21T16:40:57Z",
+        "versions": [
+          "1.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "3578397b663b98303248115a9e165e63084e22a351452528eca4979f14511403",
+        "import_time": "2026-05-26T05:51:37.166991208Z",
+        "id": "IN-MAL-2026-003936",
+        "modified_time": "2026-05-21T17:23:30Z",
+        "versions": [
+          "1.2.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "439d8bfd7ef32084aa27c851e957eb03bc30b99d739eb3894716639d87eea0c1",
+        "import_time": "2026-05-26T05:51:34.089982967Z",
+        "id": "IN-MAL-2026-003909",
+        "modified_time": "2026-05-21T16:40:57Z",
+        "versions": [
+          "1.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6bfff780d4f103edc5627a6dab29ba89f0b02dcf07be2315fd5766947e2bd70f",
+        "import_time": "2026-05-26T05:51:30.726424425Z",
+        "id": "IN-MAL-2026-003883",
+        "modified_time": "2026-05-21T16:18:24Z",
+        "versions": [
+          "1.2.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7a722f6b28171d86b55cd6b2bd814f16aa85b0b7424b93adf6b7d5114f331afc",
+        "import_time": "2026-05-26T05:51:09.29206884Z",
+        "id": "IN-MAL-2026-003707",
+        "modified_time": "2026-05-21T02:53:58Z",
+        "versions": [
+          "0.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b0841feae535a5006692f0db2322c0df7327885da6e25eaded98fb8504934a59",
+        "import_time": "2026-05-26T05:51:25.90628586Z",
+        "id": "IN-MAL-2026-003844",
+        "modified_time": "2026-05-21T14:07:48Z",
+        "versions": [
+          "1.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d3f189330bb30ac6193d02340c853bf4ac2c1dddb0dbfbab684b6df3f033ba9f",
+        "import_time": "2026-05-26T05:51:25.449654976Z",
+        "id": "IN-MAL-2026-003840",
+        "modified_time": "2026-05-21T13:50:39Z",
+        "versions": [
+          "0.2.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "18de04749ce1fd46074da1393746fa0ce343e7723950cf04aef603aa77b7dfdf",
+        "import_time": "2026-05-26T05:51:50.58929582Z",
+        "id": "IN-MAL-2026-004050",
+        "modified_time": "2026-05-21T22:32:38Z",
+        "versions": [
+          "1.3.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "27ac59e92a8a706c2ca6d52a413ef0c4e422040c0f5b3f0232464c36128f1a88",
+        "import_time": "2026-05-26T05:51:30.618844584Z",
+        "id": "IN-MAL-2026-003882",
+        "modified_time": "2026-05-21T16:18:24Z",
+        "versions": [
+          "1.2.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "419de9994ae46f1562c4e9fc38b7d28d2824abedb94b37b2629866de0390fccc",
+        "import_time": "2026-05-26T05:51:11.007310349Z",
+        "id": "IN-MAL-2026-003721",
+        "modified_time": "2026-05-21T04:31:45Z",
+        "versions": [
+          "0.2.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ab2f8fcaa8dad2604446db4cd2cda8e4675f9978020e9797f13aa92d07174a3",
+        "import_time": "2026-05-26T05:51:25.776217952Z",
+        "id": "IN-MAL-2026-003843",
+        "modified_time": "2026-05-21T14:07:47Z",
+        "versions": [
+          "1.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8671ae99e1a4cc9ab25155f83b60ea96a025f55ce2a7fabac943885b6e5555f6",
+        "import_time": "2026-05-26T05:51:11.181229744Z",
+        "id": "IN-MAL-2026-003722",
+        "modified_time": "2026-05-21T04:31:46Z",
+        "versions": [
+          "0.2.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b55652839ec988c310d43d473f54270f13d1170417721025519edb6c3c72ca83",
+        "import_time": "2026-05-26T05:51:23.76503541Z",
+        "id": "IN-MAL-2026-003826",
+        "modified_time": "2026-05-21T13:45:01Z",
+        "versions": [
+          "0.2.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "dbdb37e638f7d0dd9be6d776e2c33aece053a5a57b26852db55be2d8f5274b49",
+        "import_time": "2026-05-26T05:51:51.348726421Z",
+        "id": "IN-MAL-2026-004057",
+        "modified_time": "2026-05-21T22:48:31Z",
+        "versions": [
+          "1.3.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "127d7ed968ecd18b8ede8a8f50542a73c30712ee047a4dde3a43d68d5a21a78c",
+        "import_time": "2026-05-26T05:51:53.059098913Z",
+        "id": "IN-MAL-2026-004073",
+        "modified_time": "2026-05-21T23:00:34Z",
+        "versions": [
+          "1.3.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "281a45cf7bcf6165ff17a2930aa3361aada63dfb887bcdcd8ee4e6be4819ded5",
+        "import_time": "2026-05-26T05:51:38.543387038Z",
+        "id": "IN-MAL-2026-003948",
+        "modified_time": "2026-05-21T17:58:33Z",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "49267c629e7f1f814af033f4b3b10b36d33af88bcab529bc2ba345cb9bab3053",
+        "import_time": "2026-05-26T05:51:53.771536033Z",
+        "id": "IN-MAL-2026-004079",
+        "modified_time": "2026-05-21T23:12:21Z",
+        "versions": [
+          "1.3.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c3dbe905889294a0c799b78e1720fa951f47cb52953c712c335146fdd3e3ecfd",
+        "import_time": "2026-05-26T05:51:41.608063469Z",
+        "id": "IN-MAL-2026-003976",
+        "modified_time": "2026-05-21T18:18:28Z",
+        "versions": [
+          "1.3.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "fa880acb0e78e89ff5a00ec4955406559f1fc6bc603fe4de4b034d5471df98a2",
+        "import_time": "2026-05-26T05:51:41.807138972Z",
+        "id": "IN-MAL-2026-003978",
+        "modified_time": "2026-05-21T18:18:28Z",
+        "versions": [
+          "1.3.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "497c695eceaa883dde0f251154f311d9a8c8ea33dd443892d42784f6e440b664",
+        "import_time": "2026-05-26T05:51:55.603591039Z",
+        "id": "IN-MAL-2026-004094",
+        "modified_time": "2026-05-21T23:32:38Z",
+        "versions": [
+          "4.0.0"
+        ]
+      }
+    ]
+  }
+}
