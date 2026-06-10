@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-10T18:37:05Z",
+  "published": "2026-06-10T18:37:05Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of @solana/web3.js with credential stealer, Telegram C2 backdoor, and crypto-wallet drain",
+  "details": "Package `@solana-labs/web3.js` impersonates the legitimate `@solana/web3.js` and re-exports it as cover while running a malicious `postinstall` (`node install.js`). On `npm install`, install.js performs sandbox-evasion checks (hostname pattern scoring for Docker/AWS/CI runners, /proc/uptime, presence of strace/tcpdump/auditd, AWS metadata 169.254.169.254, security-tooling dependencies) and aborts if it detects analysis. Otherwise it enumerates installer secrets — `~/.ssh/id_rsa`, `~/.aws/credentials`, `~/.config/solana/id.json`, `.env` files, and scrapes `process.env` for KEY/SECRET/MNEMONIC/NPM/GITHUB tokens — and harvests crypto material including ETH private keys (`/0x[a-fA-F0-9]{64}/`), Solana 64-byte arrays, and AWS keys. Stolen data is tagged `[ETH]/[SOLANA]/[AWS]/[SSH]/[NPM]/[GITHUB]` and exfiltrated to `api.telegram.org/bot\u003ctoken\u003e/...` using XOR-obfuscated bot token, chat ID, and HMAC auth secret embedded in install.js. install.js then enters a long-poll loop against Telegram `getUpdates` accepting commands `/keys`, `/ssh`, `/env`, `/wallet`, `/sh \u003ccmd\u003e`, and bare text, executing them via `execSync` (PowerShell on Windows) and returning output to the attacker — a full reverse-shell C2 backdoor. Persistence is established via a `@reboot sleep 90 \u0026\u0026 node \u003cpath\u003e` crontab entry. A hardcoded Solana drain address `D4hGgKKaBFZV1NUTWvYRwbpu8HHr3qmDfHyKCTLqbaE7` is present for wallet theft.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@solana-labs/web3.js"
+      },
+      "versions": [
+        "1.0.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "e2f55065f26c6337b01f1e944df3f4c13a374b1b47ee8771a5e5680f9324c97e",
+              "tlsh": "3c4219bbf7a993b8c69a20785e1fb10b947b79134d84e144f85ce4826f6c24413a7cf9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "web3.js-1.0.7.tgz",
+              "hashes": {
+                "sha1": "6521dabf12b7042da38d9f566ed10f74ad32b77a",
+                "sha512_sri": "sha512-tlYdcAHCeVemdvK8j8FpPJU4oBgQxguv3BMp4EDOXq16nd9D7YEVy7li4ilkGYXdw+wf7gJS3POOtDokbseIwQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@solana-labs/web3.js/v/1.0.7"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "91b0523027116b3981b0f1dfe925f01d8956eb19817aae6ea7d0022d5357fba4",
+        "import_time": "2026-06-10T19:23:48.407752036Z",
+        "id": "IN-MAL-2026-005289",
+        "modified_time": "2026-06-10T18:37:05Z",
+        "versions": [
+          "1.0.7"
+        ]
+      }
+    ]
+  }
+}
