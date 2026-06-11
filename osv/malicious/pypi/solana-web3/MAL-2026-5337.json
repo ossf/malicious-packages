@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-08T22:20:58Z",
+  "modified": "2026-06-11T03:50:44Z",
   "published": "2026-06-08T22:20:57Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5337",
   "summary": "Malicious code in solana-web3 (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (91c09b86579a07d271d3bcd57adf5b5b161e49e36c3bd7af09c50dd8127aa54f)\nDuring import, the package exfiltrates sensitive data (credentials, SSH keys, cryptowallet's data). It also establishes persistence via a cronjob.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-spl-token-py\n\n\nReasons (based on the campaign):\n\n\n - crypto-related\n\n\n - typosquatting\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-credentials\n\n\n - exfiltration-crypto\n\n\n - exfiltration-env-variables\n\n\n - persistence\n\n\n - uses-telegram-bot\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4967ebad2d1f4f5802ef50f1d399c05c4dfab94a208079695570b15ffef0fdd2)\nOn import, solana-web3/__init__.py executes a credential-stealer payload. After a sandbox-evasion gate (checks for 12-hex Docker hostname, /.dockerenv, and presence of `strace` to skip analysis environments), `_collect()` reads installer-side secrets: ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.aws/credentials, Solana keypairs at ~/.config/solana/id.json and ~/.solana/id.json,.env files in the current and parent directories as well as /app/.env and /root/.env, and bulk-scrapes os.environ for any variable name containing KEY/SECRET/MNEMONIC/PRIVATE/TOKEN/PASSWORD/AWS/NPM/GITHUB/SOLANA. The harvested data is POSTed to https://api.telegram.org/bot\u003credacted\u003e/sendMessage using a hardcoded bot token and chat_id 8346336575. `_persist()` then writes `@reboot sleep 90 \u0026\u0026 python3 \u003c__file__\u003e` into /tmp/.psync and merges it into the user's crontab so the stealer re-runs on every reboot, even after the package is uninstalled. The package name impersonates the well-known @solana/web3.js Solana SDK and advertises itself as a 'Community-maintained Solana Python SDK', but ships no SDK functionality — only the stealer. METADATA lists UNKNOWN homepage/license and a generic 'Solana Dev Community' author.\n\n## Source: kam193 (91c09b86579a07d271d3bcd57adf5b5b161e49e36c3bd7af09c50dd8127aa54f)\nDuring import, the package exfiltrates sensitive data (credentials, SSH keys, cryptowallet's data). It also establishes persistence via a cronjob.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-spl-token-py\n\n\nReasons (based on the campaign):\n\n\n - crypto-related\n\n\n - typosquatting\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-credentials\n\n\n - exfiltration-crypto\n\n\n - exfiltration-env-variables\n\n\n - persistence\n\n\n - uses-telegram-bot\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
   "affected": [
     {
       "package": {
@@ -13,16 +13,60 @@
       },
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "solana-web3/__init__.py",
+              "sha256": "96f8547a8b1ef16709dab07b25ab278bd2a547fa1ca956ffff0eb19269cb0f44",
+              "tlsh": "d05195c135560829e086aa9f1c1580d4238fbf5308339ab8baddb780cfc45b89a75b9c"
+            },
+            {
+              "path": "solana_web3-1.0.0.dist-info/METADATA",
+              "sha256": "e059d3d2453f08a23fee2c54412d31c66fe2e0c460e57e147a8f0bcae0172534",
+              "tlsh": "ecd05e400ba18523f18682cf1aad43d61de29600644e28ab8c09340883a22e26fa6976"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "solana_web3-1.0.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "df978f51564bedd20c64e7df3323151e20b42b74641920d558461cd1763e4ce6",
+                "md5": "c748c9d14818de8d113240be30308243",
+                "sha256": "be1967702b04983c56fc16a1ce4bfda510fcbdb1c735a00e26812e8a7567f438"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/solana-web3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/solana-web3/1.0.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -35,11 +79,21 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-06-spl-token-py/solana-web3",
-        "import_time": "2026-06-08T23:01:22.27085005Z",
-        "modified_time": "2026-06-08T22:20:58.147035Z",
-        "sha256": "91c09b86579a07d271d3bcd57adf5b5b161e49e36c3bd7af09c50dd8127aa54f",
         "source": "kam193",
+        "sha256": "91c09b86579a07d271d3bcd57adf5b5b161e49e36c3bd7af09c50dd8127aa54f",
+        "import_time": "2026-06-08T23:01:22.27085005Z",
+        "id": "pypi/2026-06-spl-token-py/solana-web3",
+        "modified_time": "2026-06-08T22:20:58.147035Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4967ebad2d1f4f5802ef50f1d399c05c4dfab94a208079695570b15ffef0fdd2",
+        "import_time": "2026-06-11T03:48:48.560668715Z",
+        "id": "IN-MAL-2026-005416",
+        "modified_time": "2026-06-11T02:57:43Z",
         "versions": [
           "1.0.0"
         ]

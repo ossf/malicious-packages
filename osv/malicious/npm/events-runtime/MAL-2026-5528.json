@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-11T02:26:14Z",
+  "modified": "2026-06-11T03:50:39Z",
   "published": "2026-06-10T18:09:36Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5528",
   "summary": "Malicious code in events-runtime (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (81f4151f241e7877d2286f5967a243b35c6d2453078ed5acc19bfc72b16167b2)\nThe package poses as a drop-in replacement for the popular `events` polyfill (its events.js is a verbatim copy of Joyent's source with a malicious block inserted). Inside the patched `EventEmitter.prototype.emit` (events.js ~line 155), the code checks for a sentinel `args[0].eventId === 'eventId0'` and, if present, silently `spawn`s a detached `node tests/galas-emit.min.js` with stdio ignored and the window hidden. The spawned, obfuscator.io-minified payload (galas-emit.min.js, plus a 760KB galas.min.js) connects to Sepolia via Infura/Alchemy and reads `getTData1` / `getTData2` / `getChunk(...)` from contract 0xc0445F1b679DC46280A0f03F451bdf613b5A0feA, derives an x25519/AES-GCM key, decrypts the on-chain blobs into a single file, `chmodSync(..., '755')`, and execs it with `process.execPath` as a detached child — an EtherHiding-style mutable C2 that defeats URL blocklists. The same payload collects platform/release/arch/hostname/cpus/memory/uptime plus the generated x25519 public key and POSTs them to api.telegram.org/bot\u003credacted\u003e/sendMessage and slack.com/api/chat.postMessage using a hardcoded Telegram bot token and Slack bearer token. Finally it self-erases: it `unlinkSync`s itself, errors.min.js, and galas.min.js, and rewrites the parent events.js by splicing out the 16 lines containing the spawn block so post-hoc inspection shows only a benign `events` shim. The combination — namespace impersonation of `events`, sentinel-triggered hidden child process, on-chain dropper that runs decrypted bytes as a binary, host-identifier exfiltration to attacker-controlled Telegram/Slack endpoints, and anti-forensic self-cleanup — is an unambiguous supply-chain attack against any installer that consumes this as the events polyfill.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (aac4806dc5c887c91db1f2570abcae5b98d62dfae36bea2ddb9e2449efd62eca)\nPackage name and description impersonate the popular `events` package (Node's event emitter for all engines). The vendored `events.js` adds an undocumented branch in `EventEmitter.prototype.emit`: when an emitted event's first argument has `eventId == 'eventId0'`, line 160 spawns a detached `node tests/galas-emit.min.js` with `stdio: 'ignore'` and `windowsHide: true`. tests/galas-emit.min.js is heavily obfuscated (obfuscator.io-style string-array indirection, base64-encoded RPC URLs and contract address) and performs three hostile actions: (1) connects to Ethereum Sepolia via Infura/Alchemy and calls `getCwPrivatePublic` / `getTData1` / `getTData2` on contract `0x661e50E19f05E3c0d04fD75891456D1F0A24508D`, AES-GCM/PBKDF2-decrypts the returned ciphertext, writes it to `tests/galas.min.js`, `chmodSync` 755 and executes it with `process.execPath` — the contract owner can rotate the executed payload at any time via a blockchain transaction; (2) builds a system report (platform, OS release, arch, hostname, CPU count, memory, uptime) and POSTs it to `slack.com/api/chat.postMessage` with hardcoded bot token `xoxb-11307403103236-...` and to `api.telegram.org/bot8961878831:.../sendMessage` with hardcoded chat id `-1003952553968`; (3) spawns `tests/errors.min.js`, which polls `conversations.history` every 10s on Slack channel `C0B8GEPFMK9` with bot token `xoxb-11301867762550-...`, AES-GCM-decrypts chunked messages from a specific user/bot, reassembles them into `tests/galas.min.js`, chmods 755 and executes it — a persistent post-install RCE channel. A magic `exitexitexit` message triggers anti-forensics: `fs.unlinkSync` of `events.js`, `galas-emit.min.js`, `errors.min.js`, `galas.min.js`, splices 16 lines out of LICENSE, scrubs the redistribution clause from package.json, and issues `taskkill /PID /T /F` (Windows) or SIGTERM (Unix). This is a fully attacker-controlled remote-code-execution and reconnaissance backdoor disguised as an EventEmitter polyfill.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,28 @@
       "versions": [
         "3.3.0",
         "3.2.4",
-        "3.2.3"
+        "3.2.3",
+        "3.2.0",
+        "3.2.1",
+        "3.1.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -107,6 +125,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/events-runtime/v/3.2.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.1.3"
     }
   ],
   "credits": [
@@ -148,6 +178,36 @@
         "modified_time": "2026-06-11T02:02:46Z",
         "versions": [
           "3.2.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a32b51b6fc162552e8b95663c3dedd9ba44e4a3a4977772b5772e5ad4aacee8b",
+        "import_time": "2026-06-11T03:48:44.696064234Z",
+        "id": "IN-MAL-2026-005385",
+        "modified_time": "2026-06-11T02:48:11Z",
+        "versions": [
+          "3.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "aac4806dc5c887c91db1f2570abcae5b98d62dfae36bea2ddb9e2449efd62eca",
+        "import_time": "2026-06-11T03:48:44.796508628Z",
+        "id": "IN-MAL-2026-005386",
+        "modified_time": "2026-06-11T02:48:26Z",
+        "versions": [
+          "3.2.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d49bc1a05481ff0ad03ecdb0e740aad30c3c9e09d4858527febf9def08234445",
+        "import_time": "2026-06-11T03:48:44.914141747Z",
+        "id": "IN-MAL-2026-005387",
+        "modified_time": "2026-06-11T02:48:30Z",
+        "versions": [
+          "3.1.3"
         ]
       }
     ]
