@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-11T01:39:52Z",
+  "published": "2026-06-11T01:39:52Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "events-runtime ships a hidden blockchain-hosted dropper and host-fingerprint exfiltrator triggered from EventEmitter.emit",
+  "details": "The package poses as a drop-in replacement for the popular `events` polyfill (its events.js is a verbatim copy of Joyent's source with a malicious block inserted). Inside the patched `EventEmitter.prototype.emit` (events.js ~line 155), the code checks for a sentinel `args[0].eventId === 'eventId0'` and, if present, silently `spawn`s a detached `node tests/galas-emit.min.js` with stdio ignored and the window hidden. The spawned, obfuscator.io-minified payload (galas-emit.min.js, plus a 760KB galas.min.js) connects to Sepolia via Infura/Alchemy and reads `getTData1` / `getTData2` / `getChunk(...)` from contract 0xc0445F1b679DC46280A0f03F451bdf613b5A0feA, derives an x25519/AES-GCM key, decrypts the on-chain blobs into a single file, `chmodSync(..., '755')`, and execs it with `process.execPath` as a detached child — an EtherHiding-style mutable C2 that defeats URL blocklists. The same payload collects platform/release/arch/hostname/cpus/memory/uptime plus the generated x25519 public key and POSTs them to api.telegram.org/bot\u003credacted\u003e/sendMessage and slack.com/api/chat.postMessage using a hardcoded Telegram bot token and Slack bearer token. Finally it self-erases: it `unlinkSync`s itself, errors.min.js, and galas.min.js, and rewrites the parent events.js by splicing out the 16 lines containing the spawn block so post-hoc inspection shows only a benign `events` shim. The combination — namespace impersonation of `events`, sentinel-triggered hidden child process, on-chain dropper that runs decrypted bytes as a binary, host-identifier exfiltration to attacker-controlled Telegram/Slack endpoints, and anti-forensic self-cleanup — is an unambiguous supply-chain attack against any installer that consumes this as the events polyfill.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "events-runtime"
+      },
+      "versions": [
+        "3.2.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "events.js",
+              "sha256": "aa6738d3babe82b610026fbbcfff154b38fe3427a1d6f2b796b8bb12c3625cc8",
+              "tlsh": "3e620ecc574a253652f2e3bf7f0a420af23482b751149150b95ccae51f3ac6882f6ee9"
+            },
+            {
+              "path": "tests/galas-emit.min.js",
+              "sha256": "88567a33c9b9ac006d07aaa82cc6f3a20b4e6a5a30adc6242d14f507efa4e24a",
+              "tlsh": "1a4229dc77d8b237035a32af81542c47869ccd11672ed140fa56c987366e3c4ea63b35"
+            },
+            {
+              "path": "package.json",
+              "sha256": "71debf2e01cf3d1a442fa9ff93fad2d93c3d6bc8af7db1acf23f1e2c06a5c2b9",
+              "tlsh": "5111e966dca45c6316f8a3da7a3c0583f1314b6f60208c4f75ba1d2c4f771075199bae"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "events-runtime-3.2.4.tgz",
+              "hashes": {
+                "sha1": "c91275e356bc0b8545743d96cc6cc0f4bc50704e",
+                "sha512_sri": "sha512-5ZC6OfBBex5ZSijlaKrNXJzciFe2oXli4goLzVTiuBsppWujjfi7NKt9pktlpPpwqL9m5aIiFjxcOwdWfbFFAA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "81f4151f241e7877d2286f5967a243b35c6d2453078ed5acc19bfc72b16167b2",
+        "import_time": "2026-06-11T02:24:27.17173588Z",
+        "id": "IN-MAL-2026-005352",
+        "modified_time": "2026-06-11T01:39:52Z",
+        "versions": [
+          "3.2.4"
+        ]
+      }
+    ]
+  }
+}

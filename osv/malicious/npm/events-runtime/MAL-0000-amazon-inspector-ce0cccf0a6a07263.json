@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-11T02:02:46Z",
+  "published": "2026-06-11T02:02:46Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of `events` package with blockchain-C2 dropper backdoor",
+  "details": "Package impersonates the widely-used `events` polyfill but adds a covert branch inside `EventEmitter.emit()` (events.js ~line 156) that, when an emitted payload contains `args[0].eventId === 'eventId0'`, spawns a detached `node tests/galas-emit.min.js` with stdio ignored. The triggered script is heavily obfuscated (obfuscator.io string-array + parseInt-checksum dispatcher) and implements a blockchain-based C2: it connects to Sepolia RPC endpoints (Infura and Alchemy URLs stored base64-encoded), reads `TData1`/`TData2` fields from contract `0xc0445F1b679DC46280A0f03F451bdf613b5A0feA`, performs AES-GCM/PBKDF2 decryption using an X25519 ECDH key derived from an on-chain public key, concatenates the decrypted bytes into `tests/merged`, `chmod 755`s the file, and spawns it via `process.execPath` detached. The dropper also exfiltrates host fingerprint data (platform, release, arch, hostname, cpu count, memory, uptime) plus the generated public key to `api.telegram.org/bot\u003credacted\u003e/sendMessage` and `slack.com/api/chat.postMessage` using hardcoded bearer tokens. After firing, it self-cleans: unlinks `tests/galas-emit.min.js`, `tests/galas.min.js`, `tests/errors.min.js`, and splices 16 lines out of the parent `events.js` to remove the injected backdoor block. Unhandled-rejection / uncaught-exception handlers re-arm the contract listener or call `process.exit(1)`. The blockchain channel lets the attacker rotate payload bytes after publish; fetched bytes are opaque and executed without signature or hash verification.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "events-runtime"
+      },
+      "versions": [
+        "3.2.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "events.js",
+              "sha256": "aa6738d3babe82b610026fbbcfff154b38fe3427a1d6f2b796b8bb12c3625cc8",
+              "tlsh": "3e620ecc574a253652f2e3bf7f0a420af23482b751149150b95ccae51f3ac6882f6ee9"
+            },
+            {
+              "path": "tests/galas-emit.min.js",
+              "sha256": "88567a33c9b9ac006d07aaa82cc6f3a20b4e6a5a30adc6242d14f507efa4e24a",
+              "tlsh": "1a4229dc77d8b237035a32af81542c47869ccd11672ed140fa56c987366e3c4ea63b35"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "events-runtime-3.2.3.tgz",
+              "hashes": {
+                "sha1": "b001e8d2f54c1caed5d976107bc42c16dc716500",
+                "sha512_sri": "sha512-gkK//128D71UDHrM1ewlpn7P2CXseymKYjBd+EMaP+Dt/dW3/qviyYY0UMnlVOEeNkFr+W00X3mrTjGbBuRhog=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "ce0cccf0a6a07263bbcbc1a126783d86d429ada554e38332c7217b603d3d7856",
+        "import_time": "2026-06-11T02:24:28.656750392Z",
+        "id": "IN-MAL-2026-005375",
+        "modified_time": "2026-06-11T02:02:46Z",
+        "versions": [
+          "3.2.3"
+        ]
+      }
+    ]
+  }
+}
