@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-10T18:19:30Z",
+  "modified": "2026-06-11T02:26:14Z",
   "published": "2026-06-10T18:09:36Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5528",
   "summary": "Malicious code in events-runtime (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9dec390f61d4b2205b07cb0dae6c7be308ebf5c95a9167341b1ee6bfca485608)\nTyposquat of the legitimate `events` package. A trigger injected into events.js emit() spawns a hidden loader (tests/galas-emit.min.js) when an emitted event has args[0].eventId === 'eventId0'. The loader loads a 760KB ethers-based wallet stealer (tests/galas.min.js; 108 mnemonic / 62 privateKey refs), exfiltrates a host report over Telegram and Slack, and uses a Slack channel + an Ethereum Sepolia smart contract as bidirectional C2. The linked GitHub repo (EVENTS-RUNTIME/events-runtime) is a clean decoy; the published npm tarball diverges from it (injected emit block + payload files absent from the repo). No install scripts (runtime-triggered). Validated by static analysis and contained dynamic detonation.\n\nNetwork IoCs:\n- Telegram bot 8961878831:AAG4WTbRUcbXI5UCaN4VXK8k57ghqqkg_qI, chat_id -1003952553968\n- Slack token xoxb-11307403103236-11289767127959-yV5qQADdFGCI8oxsZTr8FJHk; channels C0B8XPGCKQS (exfil), C0B8GEPFMK9 (command)\n- RPC https://eth-sepolia.g.alchemy.com/v2/0E6xblLeXLnZSnn280R-O ; contract 0xc0445F1b679DC46280A0f03F451bdf613b5A0feA (Sepolia), selector 0x51e3adc0\nFile IoCs: tests/galas.min.js, tests/galas-emit.min.js, tests/errors.min.js\nTrigger: emit() with args[0].eventId === 'eventId0'\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (81f4151f241e7877d2286f5967a243b35c6d2453078ed5acc19bfc72b16167b2)\nThe package poses as a drop-in replacement for the popular `events` polyfill (its events.js is a verbatim copy of Joyent's source with a malicious block inserted). Inside the patched `EventEmitter.prototype.emit` (events.js ~line 155), the code checks for a sentinel `args[0].eventId === 'eventId0'` and, if present, silently `spawn`s a detached `node tests/galas-emit.min.js` with stdio ignored and the window hidden. The spawned, obfuscator.io-minified payload (galas-emit.min.js, plus a 760KB galas.min.js) connects to Sepolia via Infura/Alchemy and reads `getTData1` / `getTData2` / `getChunk(...)` from contract 0xc0445F1b679DC46280A0f03F451bdf613b5A0feA, derives an x25519/AES-GCM key, decrypts the on-chain blobs into a single file, `chmodSync(..., '755')`, and execs it with `process.execPath` as a detached child — an EtherHiding-style mutable C2 that defeats URL blocklists. The same payload collects platform/release/arch/hostname/cpus/memory/uptime plus the generated x25519 public key and POSTs them to api.telegram.org/bot\u003credacted\u003e/sendMessage and slack.com/api/chat.postMessage using a hardcoded Telegram bot token and Slack bearer token. Finally it self-erases: it `unlinkSync`s itself, errors.min.js, and galas.min.js, and rewrites the parent events.js by splicing out the 16 lines containing the spawn block so post-hoc inspection shows only a benign `events` shim. The combination — namespace impersonation of `events`, sentinel-triggered hidden child process, on-chain dropper that runs decrypted bytes as a binary, host-identifier exfiltration to attacker-controlled Telegram/Slack endpoints, and anti-forensic self-cleanup — is an unambiguous supply-chain attack against any installer that consumes this as the events polyfill.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "events-runtime"
       },
       "versions": [
-        "3.3.0"
+        "3.3.0",
+        "3.2.4",
+        "3.2.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -87,6 +99,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/events-runtime/v/3.3.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.3"
     }
   ],
   "credits": [
@@ -101,13 +121,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005260",
-        "import_time": "2026-06-10T19:23:46.250801076Z",
-        "modified_time": "2026-06-10T18:19:30Z",
-        "sha256": "9dec390f61d4b2205b07cb0dae6c7be308ebf5c95a9167341b1ee6bfca485608",
         "source": "amazon-inspector",
+        "sha256": "9dec390f61d4b2205b07cb0dae6c7be308ebf5c95a9167341b1ee6bfca485608",
+        "import_time": "2026-06-10T19:23:46.250801076Z",
+        "id": "IN-MAL-2026-005260",
+        "modified_time": "2026-06-10T18:19:30Z",
         "versions": [
           "3.3.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "81f4151f241e7877d2286f5967a243b35c6d2453078ed5acc19bfc72b16167b2",
+        "import_time": "2026-06-11T02:24:27.17173588Z",
+        "id": "IN-MAL-2026-005352",
+        "modified_time": "2026-06-11T01:39:52Z",
+        "versions": [
+          "3.2.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ce0cccf0a6a07263bbcbc1a126783d86d429ada554e38332c7217b603d3d7856",
+        "import_time": "2026-06-11T02:24:28.656750392Z",
+        "id": "IN-MAL-2026-005375",
+        "modified_time": "2026-06-11T02:02:46Z",
+        "versions": [
+          "3.2.3"
         ]
       }
     ]
