@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-11T02:51:22Z",
+  "published": "2026-06-11T02:51:22Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "express-timer ships destructive backdoor and time-bombed source-tree deletion",
+  "details": "express-timer is a destructive package targeting any Node.js project that installs or loads it. Two independent installer-harm mechanisms are present:\n\n1. Postinstall backdoor injection (scripts/inject.js, invoked from package.json postinstall). The script locates the installer's project root, identifies the main Express entry file (package.main, index.js, app.js, server.js, src/index.js, or src/app.js), and silently appends a route handler: `app.get('/robots.txt', (req, res) =\u003e { if (req.query.verify === 'destroy') { _boom();... } })`. The injected `_boom()` runs `npx pm2 delete all`, `taskkill /IM node.exe /F` (Windows) or `pkill -f 'node.*\u003ccwd\u003e'` (Unix), and recursively deletes the project's `src/` directory. Once the modified app is deployed, any anonymous internet visitor who hits `GET /robots.txt?verify=destroy` triggers process termination and source-tree deletion of the running service.\n\n2. Time-bombed self-destruct on require() (index.js, declared as `main`). The top-level module body calls `scheduleDestructionAfter()`, which after 60 seconds invokes `selfDestruct()`: kills pm2 and matching node processes, then on Unix spawns a detached `exec('rm -rf \"\u003ccwd\u003e/src\"')` and on Windows deletes `\u003ccwd\u003e/src` directly. Simply doing `require('express-timer')` guarantees destruction of the consumer's source directory and termination of their node processes one minute later, with no opt-in.\n\nAdditional concerns: package.json declares a dependency on `express-self-destruct1` (a likely-malicious sibling by the same author) and a self-reference `express-timer: ^1.0.0`. The tarball also contains an unrelated PHP file (`ibbl_statment.php`) with hardcoded third-party banking-portal credentials; this file is not on the Node install/load path but indicates the publisher account is operating in bad faith.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "express-timer"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/inject.js",
+              "sha256": "b1970350a7bc69bef9cf4061fd46571d344e2c11dde87f0e69ea28e983340eae",
+              "tlsh": "c7513254c67a4231eef277fd622a0416ba5bd831365151e0b2dc817d3f9247148e2efe"
+            },
+            {
+              "path": "index.js",
+              "sha256": "c180fc6f36eb72766891fad6ace25f5fd770fdfc06fcc0aff52233ae5f6a473e",
+              "tlsh": "02b15f167dbe61b019f1cab6a7231013f86f86130624d2187aadc36e0fb1169463edfd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "6d71fa199f753864a2a718b1f8dc59cf8fc7b95eb6613f31cf3b1fbd3c28fffb",
+              "tlsh": "19f08c35a824997711faa6a76c654286b1610f1b11a4dc0e72ba00ac8b6265708aefe8"
+            },
+            {
+              "path": "ibbl_statment.php",
+              "sha256": "1a29874be6538470d99c55ea6de2cc95e44d1c8187fde1eba75dcd01cde728f0",
+              "tlsh": "47a2fca169f710230462e4b81bceca889daa84735454cd11ffada2d10fda73cadf95e1"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "express-timer-1.0.4.tgz",
+              "hashes": {
+                "sha1": "2d49aece863e57ed8995c341d0ccd99a616c98d7",
+                "sha512_sri": "sha512-0TFdIYgPWMWIhKgWQ7bmbWw/uOGaurzKoC+ZeVSHps9HP8yyznAOuIrQLWMVHfxxjBPsqLsmYXICZ567YDmxvg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/express-timer/v/1.0.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "6bc13771ab814ced3a28c13a753e6c12a6c1cf760883f034a5a02a867b4ffc8d",
+        "import_time": "2026-06-11T03:48:45.492863604Z",
+        "id": "IN-MAL-2026-005392",
+        "modified_time": "2026-06-11T02:51:22Z",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  }
+}

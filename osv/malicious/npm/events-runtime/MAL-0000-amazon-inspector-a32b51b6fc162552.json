@@ -1,0 +1,76 @@
+{
+  "modified": "2026-06-11T02:48:11Z",
+  "published": "2026-06-11T02:48:11Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "events-runtime: typosquat of `events` with trojaned emit() that spawns blockchain-fed dropper and exfiltrates host data to Telegram/Slack",
+  "details": "events-runtime impersonates the legitimate `events` (browserify) package — the README copies the upstream description and badges, and it re-exports the same EventEmitter API. The `emit()` method in events.js contains a hidden branch: when the first argument has `eventId == 'eventId0'`, it detached-spawns `node tests/galas-emit.min.js` with the event payload (stdio ignored, windowsHide true), so any consumer triggering this eventId silently launches the bundled payload. tests/galas-emit.min.js is a heavily obfuscated (string-rotation array + base64) multi-stage loader that: (1) collects host fingerprint (os.platform, release, arch, hostname, cpu count, memory, uptime) and POSTs it to api.telegram.org/bot\u003credacted\u003e/sendMessage and slack.com/api/chat.postMessage using hardcoded attacker bot tokens and chat IDs; (2) connects to a Sepolia Ethereum RPC (Infura/Alchemy URLs base64-embedded), reads getTData1/getTData2 from contract 0x661e50E19f05E3c0d04fD75891456D1F0A24508D, AES-GCM decrypts the returned blobs using a key derived from the `isarray` devDependency string, writes the decrypted bytes to disk and runs them via `spawn(process.execPath, [merged], {detached:true, stdio:'ignore', windowsHide:true})` — a blockchain-hosted second-stage dropper designed to evade domain takedowns; (3) self-cleans by `unlinkSync` of galas-emit.min.js, galas.min.js, errors.min.js, splicing the first 160 lines of package.json, stripping a marker line from LICENSE, and issuing `taskkill /PID` / `process.kill` on a stored PID to erase forensic traces. Sibling stages tests/galas.min.js (760KB) and tests/errors.min.js are similarly obfuscated. Installing or consuming this package as if it were `events` results in remote code execution and host fingerprint exfiltration on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "events-runtime"
+      },
+      "versions": [
+        "3.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "events.js",
+              "sha256": "aa6738d3babe82b610026fbbcfff154b38fe3427a1d6f2b796b8bb12c3625cc8",
+              "tlsh": "3e620ecc574a253652f2e3bf7f0a420af23482b751149150b95ccae51f3ac6882f6ee9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "aa47313208d8bd04dc3ee1ba4a80e2d2af2d036f5cb3c8c639efeb09b8e325f8",
+              "tlsh": "4e21f926dca49c6316f8a39e797c0993f1304b6f51108c0f3aba1d2c4f771075159baa"
+            },
+            {
+              "path": "tests/galas-emit.min.js",
+              "sha256": "f6695c8a1729cc7f9cb3dd5fb1638c9866baeafdc13410b639ada395c321da1a",
+              "tlsh": "32421acd76a87b3207cb729e9008280785ac8c29632ed581f84edd8f315d3909673f7a"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/events-runtime/v/3.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a32b51b6fc162552e8b95663c3dedd9ba44e4a3a4977772b5772e5ad4aacee8b",
+        "import_time": "2026-06-11T03:48:44.696064234Z",
+        "id": "IN-MAL-2026-005385",
+        "modified_time": "2026-06-11T02:48:11Z",
+        "versions": [
+          "3.2.0"
+        ]
+      }
+    ]
+  }
+}
