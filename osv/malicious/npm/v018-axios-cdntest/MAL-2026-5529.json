@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-10T18:34:55Z",
+  "modified": "2026-06-11T01:23:37Z",
   "published": "2026-06-10T18:34:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5529",
   "summary": "Malicious code in v018-axios-cdntest (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a591698b95bbe1180b694b6aac6d31e658b4fd1e0ba9941f7a9714e223a0ab79)\nv018-axios-cdntest@1.0.2 impersonates axios v0.18.0 (the bundle header reads `/* axios v0.18.0 | (c) 2018 by Matt Zabriskie */` and the package.json description self-identifies as 'Axios library v0.18.0 with cryptojacker payload'). The main entry index.js is the legitimate axios bundle with an appended IIFE that reads `document.cookie` and exfiltrates it via `XMLHttpRequest` GET to `https://webhook.site/ef6e7978-f936-4664-b3ff-296a250e1735?c=\u003ccookie\u003e` whenever the bundle is loaded in a browser. The sibling xmr-min.js is a self-described 'Stealth Cryptojacker v3.0' that spawns Web Workers (using `eval` on postMessage data), mines Monero against a hardcoded wallet via `pool.supportxmr.com:4444`, and dynamically injects an additional `\u003cscript\u003e` from `https://cdn.jsdelivr.net/npm/v018-axios-cdntest@1.0.2/index.js`. Any application that bundles this package and ships it to end users will leak end-user cookies to the attacker's webhook and silently mine cryptocurrency in visitors' browsers.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (67d30d2c9939173663f8ba1312b2591d2f86c67657bd5eeff59b19187f50b901)\nPackage impersonates axios v0.18.0 (index.js carries the genuine `axios v0.18.0 | (c) 2018 by Matt Zabriskie` header and sets `window.axios={}`, `window.__cdn_package='axios@0.18.0'`) but ships two malicious payloads. (1) index.js appends an IIFE that reads `document.cookie` and sends it via XMLHttpRequest GET to a hardcoded webhook.site endpoint (`https://webhook.site/ef6e7978-f936-4664-b3ff-296a250e1735?c=\u003ccookies\u003e`), firing on the page `load` event so any consumer loading this script via CDN or bundle leaks all accessible cookies to the attacker. (2) Sibling xmr-min.js is an in-browser Monero cryptojacker that constructs a Web Worker from a Blob and uses `eval` on dynamic JS to mine to wallet `44AFFq5kSiGBoZ4NMDwYtN18obc8AemS33DBLWs3H7otXft3XjrpDtQGv7SqSsaBYBb98uNbr2VBBEt7f2wfn3RVGQBEP3A` via `pool.supportxmr.com:4444`. The package is intended to be loaded through jsdelivr (`cdn.jsdelivr.net/npm/v018-axios-cdntest@.../xmr-min.js`), so any site embedding it leaks user cookies and burns visitors' CPU. The package's own description self-labels these payloads.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "v018-axios-cdntest"
       },
       "versions": [
-        "1.0.2"
+        "1.0.2",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,6 +63,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/v018-axios-cdntest/v/1.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/v018-axios-cdntest/v/1.0.3"
     }
   ],
   "credits": [
@@ -71,13 +81,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005288",
-        "import_time": "2026-06-10T19:23:48.30857207Z",
-        "modified_time": "2026-06-10T18:34:55Z",
-        "sha256": "a591698b95bbe1180b694b6aac6d31e658b4fd1e0ba9941f7a9714e223a0ab79",
         "source": "amazon-inspector",
+        "sha256": "a591698b95bbe1180b694b6aac6d31e658b4fd1e0ba9941f7a9714e223a0ab79",
+        "import_time": "2026-06-10T19:23:48.30857207Z",
+        "id": "IN-MAL-2026-005288",
+        "modified_time": "2026-06-10T18:34:55Z",
         "versions": [
           "1.0.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "67d30d2c9939173663f8ba1312b2591d2f86c67657bd5eeff59b19187f50b901",
+        "import_time": "2026-06-11T01:21:50.796454623Z",
+        "id": "IN-MAL-2026-005346",
+        "modified_time": "2026-06-11T01:01:28Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]
