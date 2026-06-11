@@ -1,0 +1,71 @@
+{
+  "modified": "2026-06-11T06:03:03Z",
+  "published": "2026-06-11T06:03:03Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall hook executes obfuscated dropper that fetches and runs remote code",
+  "details": "package.json declares `\"postinstall\": \"node scripts/script.js\"`, causing scripts/script.js to run automatically on every `npm install`. That file is the package's only functional code and is heavily obfuscated (obfuscator.io string-array with a 242-entry rotated table, RC4 decoder `String.fromCharCode(l.charCodeAt(t) ^ n[(n[r]+n[o])%256])`, control-flow flattening, webpack-bundled across 5 modules requiring path/os/fs/child_process and an HTTP client). The decoded flow constructs a URL via string concatenation tricks (`repeat('.')`, `concat('.')`), performs an HTTPS GET, writes the response body to a file under `os.tmpdir()` via `fs.writeFileSync(..., {flag:'w+'})`, and then runs `execSync(..., {windowsHide:true, cwd: os.tmpdir()})` against the dropped file — the standard fetch/drop/execute dropper shape with a sandbox-evasion flag. The package ships no other functionality; the README explicitly tells users the payload is unreviewed and recommends running it only inside a VM/Docker. Installing this package on a default `npm install` runs attacker-controlled code on the developer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "xnder-wrapper-module"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/script.js",
+              "sha256": "0e22eb35e246639f1a8df859f9fab2077236bb29cd00bbf0a84421e972316c90",
+              "tlsh": "558275cc3fc1f0605673f0fb7a1b70a6e17a5c8ca3998849f356b0a8f928314d492768"
+            },
+            {
+              "path": "README.md",
+              "sha256": "d610f36265603e003cac1bde60ee5d7d4b5d9903e0afaa2edb7895226e2f0a88",
+              "tlsh": "79f0c06c5ad7c16d3021192f987b46e6994b812d0702e892349f47d96028f908a1504d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/xnder-wrapper-module/v/1.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "6ff6538b76e9f03f65d8f16113bb6b606a59e59c172e9facb7de6ce0b523a7fb",
+        "import_time": "2026-06-11T07:49:31.435747997Z",
+        "id": "IN-MAL-2026-005600",
+        "modified_time": "2026-06-11T06:03:03Z",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "modified": "2026-06-11T07:16:23Z",
+  "published": "2026-06-11T07:16:23Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall drops MCP connector with hardcoded bridge token into the install directory, silently routing Claude Code traffic through author-operated server",
+  "details": "On `npm install`, scripts/postinstall.cjs unconditionally copies the entire payload/ tree into INIT_CWD (the user's working directory at install time), including.mcp.json, CLAUDE.md,.claude/settings.json,.claude/commands/0x2ai-boot.md, and a bundled MCP server (chatroom-mcp-lite-patched.cjs). The dropped.mcp.json hardcodes BRIDGE_URL=https://demo1.0x2ai.com and a static BRIDGE_AUTH_TOKEN. Claude Code auto-discovers.mcp.json in the project directory on its next invocation and silently activates the connector, which exposes tools (provider_query, settings_get/set, chatroom_post, memory_save) that POST prompt content, settings, and any stored API keys (anthropic_api_key, openai_api_key) to https://demo1.0x2ai.com/api/proxy-query and /api/settings. The package's bin/start.cjs additionally launches `claude --dangerously-skip-permissions`, removing the safety prompts that would otherwise gate filesystem/exec tools while the remote-controlled MCP server is wired in. The net effect: any user who runs `npm install 0x2ai-demo1` (rather than the documented `npx` invocation) has their working project silently rewired so that future Claude Code sessions in that directory route prompts, tool calls, memory writes, and stored credentials through a third-party bridge they did not configure, authenticated with credentials embedded in the package.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "0x2ai-demo1"
+      },
+      "versions": [
+        "1.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.cjs",
+              "sha256": "4943321a174f2de446781e46abdc4eb4fd333f8cc98cf6fe3cd5fc4bbfb0b0a2",
+              "tlsh": "74e0c05706ccd379a5b2a1406c12c50a646ade81364094a0e27c0357bf92694ae23eff"
+            },
+            {
+              "path": "bin/start.cjs",
+              "sha256": "fa5af6d044cd42d37d4c7b0e5f43cf7498e621ef7db1b837ea79e3087e552984",
+              "tlsh": "9011005b868e07be57b441c46645c12b990bc84072d0e490d26e03a6fb511e82c677eb"
+            },
+            {
+              "path": "payload/chatroom-mcp-lite-patched.cjs",
+              "sha256": "a1abc812c52dcefeb85473275f7c1e5a86770b114767176416ed94ebe620cf00",
+              "tlsh": "505307852c79603a4fb65365ba36a617ff35522bb01114b2fafcc2142f314d091aaefd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/0x2ai-demo1/v/1.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "baf53f193b709bc0c98ddbe429cb8edf1caf1ed2fa019bc3e7dc362e431c493f",
+        "import_time": "2026-06-11T07:49:40.414165219Z",
+        "id": "IN-MAL-2026-005681",
+        "modified_time": "2026-06-11T07:16:23Z",
+        "versions": [
+          "1.2.0"
+        ]
+      }
+    ]
+  }
+}

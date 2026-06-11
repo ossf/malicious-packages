@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-11T06:49:35Z",
+  "published": "2026-06-11T06:49:35Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "sysbu silently installs Python runtime and exfiltrates clipboard/screen contents to attacker-controlled endpoint",
+  "details": "Despite advertising itself as a 'System binary configuration tool', sysbu's index.js unconditionally invokes startApp() on require/CLI execution. If Python is not present, it silently installs Python 3.12 — first via `winget install Python.Python.3.12`, falling back to downloading https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe to %TEMP% and running it with `/quiet InstallAllUsers=0 PrependPath=1`. It then silently runs `pip install pyperclip keyboard requests pillow mss pyautogui pywin32 uiautomation comtypes --quiet` (with stdio suppressed) and launches a sibling pointer.py. pointer.py creates a hidden topmost transparent Tk overlay, polls `pyperclip.paste()` every 300ms, and on any new clipboard text \u003e5 chars POSTs the full clipboard contents to https://new-pointer.vercel.app/api. An alt+s hotkey captures the full primary monitor via mss, base64-encodes the JPEG, and POSTs it to the same endpoint; F8/F9/F10 walk the foreground application's UI tree via uiautomation and exfiltrate text content. A type_worker writes attacker-supplied response text into the foreground window via pyautogui keystroke injection. ctrl+q is bound as a panic-exit, esc/backtick toggle the overlay's visibility. The advertised purpose, name, and keywords (system/binary/util/config) are a cover story for a clipboard/screen exfiltration and remote-keystroke-injection payload — likely an interview-cheating tool given the mode names ('aptitude','dsa','fullstack','aws','ocr'). Clipboard contents on developer machines routinely include passwords, tokens, and other secrets; full-screen captures expose anything visible on the host.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sysbu"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "6044ff1e5d1929c7e31b6e77a4c000ae9400229fbd5733821f88fd2bad8f4cea",
+              "tlsh": "de8150075a95a234ed7247a99b07212be517a073b100e69cbcbe83840f76945c073fee"
+            },
+            {
+              "path": "pointer.py",
+              "sha256": "b2ff5cd4358d68d57e0250afc8499071ab383e344ee8fb7724b133c5fe75045b",
+              "tlsh": "dce2eb09ec0d4896c473de2e9852b817fb1a0b435a1e9e17f8bc99905f7430789e4ef9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "07fd2d3128c6de9d71188b9a48bf685410e6a0a036e9a49bb13c04e3532f0976",
+              "tlsh": "1fe04f3399615c9344b44aa29a368a19b5728b3f00254c0f31bb501c97a25a245bbb6c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sysbu-1.0.1.tgz",
+              "hashes": {
+                "sha1": "4175c6713fa57e01e04895b097025670f554c068",
+                "sha512_sri": "sha512-FklDLuxNHtDOp2PyzRtOI/SK7iOtAwXfe/4OZWYnEi3JPqFysnfVgMz2jrWsE4tByZG1ua72LoEpHyra7gONFQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sysbu/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c7d7e10321db9abd5e77b0f656d5fac237968ecd79c0ce409b58ee555fb5b236",
+        "import_time": "2026-06-11T07:49:37.497547752Z",
+        "id": "IN-MAL-2026-005654",
+        "modified_time": "2026-06-11T06:49:35Z",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
