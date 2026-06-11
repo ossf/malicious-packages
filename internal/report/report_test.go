@@ -503,3 +503,56 @@ func TestReport_Split_WithTooManyOrigins(t *testing.T) {
 		t.Fatalf("Split() = %v; want %v", err, report.ErrSplitting)
 	}
 }
+
+func TestWithdrawal(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+
+	// Initially should not be withdrawn
+	if r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = true; want false")
+	}
+
+	now := time.Now().Truncate(time.Second).UTC()
+	r.Withdraw(now)
+
+	if !r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = false; want true")
+	}
+	if got := r.Vuln().Withdrawn; !got.Equal(now) {
+		t.Errorf("Withdrawn time = %v; want %v", got, now)
+	}
+	if got := r.Vuln().Modified; !got.Equal(now) {
+		t.Errorf("Modified time = %v; want %v", got, now)
+	}
+}
+
+func TestUnwithdrawal(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+
+	// Initially should be withdrawn.
+	r.Withdraw(time.Now().Truncate(time.Second).UTC())
+	if !r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = false; want true")
+	}
+
+	r.Unwithdraw()
+	if r.IsWithdrawn() {
+		t.Error("After Unwithdraw: IsWithdrawn() = true; want false")
+	}
+	if got := r.Vuln().Withdrawn; !got.IsZero() {
+		t.Errorf("Withdrawn time = %v; want zero time", got)
+	}
+}
+
+func TestUpdateModified(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+	oldModified := r.Vuln().Modified
+
+	time.Sleep(10 * time.Millisecond)
+	r.UpdateModified()
+
+	newModified := r.Vuln().Modified
+	if !newModified.After(oldModified) {
+		t.Errorf("UpdateModified didn't advance modified time: %v <= %v", newModified, oldModified)
+	}
+}

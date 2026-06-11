@@ -143,3 +143,50 @@ func getTestConfig() *config.Config {
 		},
 	}
 }
+
+func TestInit_NoUnmergablePath(t *testing.T) {
+	c := getTestConfig()
+	c.UnmergablePath = ""
+	if err := c.Init(); err == nil {
+		t.Error("Init() = nil; want an error")
+	}
+}
+
+func TestGetSource(t *testing.T) {
+	c := getTestConfig()
+	s1 := c.GetSource("source1")
+	if s1 == nil || s1.ID != "source1" {
+		t.Errorf("GetSource(\"source1\") = %v; want source with ID \"source1\"", s1)
+	}
+}
+
+func TestGetSource_MissingID(t *testing.T) {
+	c := getTestConfig()
+	sMissing := c.GetSource("nonexistent")
+	if sMissing != nil {
+		t.Errorf("GetSource(\"nonexistent\") = %v; want nil", sMissing)
+	}
+}
+
+func TestContextRoundTrip(t *testing.T) {
+	c := getTestConfig()
+	ctx := t.Context()
+
+	// Set config
+	ctx = c.NewContext(ctx)
+
+	// After setting, FromContext should return the config
+	got := config.FromContext(ctx)
+	if got != c {
+		t.Errorf("FromContext(ctx) = %v; want %v", got, c)
+	}
+}
+
+func TestFromContext_Unset(t *testing.T) {
+	ctx := t.Context()
+
+	// Before setting, FromContext should return nil
+	if got := config.FromContext(ctx); got != nil {
+		t.Errorf("FromContext(empty) = %v; want nil", got)
+	}
+}

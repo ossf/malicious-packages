@@ -245,6 +245,24 @@ func (r *Report) IsWithdrawn() bool {
 	return !r.raw.Withdrawn.IsZero()
 }
 
+// Withdraw marks the report as withdrawn at the given time.
+// It also updates the modified time to the same time.
+func (r *Report) Withdraw(t time.Time) {
+	r.raw.Withdrawn = t
+	r.raw.Modified = t
+}
+
+// Unwithdraw marks the report as unwithdrawn.
+func (r *Report) Unwithdraw() {
+	r.raw.Withdrawn = time.Time{}
+	r.UpdateModified()
+}
+
+// UpdateModified sets the modified time to the current time.
+func (r *Report) UpdateModified() {
+	r.raw.Modified = time.Now().UTC()
+}
+
 // Published returns the published time for the report.
 func (r *Report) Published() time.Time {
 	return r.raw.Published
