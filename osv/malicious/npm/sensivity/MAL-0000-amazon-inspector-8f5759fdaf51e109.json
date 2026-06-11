@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-11T04:53:36Z",
+  "published": "2026-06-11T04:53:36Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "sensivity ships obfuscated payload, Windows persistence as 'OneDriveUpdate', and process/file masquerade as Microsoft components",
+  "details": "On require/import, launcher.js (the package's main entry) sets process.title to 'Runtime Broker' (a real Windows system process), then runs a PowerShell command that writes an HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run value named 'OneDriveUpdate' which invokes wscript.exe on the bundled OneDrive.Standalone.Updater.vbs. That VBS silently relaunches `node.exe launcher.js` window-hidden, establishing boot persistence under a Microsoft-impersonating name without any user prompt. launcher.js then reads the bundled server.obf.js (an 86KB obfuscator.io string-array + RC4-encoded blob) and executes it via eval() at top level, deliberately hiding the runtime behavior from review. The obfuscated server builds a hardware fingerprint (HKLM MachineGuid + os.hostname + volume serial obtained via PowerShell/cmd `vol C:`), SHA-256 hashes it, and POSTs it together with a license key and nonce to a hardcoded `...eck.php` endpoint, routing every installer's hardware identifiers to the author's server. The server also loads sens.node, a 6.8MB native Windows binary whose strings include 'Teleport', 'LeftHand', 'LeftFoot', 'Head' — first-person-shooter cheat vectors — turning every installer machine into a cheat-hosting node running unverifiable native code. Additionally, the `sens update` CLI subcommand executes `taskkill /F /IM node.exe` and `taskkill /F /IM powershell.exe` system-wide, terminating unrelated user and system processes. The combination of obfuscation + eval, persistence under a Microsoft-mimicking Run key, process/filename masquerade as Microsoft components, hardware-ID exfiltration, and an opaque native binary is a deliberately hostile package.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sensivity"
+      },
+      "versions": [
+        "2.5.43"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "launcher.js",
+              "sha256": "469bd9ce102755e00f8870dd22217526c441e16f6c083b8dd1d954d89d5c9174",
+              "tlsh": "5081a7f641a6463d44b1b05f495f603f923b9182768dfba0718c81062fc826c93a65fe"
+            },
+            {
+              "path": "server.obf.js",
+              "sha256": "cd33d3b7834a04244e817209c6d2295c4167a14e4edb2c2e63615d125d4c8e08",
+              "tlsh": "8583945163d03c94224bafb27b1ab9e5fa197dad3059089fe0147d58febb908f6d0630"
+            },
+            {
+              "path": "sens.node",
+              "sha256": "7a9ea06a85978c444f308639de2fc979239b26c378bd539ea58109f306908e77",
+              "tlsh": "3c667bb19a9c8b0df07ab079c1835617a7f1bc0d2361df8b9ad09db74d1f590f16a20a"
+            },
+            {
+              "path": "cli.js",
+              "sha256": "195dd1dc13213ed0a6c8f867219a704e20bb689a90e954540ec4cc8276f77ab5",
+              "tlsh": "0131f99951faa378e5b35d90d867503b2917c3102354fd90a3ce931a0f83b29a2b71fd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sensivity-2.5.43.tgz",
+              "hashes": {
+                "sha1": "9fd0de868ee77905e96e5456409ce0dec7b387bf",
+                "sha512_sri": "sha512-4gNIsegws+jVkzXTONXU+GgbFUNd695AeUt4eqwRAJVqctZEkbSf9fkgYmwSYhBG4IGg5gzFCej0kkTnzTf+qg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sensivity/v/2.5.43"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8f5759fdaf51e10976fe1c68e6f296f83b120bb868409b21fb91e673393e8d78",
+        "import_time": "2026-06-11T05:40:59.580844121Z",
+        "id": "IN-MAL-2026-005486",
+        "modified_time": "2026-06-11T04:53:36Z",
+        "versions": [
+          "2.5.43"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-11T04:54:02Z",
+  "published": "2026-06-11T04:54:02Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Game-cheat malware with hidden Windows persistence, obfuscated stager, and HWID phone-home",
+  "details": "Package presents itself as a benign 'Sensivity Control Panel' but is a Windows game-cheat tool with multiple installer-hostile behaviors. On every CLI invocation (`sensivity`/`sens`) and on `require('sensivity')`, launcher.js writes an HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run entry named 'OneDriveUpdate' pointing at a bundled VBS (`OneDrive.Standalone.Updater.vbs`) that silently respawns `node launcher.js` with a hidden window; the supervisor process renames itself to 'Runtime Broker' to impersonate a Microsoft binary, and self-respawns workers to defeat Ctrl-C. The registry entry persists after `npm uninstall`. launcher.js then `eval()`s ~80KB of obfuscator.io-packed code from `server.obf.js`, which loads a 6.8MB native module `sens.node` containing aim/ESP/teleport cheat artifacts ('Head', 'LeftHand', 'LeftFoot', 'Teleport') and exposes `startCheat`/`stopCheat`/`setConfig` over socket.io to read/write external game process memory. The obfuscated server collects a hardware fingerprint (HKLM MachineGuid via PowerShell + `os.hostname()` + C: volume serial via `cmd /c vol C:`), SHA-256 hashes it, and POSTs the HWID with a license key/nonce to a runtime-decoded LICENSE_URL — a per-machine phone-home, not just license validation. Anti-analysis: a 3-second PowerShell poll gates the control-panel UI on a Chrome window whose MainWindowTitle matches 'YouTube', hiding the panel from sandboxes and OBS captures. Forensic concealment: console.log/warn/error are wrapped to replace 'sens.node' with 'program module', redact APP_DIR to '\u003capp\u003e', and drop log lines containing 'program module loaded' so crash logs never reveal the native binary name or install path.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sensivity"
+      },
+      "versions": [
+        "2.5.24"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "launcher.js",
+              "sha256": "6aebdb69c55eb304aff313f13f849cba9138dfe43e5d3484235bb975444a34eb",
+              "tlsh": "ce42d7aea9f7103585b3a02d165f5026a83bd543310dfae4759c820a6f8133c93b7afc"
+            },
+            {
+              "path": "server.obf.js",
+              "sha256": "c8dbb30c2eded6d2a96db2a7709706ba967ff1f7b940d1d84e9b5d60fd4347c5",
+              "tlsh": "b883d72163c43c8d21474ff3772bb2e5ea281a99b09445dfe514bc54ebbb914dbe8a30"
+            },
+            {
+              "path": "sens.node",
+              "sha256": "aa298f903700ac207596b12cc41921b6879a4ef23c31384ec5d3ddc1076bf7a9",
+              "tlsh": "2c667ab19a9c8b0df07ab079c1835617a7f1bc0d2321df8b9ad09db74d1f594f16a20a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sensivity-2.5.24.tgz",
+              "hashes": {
+                "sha1": "64e1fec6d6d6432734138833009a36d0cfc12182",
+                "sha512_sri": "sha512-OgS800qjaQ/T3w8WSG/uFgncPV7CSNbHjZa5r55I4ZEMlRFhqINZUA6odkPtNw5wc8jmLMRPqqddC0X0bIcz5A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sensivity/v/2.5.24"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c3bd01a5cfc5bcca989c0fb6a7927836563bff8292a2925e4dde5288e97c14a3",
+        "import_time": "2026-06-11T05:41:02.666379004Z",
+        "id": "IN-MAL-2026-005517",
+        "modified_time": "2026-06-11T04:54:02Z",
+        "versions": [
+          "2.5.24"
+        ]
+      }
+    ]
+  }
+}
