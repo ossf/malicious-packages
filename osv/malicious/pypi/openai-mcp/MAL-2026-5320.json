@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-09T07:50:16Z",
+  "modified": "2026-06-11T07:52:13Z",
   "published": "2026-06-08T10:18:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5320",
   "summary": "Malicious code in openai-mcp (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (f7597f40e5a7af25ae5f07e34310df24ac3284b9e0cadcb013a9c155384e9100)\nTyposquatting package published from a compromised account with an embedded infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collects all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6c30f8b1a160c72529e2671b81be13ea671302e9bc3915ee84bd2212e0fdd5a3)\nThe package name and module structure impersonate the official `openai` Python SDK (the package even rewrites exported classes' `__module__` attribute to `\"openai\"` in `openai_mcp/__init__.py`). Alongside the cloned SDK, it ships `openai-setup.pth`, which Python auto-loads on every interpreter start. The.pth file contains a single-line, heavily aliased `exec()` payload (single-letter names like `_O`, `_T`, `_u`, `_s`, `_b`, `_z`) that: (1) checks a one-shot guard `/tmp/.bun_ran`, (2) downloads the Bun JavaScript runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/bun-\u003cplatform\u003e-\u003carch\u003e.zip` to `/tmp/b/bun` and chmods it executable, (3) locates a sibling `_index.js` on `sys.path`, and (4) runs `bun run _index.js`. Because.pth files execute at every Python startup (not just at install), every `python` invocation after `pip install openai-mcp` downloads an alien runtime and executes the package's JavaScript payload through it — an alternate-runtime dropper that evades Python-only scanners. The obfuscation, one-shot guard, identity spoofing, and runtime-laundering together establish clear malicious intent.\n\n## Source: kam193 (f7597f40e5a7af25ae5f07e34310df24ac3284b9e0cadcb013a9c155384e9100)\nTyposquatting package published from a compromised account with an embedded infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collects all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
   "affected": [
     {
       "package": {
@@ -14,7 +14,40 @@
       "versions": [
         "2.41.1",
         "2.41.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "openai-setup.pth",
+              "sha256": "6506d31707a39949f89534bf9705bcf889f1ecae3dbc6f4ff88d67a8be3d01b2",
+              "tlsh": "8721015780038160da72d627cb2929f4278b0cbb4e538b1b8de8d9c172d0d1197b6b48"
+            },
+            {
+              "path": "openai_mcp/__init__.py",
+              "sha256": "f8eba7aafc46f204c266493e54a50de3699375e8643081c5b18390e5328108b1",
+              "tlsh": "b2522058ab15fa37d4918ae0da53d511c72598c38e023ab9379d01f91f1ba2ed9f838c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "openai_mcp-2.41.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "ac5d310d6104cd15ada46c4bdc20a4e8636df5ecaff9d712aa05f1c1f6b513e7",
+                "md5": "38f74025b26c1d96d8dbd1e6641f29df",
+                "sha256": "3d04b9631c921da2454a566a8882a96641af8ad58a9c6b9882bd029dcf7d00d4"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -33,9 +66,20 @@
     {
       "type": "WEB",
       "url": "https://socket.dev/blog/mini-shai-hulud-miasma-and-hades-worms-target-bioinformatics-and-mcp-developers-via-malicious"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/openai-mcp/2.41.1/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "ANALYST",
@@ -67,6 +111,16 @@
         "versions": [
           "2.41.1",
           "2.41.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6c30f8b1a160c72529e2671b81be13ea671302e9bc3915ee84bd2212e0fdd5a3",
+        "import_time": "2026-06-11T07:49:41.922345727Z",
+        "id": "IN-MAL-2026-005694",
+        "modified_time": "2026-06-11T07:18:37Z",
+        "versions": [
+          "2.41.1"
         ]
       }
     ]
