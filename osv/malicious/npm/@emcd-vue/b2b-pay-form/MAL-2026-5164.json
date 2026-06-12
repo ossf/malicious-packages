@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-02T00:00:00Z",
+  "modified": "2026-06-12T19:46:11Z",
   "published": "2026-06-01T07:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5164",
   "summary": "Malicious code in @emcd-vue/b2b-pay-form (npm)",
-  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to distribute multiple malicious packages posing as internal tooling under the \"EMCD Platform Engineering\" identity. This package was published on the same day as confirmed campaign packages `@emcd-vue/auth` and `@emcd-vue/loans`, which share C2 infrastructure at `oob.moika.tech`.\n\nThe package description (\"Internal HTTP client with retry, auth injection and request tracing\") is fabricated; the `@emcd-vue` scope has no affiliation with the real EMCD exchange (`emcd.io`). Campaign packages in this scope use a multi-stage postinstall dropper that downloads and executes a platform-specific payload from `https://oob.moika.tech/payload/{platform}` using a shared secret key, writes the payload to a hidden dot-file in the user's home directory, and beacons installation metadata to `https://oob.moika.tech/report`.",
+  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to distribute multiple malicious packages posing as internal tooling under the \"EMCD Platform Engineering\" identity. This package was published on the same day as confirmed campaign packages `@emcd-vue/auth` and `@emcd-vue/loans`, which share C2 infrastructure at `oob.moika.tech`.\n\nThe package description (\"Internal HTTP client with retry, auth injection and request tracing\") is fabricated; the `@emcd-vue` scope has no affiliation with the real EMCD exchange (`emcd.io`). Campaign packages in this scope use a multi-stage postinstall dropper that downloads and executes a platform-specific payload from `https://oob.moika.tech/payload/{platform}` using a shared secret key, writes the payload to a hidden dot-file in the user's home directory, and beacons installation metadata to `https://oob.moika.tech/report`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e45e677cee670117b0ff7dcdf2f04491cfb61385025a178e197ea35924e9410e)\n@emcd-vue/b2b-pay-form ships an obfuscator.io-encoded scripts/postinstall.js wired as the npm `postinstall` lifecycle hook. On `npm install`, the script builds a platform-keyed URL from `os.platform()`, performs an HTTPS GET of a remote payload, writes it to `os.tmpdir()`, and spawns it via `spawn(process.execPath, [tmpFile], {detached:true}).unref()` — a classic install-time dropper that grants the publisher arbitrary remote code execution on every installing host. An environment-variable kill switch and a TTL-gated JSON cache in the user home directory throttle re-execution to evade detection. The package's stated purpose is an 'Internal HTTP client'; fetching and executing remote Node code is unrelated to that purpose. The package metadata is also fabricated dependency-confusion bait: scope `@emcd-vue` and all referenced domains (`emcd-vue.io`, `github.emcd-vue.io`, `jira.emcd-vue.io`, `docs.emcd-vue.io`, `npm.emcd-vue.io`, `telemetry.emcd-vue.io`) are not owned by any public organization, and the README instructs consumers to point npm at `https://npm.emcd-vue.io` while branding the package as 'Internal package — Platform Engineering Team' — the canonical pattern for targeting orgs whose private internal scope matches `@emcd-vue` or whose CI lazily resolves unknown scopes from the public registry. The postinstall file itself is heavily obfuscated (string-array + RC4-style decoder, control-flow flattening, self-defending function, 109-entry encoded string table), which has no legitimate purpose for a lifecycle script and is consistent with evasion of review.\n",
   "affected": [
     {
       "package": {
@@ -20,16 +20,66 @@
             }
           ]
         }
-      ]
+      ],
+      "versions": [
+        "5.7.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "oob.moika.tech",
+            "oob.moika.tech.ec2.internal"
+          ],
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "3a18539d35b742ada67fded5569314159308daea53075f171be9ecfb14cb4ab8",
+              "tlsh": "075293456fc090916b17aebb6337a0d0d526496af665488fe3007ff8fc91326e2d6e34"
+            },
+            {
+              "path": "package.json",
+              "sha256": "79edb765f0d3613b80e60f01cd28942211e823851a8d34bac8d777a1592479d5",
+              "tlsh": "3b117831c5749d331ad42296aae45502b6b61c0b1c4abc2c37c3106d4b8e2ab14bc6be"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "b2b-pay-form-5.7.4.tgz",
+              "hashes": {
+                "sha1": "13944ee6302a445884490112e70d1e522d6f2d21",
+                "sha512_sri": "sha512-g7OZSH0uESsscbr+OSxEBJpH2swuthrwbuxkVxziCU5k0d5RwXLRnPCvdFJZfadw0f6t9aqSoIDY34BV7guzcA=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "REPORT",
       "url": "https://safedep.io/oob-moika-tech-dependency-confusion-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@emcd-vue/b2b-pay-form/v/5.7.4"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -39,6 +89,27 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a7ba596c8dca7145a8e505cdb4cf2c96dd1a4e741ea55192e076da181ecc6d38",
+        "import_time": "2026-06-12T19:44:13.684281435Z",
+        "id": "IN-MAL-2026-006150",
+        "modified_time": "2026-06-12T19:10:00Z",
+        "versions": [
+          "5.7.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e45e677cee670117b0ff7dcdf2f04491cfb61385025a178e197ea35924e9410e",
+        "import_time": "2026-06-12T19:44:13.524497209Z",
+        "id": "IN-MAL-2026-006149",
+        "modified_time": "2026-06-12T19:10:00Z",
+        "versions": [
+          "5.7.4"
+        ]
+      }
+    ]
   }
 }

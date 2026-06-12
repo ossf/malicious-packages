@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-04T22:28:51Z",
+  "modified": "2026-06-12T19:46:12Z",
   "published": "2026-06-04T22:27:40Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5189",
   "summary": "Malicious code in arjson (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: google-open-source-security (146faaf0d97c6a533a969bc3f3f117811f9317dc865ed4ab37f1679842ddeaae)\nThis package was compromised as part of the IronWorm campaign. This campaign executes a malicious binary payload during installation via a preinstall hook. The payload is a Rust-built infostealer that targets developer environments, scanning for and harvesting credentials related to cloud providers, object storage, databases, source-control, package registries, and AI developer tools. It also targets cryptocurrency wallets, specifically injecting a malicious JavaScript hook into the Exodus desktop wallet to capture passwords and recovery phrases. Furthermore, the malware exhibits worm-like behavior by stealing GitHub and NPM credentials to push malicious updates to the victim's repositories and publish trojanized packages, and it uses an eBPF-based kernel rootkit to hide its processes and network connections on Linux systems.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (00290c05e0c41a8f51d38c629ade5b3fe76f2a89302db8daac669b0c80d13197)\npackage.json declares `\"preinstall\": \"./.github/scripts/precheck\"`, which on `npm install` executes a 976KB UPX-packed Linux ELF binary shipped under `.github/scripts/` (a path designed to look like CI tooling). The binary has no accompanying source, is compressed with UPX (`http://upx.sf.net` banner present in the packed image) to defeat static inspection, and its embedded strings reveal capabilities far beyond anything a JSON serialization library would require: libbpf/eBPF (`LIBBPF_0.0`), kernel tracing (`PTRACE`), netlink socket-diag enumeration (`NETLINK_*_DIAG`, `INODE`), HTTP client primitives (`HTTP/1.1`, `POST`, `DELETE`), GitHub API client (`2022-11-28`), Windows path handling (`USERPROFILE`), and asymmetric crypto (Ed25519, MLKEM, RSA_PKCS1_). Any developer or CI system running `npm install arjson` on Linux will execute opaque packed native code with kernel-level introspection and HTTP-exfiltration capability. The package is advertised as a JSON library; no legitimate purpose exists for shipping a packed eBPF/HTTP-capable preinstall binary.\n\n## Source: google-open-source-security (146faaf0d97c6a533a969bc3f3f117811f9317dc865ed4ab37f1679842ddeaae)\nThis package was compromised as part of the IronWorm campaign. This campaign executes a malicious binary payload during installation via a preinstall hook. The payload is a Rust-built infostealer that targets developer environments, scanning for and harvesting credentials related to cloud providers, object storage, databases, source-control, package registries, and AI developer tools. It also targets cryptocurrency wallets, specifically injecting a malicious JavaScript hook into the Exodus desktop wallet to capture passwords and recovery phrases. Furthermore, the malware exhibits worm-like behavior by stealing GitHub and NPM credentials to push malicious updates to the victim's repositories and publish trojanized packages, and it uses an eBPF-based kernel rootkit to hide its processes and network connections on Linux systems.\n",
   "affected": [
     {
       "package": {
@@ -13,7 +13,34 @@
       },
       "versions": [
         "0.1.4"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": ".github/scripts/precheck",
+              "sha256": "36abd242ddaa27f0160c539377a0e92cf781c1695137850acc87e3892b436d36",
+              "tlsh": "0c2533ab0025062b904d957a58963bd279c17c81afcc3662664dae742fb59c3cf63fc3"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "arjson-0.1.4.tgz",
+              "hashes": {
+                "sha1": "3a327976602c78a813813713716657dd26b00a82",
+                "sha512_sri": "sha512-+m6kNJ+Y5Fe1w7YiVJcXByTSBcFsz/Fil5E73+FdSGFkf6z09EXHK0Cyykf7uUfYTe3PL3UzHBGlKdCpP4LnEg=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -24,15 +51,38 @@
     {
       "type": "ARTICLE",
       "url": "https://research.jfrog.com/post/iron-worm-shai-hulud-rustier-cousin/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/arjson/v/0.1.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
+        "source": "google-open-source-security",
+        "sha256": "146faaf0d97c6a533a969bc3f3f117811f9317dc865ed4ab37f1679842ddeaae",
         "import_time": "2026-06-04T22:42:01.227855Z",
         "modified_time": "2026-06-04T22:28:51.769005667Z",
-        "sha256": "146faaf0d97c6a533a969bc3f3f117811f9317dc865ed4ab37f1679842ddeaae",
-        "source": "google-open-source-security",
+        "versions": [
+          "0.1.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "00290c05e0c41a8f51d38c629ade5b3fe76f2a89302db8daac669b0c80d13197",
+        "import_time": "2026-06-12T19:44:11.095315849Z",
+        "id": "IN-MAL-2026-006127",
+        "modified_time": "2026-06-12T19:09:35Z",
         "versions": [
           "0.1.4"
         ]
