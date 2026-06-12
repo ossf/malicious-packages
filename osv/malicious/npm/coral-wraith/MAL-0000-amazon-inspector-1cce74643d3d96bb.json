@@ -1,0 +1,66 @@
+{
+  "modified": "2026-06-12T19:05:55Z",
+  "published": "2026-06-12T19:05:55Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall credential harvester exfiltrating npm tokens, AWS IAM credentials, and IMDS metadata to hardcoded remote IP",
+  "details": "On `npm install`, postinstall.js executes a shell pipeline that locates every `.npmrc` on disk, scrapes environment variables matching npm/registry/auth/token patterns, reads `/proc/1/environ` for AWS credentials, queries the AWS Instance Metadata Service at 169.254.169.254 for IAM role credentials, and invokes `aws sts` and `aws secretsmanager list-secrets`. The collected output is base64-encoded and HTTP PUT to `/api/modules/ECT-839201` on the hardcoded remote endpoint `http://154.57.164.71:30782` (and a loopback at 127.0.0.1:30782). A `shouldRun()` gate suppresses execution in CI, GitHub Actions, and Chinese registry mirror environments (npmmirror/tencent/cnpm/taobao), and only proceeds when the hostname matches a 12-hex Docker container ID pattern and the working directory contains `/app` — a deliberate sandbox/scanner-evasion fingerprint targeting production cloud containers. The destination is a bare IPv4 with no relationship to any legitimate package publisher and uses plain HTTP. Installing this package on a matching target host directly leaks npm publish tokens, AWS IAM credentials, and cloud secret-manager contents to the attacker.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "coral-wraith"
+      },
+      "versions": [
+        "6.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "13f7140241f02ef5d78398c1b928303ce15bc375734e1c7f2a834023a7de6d97",
+              "tlsh": "3a6164df60b9e433239ac5a4f596048f79939cbb24c69cc0f19f01743ec879542b69d6"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/coral-wraith/v/6.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1cce74643d3d96bb21b153accc300d89e0cb9d8c4f1922798bd73dadacac617f",
+        "import_time": "2026-06-12T19:43:51.916450187Z",
+        "id": "IN-MAL-2026-005959",
+        "modified_time": "2026-06-12T19:05:55Z",
+        "versions": [
+          "6.0.0"
+        ]
+      }
+    ]
+  }
+}

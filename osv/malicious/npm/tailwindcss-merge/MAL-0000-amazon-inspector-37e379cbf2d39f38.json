@@ -1,0 +1,71 @@
+{
+  "modified": "2026-06-12T19:09:40Z",
+  "published": "2026-06-12T19:09:40Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "tailwindcss-merge ships obfuscated Function()-eval payload at import time, impersonating tailwind-merge",
+  "details": "Package name `tailwindcss-merge` is a one-character edit of the popular `tailwind-merge` utility, and the README documents it as a drop-in (`import {... } from 'tailwindcss-merge'`). `src/index.ts` line 13 ends with a side-effect import `import './lib/lib.min.js';` even though the manifest claims `sideEffects: false`. `src/lib/lib.min.js` is a heavily obfuscated bootstrap that (a) stashes `require` into `global['r']` and `module` into `global['m']`, (b) uses a deterministic Knuth-style string-shuffle seeded with 2540575 to deshuffle the literal `'axhscuutcrogycrneotisjlnkdpfqmzovtrwb'` into the string `'constructor'`, (c) dereferences that to obtain the `Function` constructor, and (d) deshuffles two further opaque blobs and executes them via `Function('', decoded)(decoded2)` followed by `XZs(7942)`. The combination — typosquat name, side-effect import contradicting the manifest, capture of `require`/`module` into globals immediately before a two-stage opaque-string-to-Function eval chain — exists only to hide arbitrary code execution from review. Any consumer who imports this package (directly, or via the `source` field that bundlers like Parcel and Microbundle resolve to `src/index.ts`) executes the eval'd payload at module load with full access to `require`, enabling child-process spawn, network I/O, and filesystem reads. Manifest also points `main` at `./dist/bundle-cjs.js`, but no `dist/` directory ships in the tarball, and `author` is empty — publication-hygiene tells consistent with a hastily-assembled typosquat.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "tailwindcss-merge"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/lib/lib.min.js",
+              "sha256": "1a6283f5fd8fadf6ed71558c31c6ecc2e392ba9e4915201c2c9557b7e7b94a9d",
+              "tlsh": "f4815dc87548fdc979c082b181cb919f2c6507e2987fb1c4888e86ea55422465ab9eff"
+            },
+            {
+              "path": "package.json",
+              "sha256": "1384ba60e70524477e7753141828dd8c61e223134fbf53171798ab9645231d57",
+              "tlsh": "47519f27cd86ccb341f156a9b872d166f255434fa242c90b75fc672c4f74bab0093625"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tailwindcss-merge/v/1.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "37e379cbf2d39f386221b7e0896b9331c7a52dc62a74bee6ded47962a77074b7",
+        "import_time": "2026-06-12T19:44:11.462034381Z",
+        "id": "IN-MAL-2026-006130",
+        "modified_time": "2026-06-12T19:09:40Z",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  }
+}

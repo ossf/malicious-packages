@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-12T19:07:38Z",
+  "published": "2026-06-12T19:07:38Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "postinstall silently installs an unpinned, unrelated global npm package from a third-party mirror",
+  "details": "On `npm install`, the package's postinstall script (dist/postinstall.js) spawns a detached, output-suppressed `npm install -g opencode-ai --registry=https://registry.npmmirror.com`. The dependency is unpinned (`@latest`), pulled from a third-party mirror rather than the default registry, has a different publisher, and is unrelated to the package's advertised IM/messenger bridge purpose; the install runs detached with stdio ignored so failures are invisible. Whoever controls `opencode-ai@latest` on that mirror obtains arbitrary code execution at global scope on every installer. Additionally, the same postinstall path invokes `setupService()` (dist/service-installer.js, dist/github-downloader.js, dist/daemon-manager.js) which globally installs an unpinned `claw-subagent-service@latest` and registers it as an elevated system service via PowerShell `Start-Process -Verb RunAs` on Windows, `pkexec`/`sudo` on Linux, and `osascript... with administrator privileges` on macOS — giving the author the ability to push new code that auto-starts as SYSTEM/root on every boot without version review. The same flow runs `forceUninstallService()`, which kills processes with overbroad patterns (`pkill -9 -f daemon.js`, `pkill -9 -f worker.js`, `taskkill /f /im opencode.exe`, and a WMIC delete for any `node.exe` whose commandline contains `claw-subagent`), terminating unrelated developer processes on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw_messenger"
+      },
+      "versions": [
+        "0.0.84"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/postinstall.js",
+              "sha256": "975dcf800a08008605a42c479fe050db36b11dea33ce9632fcc65df290362d77",
+              "tlsh": "4841216a45aa01771f4389991d0b943f272216029158f124facedf5f1793e2d89932fe"
+            },
+            {
+              "path": "dist/github-downloader.js",
+              "sha256": "5d81496f4caa853146d4c9410b9f6d112b94a283d44e105f7029ecd454179bdb",
+              "tlsh": "6521ac6b04e3d63143331c525a176527306e63835a4bfd907a8e82598fc0d2d4e537ae"
+            },
+            {
+              "path": "dist/daemon-manager.js",
+              "sha256": "1bad06ec4afc9017a318c048437eb5ddb2de3f6405bbdfe810c50f90fda24e8b",
+              "tlsh": "4562635946f7927186636476a71f3126332ab203950cfe887ecd874a4f84c2c0af1bed"
+            },
+            {
+              "path": "dist/auto-register.js",
+              "sha256": "0d0acd44d14b8579e0cad4a335cd48e027bbdb8a0edca48a3548b1dd2532dbc8",
+              "tlsh": "891274d6adfb142e02526859cb5f50247214be872748c458fbccc6d4bfa4914e9a3bf8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw_messenger-0.0.84.tgz",
+              "hashes": {
+                "sha1": "41e9e5e4f1ab63b92b175b938b6faf9eedb1468f",
+                "sha512_sri": "sha512-lzbeBmJnYPqaNIgA6qrVqxLz2bJgxpLWVCF7YIE1vmm1i2iiZNYWEz0aMj2A55VKHEQ3mNVesE/RfL9RMA2/GQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.84"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a947d3124d0b1babb942e0beb2cb12b9eff1f32f76063ab178dfaa0b3be43c08",
+        "import_time": "2026-06-12T19:44:00.862632546Z",
+        "id": "IN-MAL-2026-006037",
+        "modified_time": "2026-06-12T19:07:38Z",
+        "versions": [
+          "0.0.84"
+        ]
+      }
+    ]
+  }
+}

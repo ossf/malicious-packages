@@ -1,0 +1,71 @@
+{
+  "modified": "2026-06-12T19:02:04Z",
+  "published": "2026-06-12T19:02:04Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "typeorm-encrypt ships obfuscated Function-eval payload with require-stashing prologue",
+  "details": "The published tarball contains lib/lib.min.js, a heavily obfuscated file that stashes Node intrinsics on globals (`global['r']=require; global['m']=module;`) before invoking a Function-constructor eval'd payload. This is the canonical dropper shape: code that needs `require` access but is structured to evade casual review through a permutation-decoder + Function-eval pipeline. The file is not referenced from lib/index.js (the package main) or any other clean module in the package, whose stated purpose is a small TypeORM transformer for encrypted columns (lib/crypto.js, lib/entity.js, lib/transformer.js show that purpose in clear source). Shipping an obfuscated payload that has no role in the advertised functionality, and that is wired to access Node's require/module via globals when invoked, is unjustified for a column-encryption transformer. Corroborating signal: package.json declares an empty author name with a lookalike email domain (`gennagykoroke@vich.com`) and no `repository` or `homepage` fields — typical placeholder maintainer metadata. While the obfuscated file is dormant on a default `require('typeorm-encrypt')` (it is not on the load graph from main), its presence in the tarball means any path that loads it — a future patch flipping main, a sibling package requiring `typeorm-encrypt/lib/lib.min.js` directly, or runtime code in other distribution paths — executes attacker-controlled obfuscated code with full Node intrinsics access. The combination of obfuscation, require-stashing prologue, purpose mismatch, and placeholder maintainer identity is consistent with smuggled malicious code.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "typeorm-encrypt"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/lib.min.js",
+              "sha256": "cc074a2f99e5bdfa7acde7d9dd6620771a3d6c9a71e023e50c1853df8681a43d",
+              "tlsh": "d4816ec87548fdc979c042b181cb919f2c6507e2987fb1c4888f86ea55422465eb9eff"
+            },
+            {
+              "path": "package.json",
+              "sha256": "548dea86c269743f1db87bcdc4526400984a0b2e5c441f83e16b863bec8cbcba",
+              "tlsh": "b9110858dc7dce6326c591a06cb58283e131495b4da4fc0c3792463e8f9d5af60bc7ae"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/typeorm-encrypt/v/1.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a56a819a1e640411db5e485054b23282d0d04f847270ea17c605cbfa6e6ab5ac",
+        "import_time": "2026-06-12T19:43:34.440606445Z",
+        "id": "IN-MAL-2026-005796",
+        "modified_time": "2026-06-12T19:02:04Z",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  }
+}

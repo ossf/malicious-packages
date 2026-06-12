@@ -1,0 +1,95 @@
+{
+  "modified": "2026-06-12T19:06:13Z",
+  "published": "2026-06-12T19:06:13Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall registers a SYSTEM/root service that listens for remote commands and auto-updates from npm",
+  "details": "On install, scripts/post-install.js uses node-windows to register a Windows service named 'OpenClaw Guard' (or a systemd unit on Linux) running as LocalSystem/root, with sc.exe failure recovery configured to auto-restart and sc.exe config start=auto for boot persistence. The service launches service/daemon.js → service/worker.js, which connects to a hardcoded RongCloud IM endpoint (https://newsradar.dreamdt.cn/im, appKey 'bmdehs6pbyyks') and treats inbound IM messages as commands. service/modules/rongyun-message-handler.js dispatches those messages through handleCommand/executeCommand to run command/{win,linux}/{start,stop,restart,status}.{bat,sh}, executeCommandDirect('openclaw doctor --fix'), and chatViaCLI which spawns `openclaw agent -m \u003cattacker-supplied message\u003e --session-id \u003c...\u003e` with shell:true under SYSTEM/root. service/worker.js additionally starts a DashboardReporter that periodically uploads ~/.openclaw/agents/*/sessions/*.jsonl session histories, cron jobs, approvals, projects, tasks, 7-day token-usage data, host MAC address, os.platform/arch/cpu/mem/uptime, and a host nodeId to the same server (auth token fetched from /api/claw/token/\u003cnodeId\u003e). On Windows the worker enumerates C:\\Users to locate a real user profile and injects HOMEDRIVE/HOMEPATH/APPDATA/LOCALAPPDATA into spawned children so SYSTEM-level commands act inside individual user homes. service/updater.js polls `npm view claw-subagent-service version --json` every 6 hours and, on any newer version, runs `npm install -g claw-subagent-service@\u003cversion\u003e` as SYSTEM/root with no signature or hash pinning, so any future version published to this name is auto-pulled and executed with admin privileges. Package metadata is a Chinese placeholder description ('虾说智能助手') with no repository, homepage, or author email, and the C2 endpoint and appKey are hardcoded with no opt-out in metadata.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claw-subagent-service"
+      },
+      "versions": [
+        "0.0.162"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/post-install.js",
+              "sha256": "01039e872d90cd6cc6cddc73f2ff657f146844126ea86eea8cfd15b017dcf0a7",
+              "tlsh": "fec10f9804fe43b02973405a2b5b101a3d5bd943324cfa9dbaed439e6fc261486e35fe"
+            },
+            {
+              "path": "service/rongcloud/openclaw-client.js",
+              "sha256": "6b26507e7444317dd51511d91250d497abf60c640db86454a37a8babdb05a820",
+              "tlsh": "3ee276581ffa207d4573b4adbb8b7435712194072206ca59fbdd03483f8862c8b6afe9"
+            },
+            {
+              "path": "service/worker.js",
+              "sha256": "c81a308ad5161aee5f3f8125e4ba4c426a8f7850157e69419abafb38d1a34efe",
+              "tlsh": "a5b2c799066b2b271db257f6f347701fff1aa197060482a0f7dc92583f761280266fe9"
+            },
+            {
+              "path": "service/updater.js",
+              "sha256": "82c472efae06f77cbcd6f99d6a4f55dfd7a1cb1065d51b9abc775ad390115d32",
+              "tlsh": "e902519956fb923597b2326d2b9b2019272ee1073119cd6cfbdc03907f412284762fe9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "2e0b8c151b1407c709cb71cc869224a49226c7de1c8adb3bd119a4156788a26e",
+              "tlsh": "70118c33ce42cd7374f85a6a2c3a4205f5a2075f22149e0732f7415c0f7627a4405b5a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claw-subagent-service-0.0.162.tgz",
+              "hashes": {
+                "sha1": "a298cbbad3f9684883b542c432a4fb17f3ceabd1",
+                "sha512_sri": "sha512-MdMxijrS+Fl2feDM4KaVngu+21GY6RbKzhga5TqLxXahpmF0BOUHYK+JEZSUDpopfuIsjrVEttkS6Hv8ZTCcqw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.162"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1b5d67d286b4968f1935e1913720aeaf077c304ca5bf53990bca73d9955470b2",
+        "import_time": "2026-06-12T19:43:53.124093144Z",
+        "id": "IN-MAL-2026-005970",
+        "modified_time": "2026-06-12T19:06:13Z",
+        "versions": [
+          "0.0.162"
+        ]
+      }
+    ]
+  }
+}

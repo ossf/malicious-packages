@@ -1,0 +1,66 @@
+{
+  "modified": "2026-06-12T19:05:33Z",
+  "published": "2026-06-12T19:05:33Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "postinstall script exfiltrates npm auth tokens and host metadata to hardcoded remote IP",
+  "details": "On `npm install`, postinstall.js executes shell commands that read `.npmrc` files at `/home/node/.npmrc`, `/setup/node/.npmrc`, `/setup/.npmrc`, and `/usr/lib/node_modules/npm/.npmrc`, and greps recursively for `_authToken=` values and other secrets across `/setup`, `/home/node`, and `/usr/lib/node_modules/npm`. It also collects `/etc/hosts`, mountinfo, `/readflag` output, and home directory listings. The captured data is base64-wrapped inside a fake YAML 'manifest' and PUT to `http://154.57.164.64:32271/api/modules/ECT-*` over cleartext HTTP. The script gates execution to evade scanners: it bails out when CI environment variables (`GITHUB_ACTIONS`, `RUNNER_OS`, `CI`) are present, when the npm registry resolves to common Chinese mirrors (`npmmirror`, `tencent`, `cnpm`, `taobao`, etc.), or when the cwd is `/tmp`; it only proceeds when the hostname matches a 12-hex-character pattern and cwd includes `/app`. The hardcoded IP `154.57.164.64:32271` is attacker-controlled infrastructure with no relation to any legitimate package registry or CDN. Combined behavior — environment-aware dormancy, npm token harvesting, and HTTP exfiltration to a bare-IP endpoint — is an unambiguous credential-theft payload that compromises any npm publishing identity present on the install host.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "coral-wraith"
+      },
+      "versions": [
+        "19.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "d930d83e941f326f2be43ff2008f8b5727d241825a346a8a2b13e6084be241bf",
+              "tlsh": "c551b5eb35b7a5320261d8a46d5b504abdd749a730c1dcd0b1ce02613fd93a883f19ca"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/coral-wraith/v/19.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "3d3050f6ec6e82aa07890b59efff51e255141e1d65e2f6a33d49a77dd1ab31e2",
+        "import_time": "2026-06-12T19:43:50.394381398Z",
+        "id": "IN-MAL-2026-005946",
+        "modified_time": "2026-06-12T19:05:33Z",
+        "versions": [
+          "19.0.1"
+        ]
+      }
+    ]
+  }
+}

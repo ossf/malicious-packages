@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-12T19:02:31Z",
+  "published": "2026-06-12T19:02:31Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "hpsetup CLI installs unverified code from non-publisher CDN and disables package-manager safeguards",
+  "details": "The hpsetup CLI is the documented invocation pattern for this package and is wired into the consumer's build pipeline (it rewrites vercel.json's installCommand to `npx -y hpsetup@latest \u003cuserKey\u003e`, so it runs on every Vercel deploy). On invocation it fetches tarballs from `https://hpsetup-cdn.932324.xyz/api/tarball/\u003cslug\u003e/\u003cversion\u003e?key=\u003cuserKey\u003e` (src/constants.js, src/download.js) and extracts them into `node_modules/@heroui-pro/react` and `node_modules/heroui-native-pro` with no hash or signature verification. The CDN domain `932324.xyz` does not match the HeroUI brand the package purports to integrate with, the version is resolved dynamically from the npm registry (not pinned in this package), and the URL is mutable — whatever the CDN serves becomes live JavaScript in the consumer's project. After extraction, src/download.js deletes `dist/postinstall` and removes the `postinstall` entry from the downloaded package.json, and src/patch.js further deletes the entire `scripts` object, so the on-disk manifest no longer reflects what was actually delivered. The installer additionally patches the consumer's `package.json` (`pnpm.onlyBuiltDependencies`, `bun.trustedDependencies`) and `pnpm-workspace.yaml` `allowBuilds` to whitelist `@heroui-pro/react`, `heroui-native-pro`, AND the unrelated `@zowe/secrets-for-zowe-sdk` for build-script execution — disabling the package manager's confirmation prompt for install/postinstall scripts on those packages going forward. Finally, it writes the user's license key into `vercel.json` and appends `vercel.json` to `.gitignore`. The combination — mutable non-publisher CDN, unpinned version, no integrity check, manifest tampering to hide what was delivered, and silent auto-trust of an unrelated third-party scope — gives the operator of `hpsetup-cdn.932324.xyz` arbitrary code execution in any project that runs this CLI, including on every Vercel deploy after first run.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.7-beta.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/install.js",
+              "sha256": "d66f96d74dac295004493918ae8e51e165eaf19d9908462c5a5032dd00c05c8d",
+              "tlsh": "31d2b81992f31179243322a4575b2012f738e2533508da84beeea7642f47974d3ebbed"
+            },
+            {
+              "path": "src/vercel.js",
+              "sha256": "ba9250f1a16ffc04ef08c0d2fb9f2a03a51e1f45d8f8e5a64780f3cc7fbcf5f7",
+              "tlsh": "c441315bebbe1b312c629115844b001173a48b633504e69935fd629e5fc78acd5a32dd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.7-beta.1.tgz",
+              "hashes": {
+                "sha1": "ec4715bbe34417d50dd70a777d8f6a273565b912",
+                "sha512_sri": "sha512-MsGU/mOhCyZTMrxqSN/femO/dEE9vCzWZQUpk4+zlVxBvZCpaWtjjHyFe7C9wyJK6SE+Oc7AAPQszZ3EAtlrjw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.7-beta.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a1d2bb391167b94145f855e66553133a2afa977778eda22ef893950f649c11ed",
+        "import_time": "2026-06-12T19:43:36.177888914Z",
+        "id": "IN-MAL-2026-005814",
+        "modified_time": "2026-06-12T19:02:31Z",
+        "versions": [
+          "4.5.7-beta.1"
+        ]
+      }
+    ]
+  }
+}

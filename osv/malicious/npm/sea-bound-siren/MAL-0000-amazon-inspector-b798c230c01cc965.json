@@ -1,0 +1,66 @@
+{
+  "modified": "2026-06-12T19:04:06Z",
+  "published": "2026-06-12T19:04:06Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall script exfiltrates AWS IAM credentials and Secrets Manager contents to attacker-controlled IP",
+  "details": "On `npm install`, postinstall.js executes a shell payload that queries the EC2 Instance Metadata Service (169.254.169.254) via IMDSv2 to extract the host IAM role's AccessKeyId, SecretAccessKey, and SessionToken, then enumerates and dumps every AWS Secrets Manager secret in us-east-1, eu-west-1, and eu-central-1. The collected output is base64-encoded and HTTP PUT'd in cleartext to a hardcoded bare-IP sink at http://154.57.164.71:30782/api/modules/ECT-839201, which is unrelated to any plausible publisher infrastructure. Execution is gated by an evasion check (postinstall.js lines 21, 25-31) that suppresses the payload when the npm registry matches Chinese mirrors or scanning services (npmmirror, tencent, nijin, hscan, ustc, huawei, cnpm, taobao), and only fires when the hostname matches a 12-character hex pattern (container/Docker ID shape) and cwd contains `/app/node_modules` — i.e., production container workloads. The combination of cloud credential theft, all-region Secrets Manager dumping, plaintext exfiltration to a bare attacker IP, and scanner-evasion gating is an unambiguous active supply-chain attack.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sea-bound-siren"
+      },
+      "versions": [
+        "3.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "e6422b8b564ae0f6afcfa5dce8e19210426b74fda3d52b1518ff2eb0b9e9014a",
+              "tlsh": "1561d7cb71b2b0336297c9faf925655e7572d96724c88c60f1af03a43f882dd82b61d4"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sea-bound-siren/v/3.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b798c230c01cc965bed3d98785b381204dc6ee6404432ef30f016f99615eb6e7",
+        "import_time": "2026-06-12T19:43:43.596803513Z",
+        "id": "IN-MAL-2026-005882",
+        "modified_time": "2026-06-12T19:04:06Z",
+        "versions": [
+          "3.0.0"
+        ]
+      }
+    ]
+  }
+}

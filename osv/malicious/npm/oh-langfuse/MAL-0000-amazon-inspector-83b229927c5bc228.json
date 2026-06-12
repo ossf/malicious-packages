@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-12T19:07:02Z",
+  "published": "2026-06-12T19:07:02Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Claude Code / Codex / OpenCode tracing tool defaults to routing all agent transcripts to a hardcoded bare-IP server over plain HTTP",
+  "details": "The package configures Langfuse tracing for Claude Code, Codex, and OpenCode. When the operator runs the bundled CLI without explicitly overriding `--langfuseBaseUrl`, the setup writes `LANGFUSE_BASEURL=http://120.46.221.227:3000` together with hardcoded public and secret Langfuse keys into `~/.claude/settings.json`, `~/.codex/config.toml`, OpenCode environment files, and shell shims (bin/cli.js lines 11-13 hardcode `DEFAULT_LANGFUSE_BASE_URL = \"http://120.46.221.227:3000\"`, `DEFAULT_LANGFUSE_PUBLIC_KEY = \"pk-lf-da0c90a7-...\"`, and `DEFAULT_LANGFUSE_SECRET_KEY = \"sk-lf-0269b85d-...\"`; scripts/langfuse-setup.mjs and scripts/opencode-langfuse-run.mjs reuse the same secret-key default). The installed Python hooks then ship every Claude/Codex turn — user prompts, assistant responses, tool inputs, and tool outputs (which routinely include file contents and any secrets observed in tool calls) — to that bare IPv4 endpoint. The destination is the publisher's own Langfuse instance, presented to the operator only as a numeric IP with no publisher-domain branding, served over cleartext HTTP, and pre-authenticated with credentials baked into the package. An additional fallback path in scripts/langfuse-setup.mjs downloads a hooks zip from `https://gitcode.com/user-attachments/files/8187690/7a797a5314b9497cae7b055aa51be646.zip` via PowerShell Invoke-WebRequest and installs it as the Claude Code Stop hook when both `--pyPath` is absent and the bundled `langfuse_hook.py` is missing — normally bypassed, but a brittle path to third-party-hosted code that Claude Code will execute. The trigger is the operator running the CLI with defaults (or `--yes`), not `npm install`; however, the documented invocation pattern of this package is to run that CLI, and the default behavior silently relays caller-supplied agent data (containing the operator's own code and secrets) to a publisher-controlled destination.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "oh-langfuse"
+      },
+      "versions": [
+        "0.1.44"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "bin/cli.js",
+              "sha256": "7f1621c5ebf003062faeb6c19f5ad55d17f4f362d5ba9e9dbffaace75104bfc8",
+              "tlsh": "6ef2d84958da792107b325a899574435fa3e87031409d846fabf43e87fa9938c2f3b7c"
+            },
+            {
+              "path": "scripts/langfuse-setup.mjs",
+              "sha256": "5763b72654d5d676256c128b94db53b8a0c31cb0defd5bc55d9b6572c1034beb",
+              "tlsh": "40821c4794fd8b2407b257b5224f9036f2e952033a02e964ba7c95c92f6913cc1b7eed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "oh-langfuse-0.1.44.tgz",
+              "hashes": {
+                "sha1": "e27aaf6734102403f1d7fabb89516734cadba5ac",
+                "sha512_sri": "sha512-Uiru97MOG50hIW42uE+u9pqjLnM0Gb+n3H1/2n8o/Ir8ZlVGk0LV7IYWO767CF1Gi07pvMRsgMw9DtluWatGcQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/oh-langfuse/v/0.1.44"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "83b229927c5bc228764ab11651b10bd06c6ff61edffa820a632c343aeec13037",
+        "import_time": "2026-06-12T19:43:56.8587184Z",
+        "id": "IN-MAL-2026-006000",
+        "modified_time": "2026-06-12T19:07:02Z",
+        "versions": [
+          "0.1.44"
+        ]
+      }
+    ]
+  }
+}

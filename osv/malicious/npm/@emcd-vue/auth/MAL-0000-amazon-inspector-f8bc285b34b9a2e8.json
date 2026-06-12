@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-12T19:04:46Z",
+  "published": "2026-06-12T19:04:46Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Obfuscated postinstall dropper executes remote code on npm install",
+  "details": "@emcd-vue/auth@6.4.5 is a hollow shell package whose only functional content is a malicious postinstall script. package.json advertises this as an 'Internal @wildberries/service-router package' (a dependency-confusion lure targeting builds that expect an internal @wildberries/* mirror), but dist/index.js is a one-line re-export `module.exports = require('../src/index.js')` pointing at a path that does not exist in the tarball — the package provides no library functionality. scripts/postinstall.js is heavily obfuscated using an obfuscator.io-style shuffled string array with RC4 + base64 decoders and hex-encoded property accesses; critical strings (host, URL path, secret header) are assembled only at runtime via `atob(...)+atob(...)` concatenation to evade static inspection. On `npm install` the script issues an HTTPS GET with a custom `X-Secret` header to the runtime-assembled URL, writes the response buffer to a randomly-named.js file under `os.tmpdir()`, and spawns it with `process.execPath` (Node) detached, `stdio:'ignore'`, `windowsHide:true`, then `.unref()`s the child so it survives the installer. Host-identifying data is exfiltrated as part of the fetch (hostname-keyed string selection via `os.hostname()`, CWD walk-up via `process.cwd()`, Node version check), and the spawned child receives the installer's full `process.env` plus additional atob-decoded secret values, handing any environment-resident credentials to the attacker-controlled payload.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@emcd-vue/auth"
+      },
+      "versions": [
+        "6.4.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "17d188fa4897d1b6d9fc6829b38bd9f8b8defeed9eeeeef72083e821e67118ac",
+              "tlsh": "6163f0c43a81e007659e9ba3bf52aafdd02f689352c8740be3507d9df8a911bc674dc4"
+            },
+            {
+              "path": "package.json",
+              "sha256": "0bba3711fc79db3b3e21824492ab3c12ca0d729a1a95b44d87775fe94264e607",
+              "tlsh": "98119931caa48d336ad425d6ade40503baaa280f1c4afc1c33c7002d8b8e19b44fd67e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "auth-6.4.5.tgz",
+              "hashes": {
+                "sha1": "50417870ff0b425e8c838f1df89c6c2b6273fac0",
+                "sha512_sri": "sha512-fROufaDzeeZ3g3+5yGrpJuYMPQwEriWZ/QLJbA8wQ0azTe8o7KCxS44gTJtPMZ1kH61LjDRr/5kF83UyK2gzbw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@emcd-vue/auth/v/6.4.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f8bc285b34b9a2e8abc8e2a86a7a0c8738823d504bbc7e30a4e56b1ec9810162",
+        "import_time": "2026-06-12T19:43:47.138542521Z",
+        "id": "IN-MAL-2026-005915",
+        "modified_time": "2026-06-12T19:04:46Z",
+        "versions": [
+          "6.4.5"
+        ]
+      }
+    ]
+  }
+}
