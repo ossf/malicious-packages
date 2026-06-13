@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-13T07:17:40Z",
+  "published": "2026-06-13T07:17:40Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of postcss-selector-parser shipping AES-GCM-encrypted eval payload",
+  "details": "Package name impersonates `postcss-selector-parser` (a widely-used PostCSS dependency). `src/selector-parser.js` re-exports the real `postcss-selector-parser` and `src/index.js` re-exports the same surface as `selectorParser`/`postcssSelectorParser` to provide a convincing cover API. Alongside that cover, the package ships a ~13KB AES-GCM ciphertext (`DEFAULT_FINAL_ENCODED_TEXT` in `src/config/defaults.js`) together with the decryption passphrase (`DEFAULT_AES_PASSPHRASE = \"default-dev-passphrase\"`) and salt (`\"encode-npm-c-salt\"`) in the same module. The exported `run()` function (`runDefaultDecodedFunction` in `src/pipeline/custom-codec-pipeline.js`) decrypts the blob and executes the plaintext via `new Function(\"require\", runnable)(require)`. The encrypted blob plus co-located key serves no functional purpose other than hiding the payload from scanners and reviewers. The package's `npm start` / `npm run decode` scripts invoke `runtime/lib.min.js`, which calls `require('../src').run()`, triggering the eval path on those commands; any consumer that requires the package and calls `run()` is also exposed. The combination of typosquat cover, encrypted-with-shipped-key payload, and `new Function()` execution is an obfuscated remote-code-execution backdoor.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "postcss-minify-selector-parser"
+      },
+      "versions": [
+        "2.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "8377cb43063976a135462b757d4f11a9c4b88aeaefb8328dee6059bff5ddf3d4",
+              "tlsh": "ae210400ed104d7339ca9d6e2c6a0446917aa4870e84bc483b45c7ac4f9d97f51fb3ad"
+            },
+            {
+              "path": "src/pipeline/custom-codec-pipeline.js",
+              "sha256": "6a38f4170e8e82254423040d311c8164b3d928ebc00cd7a95a8f22bee75ce128",
+              "tlsh": "367130c23cbf79c71d9bed64f0af0869186ca7113505f268aca953c80aeb275d123c8d"
+            },
+            {
+              "path": "src/config/defaults.js",
+              "sha256": "c62a7576ae4d350f4049c846736950a4422d9f9b3611c15d24b8177bc4c92be5",
+              "tlsh": "8542d006376d8f2131714d15e074376af7388275609930beae5e78ee46fd6932b4072b"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "postcss-minify-selector-parser-2.0.1.tgz",
+              "hashes": {
+                "sha1": "d5489f6668caccd216d88579e7c4f46bda4f7b96",
+                "sha512_sri": "sha512-QfLcX5PNvvoB40jAPpfKLnTs4PELs5h+5CysZPGu3iF2BHwC9zhgB+XGr5JyVJua7l4OHjyf/eHK6gxEnuAcpw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/postcss-minify-selector-parser/v/2.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d2d21adbc821f5e075a768a69ead3dd95330b0696159d2ac4d345806ad349d0d",
+        "import_time": "2026-06-13T07:25:41.257004345Z",
+        "id": "IN-MAL-2026-006341",
+        "modified_time": "2026-06-13T07:17:40Z",
+        "versions": [
+          "2.0.1"
+        ]
+      }
+    ]
+  }
+}

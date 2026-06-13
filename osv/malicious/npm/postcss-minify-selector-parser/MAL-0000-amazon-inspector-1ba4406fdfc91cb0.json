@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-13T07:17:44Z",
+  "published": "2026-06-13T07:17:44Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "postcss-minify-selector-parser typosquats postcss-selector-parser and ships an AES-encrypted JS payload that is decrypted and executed via new Function",
+  "details": "The package name impersonates the legitimate postcss-selector-parser. src/selector-parser.js simply re-exports the real package (`module.exports = require('postcss-selector-parser')`), providing a working CSS parser as cover while the package's main export adds a `run` function that decrypts and executes an opaque embedded blob. src/config/defaults.js ships DEFAULT_FINAL_ENCODED_TEXT (a ~10KB AES-GCM ciphertext) together with the hardcoded passphrase 'default-dev-passphrase' and salt 'encode-npm-c-salt'. src/pipeline/custom-codec-pipeline.js:55 decrypts that blob and runs the plaintext as JavaScript with full Node privileges via `new Function('require', runnable)(require)`. The package exports `run` (alias of runDefaultDecodedFunction) and the generic helper `decodeAndRunPlain`, making the public API a turnkey code-execution surface. runtime/lib.min.js is a one-liner `require('../src').run();`, and package.json wires it to both `npm start` and `npm run decode`; scripts/cjs-runner.js (and the root cjs-runner.js) provide a second trigger that calls `runDefaultDecodedFunction()` directly. Any consumer who calls run(), runs npm start, runs npm run decode, or invokes the cjs-runner files executes attacker-chosen code under the installer's Node process. Encrypting the payload with a key shipped in the same package has no legitimate purpose other than evading static scanners.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "postcss-minify-selector-parser"
+      },
+      "versions": [
+        "1.0.17"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/selector-parser.js",
+              "sha256": "5f1381695b04c0e974e44475013145e8f3a1ccdb0f4f8d1c40e056f25e924a6e",
+              "tlsh": "9a9004411fd031f1711d5455fd555043ddd5c4d14104c4d15104dfd51f40dd007074f3"
+            },
+            {
+              "path": "src/pipeline/custom-codec-pipeline.js",
+              "sha256": "6a38f4170e8e82254423040d311c8164b3d928ebc00cd7a95a8f22bee75ce128",
+              "tlsh": "367130c23cbf79c71d9bed64f0af0869186ca7113505f268aca953c80aeb275d123c8d"
+            },
+            {
+              "path": "runtime/lib.min.js",
+              "sha256": "f0cc52d68f3b7acc5c24e117101d596657003ddfd8f26674482a37dcefaefe2b",
+              "tlsh": "24700028faae02002a3080ca28023a00b80280202200a020e0882c2382830808282022"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "postcss-minify-selector-parser-1.0.17.tgz",
+              "hashes": {
+                "sha1": "e7d0a38db58f924bc5e8e171a1b245b9a1a249b1",
+                "sha512_sri": "sha512-ft5e7Bnu9OPchQA+PdhU8rGnp4OSvFOyd1yQUJtpEN+AubZeJY4AcJEm3r4AmxbVnyyIM3tO5b0sw0DB3nTLqw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/postcss-minify-selector-parser/v/1.0.17"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1ba4406fdfc91cb0ec42b98b813ca5f6b859eae24f064be244293ae505c118a7",
+        "import_time": "2026-06-13T07:25:41.709854891Z",
+        "id": "IN-MAL-2026-006347",
+        "modified_time": "2026-06-13T07:17:44Z",
+        "versions": [
+          "1.0.17"
+        ]
+      }
+    ]
+  }
+}
