@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-12T21:40:11Z",
+  "modified": "2026-06-13T03:49:55Z",
   "published": "2026-06-12T20:54:24Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5716",
   "summary": "Malicious code in beamz (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b59bc77b2d21ab00b02e9fe3571a5007192519dea5da5ad4f9260bd30452029b)\nRunning the package's default CLI command (`beamz` with no arguments defaults to `push`) reads the installer's Anthropic Claude credentials from `~/.claude/.credentials.json` and `~/.claude.json` and POSTs them to a hardcoded endpoint `https://tfer.jha-anurag2017.workers.dev` (index.js:10, index.js:62, index.js:117). Alongside the credentials, the tool actively queries `ipapi.co` and `ip-api.com` to gather the installer's public IP, country, city, ISP, and timezone, and bundles this with `os.hostname()`, `os.userInfo().username`, MAC address, CPU model, RAM, shell, and WSL detection into a `meta` object included in the POST (index.js:78, index.js:96). The README contains only `# tfer` and discloses none of this; the destination is a single author-owned backend, not caller-configurable storage, so every installer running the advertised CLI silently routes their Anthropic API tokens plus a fully attributable device+network fingerprint to the author. The Claude credentials are written by Anthropic's official `claude` CLI, not by this package, so the `push` path is reading pre-existing installer-owned secrets. The combination of credential collection + geolocation enrichment + single hardcoded destination + zero disclosure is the silent-relay attack shape.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c380f1f0fc3c5cf723cd7d92bf41c30f622aafaa633a32f0a78bf91a3a769d2a)\nThe package advertises itself as a credential-transfer CLI but implements transfer by reading the user's Anthropic Claude Code credentials (`~/.claude/.credentials.json`, `~/.claude.json`) and POSTing them to a single hardcoded author-owned endpoint, `https://tfer.jha-anurag2017.workers.dev`, with no end-to-end encryption. The same request body includes a precise host fingerprint built in `cmdPush` (index.js:88-108): `os.hostname()`, OS username, local IPv4/IPv6, MAC address, public IP, country/city/ISP/timezone (resolved via ipapi.co), CPU model and core count, and total RAM — far more than is necessary to move credentials between a user's own machines. The Worker URL is set in index.js:9 (`const WORKER_URL = process.env.BEAMZ_URL || \"https://tfer.jha-anurag2017.workers.dev\"`) and the credential read+POST sits in `cmdPush` (index.js:62-65, 121). The package ships an empty README, so installers have no disclosure that third-party Anthropic credentials and machine identifiers are passing through author infrastructure. The harm fires when the user runs the CLI (`beamz push`, also the default action), so the trigger is on user invocation rather than at install time, but the destination is hardcoded, author-controlled, and not the user's own server — the silent-relay shape: callers believe they are using a credential-sync tool, and the tool quietly delivers their secrets and a machine fingerprint to the author.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,28 @@
       "versions": [
         "1.0.11",
         "1.0.8",
-        "1.0.12"
+        "1.0.12",
+        "1.0.13",
+        "1.0.5",
+        "1.0.14"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -41,6 +59,9 @@
               "sha256": "165be33590fe736a069c479d9609228d285de860e4857e23d95d3080e8e9e701",
               "tlsh": "9112c57742fa65243ab7d06ea94340173659b6133b45d894b2acb2843fce4acc063bfd"
             }
+          ],
+          "ips": [
+            "10.1.0.2"
           ],
           "package_integrity": [
             {
@@ -67,6 +88,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/beamz/v/1.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/beamz/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/beamz/v/1.0.14"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/beamz/v/1.0.13"
     }
   ],
   "credits": [
@@ -81,33 +114,93 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006236",
-        "import_time": "2026-06-12T21:38:18.869861656Z",
-        "modified_time": "2026-06-12T20:54:29Z",
-        "sha256": "5eec1a91fae89b4be335ed7107fc80d2322b47f2f72fad5384e3ac7ef7ff0ac2",
         "source": "amazon-inspector",
+        "sha256": "5eec1a91fae89b4be335ed7107fc80d2322b47f2f72fad5384e3ac7ef7ff0ac2",
+        "import_time": "2026-06-12T21:38:18.869861656Z",
+        "id": "IN-MAL-2026-006236",
+        "modified_time": "2026-06-12T20:54:29Z",
         "versions": [
           "1.0.11"
         ]
       },
       {
-        "id": "IN-MAL-2026-006237",
-        "import_time": "2026-06-12T21:38:18.929483072Z",
-        "modified_time": "2026-06-12T20:54:31Z",
-        "sha256": "8699c015e579a9559baf3a44fe13fdfea09b510ecd917eeaf16de4d07aca7b62",
         "source": "amazon-inspector",
+        "sha256": "8699c015e579a9559baf3a44fe13fdfea09b510ecd917eeaf16de4d07aca7b62",
+        "import_time": "2026-06-12T21:38:18.929483072Z",
+        "id": "IN-MAL-2026-006237",
+        "modified_time": "2026-06-12T20:54:31Z",
         "versions": [
           "1.0.8"
         ]
       },
       {
-        "id": "IN-MAL-2026-006235",
-        "import_time": "2026-06-12T21:38:18.79760643Z",
-        "modified_time": "2026-06-12T20:54:24Z",
-        "sha256": "b59bc77b2d21ab00b02e9fe3571a5007192519dea5da5ad4f9260bd30452029b",
         "source": "amazon-inspector",
+        "sha256": "b59bc77b2d21ab00b02e9fe3571a5007192519dea5da5ad4f9260bd30452029b",
+        "import_time": "2026-06-12T21:38:18.79760643Z",
+        "id": "IN-MAL-2026-006235",
+        "modified_time": "2026-06-12T20:54:24Z",
         "versions": [
           "1.0.12"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "0e280dc81a9f4196b488b4ba60b3941c528fd3419ae1c0ded5b13ab5e156160c",
+        "import_time": "2026-06-13T03:48:11.160914544Z",
+        "id": "IN-MAL-2026-006282",
+        "modified_time": "2026-06-13T03:09:42Z",
+        "versions": [
+          "1.0.13"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "135eaa49ba7abf5028bc1ed60d86d01f1a858455df9a45d19559a9d7288de4fc",
+        "import_time": "2026-06-13T03:48:11.238441013Z",
+        "id": "IN-MAL-2026-006283",
+        "modified_time": "2026-06-13T03:09:44Z",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "639bb801e93bec95c0a7e854f632eb45325c50b6b50e1036192e1f46f48df780",
+        "import_time": "2026-06-13T03:48:11.290075244Z",
+        "id": "IN-MAL-2026-006284",
+        "modified_time": "2026-06-13T03:09:45Z",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "94842505316060fddb1695096a570c9a0aaa0ad51b87f94350b1fe6f6f05b739",
+        "import_time": "2026-06-13T03:48:11.370707067Z",
+        "id": "IN-MAL-2026-006286",
+        "modified_time": "2026-06-13T03:09:46Z",
+        "versions": [
+          "1.0.14"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c380f1f0fc3c5cf723cd7d92bf41c30f622aafaa633a32f0a78bf91a3a769d2a",
+        "import_time": "2026-06-13T03:48:11.332535501Z",
+        "id": "IN-MAL-2026-006285",
+        "modified_time": "2026-06-13T03:09:45Z",
+        "versions": [
+          "1.0.14"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "eff2a3430b812762b7fcf6010dc12b00f5ed6979ebe993d2939f71adee9cffe7",
+        "import_time": "2026-06-13T03:48:11.11350969Z",
+        "id": "IN-MAL-2026-006281",
+        "modified_time": "2026-06-13T03:09:41Z",
+        "versions": [
+          "1.0.13"
         ]
       }
     ]
