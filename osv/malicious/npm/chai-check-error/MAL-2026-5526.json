@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-11T07:52:08Z",
+  "modified": "2026-06-12T19:46:12Z",
   "published": "2026-06-10T18:46:09Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5526",
   "summary": "Malicious code in chai-check-error (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (fd1d58d0dff4bf33802ce6bf775a5de16f3b9c726a3bcc9b7a271ac5d25c01f3)\nPackage name and metadata impersonate the legitimate chaijs `check-error` utility (same author string, same repo URL, same description). index.js adds a `resolveConfig()` function called at module top-level that fetches a base64-obfuscated URL — `https://jsonkeeper.com/b/JOCBY` (encoded as `anNvbmtlZXBlci5jb20vYi9KT0NCWQ==` and decoded with `Buffer.from(..., 'base64').toString()`) — parses the JSON response, and passes the `.cookie` field into `new Function('require',...)(require)`, evaluating attacker-controlled JavaScript with `require` injected. The same index.js is wired both as `postinstall` (`node index.js`) and as the package `main`, so the remote-code-execution path fires automatically on `npm install` and again on every `require('chai-check-error')`. jsonkeeper.com is a public, mutable, anonymous paste host — the author can swap the executed payload at any time without republishing. The combination of typosquat impersonation, base64-hidden C2, mutable remote payload, and eval-with-require gives the attacker arbitrary code execution on any installer or consumer machine.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6e290b42de2cbd4aa74afa6550fc9a0381dfcb0f6996dcdc22254268b391f9f8)\nchai-check-error@2.1.6 impersonates the legitimate chaijs/check-error utility (copied README, author metadata, repository URL, and exported API surface) and adds a malicious payload. package.json declares `\"postinstall\": \"node index.js\"`, and index.js calls `_initMsgCache()` at module top level so the same code path also fires on every `require()`. _initMsgCache derives an AES-256-CBC key/IV from a hardcoded byte array `_d` mixed via a `_sbox(0x9E3779B1,...)` routine, decrypts a 165-byte ciphertext into an HTTPS URL, fetches that URL with `require('https').get(...)`, parses the JSON response, and executes the `cookie` field as JavaScript through `new Function('require', mod)(require)`. The destination URL is intentionally obfuscated and the surrounding comments frame the routine as a benign \"internal message cache\" / \"locale-aware message formatting\" feature, but `getMessage` never reads `_msgCache` — the cache framing is cover-story. Any developer who installs this package — whether intentionally or by confusing it with chai's check-error — runs arbitrary attacker-controlled JavaScript under their Node process at install time and again on every import.\n",
   "affected": [
     {
       "package": {
@@ -13,10 +13,16 @@
       },
       "versions": [
         "2.1.3",
-        "2.1.5"
+        "2.1.5",
+        "2.1.6"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -65,6 +71,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/chai-check-error/v/2.1.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chai-check-error/v/2.1.6"
     }
   ],
   "credits": [
@@ -116,6 +126,26 @@
         "modified_time": "2026-06-11T07:17:01Z",
         "versions": [
           "2.1.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6e290b42de2cbd4aa74afa6550fc9a0381dfcb0f6996dcdc22254268b391f9f8",
+        "import_time": "2026-06-12T19:43:35.366150287Z",
+        "id": "IN-MAL-2026-005806",
+        "modified_time": "2026-06-12T19:02:20Z",
+        "versions": [
+          "2.1.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b7b136bc4142a0c8e772db77fa7002ae8c5ec90fd55535f70f82b69b263eff09",
+        "import_time": "2026-06-12T19:43:35.482583617Z",
+        "id": "IN-MAL-2026-005807",
+        "modified_time": "2026-06-12T19:02:20Z",
+        "versions": [
+          "2.1.6"
         ]
       }
     ]

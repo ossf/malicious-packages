@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-09T07:50:17Z",
+  "modified": "2026-06-12T19:46:18Z",
   "published": "2026-06-06T06:13:57Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5279",
   "summary": "Malicious code in uprobe (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (d6d0df66bf8ff6eaf447d14185b7df7a06bafc9cea9de3611a2dcc594cf97ec3)\nVersions 0.1.3, 0.1.4 were compromised.\n\n\nCompromised packages start an obfuscated infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collectes all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (82230ac4ef4464e9696491bf25cfabbd5cff78ab2256f4aa1a0d5ad7456218a8)\nThe package installs `uprobe-setup.pth`, which Python auto-loads at every interpreter startup in any environment where the wheel is present. The.pth contents alias stdlib modules to single-underscore short names (`_O`, `_T`, `_o`, `_s`, `_u`, `_p`, `_y`, `_g`, `_zf`) and wrap the payload in `exec('...')` gated by a `/tmp/.bun_ran` sentinel. The payload globs for a sibling `_index.js` under the package directory, downloads the Bun JavaScript runtime ZIP from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/bun-{platform}-{arch}.zip` to `/tmp/b/bun`, chmods it 0o775, and invokes `subprocess.run([bun, 'run', _index.js])`. This is an alternate-runtime dropper: a foreign runtime is fetched and used to execute bundled JavaScript that is opaque to any Python-side review. The behavior fires unconditionally on `python` startup (not just on explicit tool invocation), runs outside pip's build isolation, and the obfuscation + exec-on-string + sentinel-gated one-shot pattern is canonical evasion shape. The advertised purpose of the package (a FISH-probe design tool) has no need for a JavaScript runtime.\n\n## Source: kam193 (d6d0df66bf8ff6eaf447d14185b7df7a06bafc9cea9de3611a2dcc594cf97ec3)\nVersions 0.1.3, 0.1.4 were compromised.\n\n\nCompromised packages start an obfuscated infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collectes all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
   "affected": [
     {
       "package": {
@@ -14,7 +14,35 @@
       "versions": [
         "0.1.3",
         "0.1.4"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "uprobe-setup.pth",
+              "sha256": "c539766062555d47716f8432e73adbe3a0c0c954a0b6c4005017a668975e275c",
+              "tlsh": "4911c02e429385b0d975d646830b19f4afdb8ce28fc79506c8d8d4c1a7b2e50e3b7684"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "uprobe-0.1.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "b3ec75821f73b07968399276f171ef5d530233d5ff57e4b6176f9e0262de5daa",
+                "md5": "7fa239f814d0289c68f8f5dfb6962c4c",
+                "sha256": "2f8657749353a7ea2751c1512ac5094d09b521755c8de4e64d0a00bab97d453e"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -37,9 +65,20 @@
     {
       "type": "WEB",
       "url": "https://socket.dev/blog/mini-shai-hulud-miasma-and-hades-worms-target-bioinformatics-and-mcp-developers-via-malicious"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/uprobe/0.1.3/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -93,6 +132,16 @@
         "versions": [
           "0.1.3",
           "0.1.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "82230ac4ef4464e9696491bf25cfabbd5cff78ab2256f4aa1a0d5ad7456218a8",
+        "import_time": "2026-06-12T19:44:06.269422778Z",
+        "id": "IN-MAL-2026-006083",
+        "modified_time": "2026-06-12T19:08:25Z",
+        "versions": [
+          "0.1.3"
         ]
       }
     ]

@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-10T07:39:02Z",
+  "modified": "2026-06-12T19:46:18Z",
   "published": "2026-06-06T06:13:57Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5280",
   "summary": "Malicious code in bramin (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (5933ebb330070d47683cbb0b04b4a8805db94d845d0efde3a592e178a0092769)\nVersions 0.0.2, 0.0.3, 0.0.4 were compromised.\n\n\nCompromised packages start an obfuscated infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collectes all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1fb2ac40fcb4626c5e7dea5e26951bc0965b39a1eb721c1a8f23846f421a5827)\nbramin ships a `bramin-setup.pth` file that Python auto-executes at every interpreter startup (system-wide, not only when bramin is imported). The.pth contains a single-line obfuscated payload using single-letter aliases (_O, _T, _G, _o, _s, _u, _p, _y, _b, _z, _zf) that, on first run, downloads the Bun JavaScript runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/bun-\u003cplatform\u003e-\u003carch\u003e.zip`, stages the binary to `/tmp/b/bun`, chmods it executable, and invokes `bun run` against a sibling `_index.js` discovered via `dirname(__file__)` with a glob fallback. A guard file `/tmp/.bun_ran` ensures the dropper fires only once per machine to evade observation. Several signals confirm malicious intent: (1) the package advertises itself only as a 'pipe operator syntax' Python library and has no legitimate need for a JavaScript runtime; (2) `_index.js` is not listed in the wheel's RECORD manifest, meaning the executed JS payload is smuggled in or supplied by a later/sibling drop and is not covered by the distribution's integrity metadata; (3) `__init__.py` declares `__version__ = '0.0.1'` while the dist-info is `0.0.3`, a version-drift fingerprint consistent with an additive-only republish bolting the dropper onto a previously legitimate release; (4) the obfuscation shape (chained `exec()` of a one-line string with aliased imports) has no benign explanation for a.pth file, whose legitimate purpose is sys.path mutation. Installer impact: arbitrary attacker-controlled JavaScript execution on the installer's machine on the very next Python invocation after `pip install bramin`, with the executed bytes (`_index.js`) outside the wheel's signed manifest and therefore mutable by the attacker at any time.\n\n## Source: kam193 (5933ebb330070d47683cbb0b04b4a8805db94d845d0efde3a592e178a0092769)\nVersions 0.0.2, 0.0.3, 0.0.4 were compromised.\n\n\nCompromised packages start an obfuscated infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collectes all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
   "affected": [
     {
       "package": {
@@ -15,7 +15,40 @@
         "0.0.3",
         "0.0.4",
         "0.0.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "bramin-setup.pth",
+              "sha256": "c539766062555d47716f8432e73adbe3a0c0c954a0b6c4005017a668975e275c",
+              "tlsh": "4911c02e429385b0d975d646830b19f4afdb8ce28fc79506c8d8d4c1a7b2e50e3b7684"
+            },
+            {
+              "path": "bramin-0.0.3.dist-info/RECORD",
+              "sha256": "e0de33c87c1a3713ea3a7b3c794eff1f8d71913e104b6616823eca037ce1f52a",
+              "tlsh": "8821bebc6b85a24f71ff40e5a36947b8fc022223744bf92c9b05143596ae4d584357e8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bramin-0.0.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "1064d72770ed10e593fb0159f8ee2c58d101487e5687269445acf9e324de10fc",
+                "md5": "74323f092ca504e78981970652460336",
+                "sha256": "d38651d6aaf018b612175ca1ecc0f588b77bef009858427c7028f0bf4e04ee8e"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -38,9 +71,20 @@
     {
       "type": "WEB",
       "url": "https://socket.dev/blog/mini-shai-hulud-miasma-and-hades-worms-target-bioinformatics-and-mcp-developers-via-malicious"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/bramin/0.0.3/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -106,6 +150,16 @@
           "0.0.2",
           "0.0.3",
           "0.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1fb2ac40fcb4626c5e7dea5e26951bc0965b39a1eb721c1a8f23846f421a5827",
+        "import_time": "2026-06-12T19:43:36.737039764Z",
+        "id": "IN-MAL-2026-005820",
+        "modified_time": "2026-06-12T19:02:38Z",
+        "versions": [
+          "0.0.3"
         ]
       }
     ]
