@@ -1,10 +1,13 @@
 {
-  "modified": "2026-05-26T05:55:05Z",
+  "modified": "2026-06-05T15:24:05Z",
   "published": "2026-05-21T15:09:28Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4699",
+  "aliases": [
+    "GHSA-4c54-hwv9-c5xm"
+  ],
   "summary": "Malicious code in utils-mf (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6d338ea2a5c454a5a0352e6fb29bd940027bc4b8c349649f6356c4fc4f396272)\nPackage metadata advertises 'utility mf' with main 'index.js', but the shipped main is a 15.7MB obfuscator.io-style blob preceded by ~8MB of invisible-Unicode whitespace padding designed to conceal its contents. On require(), the module performs several unsafe and attacker-beneficial actions:\n\n1. Hidden WhatsApp bot payload: index.js dynamically imports `@whiskeysockets/baileys`, calls `useMultiFileAuthState('sessions/dev')`, opens a WhatsApp socket via `makeWASocket(...)`, prompts on stdin for a pairing-code phone number, and writes credential state to `./sessions/`. None of this is gated behind an exported function — it fires when the module is loaded.\n\n2. Auto-exfiltration of accumulated chat/session state: an `AutoBackup` routine on a 30-second `setInterval` PUTs the local `database.json` (containing chats, contacts, sessions, and env-derived state) to `https://api.github.com/repos/\u003cowner\u003e/\u003crepo\u003e/contents/database.json` and the analogous GitLab API, using a token and repo path read from package-operator settings. The destination repo and credential are not the library consumer's — they are configured in the package's payload, so any consumer running this code uploads their accumulated state to the package operator's repository on a timer.\n\n3. Runtime self-updater / silent-mutation primitive: on load, the module fetches `https://registry.npmjs.org/utils-mf/latest`, compares versions, downloads the latest tarball to `./tmp/upgrade.tgz`, and extracts it over `node_modules/utils-mf/` using `tar -xzf` (or `Expand-Archive` on Windows), then reloads. Already-installed copies will silently pull and execute any future published version, including a compromised one — the package mutates itself at runtime regardless of the consumer's lockfile.\n\n4. Privileged system mutation at import: the top-level code shells out via `exec` to `apt-get install -y ffmpeg imagemagick git tar zip unzip` when those binaries are missing, runs recurring `exec('rm -rf /tmp/*')` and `exec('netstat -an')` on intervals, and writes to `./tmp/` and `./sessions/` in the consumer's CWD.\n\nThe combination of deceptive packaging (utility name, opaque blob), import-time exfiltration of local data to attacker-configured repos, an in-band self-update channel that bypasses normal dependency pinning, and unsanctioned privileged shell execution constitutes an active supply-chain attack against any installer who consumes this package as a 'utility'.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6d338ea2a5c454a5a0352e6fb29bd940027bc4b8c349649f6356c4fc4f396272)\nPackage metadata advertises 'utility mf' with main 'index.js', but the shipped main is a 15.7MB obfuscator.io-style blob preceded by ~8MB of invisible-Unicode whitespace padding designed to conceal its contents. On require(), the module performs several unsafe and attacker-beneficial actions:\n\n1. Hidden WhatsApp bot payload: index.js dynamically imports `@whiskeysockets/baileys`, calls `useMultiFileAuthState('sessions/dev')`, opens a WhatsApp socket via `makeWASocket(...)`, prompts on stdin for a pairing-code phone number, and writes credential state to `./sessions/`. None of this is gated behind an exported function — it fires when the module is loaded.\n\n2. Auto-exfiltration of accumulated chat/session state: an `AutoBackup` routine on a 30-second `setInterval` PUTs the local `database.json` (containing chats, contacts, sessions, and env-derived state) to `https://api.github.com/repos/\u003cowner\u003e/\u003crepo\u003e/contents/database.json` and the analogous GitLab API, using a token and repo path read from package-operator settings. The destination repo and credential are not the library consumer's — they are configured in the package's payload, so any consumer running this code uploads their accumulated state to the package operator's repository on a timer.\n\n3. Runtime self-updater / silent-mutation primitive: on load, the module fetches `https://registry.npmjs.org/utils-mf/latest`, compares versions, downloads the latest tarball to `./tmp/upgrade.tgz`, and extracts it over `node_modules/utils-mf/` using `tar -xzf` (or `Expand-Archive` on Windows), then reloads. Already-installed copies will silently pull and execute any future published version, including a compromised one — the package mutates itself at runtime regardless of the consumer's lockfile.\n\n4. Privileged system mutation at import: the top-level code shells out via `exec` to `apt-get install -y ffmpeg imagemagick git tar zip unzip` when those binaries are missing, runs recurring `exec('rm -rf /tmp/*')` and `exec('netstat -an')` on intervals, and writes to `./tmp/` and `./sessions/` in the consumer's CWD.\n\nThe combination of deceptive packaging (utility name, opaque blob), import-time exfiltration of local data to attacker-configured repos, an in-band self-update channel that bypasses normal dependency pinning, and unsanctioned privileged shell execution constitutes an active supply-chain attack against any installer who consumes this package as a 'utility'.\n\n## Source: ghsa-malware (7921878ab64996afca0b68ed8fed4ce0afccbe200740eb27504225e2d0fea9c2)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -15,10 +18,21 @@
         "11.2.5",
         "11.4.1",
         "11.2.6",
-        "11.2.4"
+        "11.2.4",
+        "12.1.1",
+        "12.1.0",
+        "12.0.2",
+        "12.0.1",
+        "11.9.9",
+        "11.9.8"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -77,6 +91,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/utils-mf/v/11.2.4"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-4c54-hwv9-c5xm"
     }
   ],
   "credits": [
@@ -91,43 +109,58 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003873",
-        "import_time": "2026-05-26T05:51:29.540419543Z",
-        "modified_time": "2026-05-21T15:09:32Z",
-        "sha256": "1c2da33ec9db484def0cd13843bd15c0ec8613d508eb86747fab86cd413532b1",
         "source": "amazon-inspector",
+        "sha256": "1c2da33ec9db484def0cd13843bd15c0ec8613d508eb86747fab86cd413532b1",
+        "import_time": "2026-05-26T05:51:29.540419543Z",
+        "id": "IN-MAL-2026-003873",
+        "modified_time": "2026-05-21T15:09:32Z",
         "versions": [
           "11.2.5"
         ]
       },
       {
-        "id": "IN-MAL-2026-004845",
-        "import_time": "2026-05-26T05:53:23.905433374Z",
-        "modified_time": "2026-05-26T01:28:39Z",
-        "sha256": "8856f3bd713eae0ec502b1450bb0221741c78b5da4235bb37aebd9e16dc625d8",
         "source": "amazon-inspector",
+        "sha256": "8856f3bd713eae0ec502b1450bb0221741c78b5da4235bb37aebd9e16dc625d8",
+        "import_time": "2026-05-26T05:53:23.905433374Z",
+        "id": "IN-MAL-2026-004845",
+        "modified_time": "2026-05-26T01:28:39Z",
         "versions": [
           "11.4.1"
         ]
       },
       {
-        "id": "IN-MAL-2026-004505",
-        "import_time": "2026-05-26T05:52:43.988477363Z",
-        "modified_time": "2026-05-24T12:26:02Z",
-        "sha256": "aece5485a5defaed47a12bb12f22d243b77a05b9ce5d6cbe0c1d1632d314672d",
         "source": "amazon-inspector",
+        "sha256": "aece5485a5defaed47a12bb12f22d243b77a05b9ce5d6cbe0c1d1632d314672d",
+        "import_time": "2026-05-26T05:52:43.988477363Z",
+        "id": "IN-MAL-2026-004505",
+        "modified_time": "2026-05-24T12:26:02Z",
         "versions": [
           "11.2.6"
         ]
       },
       {
-        "id": "IN-MAL-2026-003872",
-        "import_time": "2026-05-26T05:51:29.434901845Z",
-        "modified_time": "2026-05-21T15:09:28Z",
-        "sha256": "6d338ea2a5c454a5a0352e6fb29bd940027bc4b8c349649f6356c4fc4f396272",
         "source": "amazon-inspector",
+        "sha256": "6d338ea2a5c454a5a0352e6fb29bd940027bc4b8c349649f6356c4fc4f396272",
+        "import_time": "2026-05-26T05:51:29.434901845Z",
+        "id": "IN-MAL-2026-003872",
+        "modified_time": "2026-05-21T15:09:28Z",
         "versions": [
           "11.2.4"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "7921878ab64996afca0b68ed8fed4ce0afccbe200740eb27504225e2d0fea9c2",
+        "import_time": "2026-06-05T15:22:17.748024837Z",
+        "id": "GHSA-4c54-hwv9-c5xm",
+        "modified_time": "2026-06-05T13:40:54Z",
+        "versions": [
+          "12.1.1",
+          "12.1.0",
+          "12.0.2",
+          "12.0.1",
+          "11.9.9",
+          "11.9.8"
         ]
       }
     ]

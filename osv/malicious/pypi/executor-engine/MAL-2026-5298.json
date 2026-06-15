@@ -1,0 +1,154 @@
+{
+  "modified": "2026-06-12T19:46:18Z",
+  "published": "2026-06-06T06:13:57Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5298",
+  "summary": "Malicious code in executor-engine (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7fee580000475783e657a2e66ca6a4a4bd4369aa0bc9f87152b003dca6f34848)\nexecutor-engine 0.3.4 ships a malicious site-packages.pth file (`executor_engine-setup.pth`) that Python's site initialization auto-executes on every interpreter start after installation. The.pth contains a nested `exec()` payload with deliberately obfuscated single-letter aliases (`_o,_s,_u,_p,_zf,_g`) for `os`, `subprocess`, `urllib.request`, `platform`, `zipfile`, and `glob` to evade simple keyword scanning. On execution it downloads the Bun JavaScript runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/bun-\u003cplatform\u003e-\u003carch\u003e.zip` to `/tmp/b/bun`, chmods it executable, locates a bundled `_index.js` via glob within the installed package tree, and runs it under Bun (`subprocess.run([bun,'run',_index.js])`). A `/tmp/.bun_ran` marker is used to suppress repeated execution. The package's declared purpose is Python job management and it has no documented need for a JavaScript runtime. Additional compromise indicators: the distribution is labeled 0.3.4 but `executor/engine/__init__.py` reports `__version__ = '0.3.3'` and the RECORD references `executor_engine-0.3.3.dist-info`, indicating the malicious.pth was bolted onto an otherwise-intact prior legitimate release — fingerprint of a stolen-credential republish. Pulling in this version causes any installer's Python interpreter (including unrelated invocations after install) to fetch and execute an alien runtime against attacker-shipped JavaScript.\n\n## Source: kam193 (445bbd05ea0ef3e22608235bea18f26fc18aaaff2066b5512c9752ba04a6ab13)\nVersions 0.3.4, 0.3.5 were compromised.\n\n\nCompromised packages start an obfuscated infostealer. The infostealer is a heavily obfuscated JavaScript code executed using Bun runtime on Python startup. It collectes all kinds of sensitive data, including API keys, credentials to package repositories, cryptocurrency assets, password manager data. Infostealer actively queries online services to collect additional secrets as well as attempts to gain persistence and spread further by publishing infected packages using collected credentials. Data are exfiltrated likely using Github. The code seems to threaten to wipe the user's data if it detects invalid GitHub tokens. Cleanup should be done with caution.\n\nIt seems to be related to the recent Mini Shai Hulud campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-compr-woodpecker\n\n\nReasons (based on the campaign):\n\n\n - compromised-package\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-cloud-tokens\n\n\n - exfiltration-credentials\n\n\n - abuses-pth\n\n\n - obfuscation\n\n\n - infostealer\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-crypto\n\n\n - files-exfiltration\n\n\n - destructive-actions\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "executor-engine"
+      },
+      "versions": [
+        "0.3.4",
+        "0.3.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "executor_engine-setup.pth",
+              "sha256": "c539766062555d47716f8432e73adbe3a0c0c954a0b6c4005017a668975e275c",
+              "tlsh": "4911c02e429385b0d975d646830b19f4afdb8ce28fc79506c8d8d4c1a7b2e50e3b7684"
+            },
+            {
+              "path": "executor_engine-0.3.4.dist-info/RECORD",
+              "sha256": "4200e89cc65c9c3496e2717cb0211eac08a3aceb52b5a4439132077c76947e76",
+              "tlsh": "0751acb939d98a6b176c1bc5ce4807a77a6701836b9be85cf3890564778d38ca3316cc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "executor_engine-0.3.4-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "7c6cd827f37cab98b90c60e4e2d27c85fc15e44f32306f6d1c3ff34f3a76f2f1",
+                "md5": "a55186464b8e6bf9bd103f3c7a8f5cc1",
+                "sha256": "54f714d23d272b95d6518ddbc529a93aab1e68a76404b1434bb203caa3c50cc4"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/mini-shai-hulud-campaign-hits-red-hat-cloud-services-npm-packages"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/campaign/2026-06-compr-woodpecker"
+    },
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/shai-hulud-descends-to-hades-miasma-pypi-wave"
+    },
+    {
+      "type": "WEB",
+      "url": "https://o3.security/blog/pypi-supply-chain-attack-pth-file-miasma"
+    },
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/mini-shai-hulud-miasma-and-hades-worms-target-bioinformatics-and-mcp-developers-via-malicious"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/executor-engine/0.3.4/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "kam193",
+        "sha256": "445bbd05ea0ef3e22608235bea18f26fc18aaaff2066b5512c9752ba04a6ab13",
+        "import_time": "2026-06-07T17:33:27.316749512Z",
+        "id": "pypi/2026-06-compr-woodpecker/executor-engine",
+        "modified_time": "2026-06-06T06:13:57Z",
+        "versions": [
+          "0.3.4",
+          "0.3.5"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "b4e5edf3841a60f3a2ca53c80a29c679091db234b244009e2c759e5d429c9a00",
+        "import_time": "2026-06-08T11:41:02.523033509Z",
+        "id": "pypi/2026-06-compr-woodpecker/executor-engine",
+        "modified_time": "2026-06-06T06:13:57Z",
+        "versions": [
+          "0.3.4",
+          "0.3.5"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "baadb337b0bff76d8e98f724885e4768a33ea2e47b7c30e0d52615e09920c4b9",
+        "import_time": "2026-06-08T19:19:19.177959214Z",
+        "id": "pypi/2026-06-compr-woodpecker/executor-engine",
+        "modified_time": "2026-06-07T16:16:39Z",
+        "versions": [
+          "0.3.4",
+          "0.3.5"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "287577f98316d25963f2b25e9312f4bc2e1dc1e3cb34e83d69c6a2fc9cc3e7e6",
+        "import_time": "2026-06-09T07:48:29.638037145Z",
+        "id": "pypi/2026-06-compr-woodpecker/executor-engine",
+        "modified_time": "2026-06-07T16:16:39Z",
+        "versions": [
+          "0.3.4",
+          "0.3.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7fee580000475783e657a2e66ca6a4a4bd4369aa0bc9f87152b003dca6f34848",
+        "import_time": "2026-06-12T19:44:13.808515375Z",
+        "id": "IN-MAL-2026-006151",
+        "modified_time": "2026-06-12T19:10:01Z",
+        "versions": [
+          "0.3.4"
+        ]
+      }
+    ]
+  }
+}

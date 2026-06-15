@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-22T10:25:25Z",
+  "modified": "2026-06-12T19:46:14Z",
   "published": "2026-05-22T10:25:25Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4563",
   "summary": "Malicious code in finkrouter (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ff852ad2ff69ee287dd37d79ea134314ffca73772068117b819495250ff401f3)\nThe package ships a single heavily-obfuscated cli.obf.js (RC4 string-array via javascript-obfuscator, per the prepublishOnly script in package.json) whose hardcoded API_BASE_URL is hidden inside the obfuscated string table. On invocation, the CLI prompts for an 'Auth Token' and then writes ~/.claude/settings.json with ANTHROPIC_AUTH_TOKEN=\u003cuser-supplied token\u003e and ANTHROPIC_BASE_URL=\u003cobfuscated author gateway\u003e, and on Linux/macOS appends `export ANTHROPIC_BASE_URL=...`/`ANTHROPIC_AUTH_TOKEN=...` to the user's shell profile (~/.bashrc etc.) via execSync. After this runs, every subsequent invocation of Anthropic's official `claude` CLI in that shell silently transits prompts, responses, and the user's auth token through the author-controlled endpoint. The destination URL is deliberately concealed via RC4 obfuscation, so users cannot audit where their AI prompts and credentials are being sent. Additionally, on every invocation the CLI runs purgeCaveman(), which silently scans ~/.claude/settings.json for any plugin whose name contains 'caveman' and deletes its UserPromptSubmit hooks, statusLine, and agents, and strips '##... Caveman...' sections from ~/.claude/CLAUDE.md and./CLAUDE.md — undocumented sabotage of a competing tool's configuration. A sentinel.js dropped to ~/.fink/ also polls the same obfuscated gateway on a 24h cadence.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (75cee0798d304ff9f0532df845511df6560314b8808664c15b3c3aa18f1953b5)\nThe package's CLI (shipped as cli.obf.js, the javascript-obfuscator output with RC4 string-array encoding and control-flow flattening per package.json prepublishOnly) prompts the user for an Auth Token and then writes ~/.claude/settings.json, setting ANTHROPIC_BASE_URL and ANTHROPIC_AUTH_TOKEN to a hardcoded API_BASE_URL whose literal is RC4-encoded so installers cannot audit the destination. Once configured, every Claude Code request — including source code, prompts, secrets embedded in prompts, and the Anthropic auth token — is silently relayed through the author's proxy instead of Anthropic. A provisionSentinel() routine writes ~/.fink/sentinel.js and appends `(cd ~ \u0026\u0026 node ~/.fink/sentinel.js \u0026) # Fink Sentinel` to ~/.bashrc, ~/.zshrc, ~/.profile (or registers equivalents via PowerShell setx on Windows), giving the daemon persistence across reboots independent of the npm package. installECC() performs `git clone \u003cRC4-encoded URL\u003e` into ~/.fink, then on subsequent invocations runs `git fetch --all \u0026\u0026 git reset --hard origin/main` followed by `npm install` in the cloned tree — a mutable-branch, unpinned remote-code channel allowing the author to ship arbitrary new code into the installer's home directory on every CLI run. A purgeCaveman() routine additionally tampers with a competing tool's configuration by deleting hooks, agents, and statusLine entries referencing 'caveman' from ~/.claude/settings.json and stripping `## Caveman` sections from CLAUDE.md files in $HOME and CWD. Together these constitute credential capture, silent relay of sensitive AI traffic, persistent backdoor, and an unpinned remote-code execution channel.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "finkrouter"
       },
       "versions": [
-        "0.1.0"
+        "0.1.0",
+        "1.1.1",
+        "1.1.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,6 +59,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/finkrouter/v/0.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/finkrouter/v/1.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/finkrouter/v/1.1.2"
     }
   ],
   "credits": [
@@ -54,20 +74,41 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004187",
-        "import_time": "2026-05-26T05:52:06.387990665Z",
-        "modified_time": "2026-05-22T10:25:25Z",
-        "sha256": "ff852ad2ff69ee287dd37d79ea134314ffca73772068117b819495250ff401f3",
         "source": "amazon-inspector",
+        "sha256": "ff852ad2ff69ee287dd37d79ea134314ffca73772068117b819495250ff401f3",
+        "import_time": "2026-05-26T05:52:06.387990665Z",
+        "id": "IN-MAL-2026-004187",
+        "modified_time": "2026-05-22T10:25:25Z",
         "versions": [
           "0.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "75cee0798d304ff9f0532df845511df6560314b8808664c15b3c3aa18f1953b5",
+        "import_time": "2026-06-12T19:44:05.809662313Z",
+        "id": "IN-MAL-2026-006080",
+        "modified_time": "2026-06-12T19:08:21Z",
+        "versions": [
+          "1.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9ff19d6dc7e3eaa2ae39e6945fc76f54115dd7d885dae5b61b5b0b5c83ea4f6b",
+        "import_time": "2026-06-12T19:44:05.936368009Z",
+        "id": "IN-MAL-2026-006081",
+        "modified_time": "2026-06-12T19:08:22Z",
+        "versions": [
+          "1.1.2"
         ]
       }
     ]

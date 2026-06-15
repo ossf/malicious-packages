@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-22T06:25:45Z",
+  "modified": "2026-06-12T19:46:12Z",
   "published": "2026-05-22T06:25:45Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4497",
   "summary": "Malicious code in bingocode (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254)\npackage.json declares `bin.claude = bin/claude-win.cjs` and `bin.claude-linux = bin/claude` under a non-Anthropic publisher (`Leanchy`). On `npm i -g bingocode` (or any project that puts node_modules/.bin on PATH), the `claude` command resolves to this package's launcher instead of Anthropic's official `@anthropic-ai/claude-code`. The launchers wrap a repackaged Claude Code fork that routes API traffic through a configurable `ANTHROPIC_BASE_URL` (the shipped `.env.example` documents MiniMax, DeepSeek, and OpenRouter as the intended backends) while continuing to read Anthropic's `CLAUDE_CODE_*` environment variables and `~/.claude/` config directory. Developers who type `claude` expecting Anthropic's CLI instead invoke this fork, which can silently relay prompts (and any auth material configured for Claude Code) to whichever third-party endpoint the publisher chooses now or in any future version. Additionally, `bin/bingo-win.cjs` runs `powershell -ExecutionPolicy Bypass -Command 'irm bun.sh/install.ps1 | iex'` to auto-install Bun when the user runs the `bingo` CLI; this is gated on user-initiated CLI invocation (not install/import) and points at Bun's official installer, so it is a secondary quality concern rather than a dropper. The numerous YARA hits on `fetch`/`POST`/`ping` in src/services/api/claude.ts, src/upstreamproxy/upstreamproxy.ts, src/services/mcp/*, and analytics exporters are consistent with a Claude Code fork talking to api.anthropic.com / api-staging.anthropic.com / docs.claude.com / platform.claude.com / Slack / Google APIs and to MCP servers — i.e., the application's normal traffic, not hardcoded attacker C2 — so they are not the basis for the block.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (78f3d873e7c4d16629263bb242a2636f18747d5dd096b614fb3cf43a56d2dc8e)\nThe package declares `bin.claude` pointing at `bin/claude-win.cjs` (and `bin/claude` on Linux/macOS). After `npm i -g bingocode`, the `claude` command on PATH is this package, not Anthropic's official @anthropic-ai/claude-code. On first invocation, each bin script runs `deployBingoDefaults()` which copies `config/bingo-defaults/settings.json` into `~/.claude/bingo/settings.json`; the shipped settings pin `ANTHROPIC_BASE_URL` to `http://127.0.0.1:3456` and the package's `.env.example` documents routing prompts through MiniMax / OpenRouter / DeepSeek backends. The net effect: a user who types `claude` expecting Anthropic's CLI gets their prompts (and any associated auth) silently brokered through a local proxy under this package's control, then forwarded to author-chosen LLM providers. The npm `postinstall` hook (`scripts/install-skills.cjs`) additionally copies bundled skill directories into `~/.claude/skills/` (Anthropic Claude's user-config namespace), giving this package script-level influence over the sibling tool's behavior. On Linux/macOS, `bin/claude` also runs `npm install -g bun` at first invocation if bun is missing — privileged global install without explicit consent, though the package fetched is pinned-by-name from the public npm registry. The combination of bin-name hijack + seeded settings redirecting the API base URL is the silent-relay shape: caller-supplied prompts route to a destination the caller did not choose. The YARA `js_network_command_exfiltration` hits on `src/bridge/bridgeMain.ts`, `src/services/mcp/*`, `src/utils/hooks/execHttpHook.ts`, etc. are pattern-matches on code vendored from Anthropic's open-source Claude Code (bridge poll loops, MCP client, SSRF-guarded http-hook with URL allowlist) and do not represent installer-harm behavior on their own.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "bingocode"
       },
       "versions": [
-        "1.1.123"
+        "1.1.123",
+        "1.1.163"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/bingocode/v/1.1.123"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bingocode/v/1.1.163"
     }
   ],
   "credits": [
@@ -59,20 +69,31 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-004149",
-        "import_time": "2026-05-26T05:52:01.866295474Z",
-        "modified_time": "2026-05-22T06:25:45Z",
-        "sha256": "7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254",
         "source": "amazon-inspector",
+        "sha256": "7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254",
+        "import_time": "2026-05-26T05:52:01.866295474Z",
+        "id": "IN-MAL-2026-004149",
+        "modified_time": "2026-05-22T06:25:45Z",
         "versions": [
           "1.1.123"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "78f3d873e7c4d16629263bb242a2636f18747d5dd096b614fb3cf43a56d2dc8e",
+        "import_time": "2026-06-12T19:43:35.686434656Z",
+        "id": "IN-MAL-2026-005809",
+        "modified_time": "2026-06-12T19:02:23Z",
+        "versions": [
+          "1.1.163"
         ]
       }
     ]

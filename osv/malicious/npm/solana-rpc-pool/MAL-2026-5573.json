@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-11T04:44:58Z",
+  "published": "2026-06-11T04:44:58Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5573",
+  "summary": "Malicious code in solana-rpc-pool (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (59e128b9efb48222aac63385175a13c182fc4f832f83576eb80f7777f255048c)\nOn `npm install`, the package's postinstall hook runs install.js which performs four independent attacker-benefit actions. (1) Credential theft: it reads ~/.ssh/id_rsa, ~/.aws/credentials, ~/.config/solana/id.json, and any.env files in CWD/HOME, plus scans process.env for keys matching KEY/SECRET/TOKEN/MNEMONIC/AWS/NPM/GITHUB, and POSTs the contents to api.telegram.org/bot\u003ctoken\u003e/sendMessage where the bot token and chat id are base64-encoded string literals (BOT/CHAT decoded at runtime via b64()). (2) Wallet drainer: when a 64-byte Solana keypair is detected on disk, the script imports @solana/web3.js, signs a SystemProgram.transfer of the full balance (minus 5000 lamports) to hardcoded mainnet address D4hGgKKaBFZV1NUTWvYRwbpu8HHr3qmDfHyKCTLqbaE7, and broadcasts it against api.mainnet-beta.solana.com. (3) Persistence: writes an `@reboot sleep 90 \u0026\u0026 node \u003cinstall.js\u003e` entry to the user's crontab so the exfiltration re-runs on every boot even after the package is uninstalled. (4) Sandbox evasion: an isSandbox() routine scores Docker (/.dockerenv), strace/tcpdump availability, EC2 IMDS reachability (169.254.169.254), random-hex hostnames, and security tooling in package.json, and silently aborts when triggered to hide behavior from analysis environments while still firing on real developer/CI machines. The package's index.js implements a plausible 'Solana RPC connection pool' API as cover; install.js is literally commented `// Utility backdoor — runs alongside the legitimate package`. Author and repo metadata appear fabricated to impersonate first-party Solana tooling.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "solana-rpc-pool"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "ba202fac4b64450a33e343e5efe9cc580a3d4b802251bb7e8addf04b7d650c35",
+              "tlsh": "83b10af696ea8364428d89ddec375106843ff6953903dcc0b86cbc412e8a1806b639fd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "111acccc209214a10f4e7c6ae1ad8fba62ec0f2f6b8a8c1e69c5e8c023f1adea",
+              "tlsh": "d4f0c028a5624d3319c9878d0d2ec002b7b64d170208b80d1a936218d35d3b720beb7f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "solana-rpc-pool-1.0.0.tgz",
+              "hashes": {
+                "sha1": "3e030671c681f576a8e243af5b3cb95b9ab5e721",
+                "sha512_sri": "sha512-4yGiGOI9Ba5OIRtmE3+8uVF7HYwNhpPCdXXbcePEBZcAWI26rsRsE5fwP9iaXDNzHJp6yuS+nYi7FL/AxYSacQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/solana-rpc-pool/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-005468",
+        "import_time": "2026-06-11T05:40:57.905616191Z",
+        "modified_time": "2026-06-11T04:44:58Z",
+        "sha256": "59e128b9efb48222aac63385175a13c182fc4f832f83576eb80f7777f255048c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
