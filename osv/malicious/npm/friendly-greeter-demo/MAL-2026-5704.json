@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-12T19:46:14Z",
+  "modified": "2026-06-15T17:24:52Z",
   "published": "2026-06-12T19:15:47Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5704",
   "summary": "Malicious code in friendly-greeter-demo (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3d7aae6052d68219fd3611f6c4faf98ebaa10c81bb2190be2ba9fc8c21414ca8)\nThe package presents itself as a trivial greeting library but ships two independent backdoor paths to a hardcoded bare-IP C2 at http://98.86.244.177:8080. (1) package.json declares `\"postinstall\": \"node postinstall.js\"`, which fires on every `npm install`. postinstall.js re-spawns itself as a detached daemon (POSTINSTALL_DAEMON=1), POSTs the installer's os.hostname() and process.platform to /register, polls /beacon for a `command` field, executes it via child_process.exec with a 30s timeout, and POSTs stdout+stderr back to /results in a jittered loop — a persistent command-and-control backdoor that survives the install and grants the operator of 98.86.244.177 full shell on the installer's machine. (2) index.js (the declared `main`) contains a top-level IIFE that performs the same /register → /beacon → exec → /results flow on `require('friendly-greeter-demo')`, so any consumer that imports the package as a library also gets full RCE. The C2 destination is a bare IPv4 over plaintext HTTP, with no relation to the package's stated greeting purpose.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9b881e279b0b93ea759ec1f1a2265382a01778725a1c563a5ea4eb168e03ca5d)\nfriendly-greeter-demo ships an active remote-access backdoor that fires both at install time (postinstall.js, run automatically by `npm install`) and on import (index.js, declared as `main`). On install, postinstall.js spawns a detached daemon (POSTINSTALL_DAEMON=1) that POSTs the host's uuid, hostname, and platform to http://98.86.244.177:8080/register, polls http://98.86.244.177:8080/beacon for a `command` field, executes the returned shell command via child_process.exec with a 30s timeout, and POSTs stdout/stderr back to http://98.86.244.177:8080/results. index.js performs the same register/beacon/exec/results loop in a top-level IIFE, so any consumer that `require`s or `import`s this package also runs attacker-supplied shell commands. The C2 endpoint is a hardcoded bare IPv4 address over plain HTTP, with no authentication, pinning, or opt-in. Author metadata is the placeholder `Your Name \u003csalman.ta12312@gmail.com\u003e` with a generic 'educational' description. This is a complete remote-code-execution backdoor on every installer and every downstream consumer.\n",
   "affected": [
     {
       "package": {
@@ -16,10 +16,28 @@
         "1.0.6",
         "1.0.2",
         "1.0.3",
-        "1.0.1"
+        "1.0.1",
+        "1.0.10",
+        "1.0.11",
+        "1.0.9"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -64,6 +82,9 @@
               "tlsh": "71e02b518d551a331ac10e962856a20df9364d2b02887c4db76b404c4f9e76b58ff74f"
             }
           ],
+          "ips": [
+            "98.86.244.177"
+          ],
           "package_integrity": [
             {
               "filename": "friendly-greeter-demo-1.0.4.tgz",
@@ -97,6 +118,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.9"
     }
   ],
   "credits": [
@@ -111,53 +144,113 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006209",
-        "import_time": "2026-06-12T19:44:20.15234419Z",
-        "modified_time": "2026-06-12T19:16:32Z",
-        "sha256": "296efda061a9a7286225d84524e63a37f5d4b655352f579db38e6ab244911f1b",
         "source": "amazon-inspector",
+        "sha256": "296efda061a9a7286225d84524e63a37f5d4b655352f579db38e6ab244911f1b",
+        "import_time": "2026-06-12T19:44:20.15234419Z",
+        "id": "IN-MAL-2026-006209",
+        "modified_time": "2026-06-12T19:16:32Z",
         "versions": [
           "1.0.4"
         ]
       },
       {
-        "id": "IN-MAL-2026-006212",
-        "import_time": "2026-06-12T19:44:20.470285031Z",
-        "modified_time": "2026-06-12T19:16:36Z",
-        "sha256": "3d7aae6052d68219fd3611f6c4faf98ebaa10c81bb2190be2ba9fc8c21414ca8",
         "source": "amazon-inspector",
+        "sha256": "3d7aae6052d68219fd3611f6c4faf98ebaa10c81bb2190be2ba9fc8c21414ca8",
+        "import_time": "2026-06-12T19:44:20.470285031Z",
+        "id": "IN-MAL-2026-006212",
+        "modified_time": "2026-06-12T19:16:36Z",
         "versions": [
           "1.0.6"
         ]
       },
       {
-        "id": "IN-MAL-2026-006210",
-        "import_time": "2026-06-12T19:44:20.250199272Z",
-        "modified_time": "2026-06-12T19:16:33Z",
-        "sha256": "6abf509238a817b53302533e1df0b744115e5814c7cf707a5d86d9bc0414d8c4",
         "source": "amazon-inspector",
+        "sha256": "6abf509238a817b53302533e1df0b744115e5814c7cf707a5d86d9bc0414d8c4",
+        "import_time": "2026-06-12T19:44:20.250199272Z",
+        "id": "IN-MAL-2026-006210",
+        "modified_time": "2026-06-12T19:16:33Z",
         "versions": [
           "1.0.2"
         ]
       },
       {
-        "id": "IN-MAL-2026-006208",
-        "import_time": "2026-06-12T19:44:20.065373665Z",
-        "modified_time": "2026-06-12T19:15:47Z",
-        "sha256": "cf7bb5ffaaf1b751fff6564106d0f381be58f3c9541e571f9e1f580a2358d99f",
         "source": "amazon-inspector",
+        "sha256": "cf7bb5ffaaf1b751fff6564106d0f381be58f3c9541e571f9e1f580a2358d99f",
+        "import_time": "2026-06-12T19:44:20.065373665Z",
+        "id": "IN-MAL-2026-006208",
+        "modified_time": "2026-06-12T19:15:47Z",
         "versions": [
           "1.0.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-006211",
-        "import_time": "2026-06-12T19:44:20.384109941Z",
-        "modified_time": "2026-06-12T19:16:36Z",
-        "sha256": "e42b62d2ce224204686eadc2dd79e8059a3f21a3fd407b84e7e0a8434af594af",
         "source": "amazon-inspector",
+        "sha256": "e42b62d2ce224204686eadc2dd79e8059a3f21a3fd407b84e7e0a8434af594af",
+        "import_time": "2026-06-12T19:44:20.384109941Z",
+        "id": "IN-MAL-2026-006211",
+        "modified_time": "2026-06-12T19:16:36Z",
         "versions": [
           "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ff9f9052d78a099cd482037ffbb9954baa99fa363b38484d637a9db6687244bc",
+        "import_time": "2026-06-15T17:22:48.437525837Z",
+        "id": "IN-MAL-2026-006530",
+        "modified_time": "2026-06-15T16:39:45Z",
+        "versions": [
+          "1.0.10"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4dbd27651f09ff06e5f802c140545d3f2186ee3ebd09d30b739d51c27001f029",
+        "import_time": "2026-06-15T17:22:48.600232225Z",
+        "id": "IN-MAL-2026-006531",
+        "modified_time": "2026-06-15T16:39:49Z",
+        "versions": [
+          "1.0.11"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9b881e279b0b93ea759ec1f1a2265382a01778725a1c563a5ea4eb168e03ca5d",
+        "import_time": "2026-06-15T17:22:48.25642595Z",
+        "id": "IN-MAL-2026-006528",
+        "modified_time": "2026-06-15T16:39:44Z",
+        "versions": [
+          "1.0.10"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a892934681dbc18da71ce68cf61938eee9fe0124b55411a64a1ae16ca26e280a",
+        "import_time": "2026-06-15T17:22:48.646437563Z",
+        "id": "IN-MAL-2026-006532",
+        "modified_time": "2026-06-15T16:39:50Z",
+        "versions": [
+          "1.0.11"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d9028b74840b2ad4dff23e3300e1c5824dde753af8ab0afd18904547795718c1",
+        "import_time": "2026-06-15T17:22:48.347978267Z",
+        "id": "IN-MAL-2026-006529",
+        "modified_time": "2026-06-15T16:39:45Z",
+        "versions": [
+          "1.0.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f7264281ec802d8a2676bfd0dace239716156a5d070b90beb851dfd4b4bdbfa2",
+        "import_time": "2026-06-15T17:22:48.211870608Z",
+        "id": "IN-MAL-2026-006527",
+        "modified_time": "2026-06-15T16:39:43Z",
+        "versions": [
+          "1.0.9"
         ]
       }
     ]
