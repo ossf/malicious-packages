@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-15T16:45:04Z",
+  "published": "2026-06-15T16:45:04Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claude-cup harvests installer credentials and validates them against third-party APIs under remote-controlled manifest",
+  "details": "claude-cup ships a 'configuration audit' module (research/config-audit.js) that walks the installer's home directory and reads classic credential paths: ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.netrc, ~/.git-credentials, ~/.npmrc, ~/.docker/config.json, ~/.kube/config, ~/.claude/.credentials.json, ~/.codex/auth.json, ~/.config/gh/hosts.yml, all.env* files, shell history, and the OS keychain (`security dump-keychain` on macOS, `cmdkey /list` on Windows). Harvested raw tokens are then actively exercised against third-party providers: validateGithub sends them as `Authorization` headers to api.github.com/user; validateNpm writes the installer's npm token to a temp.npmrc and runs `npm access ls-packages --userconfig \u003ctmp\u003e` against registry.npmjs.org/-/whoami; validateAwsPair exports the installer's AWS access key/secret into the environment of a spawned `aws sts get-caller-identity`; additional validators target api.openai.com, api.anthropic.com, api.stripe.com, gitlab.com, huggingface.co, and Google APIs. Account metadata returned (username, orgs, push/publish capability) is persisted to a local SQLite victim profile. checkBrowserSessions() additionally copies Chrome/Edge cookie SQLite databases to /tmp and enumerates cookies for github.com, gitlab.com, npmjs.com, openai.com, anthropic.com, console.aws.amazon.com, cloud.google.com, and huggingface.co. The validator URLs and target file/regex lists are not hardcoded — they are loaded at runtime from https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json (mutable `main` branch ref, no SHA pin), which gives the publisher post-publication control over which endpoints raw credentials are sent to. On first launch, src/cli.js writes ~/.claude/settings.json and ~/.cursor/mcp.json to register SessionStart/PreToolUse/PostToolUse hooks invoking `node ~/.claude-jar/mcp-server.mjs --hook \u003cevent\u003e`; the launcher lives outside the npm package directory and survives `npm uninstall`, giving the harvester a persistent execution trigger on every Claude Code/Cursor tool call. The runCalibration path in mcp-server/src/calibrator.js invokes the audit on a schedule. The README disclaimer that the module 'never stores, transmits, or logs raw credential values' is contradicted by the code, which transmits raw tokens in Authorization headers and exports raw AWS keys into spawned-process environments.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.7.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "research/config-audit.js",
+              "sha256": "76547a483ecba0d3d464a35842a9bd94e9cbf0a4a994821deb590feffb079ab9",
+              "tlsh": "f113c7ba20f721247662e0ec565b8011aa75f0037549dcd8b79c73902fde979d2b3eb8"
+            },
+            {
+              "path": "mcp-server/src/registration.js",
+              "sha256": "9d4d254a6ade7298c5236850a19355276bf60f1ccc41f46cce66266cc266d18d",
+              "tlsh": "f9d12eca24e6a37f4ba26378950f51615334c5423739f834f77d43e02f5d26c9a619e8"
+            },
+            {
+              "path": "README.md",
+              "sha256": "f7c95b3f286d82ed282d04c539400784bee469296e2dafdc0882e4ac337f605f",
+              "tlsh": "d291f92a519c323305c301e676ab6edbf770d51923212935a92d809dd3693b9d47f28c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.7.6.tgz",
+              "hashes": {
+                "sha1": "36ab5e6e555c259aab9fcd5ae8159510c6714703",
+                "sha512_sri": "sha512-G0f5aM3yYO3qy/nKI8U4C4JcJwkLa21f/5C+tX5+PmQ9k6dT52VKZeC6gRKKtHkQfhFfWE6LIyEDB7vosW0+Iw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.7.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "bfe8394f0a7c5939bea2472c3d0d66c7295a6e905a68df730eba5baec388d4b5",
+        "import_time": "2026-06-15T17:22:48.692446556Z",
+        "id": "IN-MAL-2026-006533",
+        "modified_time": "2026-06-15T16:45:04Z",
+        "versions": [
+          "0.7.6"
+        ]
+      }
+    ]
+  }
+}

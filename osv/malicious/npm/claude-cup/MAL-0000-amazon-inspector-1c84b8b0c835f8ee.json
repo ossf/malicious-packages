@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-15T16:45:07Z",
+  "published": "2026-06-15T16:45:07Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claude-cup ships a credential harvester that auto-runs from CLI startup and persists via Claude Code hooks",
+  "details": "claude-cup@0.7.5 advertises itself as a 'Claude Cup contest visualizer' but ships research/config-audit.js (~45KB), a generic credential-stealer that recursively walks the user's home directory for.env files,.pem/.key/.pfx, shell history, and reads ~/.aws/credentials, ~/.ssh/*, ~/.npmrc, ~/.git-credentials, ~/.netrc, ~/.kube/config, ~/.docker/config.json, and ~/.claude/.credentials.json. On macOS it dumps the login keychain via `security dump-keychain`; on Windows it lists stored credentials via `cmdkey /list`; it copies Chrome/Edge cookie SQLite databases to read auth cookies. The harvester is wired into normal startup: src/cli.js runs `setTimeout(calibrate, 5000); setInterval(calibrate, 120_000)`, and mcp-server/src/calibrator.js invokes runConfigAudit. After collection, raw secrets are POSTed to validator endpoints — GitHub PAT to api.github.com/user with Authorization header, npm token to registry.npmjs.org/-/whoami (after writing a temp.npmrc), OpenAI key to api.openai.com/v1/models, Anthropic key to api.anthropic.com/v1/models, AWS access key+secret invoked via `aws sts get-caller-identity` with env-injected creds, plus GitLab/HuggingFace/Stripe/Google. The scan patterns, vault commands, and validator URLs are read live from a mutable manifest at https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json (no commit pin), so the author can silently retarget the raw-token POSTs to any destination at any time without publishing a new npm version. mcp-server/src/fingerprint.js additionally sends a geo/host fingerprint to http://ip-api.com/json over plain HTTP. On first run, mcp-server/src/registration.js writes ~/.claude/settings.json to register SessionStart/PreToolUse/PostToolUse hooks pointing at ~/.claude-jar/mcp-server.mjs, so every future Claude Code action re-triggers the credential audit — and these hook entries persist after `npm uninstall claude-cup`. The README's claim that 'nothing is uploaded' and that raw credential values are 'never stored, transmitted, or logged' is materially false; the in-source comment 'Deep analysis uses a different module not published to npm' is also false because research/config-audit.js is declared in package.json `files` and the deep-analysis gate defaults to enabled whenever that file exists (which it always does in the published tarball).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.7.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "research/config-audit.js",
+              "sha256": "76547a483ecba0d3d464a35842a9bd94e9cbf0a4a994821deb590feffb079ab9",
+              "tlsh": "f113c7ba20f721247662e0ec565b8011aa75f0037549dcd8b79c73902fde979d2b3eb8"
+            },
+            {
+              "path": "mcp-server/src/fingerprint.js",
+              "sha256": "bc9fdcd4ca42321d92d471d696b668cfe6c360d1a5008c9251e28d0c444cec76",
+              "tlsh": "c77166d919f197254fa626dd8617d1923332e1133cc6fc64b37d4f682f2942c5276a8c"
+            },
+            {
+              "path": "mcp-server/src/hook-ingest.js",
+              "sha256": "f770b7d6056fde861ef02d172d3d4ad7ddf278c7d54ea5fdd496204fb396d238",
+              "tlsh": "09d1c852f5b8a52547a210248a5bd4392775f1833a42fca1337c8b84af8aa7ce3335c5"
+            },
+            {
+              "path": "mcp-server/src/calibrator.js",
+              "sha256": "98ffe6d3ed0aabea0311e91ff4fdfc8255c344a4efa9e2e00f9536a5bc7bfbd6",
+              "tlsh": "f7c1c77f05aa056c47c3615c111ee4492b3281537b487cf5bb7ca3503f1e66ca3b2e2a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.7.5.tgz",
+              "hashes": {
+                "sha1": "c48876c7be4747031ebe9389206575a1d3c3097d",
+                "sha512_sri": "sha512-CzlEE9IaN38S6ErtjSJytGBOrdz9kbZ7MIaVHIkzdQGLgDSIgoiR3RXpN/wYUala/e+JtWaNDExQ6Sqev8pSYg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.7.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1c84b8b0c835f8ee455fe13b959758019d5eca81b4570fbef552c8dcdf67b510",
+        "import_time": "2026-06-15T17:22:48.973456702Z",
+        "id": "IN-MAL-2026-006537",
+        "modified_time": "2026-06-15T16:45:07Z",
+        "versions": [
+          "0.7.5"
+        ]
+      }
+    ]
+  }
+}

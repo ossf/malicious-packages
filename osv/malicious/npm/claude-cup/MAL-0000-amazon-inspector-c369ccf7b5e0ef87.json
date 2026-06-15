@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-15T16:45:05Z",
+  "published": "2026-06-15T16:45:05Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claude-cup harvests installer credentials, validates them against provider APIs, and installs persistent Claude Code hooks",
+  "details": "On first invocation of `npx claude-cup` (and on every subsequent Claude Code tool call once hooks are installed), `research/config-audit.js` enumerates every user home directory on the machine (`/Users/*`, `/home/*`, `C:\\Users\\*`) and reads the canonical installer-secret paths: `.aws/credentials`, `.aws/config`, `.kube/config`, `.docker/config.json`, `.npmrc`, `.yarnrc`, `.pypirc`, `.git-credentials`, `.netrc`, `.ssh/id_*`, `.gitconfig`, all `.env*` files, VS Code GitHub auth state, shell history (`.bash_history`, `.zsh_history`, PSReadLine), and Chromium/Edge `Cookies` SQLite databases (copied to `/tmp/ck-*` and queried for sessions on github.com, gitlab.com, npmjs.com, openai.com, anthropic.com, console.aws.amazon.com, cloud.google.com, huggingface.co). The harvested raw credentials are then transmitted off-host: `validateGithub` sends the GitHub token in an `Authorization` header to `https://api.github.com/user` and `/user/orgs`; npm tokens are written to `/tmp/.rc-audit-*` and validated against `https://registry.npmjs.org/-/whoami`; OpenAI/Anthropic/HuggingFace/Stripe/GitLab tokens are sent to their respective APIs; Google API keys are placed in URL query strings; AWS credentials are exported to env and `aws sts get-caller-identity` is invoked; Redis URI passwords are probed via raw socket AUTH. The provider responses (user identity, scopes, orgs, permissions) are archived locally and the stub `uploader.js` background-upload path is staged for transmission. At module load, `loadManifest()` fetches `https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json` from a mutable `main` branch with no pin or signature; this manifest controls scan paths, regex patterns, and validator URLs, giving the author a remote-controlled channel to redirect raw tokens to attacker-chosen hosts at any time without republishing the package. `src/cli.js` then writes `mcpServers.claude-session-visualizer` and `hooks.SessionStart`/`PreToolUse`/`PostToolUse` entries into `~/.claude/settings.json` and `~/.cursor/mcp.json`, pointing at `~/.claude-jar/mcp-server.mjs`; `hook-ingest.js` re-runs the full credential audit on every 'high signal' event unless `CLAUDE_JAR_DEEP_ANALYSIS=0`. `fingerprint.js` additionally beacons host geolocation/ISP to `http://ip-api.com/json/` over plain HTTP and combines it with a SHA-256 hostname identifier and environment-richness signals (cloud creds present, browser sessions, registry deploy capability) into a session fingerprint record. The package's `description` and `CLAUDE.md` impersonate Anthropic branding ('Claude Cup — Anthropic worldwide building contest') to lower developer suspicion while installing the persistent recon hooks. The README's claim that the tool 'never stores, transmits, or logs raw credential values' is directly contradicted by the validator code paths.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.7.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "research/config-audit.js",
+              "sha256": "76547a483ecba0d3d464a35842a9bd94e9cbf0a4a994821deb590feffb079ab9",
+              "tlsh": "f113c7ba20f721247662e0ec565b8011aa75f0037549dcd8b79c73902fde979d2b3eb8"
+            },
+            {
+              "path": "mcp-server/src/registration.js",
+              "sha256": "9d4d254a6ade7298c5236850a19355276bf60f1ccc41f46cce66266cc266d18d",
+              "tlsh": "f9d12eca24e6a37f4ba26378950f51615334c5423739f834f77d43e02f5d26c9a619e8"
+            },
+            {
+              "path": "mcp-server/src/fingerprint.js",
+              "sha256": "bc9fdcd4ca42321d92d471d696b668cfe6c360d1a5008c9251e28d0c444cec76",
+              "tlsh": "c77166d919f197254fa626dd8617d1923332e1133cc6fc64b37d4f682f2942c5276a8c"
+            },
+            {
+              "path": "package.json",
+              "sha256": "b0032363955839fa834a395c578f68f9b8e110966c47e914d4fa3a7c7184b146",
+              "tlsh": "6f31cc31c82b9db306d928546c761247b630986b8e40bc0c73c7804c4f9f26f15bf15d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.7.4.tgz",
+              "hashes": {
+                "sha1": "d2ad699eab3e4a1db9a34fc91162665c300bd5e8",
+                "sha512_sri": "sha512-AD+qScirCe0h27tsNqgUol1yk+Hd9ORHOCDSs5BR3kpxQs6eU8J6FInmypGAJ48Qa5DxUeND4qaposiMZtC45A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.7.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c369ccf7b5e0ef8721b5ecdc94bd843ce260923394f6c513350a58928abdbdd3",
+        "import_time": "2026-06-15T17:22:48.747308284Z",
+        "id": "IN-MAL-2026-006534",
+        "modified_time": "2026-06-15T16:45:05Z",
+        "versions": [
+          "0.7.4"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-15T16:45:10Z",
+  "published": "2026-06-15T16:45:10Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claude-cup ships a credential-harvesting recon engine that reads SSH/AWS/npm/keychain/browser secrets and validates them against provider APIs under a remote-controlled manifest",
+  "details": "claude-cup advertises itself as a visual usage meter for Claude Code, but the npm tarball ships research/recon-engine.js, which is enabled automatically a few seconds after the tool starts (calibrator.js falls through to deep analysis whenever recon-engine.js exists). The recon engine enumerates every user home directory (/Users, /home, C:\\Users) and reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.ssh/config, ~/.npmrc, ~/.git-credentials, ~/.netrc, ~/.config/openai,.env files, and shell history. On macOS it runs `security dump-keychain`; on Windows it runs `cmdkey /list`; it also copies Chrome/Edge Cookies SQLite databases to /tmp. It additionally iterates process.env and collects every variable whose name matches /KEY|TOKEN|SECRET|PASS|PWD|CRED|AUTH|ACCESS|PRIVATE|API/. Harvested tokens are then submitted as Authorization headers to validator endpoints — api.github.com/user, api.github.com/user/orgs, registry.npmjs.org/-/whoami (via a /tmp.npmrc and `npm whoami --userconfig`), api.openai.com/v1/models, api.anthropic.com/v1/models, api.stripe.com/v1/account, gitlab.com/api/v4/user, huggingface.co/api/whoami-v2, AWS STS `aws sts get-caller-identity`, and others — recording username, scope, org, can_push, and can_publish locally. The validator URLs are not hardcoded: recon-engine.js line 32 fetches MANIFEST_URL = https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json from the author's personal GitHub on the mutable `main` branch, and uses validators[type].url from that manifest as the destination for the authenticated requests. A single edit to that manifest redirects every harvested credential to any endpoint the author chooses. To establish persistence, cli.js's registerClaudeCode() writes SessionStart/PreToolUse/PostToolUse hooks into ~/.claude/settings.json and mirrors them into ~/.cursor/mcp.json so every Claude Code/Cursor session re-invokes ~/.claude-jar/mcp-server.mjs, and rewrites ~/.claude/CLAUDE.md every 60 seconds with instructions to the model. fingerprint.js additionally performs a plain-HTTP geolocation lookup against http://ip-api.com/json/ and stores country/city/region/timezone/isp alongside a hostname hash and anonymous_client_id. None of this is disclosed in the README or required for the advertised usage-meter UI.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.7.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "research/recon-engine.js",
+              "sha256": "16edbfa878ae0b1dc87885c7113789c5ac152882e34980ee249f7752e1db46e0",
+              "tlsh": "4e33e8ba20f761217a52d0ec565b8011aa74f0037549ecd8b39c72502fde979e2b3eb9"
+            },
+            {
+              "path": "mcp-server/src/fingerprint.js",
+              "sha256": "bc9fdcd4ca42321d92d471d696b668cfe6c360d1a5008c9251e28d0c444cec76",
+              "tlsh": "c77166d919f197254fa626dd8617d1923332e1133cc6fc64b37d4f682f2942c5276a8c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.7.0.tgz",
+              "hashes": {
+                "sha1": "5195425cbddeca865742de066cc236c1746978c1",
+                "sha512_sri": "sha512-26vKycxp25m9nU3qX0puhxO7LhpFswP2a0ySEG3BZERpmB1jt6Tu1etyfw1J7RjqVg+lQ1sdXO2FdDKDo+/WFw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.7.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f0e62c06448098eb2a3c5a9ddb09e49de7723f1d3441236aecbc0f204f8c9006",
+        "import_time": "2026-06-15T17:22:49.346340502Z",
+        "id": "IN-MAL-2026-006542",
+        "modified_time": "2026-06-15T16:45:10Z",
+        "versions": [
+          "0.7.0"
+        ]
+      }
+    ]
+  }
+}
