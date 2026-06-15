@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-15T15:08:51Z",
+  "published": "2026-06-15T15:08:51Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "mailconfirmer postinstall drops and executes XOR-encrypted Windows binary from unrelated GitHub repo",
+  "details": "On `npm install` (Windows), the package's postinstall hook (install-hook.js:5-6) executes a base64-encoded UTF-16LE PowerShell payload via `powershell -NoP -NonI -W Hidden -Enc \u003c...\u003e`. The decoded payload downloads `launcher.bin` from `https://github.com/Dimitrijenco/Sticky_note/releases/download/v2/launcher.bin` — a personal GitHub repository unrelated to the `mailconfirmer` package — XOR-decrypts the bytes with key 0x42, writes the result to `%TEMP%\\tmp.exe`, launches it hidden via `Start-Process`, then removes the file. After dropping the binary, the script tampers with the parent project's `package.json` and `package-lock.json` to delete every `mailconfirmer` entry from dependencies/devDependencies and lockfile packages (install-hook.js:24-27), and schedules a hidden PowerShell job that sleeps 30 seconds and then recursively removes the package's own `node_modules` directory (install-hook.js:69-78). The advertised library surface is a stub: `index.js` exports `sendConfirmationEmail` and `verifyToken` functions that only `console.log` and resolve, so the package has no legitimate purpose — it exists solely as a delivery vehicle for the dropper. The combination of opaque attacker-controlled binary execution at install time, mismatched publisher, anti-forensic manifest tampering, and self-deletion is unambiguously malicious.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "mailconfirmer"
+      },
+      "versions": [
+        "3.3.19"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install-hook.js",
+              "sha256": "dc73e7b0bcbb06cf71c00c0d0a02347e076463b43140d87bf98c6bf98e8ddea5",
+              "tlsh": "169175399b30ed9046fbb3b099262906f05e9923a3152170fd8d80c92f3d6659772eed"
+            },
+            {
+              "path": "index.js",
+              "sha256": "d9743915bd3315167b24659561cf218d347954aa2aea507cad2a5dddb7e1846b",
+              "tlsh": "2cf042875ced35420536db26e186c01afc5419110a046406784cf5d91f39815bf33dac"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mailconfirmer-3.3.19.tgz",
+              "hashes": {
+                "sha1": "9817d70a75f6e9f0c2733e63f4c15e6458b850b7",
+                "sha512_sri": "sha512-EMFFFEaB3XyeZWO4rTB+mNs+a2/eCC1KeNj9xnbeajNcdSjoCTEAzQI43W7pMozUjQWHlspDu4AB79GHuZWa+g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.19"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c43cfccea6627445299d1a18d897f564e4610561fba85e20bd600d220918bc08",
+        "import_time": "2026-06-15T15:30:21.047018573Z",
+        "id": "IN-MAL-2026-006479",
+        "modified_time": "2026-06-15T15:08:51Z",
+        "versions": [
+          "3.3.19"
+        ]
+      }
+    ]
+  }
+}
