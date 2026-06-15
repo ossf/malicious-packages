@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-15T21:36:32Z",
+  "modified": "2026-06-15T22:47:19Z",
   "published": "2026-06-15T21:36:32Z",
   "schema_version": "1.7.4",
-  "id": "",
-  "summary": "Hidden obfuscated exec() backdoor in cipherflow exposed via setup_env()",
-  "details": "Package advertises itself as a zero-dependency pure-Python AES/DES cryptography library, but ships cipherflow/_environ.py containing a multi-layer obfuscated payload (base85 → XOR with a 32-byte key → zlib decompress) that is fed directly to exec(): `exec(zlib.decompress(bytes(__[i]^_[i%len(_)] for i in range(len(__)))).decode())`. The payload is reachable through a public API: cipherflow/__init__.py defines and exports `setup_env()` whose docstring is '下载并执行外部环境' ('download and execute external environment'), which calls `from._environ import main; main()`. The function is listed in `__all__` but is undocumented in the README and has no relation to the advertised crypto functionality. Any caller invoking `cipherflow.setup_env()` executes the concealed payload on the host. The combination of multi-layer obfuscation, an exec() sink, a self-incriminating docstring describing remote download-and-execute, and an entry point unrelated to the library's stated purpose constitutes a hidden backdoor.",
+  "id": "MAL-2026-5839",
+  "summary": "Malicious code in cipherflow (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (281ede3c5b3181c2df22a4b32a01453a51ac389a1dfe8bde69d53821cbaf20d4)\ncipherflow advertises itself as a zero-dependency pure-Python AES/DES library, but cipherflow/_environ.py contains a multi-layer-obfuscated payload that is decoded and passed directly to exec(). The blob is base85-decoded, XOR'd against a 32-byte key, then zlib-decompressed before being executed: `exec(zlib.decompress(bytes(__[i]^_[i%len(_)] for i in range(len(__)))).decode())` with `__ = base64.b85decode(b'MJ*(r4W!?y...')`. This payload is exposed via cipherflow.setup_env() (declared in __all__), whose docstring translates to 'download and execute external environment'. The function is not mentioned anywhere in the README/PKG-INFO. The combination of triple-stacked encoding (base85 + XOR + zlib) terminating in exec(), placement inside a cover-named module (_environ.py / setup_env), and intentional omission from documentation are canonical signals of hidden malicious code execution. Any consumer who imports cipherflow and invokes setup_env() — or any downstream code that does so — runs whatever bytes the author chose to hide, with full process privileges.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "cipherflow"
       },
       "versions": [
+        "0.1.2",
         "0.1.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -55,6 +61,10 @@
   "references": [
     {
       "type": "PACKAGE",
+      "url": "https://pypi.org/project/cipherflow/0.1.2/"
+    },
+    {
+      "type": "PACKAGE",
       "url": "https://pypi.org/project/cipherflow/0.1.3/"
     }
   ],
@@ -70,11 +80,21 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
+        "id": "IN-MAL-2026-006721",
+        "import_time": "2026-06-15T22:45:30.331795109Z",
+        "modified_time": "2026-06-15T21:36:34Z",
+        "sha256": "281ede3c5b3181c2df22a4b32a01453a51ac389a1dfe8bde69d53821cbaf20d4",
         "source": "amazon-inspector",
-        "sha256": "31690b7dc2576fb3dfe0aae6a5e1893ccd766d080c44dd7fa5e38f4904f809aa",
-        "import_time": "2026-06-15T22:45:30.215056128Z",
+        "versions": [
+          "0.1.2"
+        ]
+      },
+      {
         "id": "IN-MAL-2026-006720",
+        "import_time": "2026-06-15T22:45:30.215056128Z",
         "modified_time": "2026-06-15T21:36:32Z",
+        "sha256": "31690b7dc2576fb3dfe0aae6a5e1893ccd766d080c44dd7fa5e38f4904f809aa",
+        "source": "amazon-inspector",
         "versions": [
           "0.1.3"
         ]
