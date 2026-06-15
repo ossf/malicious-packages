@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-15T19:45:04Z",
+  "published": "2026-06-15T19:45:04Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Package starts a long-poll backdoor to a hardcoded JD-internal host that executes remote-supplied JavaScript",
+  "details": "On load, dist/index.js unconditionally instantiates `new AIServer()` and calls `server.start()` at module top level (no `require.main === module` guard), so simply running `node dist/index.js`, invoking the package's bin, or `require('@aiscene/aiserver')` from another module immediately launches a network-talking server in the consumer's process. That server registers with the hardcoded URL `http://nethp-test.jd.com/rest/execution-nodes/register` (plain HTTP, not configurable in code) and continuously long-polls `http://nethp-test.jd.com/rest/execution-queue/tasks/next`. Tasks returned by that endpoint carry a `naturalLanguage`/`code` field which dist/executor/code-executor.js compiles and runs via `new (async function(){}).constructor(instrumentedCode)` inside a forked worker — i.e. arbitrary JavaScript supplied by the remote control plane is executed in the installer's process. dist/node/service.js additionally POSTs the installer's `os.hostname()`, local non-internal IPv4 addresses from `os.networkInterfaces()`, and connected device info to the same host every ~30 seconds with no opt-in or override. Because the control-plane URL is hardcoded and served over plaintext HTTP, any non-JD installer (and any on-path attacker on the network between the installer and that host) gains unauthenticated remote code execution on the installer's machine. dist/config/index.js and dist/.env also ship a hardcoded `modelservice.jdcloud.com` API key (`pk-485b2b56-...`) used as the default for three model slots; this is author self-harm against the author's own JD Cloud quota and is not the basis for the block.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@aiscene/aiserver"
+      },
+      "versions": [
+        "1.7.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/executor/code-executor.js",
+              "sha256": "8e3c9e6b2b312c05ed5bcdc09fd098de37a98b09a77d5d2ef4608e3a5fff5217",
+              "tlsh": "a1512159157b2b765b637962fb2770426136d5073a08c8a0fa4e63809f8212caa52fed"
+            },
+            {
+              "path": "dist/node/service.js",
+              "sha256": "14cbd94159bca39029d4ab2fa6242a0a3a57d45cb8b8ad25ee8c3cdd66e46f12",
+              "tlsh": "9ce10e4f1fff542b4ab224ad6e0b12117a279103220ac974bbdd63815f8296ce675bf4"
+            },
+            {
+              "path": "dist/config/index.js",
+              "sha256": "9a7df5d89f39e58bb68b7ccde160a13f46a56a88be53f4441c3093ec301073bd",
+              "tlsh": "62d1789e095a542328868a44e7ff0013dff577873d46b4b4b29d2b082f1e91ce23679a"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "c5898b11d8431be767f11852c0b95a284a696e3c17a201d90fd17743a364a340",
+              "tlsh": "d2029516277f483b4abb01d5ab5312113b36e1872605c828739db729bf4433cb79aed5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aiserver-1.7.4.tgz",
+              "hashes": {
+                "sha1": "7641254a9a3201790968f54ee68a8bc9c33e9ae6",
+                "sha512_sri": "sha512-aTEzmZ3ygnAzG1UpMF4myNp0qGzmVd2b2I1DKfkKp99enX0aflPV9mE4rqZk1uVSmJsCZSttZXy3AIZ5rAerdg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.7.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "5afe7de709fb18909451ff49a02f133f248fb0dc0688709251c924038effc6dc",
+        "import_time": "2026-06-15T20:14:27.34661461Z",
+        "id": "IN-MAL-2026-006682",
+        "modified_time": "2026-06-15T19:45:04Z",
+        "versions": [
+          "1.7.4"
+        ]
+      }
+    ]
+  }
+}
