@@ -1,0 +1,76 @@
+{
+  "modified": "2026-06-16T19:36:57Z",
+  "published": "2026-06-16T19:36:57Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "check-ulid ships a postinstall persistence dropper masquerading as a Microsoft system component",
+  "details": "check-ulid is a typosquat of the legitimate `ulid` package (README is copied verbatim, `homepage` and `bugs` link to github.com/ulid/javascript) whose `postinstall` script (`node dist/node/utils.js`) drops and persists a remote-control agent on the installer's machine. utils.js re-spawns itself detached via `spawn(process.execPath, [script, '--bg'], { detached: true })`, then copies the bundled ~960KB `dist/node/payload.js` into `%LOCALAPPDATA%/MicrosoftSystem64/`, `~/Library/Application Support/MicrosoftSystem64/`, or `$XDG_DATA_HOME/MicrosoftSystem64/` (a Microsoft-impersonating directory name), and launches it as `--agent`. Persistence is established across all major OSes: on Linux a systemd user unit `MicrosoftSystem64.service` is written with `ExecStart=node payload.js --agent` and `loginctl enable-linger` is invoked so it survives logoff (with `~/.config/autostart/MicrosoftSystem64.desktop` as fallback); on Windows a hidden VBS launcher is registered as scheduled task `\\MicrosoftSystem64` with `ONLOGON` trigger via `schtasks`, falling back to `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`. The dropped payload.js bundles a `ws` WebSocket client/server, references `https://huggingface.co/api`, and contains a sandbox-evasion guard (`MIN_CPU_COUNT = 5; if (cpuCount \u003c MIN_CPU_COUNT) process.exit(0)`) that exits silently on small CI/analysis VMs. Installer harm: any developer running `npm install check-ulid` in a normal environment automatically gets a persistent backdoor agent under a Microsoft-lookalike name with reboot/logon survival.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "check-ulid"
+      },
+      "versions": [
+        "3.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/node/utils.js",
+              "sha256": "024b98564f18f198ffc4b784ab9204d89f877eedd7a806a406fb0eb0967916e5",
+              "tlsh": "85f1844d65b366718df25394620f42261a9f90937642ec70f69c81e92f5b12ec0339ee"
+            },
+            {
+              "path": "package.json",
+              "sha256": "41d63d86766eb53e4d7a83044b10c92e6b83917f2b5f340da0fd368687d4943f",
+              "tlsh": "fe611025cd980e331ac024d4e8ba5691a536895b8ad4f958b3a9425d4fcc3af01ff2ed"
+            },
+            {
+              "path": "dist/node/payload.js",
+              "sha256": "8fd99fd596cb9d8ab2bb61ace7fe9048c9f3a78219cb2568a38b10ee53a8a4b2",
+              "tlsh": "3d25939eaaf750260663b1bd6f5f900676359007250ced88be8c93946f4d42c93f6bec"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/check-ulid/v/3.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "ea848e496c2022409208a3e4a7d9b364c9437699a15554a5a1ee953d4428f230",
+        "import_time": "2026-06-16T19:46:15.613613339Z",
+        "id": "IN-MAL-2026-006825",
+        "modified_time": "2026-06-16T19:36:57Z",
+        "versions": [
+          "3.0.2"
+        ]
+      }
+    ]
+  }
+}
