@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-15T17:24:52Z",
+  "modified": "2026-06-16T16:08:47Z",
   "published": "2026-06-12T19:15:47Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5704",
   "summary": "Malicious code in friendly-greeter-demo (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9b881e279b0b93ea759ec1f1a2265382a01778725a1c563a5ea4eb168e03ca5d)\nfriendly-greeter-demo ships an active remote-access backdoor that fires both at install time (postinstall.js, run automatically by `npm install`) and on import (index.js, declared as `main`). On install, postinstall.js spawns a detached daemon (POSTINSTALL_DAEMON=1) that POSTs the host's uuid, hostname, and platform to http://98.86.244.177:8080/register, polls http://98.86.244.177:8080/beacon for a `command` field, executes the returned shell command via child_process.exec with a 30s timeout, and POSTs stdout/stderr back to http://98.86.244.177:8080/results. index.js performs the same register/beacon/exec/results loop in a top-level IIFE, so any consumer that `require`s or `import`s this package also runs attacker-supplied shell commands. The C2 endpoint is a hardcoded bare IPv4 address over plain HTTP, with no authentication, pinning, or opt-in. Author metadata is the placeholder `Your Name \u003csalman.ta12312@gmail.com\u003e` with a generic 'educational' description. This is a complete remote-code-execution backdoor on every installer and every downstream consumer.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ab72d8364f58d27c6ba37063af62500b494b2fcb8961c1a2b40ed1d2feabdcfe)\nfriendly-greeter-demo ships two independent remote-code-execution channels that activate automatically. postinstall.js runs on `npm install` and re-spawns itself detached (POSTINSTALL_DAEMON=1), then enters an infinite loop that POSTs a UUID, os.hostname() and process.platform to http://98.86.244.177:8080/register, GETs http://98.86.244.177:8080/beacon every 30 seconds, exec()s any returned shell command, and POSTs stdout/stderr to /results. index.js (the package main) contains an equivalent IIFE that fires whenever a consumer require()s or imports the package, performing the same register/beacon/exec/results loop against the same hardcoded bare-IP C2. The README only documents greet()/greetByTime() helpers; the C2 channel is undocumented. Installer impact: any developer or build system running `npm install friendly-greeter-demo` gets a detached daemon polling an attacker-controlled IP for arbitrary shell commands executed as the install user, plus a second execution path triggered by any code that imports the library. Host identifiers and command output are exfiltrated over plain HTTP to 98.86.244.177:8080.\n",
   "affected": [
     {
       "package": {
@@ -19,10 +19,22 @@
         "1.0.1",
         "1.0.10",
         "1.0.11",
-        "1.0.9"
+        "1.0.9",
+        "1.0.13",
+        "1.0.14"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -130,6 +142,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.13"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/friendly-greeter-demo/v/1.0.14"
     }
   ],
   "credits": [
@@ -251,6 +271,26 @@
         "modified_time": "2026-06-15T16:39:43Z",
         "versions": [
           "1.0.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ab72d8364f58d27c6ba37063af62500b494b2fcb8961c1a2b40ed1d2feabdcfe",
+        "import_time": "2026-06-16T16:06:35.594192604Z",
+        "id": "IN-MAL-2026-006776",
+        "modified_time": "2026-06-16T16:02:29Z",
+        "versions": [
+          "1.0.13"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f1e7f6d307fef5fc271a73ae4bda0c75fe7479f683672e42ad396affe1f5f593",
+        "import_time": "2026-06-16T16:06:35.65822173Z",
+        "id": "IN-MAL-2026-006777",
+        "modified_time": "2026-06-16T16:02:33Z",
+        "versions": [
+          "1.0.14"
         ]
       }
     ]
