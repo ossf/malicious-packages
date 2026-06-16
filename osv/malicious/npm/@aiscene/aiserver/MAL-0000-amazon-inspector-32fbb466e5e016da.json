@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-16T02:18:35Z",
+  "published": "2026-06-16T02:18:35Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Self-executing main turns importers into remote-controlled JS workers polling a hardcoded HTTP control plane",
+  "details": "package.json declares `main: dist/index.js`, whose top-level code instantiates `AIServer` and calls `server.start()` so `require`/`import` of this package immediately bootstraps a long-running service. That service registers with `http://nethp-test.jd.com/rest/execution-nodes/register`, polls `http://nethp-test.jd.com/rest/execution-queue/tasks/next`, and runs task bodies via `new (async function(){}).constructor(instrumentedCode)` in `dist/executor/code-executor.js` — i.e. it evaluates JavaScript strings returned by the remote endpoint. There is no TLS, no authentication of the control plane, and no signature on task `code`, so any operator of nethp-test.jd.com (or any on-path attacker, including DNS hijack on the installer's network) can deliver arbitrary JS that executes on every host that loaded this package. The same bootstrap also uploads screenshots and HTML reports captured from connected Android/iOS devices to `http://nethp-test.jd.com/rest/execution-callback/result-file` and `/rest/execution-callback/package-file` via multipart POST in `dist/api/callback.js`, so importing the package silently ships device-capture artifacts to that endpoint over plaintext HTTP. The shipped `dist/.env` also carries a live `MIDSCENE_MODEL_API_KEY` for `modelservice.jdcloud.com` (author self-harm, not the basis for this verdict).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@aiscene/aiserver"
+      },
+      "versions": [
+        "1.7.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/executor/code-executor.js",
+              "sha256": "8e3c9e6b2b312c05ed5bcdc09fd098de37a98b09a77d5d2ef4608e3a5fff5217",
+              "tlsh": "a1512159157b2b765b637962fb2770426136d5073a08c8a0fa4e63809f8212caa52fed"
+            },
+            {
+              "path": "dist/api/callback.js",
+              "sha256": "0280f4919d06189b5084f2b82318fd0746f11e1d9ec20790f2608da304d21c21",
+              "tlsh": "a882729e2bfb5065462711f91a8b4101783de44b2689c86dfa8c2354bf0ce1cbbb77d6"
+            },
+            {
+              "path": "dist/.env",
+              "sha256": "f2db36425c31254bdba20b43b3b2bb5b72f4d111fc3dee009b86f2fdc465c263",
+              "tlsh": "cb318b5c6d53a4118f0e0d7e7bf061c6ba5f710d99848db9c06bfb182c192622b90a6e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aiserver-1.7.5.tgz",
+              "hashes": {
+                "sha1": "f71c1a49eb03a36c28ed482b980f7528cbb69fe0",
+                "sha512_sri": "sha512-W8kZjGsuVNqZFL6mLLRNE8qFrQNfaZFndd6zKLVXJk4K9t1k2JMQOGKNcAl6g1DFBqHXBY2tSzQY8ggAJTV7RA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.7.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "32fbb466e5e016da6349257f11d47dfa96598d3ddb17c87f27082070e6893b95",
+        "import_time": "2026-06-16T02:23:12.222475164Z",
+        "id": "IN-MAL-2026-006742",
+        "modified_time": "2026-06-16T02:18:35Z",
+        "versions": [
+          "1.7.5"
+        ]
+      }
+    ]
+  }
+}
