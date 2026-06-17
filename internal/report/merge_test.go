@@ -573,7 +573,86 @@ func TestMerge_AffectedDatabaseSpecific(t *testing.T) {
 			"unique2": "foo",
 			"common":  "bar",
 		},
-		"array": []any{"a", "b", "b", "c"},
+		"array": []any{"a", "b", "c"},
+	}
+
+	if err := r.Merge(other); err != nil {
+		t.Fatalf("Merge() = %v; want no error", err)
+	}
+
+	if got := r.Vuln().Affected[0].DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestMerge_AffectedDatabaseSpecific_Recursive(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"indicators": map[string]any{
+			"domains": []any{"example.com"},
+			"ips":     []any{"1.1.1.1"},
+		},
+	}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"indicators": map[string]any{
+			"domains": []any{"example.org", "example.com"},
+			"urls":    []any{"https://example.com/malware"},
+		},
+	}
+
+	want := map[string]any{
+		"indicators": map[string]any{
+			"domains": []any{"example.com", "example.org"},
+			"ips":     []any{"1.1.1.1"},
+			"urls":    []any{"https://example.com/malware"},
+		},
+	}
+
+	if err := r.Merge(other); err != nil {
+		t.Fatalf("Merge() = %v; want no error", err)
+	}
+
+	if got := r.Vuln().Affected[0].DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestMerge_AffectedDatabaseSpecific_DeduplicateObjects(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"cwes": []any{
+			map[string]any{
+				"cweId": "CWE-94",
+				"name":  "Code Injection",
+			},
+		},
+	}
+	other := testReport(osvschema.EcosystemNPM, "example")
+	other.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"cwes": []any{
+			map[string]any{
+				"cweId": "CWE-94",
+				"name":  "Code Injection",
+			},
+			map[string]any{
+				"cweId": "CWE-506",
+				"name":  "Embedded Malicious Code",
+			},
+		},
+	}
+
+	want := map[string]any{
+		"cwes": []any{
+			map[string]any{
+				"cweId": "CWE-94",
+				"name":  "Code Injection",
+			},
+			map[string]any{
+				"cweId": "CWE-506",
+				"name":  "Embedded Malicious Code",
+			},
+		},
 	}
 
 	if err := r.Merge(other); err != nil {

@@ -238,41 +238,116 @@ func mergeSlices[K comparable](ss ...[]K) []K {
 // The following rules are used to determine how the merge works:
 // - sources *must* have keys unique to that source.
 // - values must not be scalars. they must be arrays or objects.
-// - values that are arrays are concatenated together, duplicates will be preserved.
-// - values that are objects are merged, keys should be unique, but if they are the same the first key seen will retain its value.
+// - values that are arrays are concatenated together, duplicates will be removed.
+// - values that are objects are merged recursively, keys should be unique, but if they are the same the first key seen will retain its value.
 func combineDatabaseSpecific(objs ...map[string]any) map[string]any {
 	if len(objs) == 0 {
 		return nil
 	}
-	res := make(map[string]any)
+	var res map[string]any
 	for _, obj := range objs {
+		if obj == nil {
+			continue
+		}
+		if res == nil {
+			res = make(map[string]any)
+			for k, v := range obj {
+				res[k] = sanitizeAndDeduplicate(v)
+			}
+			continue
+		}
 		for k, v := range obj {
-			switch v.(type) {
-			case map[string]any:
-			case []any:
-			default:
-				// Skip because there should be no scalars after normalization.
-				continue
-			}
-			if _, ok := res[k]; !ok {
-				// Key doesn't exist, so add it immediately.
-				res[k] = v
-				continue
-			}
-			switch existing := res[k].(type) {
-			case map[string]any:
-				anyMap := v.(map[string]any)
-				for innerK, innerV := range anyMap {
-					// Only merge keys that don't already exist.
-					if _, ok := existing[innerK]; !ok {
-						existing[innerK] = innerV
-					}
-				}
-			case []any:
-				anyList := v.([]any)
-				res[k] = append(existing, anyList...)
-			}
+			res[k] = combineValues(res[k], v)
 		}
 	}
-	return res
+	cleaned := make(map[string]any)
+	for k, v := range res {
+		switch v.(type) {
+		case map[string]any:
+		case []any:
+		default:
+			continue
+		}
+		cleaned[k] = v
+	}
+	return cleaned
+}
+
+func sanitizeAndDeduplicate(v any) any {
+	switch t := v.(type) {
+	case map[string]any:
+		cleaned := make(map[string]any)
+		for k, val := range t {
+			cleaned[k] = sanitizeAndDeduplicate(val)
+		}
+		return cleaned
+	case []any:
+		var cleaned []any
+		for _, item := range t {
+			cleaned = append(cleaned, sanitizeAndDeduplicate(item))
+		}
+		return deduplicateSlice(cleaned)
+	default:
+		return v
+	}
+}
+
+func combineValues(v1, v2 any) any {
+	if v1 == nil {
+		return sanitizeAndDeduplicate(v2)
+	}
+	if v2 == nil {
+		return sanitizeAndDeduplicate(v1)
+	}
+
+	switch t1 := v1.(type) {
+	case map[string]any:
+		t2, ok := v2.(map[string]any)
+		if !ok {
+			return v1
+		}
+		merged := make(map[string]any)
+		for k, v := range t1 {
+			merged[k] = v
+		}
+		for k, v := range t2 {
+			if existing, ok := merged[k]; ok {
+				merged[k] = combineValues(existing, v)
+			} else {
+				merged[k] = sanitizeAndDeduplicate(v)
+			}
+		}
+		return merged
+
+	case []any:
+		t2, ok := v2.([]any)
+		if !ok {
+			return v1
+		}
+		combined := append([]any{}, t1...)
+		for _, item := range t2 {
+			combined = append(combined, sanitizeAndDeduplicate(item))
+		}
+		return deduplicateSlice(combined)
+
+	default:
+		return v1
+	}
+}
+
+func deduplicateSlice(slice []any) []any {
+	var unique []any
+	for _, item := range slice {
+		matched := false
+		for _, u := range unique {
+			if reflect.DeepEqual(item, u) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			unique = append(unique, item)
+		}
+	}
+	return unique
 }
