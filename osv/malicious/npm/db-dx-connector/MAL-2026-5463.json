@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-09T20:18:26Z",
+  "modified": "2026-06-16T23:05:27Z",
   "published": "2026-06-09T20:18:26Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5463",
   "summary": "Malicious code in db-dx-connector (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6eeeef7d309b24e00c0e45df8736d1d8b8d279207d2bfa766c75890815e5382d)\ndb-dx-connector is a name-swap typosquat of the legitimate dx-db-connector package (the package's own repository, bugs, and homepage fields all point to github.com/divbloxjs/dx-db-connector). The package mirrors the upstream README, license, and most source, but adds a hidden method `DivbloxDatabaseConnector.queryDBConnect()` in index.js that base64-decodes a URL stored in a variable misleadingly named `HASH_KEY` (decoding to https://www.jsonkeeper.com/b/ZIAIK), HTTP-GETs its `.data.content`, and pipes the response body into the stdin of a detached `spawn(\"node\", [], {detached:true})` child — executing arbitrary attacker-controlled JavaScript as the installer's user. jsonkeeper.com is an anonymous, mutable JSON-paste host not controlled by the publisher; the obfuscated URL, undocumented method name, and pipe-to-node pattern together form a remote-execution dropper. Any caller who reaches `queryDBConnect()` (e.g., via mistaken use as a database query helper) runs attacker-controlled code.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b0a6cd3a84c38e801823eba4ccf0d4ff2a28f5955309bfb300f7f0f640b1a69b)\ndb-dx-connector is a name-transposition of the legitimate divblox package dx-db-connector (the package.json even points repository.url at github.com/divbloxjs/dx-db-connector, which it does not own). Beyond mimicking the real connector's API, index.js (~line 242) exposes two methods (`queryDBConnect`, `queryDBErrorReply`) that base64-decode a hardcoded constant to a URL on the anonymous paste host jsonkeeper.com, fetch the paste body with axios, and pipe it to the stdin of a detached `spawn('node', [])` child process. The decoded endpoints are https://www.jsonkeeper.com/b/ZIAIK and https://jsonkeeper.com/b/L435A. Whoever controls those pastes can execute arbitrary Node.js code on any host that calls either method. The base64 obfuscation of the URL constant, the use of a mutable third-party paste host, and the pipe-to-node sink are unambiguous attacker shape — there is no legitimate database-connector reason for any of these primitives. Any consumer who fat-fingered the package name and exercises the connector triggers attacker-controlled RCE.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "db-dx-connector"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/db-dx-connector/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/db-dx-connector/v/1.0.1"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005190",
-        "import_time": "2026-06-09T20:45:50.787271159Z",
-        "modified_time": "2026-06-09T20:18:26Z",
-        "sha256": "6eeeef7d309b24e00c0e45df8736d1d8b8d279207d2bfa766c75890815e5382d",
         "source": "amazon-inspector",
+        "sha256": "6eeeef7d309b24e00c0e45df8736d1d8b8d279207d2bfa766c75890815e5382d",
+        "import_time": "2026-06-09T20:45:50.787271159Z",
+        "id": "IN-MAL-2026-005190",
+        "modified_time": "2026-06-09T20:18:26Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b0a6cd3a84c38e801823eba4ccf0d4ff2a28f5955309bfb300f7f0f640b1a69b",
+        "import_time": "2026-06-16T23:03:44.318776268Z",
+        "id": "IN-MAL-2026-006858",
+        "modified_time": "2026-06-16T22:47:12Z",
+        "versions": [
+          "1.0.1"
         ]
       }
     ]

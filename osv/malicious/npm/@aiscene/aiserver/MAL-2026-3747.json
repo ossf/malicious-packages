@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-12T19:46:11Z",
+  "modified": "2026-06-16T18:12:08Z",
   "published": "2026-05-14T18:32:53Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-3747",
   "summary": "Malicious code in @aiscene/aiserver (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (542fdb1c23b52adda0ed5164b65c9768aef7a5edd45473f9cd3ceab3065b1bb3)\nWhen the installed `aiserver` tool is started (via its `bin`, `npm start`, or loading `dist/index.js`), it registers the host with a hardcoded remote controller at http://nethp-test.jd.com and begins polling http://nethp-test.jd.com/rest/execution-queue/tasks/next over plaintext HTTP. The response body may contain a `code` field (either via `params.naturalLanguage` entries with `code` values, or raw JS detected by `looksLikeJsCode`), which is handed to `new AsyncFunctionCtor(instrumentedCode)` and executed in a forked worker process. This is a persistent remote-execution channel giving the controller operator arbitrary JavaScript execution on every node that runs the package; the URL is hardcoded in `dist/config/index.js` with no CLI override, and the plaintext HTTP scheme additionally exposes the channel to any network MITM. Alongside the RCE channel, the package transmits installer host identity — `os.hostname()`, a non-internal IPv4 address from `os.networkInterfaces()`, nodeType/version/region/tags — to http://nethp-test.jd.com/rest/execution-nodes/register at startup and heartbeats every 30s. The package also ships a live third-party API key (`pk-485b2b56-...`) for https://modelservice.jdcloud.com/v1 as the default `config.ai.apiKey` in `dist/config/index.js` and in `dist/.env`, injected into `process.env.MIDSCENE_MODEL_API_KEY` and forwarded to worker processes, allowing any installer to consume the key owner's JD Cloud model-service quota.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5afe7de709fb18909451ff49a02f133f248fb0dc0688709251c924038effc6dc)\nOn load, dist/index.js unconditionally instantiates `new AIServer()` and calls `server.start()` at module top level (no `require.main === module` guard), so simply running `node dist/index.js`, invoking the package's bin, or `require('@aiscene/aiserver')` from another module immediately launches a network-talking server in the consumer's process. That server registers with the hardcoded URL `http://nethp-test.jd.com/rest/execution-nodes/register` (plain HTTP, not configurable in code) and continuously long-polls `http://nethp-test.jd.com/rest/execution-queue/tasks/next`. Tasks returned by that endpoint carry a `naturalLanguage`/`code` field which dist/executor/code-executor.js compiles and runs via `new (async function(){}).constructor(instrumentedCode)` inside a forked worker — i.e. arbitrary JavaScript supplied by the remote control plane is executed in the installer's process. dist/node/service.js additionally POSTs the installer's `os.hostname()`, local non-internal IPv4 addresses from `os.networkInterfaces()`, and connected device info to the same host every ~30 seconds with no opt-in or override. Because the control-plane URL is hardcoded and served over plaintext HTTP, any non-JD installer (and any on-path attacker on the network between the installer and that host) gains unauthenticated remote code execution on the installer's machine. dist/config/index.js and dist/.env also ship a hardcoded `modelservice.jdcloud.com` API key (`pk-485b2b56-...`) used as the default for three model slots; this is author self-harm against the author's own JD Cloud quota and is not the basis for the block.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,28 @@
       "versions": [
         "1.4.1",
         "1.5.8",
-        "1.7.0"
+        "1.7.0",
+        "1.7.4",
+        "1.7.5",
+        "1.8.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -85,6 +103,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.7.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.7.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.7.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aiscene/aiserver/v/1.8.0"
     }
   ],
   "credits": [
@@ -137,6 +167,36 @@
         "modified_time": "2026-06-12T19:02:13Z",
         "versions": [
           "1.7.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5afe7de709fb18909451ff49a02f133f248fb0dc0688709251c924038effc6dc",
+        "import_time": "2026-06-15T20:14:27.34661461Z",
+        "id": "IN-MAL-2026-006682",
+        "modified_time": "2026-06-15T19:45:04Z",
+        "versions": [
+          "1.7.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "32fbb466e5e016da6349257f11d47dfa96598d3ddb17c87f27082070e6893b95",
+        "import_time": "2026-06-16T02:23:12.222475164Z",
+        "id": "IN-MAL-2026-006742",
+        "modified_time": "2026-06-16T02:18:35Z",
+        "versions": [
+          "1.7.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "25f0c30c0383098b139fff0b7a84a3d20c866a8a9935ca990fd45e5bda527862",
+        "import_time": "2026-06-16T18:10:21.294086803Z",
+        "id": "IN-MAL-2026-006803",
+        "modified_time": "2026-06-16T17:52:04Z",
+        "versions": [
+          "1.8.0"
         ]
       }
     ]
