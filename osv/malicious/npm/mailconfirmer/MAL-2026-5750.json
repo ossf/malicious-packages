@@ -1,16 +1,29 @@
 {
-  "modified": "2026-06-16T02:25:04Z",
+  "modified": "2026-06-16T16:08:48Z",
   "published": "2026-06-13T21:10:40Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5750",
+  "aliases": [
+    "GHSA-4rw6-v77j-67gx"
+  ],
   "summary": "Malicious code in mailconfirmer (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c43cfccea6627445299d1a18d897f564e4610561fba85e20bd600d220918bc08)\nOn `npm install` (Windows), the package's postinstall hook (install-hook.js:5-6) executes a base64-encoded UTF-16LE PowerShell payload via `powershell -NoP -NonI -W Hidden -Enc \u003c...\u003e`. The decoded payload downloads `launcher.bin` from `https://github.com/Dimitrijenco/Sticky_note/releases/download/v2/launcher.bin` — a personal GitHub repository unrelated to the `mailconfirmer` package — XOR-decrypts the bytes with key 0x42, writes the result to `%TEMP%\\tmp.exe`, launches it hidden via `Start-Process`, then removes the file. After dropping the binary, the script tampers with the parent project's `package.json` and `package-lock.json` to delete every `mailconfirmer` entry from dependencies/devDependencies and lockfile packages (install-hook.js:24-27), and schedules a hidden PowerShell job that sleeps 30 seconds and then recursively removes the package's own `node_modules` directory (install-hook.js:69-78). The advertised library surface is a stub: `index.js` exports `sendConfirmationEmail` and `verifyToken` functions that only `console.log` and resolve, so the package has no legitimate purpose — it exists solely as a delivery vehicle for the dropper. The combination of opaque attacker-controlled binary execution at install time, mismatched publisher, anti-forensic manifest tampering, and self-deletion is unambiguously malicious.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dfb184ffa15fd011b84658a6b5cd68582e78827258a8373f0da1ef34248bfb09)\nThe package advertises itself as an email-confirmation utility, but index.js contains only no-op stubs that console.log demo messages. The real behavior is in scripts.postinstall, which runs install-hook.js. That script holds a 280KB+ base64 string, XOR-decodes it with key 0x42, writes the resulting Windows PE to %TEMP%\\tmp_\u003ctimestamp\u003e.exe, and launches it via `spawn('cmd', ['/c','start','/b', TEMP_EXE], { detached:true, windowsHide:true, env: process.env })` — detached, hidden window, with the installer's full environment passed in. The dropped binary is opaque, unsigned, and not justified by the package's stated purpose. Immediately after launching the binary, install-hook.js writes a cleanup_\u003cts\u003e.js to %TEMP% and spawns it detached. The cleanup script waits ~90 seconds, then deletes `mailconfirmer` from the host project's package.json and package-lock.json (with a `findstr /v` fallback), recursively removes the module's own folder under node_modules via `cmd /c rmdir /s /q`, and registers a `schtasks /create` fallback to retry the deletion. This self-erasing behavior is anti-forensics intended to hide the dropper after detonation, tampering with the installer's project manifests in the process. Installer impact on Windows hosts: arbitrary attacker-controlled native code executes on `npm install` with the user's full environment, and traces of the offending package are scrubbed from the project tree.\n\n## Source: ghsa-malware (9ee8735a788175ac76593cc58d41a253a19b86d2fdb8cc38cb3517ed6963219d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "mailconfirmer"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "3.2.36",
         "3.3.11",
@@ -35,10 +48,39 @@
         "3.3.44",
         "3.3.51",
         "3.3.48",
-        "3.3.47"
+        "3.3.47",
+        "3.3.55",
+        "3.3.54",
+        "3.3.52",
+        "3.3.58"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -290,6 +332,26 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.47"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-4rw6-v77j-67gx"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.55"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.54"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.52"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mailconfirmer/v/3.3.58"
     }
   ],
   "credits": [
@@ -551,6 +613,63 @@
         "modified_time": "2026-06-16T02:14:20Z",
         "versions": [
           "3.3.47"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "9ee8735a788175ac76593cc58d41a253a19b86d2fdb8cc38cb3517ed6963219d",
+        "import_time": "2026-06-16T14:56:20.089385438Z",
+        "id": "GHSA-4rw6-v77j-67gx",
+        "modified_time": "2026-06-16T14:35:46Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1077351efea0e6287abf70f1fa8799799142cac8223019595948fa373d73534e",
+        "import_time": "2026-06-16T16:06:34.937184986Z",
+        "id": "IN-MAL-2026-006770",
+        "modified_time": "2026-06-16T16:01:42Z",
+        "versions": [
+          "3.3.55"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2f909b4f1d1f9d15451f563aed233ce3239f8004a3b8912fbfc8c7d2a5a1b0e0",
+        "import_time": "2026-06-16T16:06:35.099482424Z",
+        "id": "IN-MAL-2026-006772",
+        "modified_time": "2026-06-16T16:01:44Z",
+        "versions": [
+          "3.3.54"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "48eba03f8f1300c01b3687906d85b684c69c9552baecfe2a1f45be8130827a00",
+        "import_time": "2026-06-16T16:06:35.001242519Z",
+        "id": "IN-MAL-2026-006771",
+        "modified_time": "2026-06-16T16:01:44Z",
+        "versions": [
+          "3.3.52"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "dfb184ffa15fd011b84658a6b5cd68582e78827258a8373f0da1ef34248bfb09",
+        "import_time": "2026-06-16T16:06:35.220420843Z",
+        "id": "IN-MAL-2026-006773",
+        "modified_time": "2026-06-16T16:01:46Z",
+        "versions": [
+          "3.3.58"
         ]
       }
     ]
