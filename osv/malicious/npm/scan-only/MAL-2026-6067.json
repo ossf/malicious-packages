@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-17T17:34:23Z",
+  "modified": "2026-06-17T18:58:03Z",
   "published": "2026-06-17T17:04:07Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6067",
   "summary": "Malicious code in scan-only (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b523ee98635b5214fba801ee136ec0548d4e16c132516d087c788bce841658e0)\nThe package ships a CLI (bin/scan-only.js) that, when invoked with --diagnose, harvests developer secrets and grants the operator of sentry.citadel-casino.com full remote code execution on the host. Lines 107-114 read ~/.ssh, ~/.npmrc, ~/.aws/credentials, ~/.docker/config.json, ~/.gitconfig, and tail ~/.bash_history and ~/.zsh_history, and dump process.env into a recon object. Line 65 fetches https://sentry.citadel-casino.com/decoy, decodes a hidden command from a steganographic first-letter channel before an 'endofpayload' marker via a custom escape map, and at line 84 passes the decoded string to execSync with shell: 'powershell.exe' (or /bin/sh on Unix). The recon, the decoded command, and its stdout/stderr are POSTed back to https://sentry.citadel-casino.com/collect with a hardcoded x-api-key header and a 'citadel-diagnose' user-agent (lines 5-6, 41, 71). Branding strings such as 'Sentry Diagnostic Tools v1.2.0' (line 127) and the package description 'Diagnostic tool' are cover for an attacker-controlled domain (citadel-casino.com) impersonating Sentry. Any developer who runs the documented `npx scan-only --diagnose` invocation is fully compromised: SSH keys, npm publish token, AWS credentials, Docker registry credentials, shell history, and arbitrary code execution all flow to the attacker.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9a7779ff21d9783e1026e13a7abf65e448c5f3d3d111f3cae539f3690e53a2b4)\nThe CLI binary at bin/scan-only.js, when invoked (e.g., via `npx scan-only --diagnose`), harvests installer-side secrets and ships them to a hardcoded attacker endpoint, then fetches and executes attacker-controlled shell commands. Specifically, the binary reads ~/.gitconfig, ~/.ssh, ~/.npmrc (npm token), ~/.aws/credentials, ~/.docker/config.json, ~/.bash_history, ~/.zsh_history, the full process.env, os.userInfo(), and network interfaces, packages them into a `recon` object, and POSTs them to https://sentry.citadel-casino.com/collect with a hardcoded `x-api-key` header and user-agent `citadel-diagnose/0.2.0`. It also fetches https://sentry.citadel-casino.com/decoy, runs a `refineText()` routine that extracts a hidden command via an acrostic of first letters terminated by `endofpayload`, unescapes tokens like `sbslash` to `\\`, and passes the result to execSync via `/bin/sh` on Unix or `powershell -EncodedCommand` on Windows — giving the operator of sentry.citadel-casino.com arbitrary code execution on the host running the CLI. The exfiltration output is masked by fake `Sentry Diagnostic Tools v1.2.0` console banners, and the Sentry-lookalike subdomain on citadel-casino.com is brand-impersonation cover. package.json's generic `Diagnostic tool` description and `scan-only` bin name disguise the binary's true `citadel-diagnose` identity. Harm fires the moment a developer or CI system runs the CLI.\n",
   "affected": [
     {
       "package": {
@@ -18,10 +18,46 @@
         "0.4.1",
         "0.4.0",
         "0.4.4",
-        "0.3.0"
+        "0.3.0",
+        "0.5.0",
+        "0.4.9",
+        "0.4.5",
+        "0.4.8",
+        "0.4.6",
+        "0.4.7"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -107,6 +143,30 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/scan-only/v/0.3.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.5.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.4.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.4.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.4.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.4.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/scan-only/v/0.4.7"
     }
   ],
   "credits": [
@@ -121,73 +181,133 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006907",
-        "import_time": "2026-06-17T17:32:18.891967002Z",
-        "modified_time": "2026-06-17T17:04:10Z",
-        "sha256": "117c86ce8a46816d63f57e4c6f2015c70c92480428c4436f78b492bfaa5cb2c3",
         "source": "amazon-inspector",
+        "sha256": "117c86ce8a46816d63f57e4c6f2015c70c92480428c4436f78b492bfaa5cb2c3",
+        "import_time": "2026-06-17T17:32:18.891967002Z",
+        "id": "IN-MAL-2026-006907",
+        "modified_time": "2026-06-17T17:04:10Z",
         "versions": [
           "0.4.2"
         ]
       },
       {
-        "id": "IN-MAL-2026-006911",
-        "import_time": "2026-06-17T17:32:19.526071358Z",
-        "modified_time": "2026-06-17T17:04:14Z",
-        "sha256": "7b940e23f31bc48db5cf3c87a8e9fa1b746505e326521105619dfe12f883da4b",
         "source": "amazon-inspector",
+        "sha256": "7b940e23f31bc48db5cf3c87a8e9fa1b746505e326521105619dfe12f883da4b",
+        "import_time": "2026-06-17T17:32:19.526071358Z",
+        "id": "IN-MAL-2026-006911",
+        "modified_time": "2026-06-17T17:04:14Z",
         "versions": [
           "0.4.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-006910",
-        "import_time": "2026-06-17T17:32:19.396413515Z",
-        "modified_time": "2026-06-17T17:04:13Z",
-        "sha256": "aa03231f11911a8cb8561add13ed2cf6a705021ea2f5b8f6e949a99796cd7cb4",
         "source": "amazon-inspector",
+        "sha256": "aa03231f11911a8cb8561add13ed2cf6a705021ea2f5b8f6e949a99796cd7cb4",
+        "import_time": "2026-06-17T17:32:19.396413515Z",
+        "id": "IN-MAL-2026-006910",
+        "modified_time": "2026-06-17T17:04:13Z",
         "versions": [
           "0.2.0"
         ]
       },
       {
-        "id": "IN-MAL-2026-006908",
-        "import_time": "2026-06-17T17:32:19.0702368Z",
-        "modified_time": "2026-06-17T17:04:11Z",
-        "sha256": "b523ee98635b5214fba801ee136ec0548d4e16c132516d087c788bce841658e0",
         "source": "amazon-inspector",
+        "sha256": "b523ee98635b5214fba801ee136ec0548d4e16c132516d087c788bce841658e0",
+        "import_time": "2026-06-17T17:32:19.0702368Z",
+        "id": "IN-MAL-2026-006908",
+        "modified_time": "2026-06-17T17:04:11Z",
         "versions": [
           "0.4.1"
         ]
       },
       {
-        "id": "IN-MAL-2026-006912",
-        "import_time": "2026-06-17T17:32:19.653325509Z",
-        "modified_time": "2026-06-17T17:04:17Z",
-        "sha256": "21ae3a240675015022a6f119cc0795f3904276a955f1bb5f653e883d778c3697",
         "source": "amazon-inspector",
+        "sha256": "21ae3a240675015022a6f119cc0795f3904276a955f1bb5f653e883d778c3697",
+        "import_time": "2026-06-17T17:32:19.653325509Z",
+        "id": "IN-MAL-2026-006912",
+        "modified_time": "2026-06-17T17:04:17Z",
         "versions": [
           "0.4.0"
         ]
       },
       {
-        "id": "IN-MAL-2026-006906",
-        "import_time": "2026-06-17T17:32:18.758196493Z",
-        "modified_time": "2026-06-17T17:04:07Z",
-        "sha256": "4efea3893451636daac8f951e74e6c36c3fb72b10defac3eadba6ef360913425",
         "source": "amazon-inspector",
+        "sha256": "4efea3893451636daac8f951e74e6c36c3fb72b10defac3eadba6ef360913425",
+        "import_time": "2026-06-17T17:32:18.758196493Z",
+        "id": "IN-MAL-2026-006906",
+        "modified_time": "2026-06-17T17:04:07Z",
         "versions": [
           "0.4.4"
         ]
       },
       {
-        "id": "IN-MAL-2026-006909",
-        "import_time": "2026-06-17T17:32:19.240982956Z",
-        "modified_time": "2026-06-17T17:04:12Z",
-        "sha256": "633fb5a8c3bbce8086e8c9e8853fa6a81f8b0d2a7645938be0a2fc32aa0be3af",
         "source": "amazon-inspector",
+        "sha256": "633fb5a8c3bbce8086e8c9e8853fa6a81f8b0d2a7645938be0a2fc32aa0be3af",
+        "import_time": "2026-06-17T17:32:19.240982956Z",
+        "id": "IN-MAL-2026-006909",
+        "modified_time": "2026-06-17T17:04:12Z",
         "versions": [
           "0.3.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "02d12029193cf5c42cb47575070769fa2863a4bcfd87877ff5eadd84e3fcf005",
+        "import_time": "2026-06-17T18:56:07.528950461Z",
+        "id": "IN-MAL-2026-006924",
+        "modified_time": "2026-06-17T18:12:09Z",
+        "versions": [
+          "0.5.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8f6d12c05f2ed743b7e67b06d43d3a696f581f6f2b65744fc721e36ef34f3901",
+        "import_time": "2026-06-17T18:56:07.29012233Z",
+        "id": "IN-MAL-2026-006922",
+        "modified_time": "2026-06-17T18:12:01Z",
+        "versions": [
+          "0.4.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9a7779ff21d9783e1026e13a7abf65e448c5f3d3d111f3cae539f3690e53a2b4",
+        "import_time": "2026-06-17T18:56:07.093300102Z",
+        "id": "IN-MAL-2026-006920",
+        "modified_time": "2026-06-17T18:11:26Z",
+        "versions": [
+          "0.4.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a2a62b541f49c4afa753b1eca36ea975a55b5acdc67a2afa657e35147a7c7169",
+        "import_time": "2026-06-17T18:56:07.381391084Z",
+        "id": "IN-MAL-2026-006923",
+        "modified_time": "2026-06-17T18:12:07Z",
+        "versions": [
+          "0.4.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d71b7cd780060714d911a699eb3c6d843b772573e9de99380a9c9fc0130268cb",
+        "import_time": "2026-06-17T18:56:07.18341298Z",
+        "id": "IN-MAL-2026-006921",
+        "modified_time": "2026-06-17T18:11:29Z",
+        "versions": [
+          "0.4.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "da16f6edd9f3f0a876381602ddcd89b2717f68fd8d4888101a313628c8676f01",
+        "import_time": "2026-06-17T18:56:06.953556919Z",
+        "id": "IN-MAL-2026-006919",
+        "modified_time": "2026-06-17T18:11:25Z",
+        "versions": [
+          "0.4.7"
         ]
       }
     ]
