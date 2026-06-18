@@ -1,0 +1,169 @@
+{
+  "modified": "2026-05-26T05:55:03Z",
+  "published": "2026-05-22T10:21:37Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4346",
+  "summary": "Malicious code in logger-draft (npm)",
+  "details": "Part of a multi-package malicious campaign by npm author `toskypi`, `logger-draft` is a companion package to `eo-terminal` in the same infostealer and remote access trojan (RAT) campaign. Both packages share the same actor, C2 infrastructure, and attack pattern, and are distributed together under a \"terminal logging utilities\" theme.\n\nThe campaign deploys a comprehensive payload via a `postinstall` hook that copies a large JavaScript agent to a persistent location disguised as `MicrosoftSystem64` and registers it as a system service (systemd on Linux, LaunchAgent on macOS, scheduled task or registry run key on Windows). A sandbox check (CPU count and CPU model string) aborts execution in analysis environments. The install process exits cleanly with `process.exit(0)`, leaving no visible error output.\n\n**C2 infrastructure:** Primary WebSocket/HTTP C2 at `ws://195.201.194.107:8010` (Hetzner Cloud, Germany). Stolen data is also exfiltrated to HuggingFace repository `yszf984308/system-release` via a hardcoded API token.\n\n**Capabilities** (shared with campaign):\n- **Keylogger** — keystroke and password capture with offline queuing\n- **Clipboard harvesting** — 1,000 ms polling via platform-native tools\n- **Screenshot capture and live streaming**\n- **Browser credential theft** — Chromium-family and Firefox profile directories\n- **Crypto wallet exfiltration** — 20+ desktop wallets\n- **SSH backdoor** — exfiltrates SSH keys and injects attacker RSA public key into `authorized_keys`\n- **Shell history theft** — 15+ history file formats across all user home directories\n- **Environment variable and `.env` file theft** — targets cloud and CI/CD credentials at install time\n- **Telegram session theft** — full `tdata/` directory exfiltration\n- **Cloud credential theft** — AWS, Azure, GCP, Kubernetes, Docker, GnuPG\n- **Recursive filesystem scan** — certificate, key, and wallet files uploaded to HuggingFace\n- **Remote command execution** and interactive terminal sessions\n- **Self-update** via HuggingFace-hosted native binaries\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0862a27a4fcbb3fc546fed447371d22dfcabb46e2d6a163754d30ec300fdceb7)\nlogger-draft@3.2.1 advertises itself as a terminal-color logger but ships a heavily obfuscated postinstall dropper (utils.cjs, 252 KB, obfuscator.io-style string-array + RC4 + self-defending wrappers) wired into package.json as `\"postinstall\": \"node utils.cjs\"`. On install the script RC4-decodes a hidden BINARY_BASE_URL and HF_TOKEN, selects a platform-specific filename (linux-x64/arm64, darwin-arm64, win32-x64), HTTPS-GETs the binary with an `Authorization: Bearer \u003ctoken\u003e` header, writes it under the user's data directory with mode 0o755, and detached-spawns it. No hash or signature verification is performed, and the bearer-token gate means the source bytes are unauditable from the published package — the author can swap the payload server-side at any time. After dropping the binary the script installs cross-platform boot persistence: on Windows it creates a `schtasks /SC ONLOGON` task and an HKCU\\...\\CurrentVersion\\Run value pointing at a generated.vbs shim that re-spawns the binary hidden; on Linux it writes `~/.config/systemd/user/\u003cunit\u003e.service` and runs `systemctl --user daemon-reload \u0026\u0026 enable --now`, plus an autostart entry; on macOS it launches the binary detached from a writable directory. Supporting deception signals: the README is titled `terminal-logger-utils` and instructs `npm install terminal-logger-utils` (mismatched name), publisher metadata is a bare handle with no repository/homepage/license, and the README claims 'Zero runtime dependencies' while package.json declares nine. Installer harm fires automatically on `npm install` in any developer or CI environment.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "logger-draft"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "3.2.0",
+        "3.2.1",
+        "3.2.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "34.0.16.104.in-addr.arpa"
+          ],
+          "evidence_files": [
+            {
+              "path": "utils.cjs",
+              "sha256": "032586646362b7e21f8bf0b87cef3ace2a27c415a8447c52edfa81f37b51810f",
+              "tlsh": "3344a58037d6bc8217471bb7371ab5f5e52edd98b088458ef500bc58f1f9a26eae0670"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "logger-draft-3.2.0.tgz",
+              "hashes": {
+                "sha1": "b28c81c63335b8b421cd77c462512b9c1b66f5b7",
+                "sha512_sri": "sha512-VHk9uUdqsy6HSvu5KI99Ekrq4tPFj5q3QT1EbNvwN4qDsWgAuFErH3TF+hL6WNh3d2tOrW19ezA6j86eIdD8RA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://x.com/safedepio/status/2058848260845076651"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/logger-draft/v/3.2.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/logger-draft/v/3.2.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/logger-draft/v/3.2.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "fbefd2d58c46c2967c6d1ac070fe3fef6a50b078d76ca015d184cf8ac3e9812e",
+        "import_time": "2026-05-26T05:52:05.958128048Z",
+        "id": "IN-MAL-2026-004183",
+        "modified_time": "2026-05-22T10:21:37Z",
+        "versions": [
+          "3.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "0862a27a4fcbb3fc546fed447371d22dfcabb46e2d6a163754d30ec300fdceb7",
+        "import_time": "2026-05-26T05:52:16.789692958Z",
+        "id": "IN-MAL-2026-004272",
+        "modified_time": "2026-05-22T23:56:40Z",
+        "versions": [
+          "3.2.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1f700e9c57c78ef1864ca4e05bb03e3d1c1d3af843fea707f934e80ff827aa93",
+        "import_time": "2026-05-26T05:52:22.246211527Z",
+        "id": "IN-MAL-2026-004320",
+        "modified_time": "2026-05-23T12:30:46Z",
+        "versions": [
+          "3.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5f856a4ade2e077545656c876ac51e89603c8901fefa4abbd03f3348ebc39854",
+        "import_time": "2026-05-26T05:52:06.06456415Z",
+        "id": "IN-MAL-2026-004184",
+        "modified_time": "2026-05-22T10:21:37Z",
+        "versions": [
+          "3.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "82d03fd6ce6e3d4cc0cca06c66cf56d00115c6ab335ab7ec9e0fe7476fa10d3c",
+        "import_time": "2026-05-26T05:52:16.891824041Z",
+        "id": "IN-MAL-2026-004273",
+        "modified_time": "2026-05-22T23:56:40Z",
+        "versions": [
+          "3.2.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "acd3dbf9060aad9798a0c2bdca5208715491ce58711cec202661d6d7648361a6",
+        "import_time": "2026-05-26T05:52:22.357513746Z",
+        "id": "IN-MAL-2026-004321",
+        "modified_time": "2026-05-23T12:30:47Z",
+        "versions": [
+          "3.2.2"
+        ]
+      }
+    ]
+  }
+}

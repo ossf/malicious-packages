@@ -1,0 +1,148 @@
+{
+  "modified": "2026-06-15T20:16:21Z",
+  "published": "2026-05-02T08:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3288",
+  "summary": "Malicious code in common-tg-service (npm)",
+  "details": "Malicious npm package published by user `shetty123` as part of a Telegram account hijacking framework targeting Indian Telegram users. All 502 published versions (1.0.1 through 1.3.207) are malicious. Pairs with `ams-ssk`, which provides the operator's server-side AMS/CMS infrastructure.\n\n`common-tg-service` performs full Telegram account takeover at runtime when the service is initialized (no install-time hooks, which lets it bypass scanners that gate on preinstall/postinstall lifecycle scripts). Behavior includes: implanting a hardcoded 2FA password (`Ajtdmwajt1@`) and recovery email on hijacked accounts; polling an operator-controlled Gmail inbox over IMAP (`imap.gmail.com`) to auto-submit 2FA confirmation codes; revoking all device authorizations except the attacker's session; harvesting OTP codes by monitoring Telegram chat 777000 and forwarding them to the operator; running SRP ownership checks against managed accounts and flagging rotated 2FA as unrecoverable; and fetching remote JSON configuration from `npoint.io` so operators can change behavior without re-publishing.\n\nBlocked outbound requests are laundered through a relay at `helper-thge.onrender.com`. Stolen accounts and updates are exfiltrated to attacker-controlled Telegram channels (`-1001801844217` and `-1001972065816`). Operator infrastructure includes `paidgirl.site`, `cms.paidgirl.site`, `report-upi.netlify.app`, and `promoteClients2.glitch.me`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7cd3b6dd4751c7296aa980af903101344ab538b1a9ead17da5699ab21bcfdfdb)\nThis package wires a global NestJS AuthGuard (registered via APP_GUARD in AppModule) that grants authenticated access to any deployed consumer service under several attacker-controlled conditions: (1) any HTTP request carrying header or query parameter `apiKey=santoor` (case-insensitive) is treated as authenticated — see dist/guards/auth.guard.js line 80; (2) requests originating from a hardcoded list of five public IPs (31.97.59.2, 148.230.84.50, 13.228.225.19, 18.142.128.26, 54.254.162.138) are unconditionally allowed — dist/guards/auth.guard.js lines 14–20; (3) requests with an Origin header matching author-owned web properties (paidgirl.site, zomcall.netlify.app, tgchats.netlify.app, tg-chats.netlify.app, report-upi.netlify.app) are accepted — dist/guards/auth.guard.js lines 21–27; and (4) a long IGNORE_PATHS list bypasses auth entirely on destructive routes (/exit, /sendtoall, /sendmessage, /sendtochannel, /joinchannel, /leavechannel, /executehs, /executehsl, etc.). AppController exposes POST /execute-request (dist/app.controller.js lines 80–105), which proxies arbitrary HTTP requests server-side — combined with the master key this turns every consumer deployment into an open SSRF/relay reachable by anyone who reads the public tarball. CloudinaryService.downloadAndExtractZip fetches https://cms.paidgirl.site/folders/${folderName}/files/download-all and runs AdmZip.extractAllTo(process.cwd(), true) on the result with no integrity check (dist/cloudinary.js lines 69, 84) — the author can overwrite arbitrary files (including dist/index.js, package.json) in the deployed app's working directory and achieve code execution on the next start. generateTGConfig defaults SOCKS5 proxy fetch and IP-management to https://cms.paidgirl.site/ip-management with x-api-key `santoor` (dist/components/Telegram/utils/generateTGConfig.js line 97), routing the installer's Telegram MTProto sessions through author-selected proxies. fetchWithTimeout silently re-POSTs any 403/495 request — including its original headers and body — to https://helper-thge.onrender.com/execute-request (dist/utils/fetchWithTimeout.js lines 80–85), exfiltrating auth tokens and request payloads to an author-operated relay. On bootstrap, InitModule.onModuleInit posts the installer's clientId to api.telegram.org chat_id `-1001801844217` (dist/utils/logbots.js line 24), with subsequent unauthorized-attempt logs sent to the same author channel by default. The combined effect: every installer that imports AppModule grants the author persistent remote access, code-execution capability, MTProto traffic interception, and a silent-relay exfiltration channel.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "common-tg-service"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.3.221",
+        "1.3.226"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/utils/logbots.js",
+              "sha256": "362c140115aa0192f39e33d94ba39345e144aae3f865d0b5e68ac57a14d8b3d3",
+              "tlsh": "b8319d4825fb6476835248955fdfc0b4792275133e8dec34b56cd3c24f41ab652e3e84"
+            },
+            {
+              "path": "dist/utils/fetchWithTimeout.js",
+              "sha256": "ab846b4523706a54989794d987a57d82076372ff2ae1363b8b3d849897c1831f",
+              "tlsh": "4e32725a2bf3552701e320a8922f64123633a9071a19fd507b5c97117f8859ceef3bd9"
+            },
+            {
+              "path": "dist/cloudinary.js",
+              "sha256": "421e14a820d21d8edf7e2f70d33fed4188f2fb2d9d5774b9d4434280703cd676",
+              "tlsh": "9ff1a5870af79533907771ae1b2f1402b522c907252ced18bb8ca365afe1590ecd1ee8"
+            },
+            {
+              "path": "dist/guards/auth.guard.js",
+              "sha256": "c551806048a3c62f8207520667f12985cf7af79ff896e5d36a5fe4aa63b4e86d",
+              "tlsh": "be1242da21f77560c32291ad8f0b6206b124e457380dedb57eac51d5afc9168c3f2aa8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "common-tg-service-1.3.221.tgz",
+              "hashes": {
+                "sha1": "5ff1aaa669b821427383b1720a26fb422d5ce193",
+                "sha512_sri": "sha512-UkEwv8LgmRkUUhboUOc0QeqR6adrrdODEhlQdMsyISvLSe/KtlFhO6GF301ioTwSGX0rCREl3Q+pqB4L5jRIRg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-common-tg-service-npm-telegram-hijacking-framework/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.221"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.226"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b90ad93b19ce09a090f9837117fe06f9a4b7b15a8268160182e9d671f0f19b65",
+        "import_time": "2026-05-12T07:28:57.937817916Z",
+        "modified_time": "2026-05-12T06:53:21Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "cabb88eaa75d4e2a841ec661c545d4d4796871fc3da8e39da527bfa0a33b74a7",
+        "import_time": "2026-06-12T19:44:12.322610047Z",
+        "id": "IN-MAL-2026-006138",
+        "modified_time": "2026-06-12T19:09:48Z",
+        "versions": [
+          "1.3.221"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7cd3b6dd4751c7296aa980af903101344ab538b1a9ead17da5699ab21bcfdfdb",
+        "import_time": "2026-06-15T20:14:27.612881018Z",
+        "id": "IN-MAL-2026-006685",
+        "modified_time": "2026-06-15T19:49:45Z",
+        "versions": [
+          "1.3.226"
+        ]
+      }
+    ]
+  }
+}

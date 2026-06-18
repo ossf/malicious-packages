@@ -1,0 +1,78 @@
+{
+  "modified": "2026-06-09T15:24:30Z",
+  "published": "2026-06-09T15:16:44Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5342",
+  "aliases": [
+    "GHSA-4vrf-wcrh-g5j5"
+  ],
+  "summary": "Malicious code in kecak256 (npm)",
+  "details": "`kecak256` is a typosquat of the popular `keccak256` package (one `c` dropped) that ships a credential-stealing payload executed automatically on install.\n\nThe package spoofs the legitimate keccak256 project — author \"Miguel Mota\", matching description, README, and keywords — and includes a benign decoy hash implementation (`kecak256.js`) as `main`.\n\n`package.json` defines `scripts.postinstall`: `node init.m.js \u0026\u0026 echo DONE`, and declares `archiver`, `axios`, and `form-data` as runtime dependencies (the exfiltration toolchain).\n\n**init.m.js (launcher):** RC4 + base64 string obfuscation. On Windows it spawns a hidden PowerShell (`-WindowStyle Hidden -ExecutionPolicy Bypass`) that `Start-Process`-launches `upchk.m.js` under node; on other platforms it spawns `node upchk.m.js` detached (`{detached:true, windowsHide:true, stdio:'ignore'}`) and calls `child.unref()` to orphan the process.\n\n**upchk.m.js (stage 2, ~63 KB obfuscated):** performs an `isAdmin()` privilege check, targets browser/credential stores (observed string targets include Chrome `Login Data`, keystore, `cc_appkey`), archives collected data into `npmupdate.zip` via `archiver`, and exfiltrates it in 5 MB chunks via `axios` + `FormData` to a runtime-decoded C2 URL (`uploadFileChunks(file, sUrl, 5MB)`).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (558c8dc29d2f864f51bea9c39fd8af25714a650a35d008d4142acd5c402a1b3c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "kecak256"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/kecak256"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-4vrf-wcrh-g5j5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Hugo Guillaume (Konvu)",
+      "type": "FINDER",
+      "contact": [
+        "mailto:hugo@konvu.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "558c8dc29d2f864f51bea9c39fd8af25714a650a35d008d4142acd5c402a1b3c",
+        "import_time": "2026-06-09T15:22:39.837017975Z",
+        "id": "GHSA-4vrf-wcrh-g5j5",
+        "modified_time": "2026-06-09T15:16:45Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

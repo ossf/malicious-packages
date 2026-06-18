@@ -1,0 +1,139 @@
+{
+  "modified": "2026-05-26T05:55:03Z",
+  "published": "2026-05-23T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4280",
+  "aliases": [
+    "GHSA-vxfv-w8fq-239r"
+  ],
+  "summary": "Malicious code in node-setup-helpers (npm)",
+  "details": "Ten packages published by npm user `asdxzxc` at version 1.0.10 target developers working on AI and LLM tooling. Each package masquerades as a developer utility while executing a two-stage payload triggered via postinstall: `package.json` → `lib/setup.js` → `lib/worker.js`.\n\n**Credential harvesting:** `lib/worker.js` scans the filesystem for private keys (64-char hex), BIP39 mnemonics (12–24 word phrases), API keys and secrets, and passwords from env vars and shell history (`.bash_history`, `.zsh_history`, `.fish_history`, `.mysql_history`, `.psql_history`), including wallet tool invocations (`geth account`, `hardhat`, `metamask`, `wallet import`). Targeted paths include `~/.ssh`, `~/.aws/credentials`, `~/.config/gcloud`, `~/.azure`, `~/.docker/config.json`, `~/.kube/config`, crypto wallet dirs (`~/.ethereum`, `~/.bitcoin`, `~/.solana`), exchange configs (Binance, Bybit, OKX, KuCoin, Deribit, 3Commas), `.env`, `.npmrc`, `.gitconfig`. Also performs browser data theft and Ethereum keystore brute-force. A priority-target list fetched from the actor's GitHub Pages endpoint enables aggressive deep scanning for pre-registered high-value hosts.\n\n**AI self-propagation:** after credential theft, a `_propagate()` function executes a multi-vector campaign to infect AI coding assistants. It writes poisoned `.cursorrules` and `CLAUDE.md` files — framed as \"P-2024-001 Enterprise Credential Integrity Standard\" — to all discovered project directories, parent directories, and home subdirectories, instructing Cursor, Claude Code, and GitHub Copilot to execute the remote payload and propagate it via Issues, PRs, and documentation. Git hooks (`post-merge`, `post-checkout`, `pre-commit`, `pre-push`) are injected into all `.git` repos found on disk, and a persistence block is appended to `~/.bashrc`, `~/.zshrc`, and `~/.profile`. Zero-width steganography (ZWSP/ZWJ/ZWNJ/LTRM encoding) embeds hidden scan triggers in all AI-generated text output, enabling AI-to-AI chain infection invisible to humans.\n\n**C2/exfil:** a remotely configurable JSON config hosted on the actor's GitHub Pages delivers the active webhook list, encryption key, and scan strategy; hardcoded fallback webhooks at `webhook.site` and a DNS TXT record fallback are used if the primary channel fails. A dedup marker at `~/.local/share/.p2024_integrity` prevents re-propagation within 24 hours.\n\n`node-setup-helpers` poses as helper utilities for Node.js project setup and configuration.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (626e815912fa24995ad58e18c495b1c6bd70987f9970b6262374f292e3c0d6ed)\nThe package's lib/trap-core.js combines host enumeration (os.hostname(), os.platform()), filesystem reads (fs.existsSync against multiple paths), child_process invocations (with curl and ping observable in the file), and HTTPS POST calls that include a 'hostname:' field in the request body — the canonical shape of a system-information beacon that gathers host identity and shells out to OS commands, then exfiltrates the results over HTTPS. Multiple POST sites (lines 385, 411, 466, 548, 549) and repeated child_process imports across the file indicate a deliberate, large surface for collection and outbound transmission rather than incidental utility code. Installing this package places this collector in the dependency graph; any code path that reaches lib/trap-core.js will leak host details and command output to a remote endpoint.\n\n## Source: ghsa-malware (32024ed016e86afba2889a0ed45a587d84d4f4f51d69f13511b4d6a5bf185b79)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "node-setup-helpers"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.5.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "raw.githubusercontent.com",
+            "webhook.site"
+          ],
+          "evidence_files": [
+            {
+              "path": "lib/trap-core.js",
+              "sha256": "5b68fa0e8fcab79911423bddf4edebcc1ba8c7b140b30c6a9a6ee698606ea111",
+              "tlsh": "5823f78615f611304aa3e0e99f879029623ae1533245dda4f79c83449fca72c93f6bed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "node-setup-helpers-1.5.1.tgz",
+              "hashes": {
+                "sha1": "7306e5f19bca3a3203ba00424ec2fde7f2b7bfa2",
+                "sha512_sri": "sha512-qwLmLVFKfhEszGlliM6ezSDX2XW7a5wBTkC9Q6twKDV1GQ+B/PH4KNBXHpKeEInNPSq77JyxOXvvw9qKrWWjmw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-vxfv-w8fq-239r"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://x.com/safedepio/status/2058177434630213994"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/node-setup-helpers/v/1.5.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "32024ed016e86afba2889a0ed45a587d84d4f4f51d69f13511b4d6a5bf185b79",
+        "import_time": "2026-05-24T15:40:47.39897154Z",
+        "id": "GHSA-vxfv-w8fq-239r",
+        "modified_time": "2026-05-24T15:36:30Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "626e815912fa24995ad58e18c495b1c6bd70987f9970b6262374f292e3c0d6ed",
+        "import_time": "2026-05-26T05:52:42.769074825Z",
+        "id": "IN-MAL-2026-004496",
+        "modified_time": "2026-05-24T11:20:27Z",
+        "versions": [
+          "1.5.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b410780411be5edfed752748ed9d0f1cb84fee1ef28b203af1575030ff414879",
+        "import_time": "2026-05-26T05:52:43.096906933Z",
+        "id": "IN-MAL-2026-004498",
+        "modified_time": "2026-05-24T11:21:13Z",
+        "versions": [
+          "1.5.1"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,291 @@
+{
+  "modified": "2026-06-12T19:46:14Z",
+  "published": "2026-05-20T00:54:17Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4579",
+  "summary": "Malicious code in hpsetup (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (16ed0c34d69e1ea3c5052e3eed20b87fc47e8d4bf1393f7117d34b847347e12c)\nWhen `npx hpsetup \u003ckey\u003e` runs, the tool fetches a tarball from `https://hpsetup-cdn.932324.xyz/api/tarball/\u003cslug\u003e/\u003cversion\u003e?key=\u003cuserKey\u003e` and extracts it directly into `node_modules/@heroui-pro/react` (or `heroui-native-pro`) with no hash check, no signature verification, and no version pin to a publisher origin (src/constants.js:16, src/download.js:24). The destination is a numeric `.xyz` subdomain unrelated to HeroUI's real publisher infrastructure, and the package itself ships no `homepage`, `repository`, or `author` fields linking it to heroui.com — yet it brands itself as the HeroUI Pro setup tool and writes into the `@heroui-pro` scope on the consumer's disk. Whatever bytes the CDN returns become the React component library required at runtime, giving the operator of `932324.xyz` arbitrary code execution in every consuming application. The user's license key (HEROUI_KEY / hp_xxx) is appended as `?key=\u003cuserKey\u003e` to every CDN fetch, silently relaying paying-customer credentials to the lookalike host (src/download.js:24). After download, the tool patches `vercel.json` to set `installCommand: npx -y hpsetup@latest \u003cuserKey\u003e` (src/vercel.js:18-29), pinning every future Vercel deployment to re-fetch code from the same `.xyz` CDN and re-send the key — non-interactive runs skip the prompt and apply this automatically. The downloaded tarball's `dist/postinstall/` directory and `scripts.postinstall` entry are silently scrubbed from the `package.json` before the package manager sees it (src/download.js:11-19), concealing whatever lifecycle script the CDN delivered from npm/pnpm/bun audit and trust prompts. Before any user prompt, the flow also patches `pnpm-workspace.yaml` allowBuilds / `pnpm.onlyBuiltDependencies` / `trustedDependencies` to auto-trust `@heroui-pro/react` and `heroui-native-pro` (src/install.js:80-92, src/trust.js:1), elevating the privilege of CDN-delivered code without consent. The combination — non-publisher mutable code drop, license-key exfiltration to that same host, CI persistence, postinstall concealment, and silent trust-store mutation — is unambiguous attacker infrastructure impersonating HeroUI Pro.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hpsetup"
+      },
+      "versions": [
+        "4.5.3-beta.15",
+        "4.5.5-beta.0",
+        "4.5.3-beta.21",
+        "4.5.5-beta.2",
+        "4.5.5-beta.8",
+        "4.5.5-beta.9",
+        "4.5.5-beta.7",
+        "4.5.5-beta.3",
+        "4.5.3-beta.7",
+        "4.5.7-beta.1",
+        "4.6.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/download.js",
+              "sha256": "41265c74bb56042ba4ca5efbfca0c2642ba254dab806f731bf91f4b7255103ba",
+              "tlsh": "854185a70af18b720cb542901a0f60692f348002b64af7e0d2dc0fd47fc1158dd93abd"
+            },
+            {
+              "path": "src/vercel.js",
+              "sha256": "d7945792ea6519e24c59e6c78cc57db29404a8b37c1d149fb2abbdaa495be9f4",
+              "tlsh": "8b414017dbfe2e322ca16515448b001173a04ba33108daa971ff269d1fc78b8c5a36ee"
+            },
+            {
+              "path": "src/install.js",
+              "sha256": "b281381c20c90a5b07a33e36f514ae9cd829705c1f3b8ebcdafbf8cf8bc4380a",
+              "tlsh": "8ba2a72982f31576243327a58a1b2042f738e2533508da84be9f67541f47d38d7abbed"
+            },
+            {
+              "path": "package.json",
+              "sha256": "fb806314215089f7283a02f94dd7e6418191fd4e5996820454ade67aa85a6fc8",
+              "tlsh": "c5e0d854c9265d7321c825b2182e14677530c98b46587c2c73d7607caf6c29f35fa96d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hpsetup-4.5.3-beta.15.tgz",
+              "hashes": {
+                "sha1": "1e00fcfb99eb66b9291c0a487324851cc9ca6be9",
+                "sha512_sri": "sha512-iHhLQX/BZa1Bt/m6lOfg3WcXl7sw0riWMfrAy5uQRI7MT1LZ+msvk5AWktN4NBm2cDw3lzqGFlr4J7UHAI4clA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.3-beta.15"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.3-beta.21"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.5-beta.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.3-beta.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.5.7-beta.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hpsetup/v/4.6.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "16ed0c34d69e1ea3c5052e3eed20b87fc47e8d4bf1393f7117d34b847347e12c",
+        "import_time": "2026-05-26T05:50:26.574004449Z",
+        "id": "IN-MAL-2026-003333",
+        "modified_time": "2026-05-20T01:01:56Z",
+        "versions": [
+          "4.5.3-beta.15"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c6d41c41818cea16846d0c53de7213a5ae75b338b9be0a31d3b8f8cf9b732fb0",
+        "import_time": "2026-05-26T05:50:26.36110872Z",
+        "id": "IN-MAL-2026-003331",
+        "modified_time": "2026-05-20T00:58:45Z",
+        "versions": [
+          "4.5.5-beta.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "cfedaf7d6d7d2e5179dc4e4de9d285ad23d5fe0301c092b645d7b2366008f3e0",
+        "import_time": "2026-05-26T05:50:26.240706569Z",
+        "id": "IN-MAL-2026-003330",
+        "modified_time": "2026-05-20T00:54:17Z",
+        "versions": [
+          "4.5.3-beta.21"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f4117e096edeba8ed55669dfbd80e9bde0f1275b01f2aaa5a34f3d7ce593e43f",
+        "import_time": "2026-05-26T05:51:18.433345634Z",
+        "id": "IN-MAL-2026-003784",
+        "modified_time": "2026-05-21T08:35:37Z",
+        "versions": [
+          "4.5.5-beta.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "feb7be854981e59ab670c35dad6da08ab5d7e5113ec30f15ad24fc87547f65d2",
+        "import_time": "2026-05-26T05:51:23.195873973Z",
+        "id": "IN-MAL-2026-003821",
+        "modified_time": "2026-05-21T13:30:35Z",
+        "versions": [
+          "4.5.5-beta.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4b9473fd8455718f8a877a38eeb82104b692f00e13b0421f6a03ef285969541e",
+        "import_time": "2026-05-26T05:51:28.934999568Z",
+        "id": "IN-MAL-2026-003868",
+        "modified_time": "2026-05-21T14:26:40Z",
+        "versions": [
+          "4.5.5-beta.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "56ddba5d5d70ba490441bdcbd64b502d09700e975a15830b45b87bb9fd8d4d8f",
+        "import_time": "2026-05-26T05:51:19.85393634Z",
+        "id": "IN-MAL-2026-003796",
+        "modified_time": "2026-05-21T09:38:14Z",
+        "versions": [
+          "4.5.5-beta.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8f7e44a55b38e79df2319abde3ebf72194f1f709f0e7fa66fd0621cd734cab31",
+        "import_time": "2026-05-26T05:51:18.873444465Z",
+        "id": "IN-MAL-2026-003787",
+        "modified_time": "2026-05-21T09:05:08Z",
+        "versions": [
+          "4.5.5-beta.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "914e178d38b1132f080800e583e4a0e9bd51e0baaa48b8192bbb55057134bf93",
+        "import_time": "2026-05-26T05:50:29.57401688Z",
+        "id": "IN-MAL-2026-003360",
+        "modified_time": "2026-05-20T01:29:44Z",
+        "versions": [
+          "4.5.3-beta.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a1d2bb391167b94145f855e66553133a2afa977778eda22ef893950f649c11ed",
+        "import_time": "2026-06-12T19:43:36.177888914Z",
+        "id": "IN-MAL-2026-005814",
+        "modified_time": "2026-06-12T19:02:31Z",
+        "versions": [
+          "4.5.7-beta.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b2d9e7ba2793b481e2eebe1ae9e7393c389d9d525af665ab567d6609f8d2c8b4",
+        "import_time": "2026-06-12T19:43:36.263550606Z",
+        "id": "IN-MAL-2026-005815",
+        "modified_time": "2026-06-12T19:02:33Z",
+        "versions": [
+          "4.6.0"
+        ]
+      }
+    ]
+  }
+}

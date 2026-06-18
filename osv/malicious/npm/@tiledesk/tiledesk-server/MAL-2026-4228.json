@@ -1,0 +1,78 @@
+{
+  "modified": "2026-05-26T21:41:23Z",
+  "published": "2026-05-21T08:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4228",
+  "aliases": [
+    "GHSA-5vfv-hpg7-77hj"
+  ],
+  "summary": "Malicious code in @tiledesk/tiledesk-server (npm)",
+  "details": "`@tiledesk/tiledesk-server` version 2.18.12 is a compromised release of the legitimate Tiledesk customer support platform package. This version was injected with a CI pipeline backdoor as part of the **megalodon** campaign \u2014 a mass GitHub repository backdooring operation targeting CI/CD runner environments.\n\n**Attack vector:** The malicious payload is embedded in `.github/workflows/docker-community-worker-push-latest.yml` within the npm tarball, in a step named \"Optimize-Build\". The step decodes and executes a base64-encoded shell script (`set +e; echo \"<base64>\" | base64 -d | bash`).\n\n**What it does:** The decoded script is a multi-stage CI credential harvester:\n- Dumps all environment variables via `printenv` and scrapes `/proc/self/environ` and `/proc/[0-9]*/environ`, capturing secrets from every process on the runner\n- Exfiltrates credential files: `~/.aws/credentials`, `~/.ssh/`, `~/.docker/config.json`, `~/.npmrc`, `~/.kube/config`, `~/.vault-token`, `.git-credentials`, GCP Application Default Credentials, and Terraform credentials\n- Enumerates AWS profiles to extract access keys, secret keys, and session tokens; runs `gcloud auth print-access-token` for GCP\n- Queries cloud IMDS endpoints (`169.254.169.254`, `metadata.google.internal`) for instance credentials\n- Steals `ACTIONS_ID_TOKEN_REQUEST_TOKEN` to mint arbitrary OIDC tokens for cloud impersonation\n- Scans `/var/www`, `/opt`, `/srv` for certificate files (`.pem`, `.key`, `.p12`, `.pfx`) and runs regex-based secret scanning for 30+ patterns including AWS AKIA keys, GitHub PATs, npm tokens, PyPI tokens, private keys, and database connection strings\n\n**C2 infrastructure:** All stolen data is exfiltrated via HTTP POST to `http://216.126.225.129:8443` with query parameters `?h=megalodon&l=gh_dump&id=hefs8esnhgkx`.\n\n**Trigger:** Execution occurs during GitHub Actions Docker build workflows. Any CI pipeline that included this package version in a Docker build would have had its entire runner secrets environment exfiltrated at build time.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (2a1ee4a2f73000abfb87afaa9a4f7a8519b82f279b294c71f9c3b688624d92be)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@tiledesk/tiledesk-server"
+      },
+      "versions": [
+        "2.18.12",
+        "2.18.11",
+        "2.18.10",
+        "2.18.9",
+        "2.18.7",
+        "2.18.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/megalodon-mass-github-repo-backdooring-ci-workflows/"
+    },
+    {
+      "type": "GIT",
+      "url": "https://github.com/Tiledesk/tiledesk-server/commit/acac5a9854650c4ae2883c4740bf87d34120c038"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-5vfv-hpg7-77hj"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "2a1ee4a2f73000abfb87afaa9a4f7a8519b82f279b294c71f9c3b688624d92be",
+        "import_time": "2026-05-22T16:59:25.083440933Z",
+        "id": "GHSA-5vfv-hpg7-77hj",
+        "modified_time": "2026-05-22T15:46:38Z",
+        "versions": [
+          "2.18.12",
+          "2.18.11",
+          "2.18.10",
+          "2.18.9",
+          "2.18.7",
+          "2.18.6"
+        ]
+      }
+    ]
+  }
+}

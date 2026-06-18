@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-16T22:18:21Z",
+  "published": "2026-06-16T22:18:21Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5932",
+  "summary": "Malicious code in package-uploader (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (69b86134d9cd019c2d8ad172eed54cd4a48839d69ed2c6af52b79ef5080da765)\npackage-uploader@1.3.25 ships an install-hook.js that runs automatically as the npm postinstall script (package.json declares \"postinstall\": \"node install-hook.js\"). The hook embeds a 383KB base64 string (LAUNCHER_BIN_BASE64), XOR-decrypts it with key 0x42, writes the result to %TEMP%/tmp_\u003ctimestamp\u003e.exe, and launches it detached via `spawn('cmd', ['/c', 'start', '/b', TEMP_EXE], { detached: true })` — a classic obfuscated-binary dropper executed on every `npm install`. After dropping the payload, a detached cleanup process waits ~90 seconds and then edits the victim's package.json and package-lock.json to remove the dependency entry (the cleanup code references the name `mailconfirmer`, indicating the campaign re-publishes under rotating names) and recursively deletes the installed module directory; if direct deletion fails, it registers a Windows scheduled task via `schtasks /create` to remove the directory later. The package's stated purpose is a UI navbar library and the index.js entry point exports only theme colors as a decoy — completely unrelated to executing a Windows binary. The combination of name/description/decoy-main mismatch, embedded XOR-encrypted PE payload, automatic postinstall execution, and anti-forensics manifest tampering is an unambiguous supply-chain dropper.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "package-uploader"
+      },
+      "versions": [
+        "1.3.25"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install-hook.js",
+              "sha256": "a1091c132f65787aa89cc2e3a689d4ccfbc31af88577615590f76daa204c0d66",
+              "tlsh": "d5846ce18d4c1549a7288be1e69fe6e06ce236027854e5d87fcc79ca03389b76d650cf"
+            },
+            {
+              "path": "package.json",
+              "sha256": "fa5bd0928b7bf428ee95ee049643424cbff05d4d69852632ca1c07b56cb60197",
+              "tlsh": "74d0951fce5152332074cf945c6e171e77120f2e11a05c07707700d84191bf1442f70a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "package-uploader-1.3.25.tgz",
+              "hashes": {
+                "sha1": "35032eb815e35d5114c0659501e6cf8cf05371fa",
+                "sha512_sri": "sha512-eJeECikvclcXLrhZnUvICQJdNBhahC1eYEc9CH4Bv7nExw/RYY/DbpM9E1izB4jzAsUDMKxJL2XGU1rD85Z7dA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/package-uploader/v/1.3.25"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-006841",
+        "import_time": "2026-06-16T23:03:43.198691643Z",
+        "modified_time": "2026-06-16T22:18:21Z",
+        "sha256": "69b86134d9cd019c2d8ad172eed54cd4a48839d69ed2c6af52b79ef5080da765",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.25"
+        ]
+      }
+    ]
+  }
+}

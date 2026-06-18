@@ -1,0 +1,85 @@
+{
+  "modified": "2026-05-14T19:25:48Z",
+  "published": "2026-05-14T19:25:48Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3773",
+  "summary": "Malicious code in sysbin (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8ab8ea4ce073a93a1973a062ac7661ceeaea9c312f9fd67e9acda9936e2b6578)\nPackage metadata advertises sysbin as a 'System binary configuration tool' but the tarball ships pointer.py, a stealth overlay that runs automatically when index.js executes. index.js calls startApp() unconditionally at the bottom of the main module (triggered by `node index.js`, the `sys-bin` bin entry, `npm start`, or `require('sysbin')`). If Python is not present, index.js first tries `winget install Python.Python.3.12 --silent`, and on failure downloads https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe to %TEMP% and runs it with `/quiet InstallAllUsers=0 PrependPath=1` — code comments describe this as a 'GHOST INSTALLER' intended to bypass browser/admin prompts. It then pip-installs pyperclip, keyboard, mss, pyautogui, pywin32, and uiautomation and launches pointer.py. pointer.py polls the clipboard every 300ms via pyperclip.paste() and POSTs every change to the hardcoded URL https://iq-overlay-pointer.vercel.app/api (pointer.py:281). It also binds hotkeys that capture full-screen screenshots via mss/ImageGrab, base64-encodes them as JPEG, and POSTs them to the same endpoint (pointer.py:231). The endpoint is hardcoded with no config surface, no documentation, and no consent prompt. Additional stealth features (panic_exit on Ctrl+Q, Esc-to-hide transparent Tk window, keystroke-replay 'mash-to-type' mode) confirm the tool is designed to hide from the machine's user. This is an intentional supply-chain attack: installing and running sysbin exfiltrates clipboard contents and screenshots to an author-controlled host.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sysbin"
+      },
+      "versions": [
+        "1.0.34"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pointer.py",
+              "sha256": "fb92fc2bf9a16ef9a4eb4e6ad0c792682d03d6e27c90e4b0d6cb36c1fa0c6be0",
+              "tlsh": "87b2714adc0d584ac433cd1f6952b823fb1e43439a5e9917f8bca9901f7431689e4ef9"
+            },
+            {
+              "path": "index.js",
+              "sha256": "a68b940ab1f3cb8dca48c53f74c11b4b94c81bfbd98566362bb8a5ba2a5a0f7f",
+              "tlsh": "c58140075a95a234ed3247ed9b07212be517a0736101e69cbdbe83840f76945c073fee"
+            },
+            {
+              "path": "package.json",
+              "sha256": "faf5b2859becc22f2f887a9641e9aa335f943fcfc4237bbf5a694b3f34f84437",
+              "tlsh": "7ce04f3389615c5344b94aa29a2a8b15b5729b3f00354c0b30bba01c9ba25b245bab5c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sysbin-1.0.34.tgz",
+              "hashes": {
+                "sha1": "7c0509088db0d478d4808e276a501039181f6e68",
+                "sha512_sri": "sha512-a+onHkOdpZXFcYQCcOsozLM0Anpn5D2345168v4/z5SnaxgbVEN5lH0INIKxCurxz/MKTMRlxfeY//TuNpPkvw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sysbin/v/1.0.34"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-002758",
+        "import_time": "2026-05-15T07:37:19.225288551Z",
+        "modified_time": "2026-05-14T19:25:48Z",
+        "sha256": "8ab8ea4ce073a93a1973a062ac7661ceeaea9c312f9fd67e9acda9936e2b6578",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.34"
+        ]
+      }
+    ]
+  }
+}

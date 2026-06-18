@@ -1,0 +1,101 @@
+{
+  "modified": "2026-06-12T19:46:12Z",
+  "published": "2026-05-22T06:25:45Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-4497",
+  "summary": "Malicious code in bingocode (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (78f3d873e7c4d16629263bb242a2636f18747d5dd096b614fb3cf43a56d2dc8e)\nThe package declares `bin.claude` pointing at `bin/claude-win.cjs` (and `bin/claude` on Linux/macOS). After `npm i -g bingocode`, the `claude` command on PATH is this package, not Anthropic's official @anthropic-ai/claude-code. On first invocation, each bin script runs `deployBingoDefaults()` which copies `config/bingo-defaults/settings.json` into `~/.claude/bingo/settings.json`; the shipped settings pin `ANTHROPIC_BASE_URL` to `http://127.0.0.1:3456` and the package's `.env.example` documents routing prompts through MiniMax / OpenRouter / DeepSeek backends. The net effect: a user who types `claude` expecting Anthropic's CLI gets their prompts (and any associated auth) silently brokered through a local proxy under this package's control, then forwarded to author-chosen LLM providers. The npm `postinstall` hook (`scripts/install-skills.cjs`) additionally copies bundled skill directories into `~/.claude/skills/` (Anthropic Claude's user-config namespace), giving this package script-level influence over the sibling tool's behavior. On Linux/macOS, `bin/claude` also runs `npm install -g bun` at first invocation if bun is missing — privileged global install without explicit consent, though the package fetched is pinned-by-name from the public npm registry. The combination of bin-name hijack + seeded settings redirecting the API base URL is the silent-relay shape: caller-supplied prompts route to a destination the caller did not choose. The YARA `js_network_command_exfiltration` hits on `src/bridge/bridgeMain.ts`, `src/services/mcp/*`, `src/utils/hooks/execHttpHook.ts`, etc. are pattern-matches on code vendored from Anthropic's open-source Claude Code (bridge poll loops, MCP client, SSRF-guarded http-hook with URL allowlist) and do not represent installer-harm behavior on their own.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "bingocode"
+      },
+      "versions": [
+        "1.1.123",
+        "1.1.163"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "a3ff12efe74a2abf8b05b6321bb04894b3a16f9c7ee690a3e3b2d49d0fd9bbbb",
+              "tlsh": "0671cd23cd55cea345faaad9bc3a0a66f124571f2100c4cf33b547dd4fb5a2a2089b61"
+            },
+            {
+              "path": "bin/bingo-win.cjs",
+              "sha256": "4538c7d701c8690c25075a6a36f693ceb9710c7553c196bb08c04fd3a71633eb",
+              "tlsh": "958171d9545767785ef15f689b07040bfd6e68b33a02e254f9cc02ca6f705584242efe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bingocode-1.1.123.tgz",
+              "hashes": {
+                "sha1": "54f12fbe81bd537b8eb32ca32644aeb022ed9bcc",
+                "sha512_sri": "sha512-mk5PnU0PZtFRn0Hh9apQB8ePS/pbdnndRBL5Sly5LwciRxNDHswHFP3OhQvYJERloyOcxwOGHp7hyMuLpZgYTw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bingocode/v/1.1.123"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bingocode/v/1.1.163"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "7bb3ff21cce9379a60d3ebe3408d8c179e39cfd940eed6deb4afb2f28d852254",
+        "import_time": "2026-05-26T05:52:01.866295474Z",
+        "id": "IN-MAL-2026-004149",
+        "modified_time": "2026-05-22T06:25:45Z",
+        "versions": [
+          "1.1.123"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "78f3d873e7c4d16629263bb242a2636f18747d5dd096b614fb3cf43a56d2dc8e",
+        "import_time": "2026-06-12T19:43:35.686434656Z",
+        "id": "IN-MAL-2026-005809",
+        "modified_time": "2026-06-12T19:02:23Z",
+        "versions": [
+          "1.1.163"
+        ]
+      }
+    ]
+  }
+}

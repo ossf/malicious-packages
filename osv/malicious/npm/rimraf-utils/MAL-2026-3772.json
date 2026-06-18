@@ -1,0 +1,120 @@
+{
+  "modified": "2026-05-15T07:39:09Z",
+  "published": "2026-05-14T19:25:01Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3772",
+  "summary": "Malicious code in rimraf-utils (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a59d88d733415216903578b3c3806d76405a23a7cca56ee355eb6725e4e930d4)\nrimraf-utils@1.0.5 impersonates the widely-installed `rimraf` package (index.js is a dummy stub that internally identifies itself as 'lodash-js — Just a dummy module. The real payload is in postinstall.js'). On `npm install`, `scripts.postinstall` runs postinstall.js, which harvests installer-side secrets and ships them to a hardcoded bare-IP C2 over plaintext HTTP at `http://149.28.127.35:8888` (overridable via `process.env.C2_URL`).\n\nSpecific behavior in postinstall.js:\n- Reads `~/.npmrc` (npm auth tokens), `~/.env` (API keys, DB URLs, cloud credentials, payment keys, EVM private keys, webhooks), and `~/.git-credentials`.\n- Collects `os.hostname()` and `os.userInfo()` for host identification.\n- Enumerates 71 hardcoded Chrome/Brave/Edge/Firefox crypto-wallet extension IDs (MetaMask, Phantom, Coinbase, Trust, Exodus, Ledger Live, Trezor, Solflare, etc.) under the browsers' profile directories and reads each wallet's LevelDB `.log` files, regex-extracting `vault`/`seed`/`mnemonic`/`privateKey`/`encrypted`/`password` fields.\n- Recursively walks `~/Documents`, `~/Desktop`, `~/Downloads`, `~/OneDrive`, `~/Dropbox`, `~/Google Drive`, and `backup`/`keys`/`wallet`/`crypto` subtrees searching for seed-phrase and private-key patterns.\n- POSTs the aggregated JSON payload to the C2 via `http.request(...)`.\n\nThis package matches multiple unambiguous attack fingerprints simultaneously: hardcoded bare-IP plaintext-HTTP C2 invoked from a lifecycle hook; browser crypto-wallet extension-ID enumeration; seed-phrase/mnemonic home-directory scanner; and installer-secret regex extraction from `~/.npmrc`/`~/.env`/`~/.git-credentials`. The name is a typosquat of `rimraf` used as the delivery vector for the payload.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "rimraf-utils"
+      },
+      "versions": [
+        "1.0.4",
+        "2.0.0",
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "6ac41974ce61de899439008088ad972e7ab2ac161b3abf61fcd6796f28a941d9",
+              "tlsh": "0452e994aaa9021c596382bbd75775b40499e90b35c1e8b4f78f03489f0974d2ef33bb"
+            },
+            {
+              "path": "package.json",
+              "sha256": "98ae1b8d6c3e001a0642d4b45934823f2888c1a2ed6cc4040bc27d136ee114b4",
+              "tlsh": "c4d02b208a129d3314c417671a6b420566f14d4b0148bc1c33db015c87aa3b68cff61e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "rimraf-utils-1.0.4.tgz",
+              "hashes": {
+                "sha1": "51b7f65b122b5c029b1e404869eb0e2e956de9c1",
+                "sha512_sri": "sha512-SzdPb1OuAUeUelQ9hHfVSFOEBdt/ekeLLr0grRcWDDP0aKdt1piTKT5t55fc1GDLYf7fbmOGmFQPNvjJ8TTS9A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rimraf-utils/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rimraf-utils/v/2.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rimraf-utils/v/1.0.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-002678",
+        "import_time": "2026-05-15T07:37:16.014381157Z",
+        "modified_time": "2026-05-14T19:25:01Z",
+        "sha256": "0514899c58dd41152ee9aeb101db1eec4a229ea907aa96f6bf9606b7a75cfe83",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-002679",
+        "import_time": "2026-05-15T07:37:16.060231882Z",
+        "modified_time": "2026-05-14T19:25:02Z",
+        "sha256": "8947f86d49a41e3f5b03eed92ee6a87e0e6438941606c25cac17c94da8ca9c08",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-002698",
+        "import_time": "2026-05-15T07:37:17.158478544Z",
+        "modified_time": "2026-05-14T19:25:11Z",
+        "sha256": "a59d88d733415216903578b3c3806d76405a23a7cca56ee355eb6725e4e930d4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,510 @@
+// Copyright 2023 Malicious Packages Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package report_test
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"reflect"
+	"slices"
+	"testing"
+	"time"
+
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	"github.com/ossf/malicious-packages/internal/report"
+	"github.com/ossf/malicious-packages/internal/reportfilter"
+)
+
+func testReport(ecosystem osvschema.Ecosystem, name string) *report.Report {
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["0"]}]}`
+	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
+	if err != nil {
+		panic(err)
+	}
+	return r
+}
+
+func TestPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		ecosystem string
+		want      string
+	}{
+		{
+			name:      "github.com/ossf/malicious-packages/cmd/ingest",
+			ecosystem: "Go",
+			want:      "go/github.com/ossf/malicious-packages/cmd/ingest",
+		},
+		{
+			name:      "ThIs-is-A-Package",
+			ecosystem: "Github Action",
+			want:      "github-action/this-is-a-package",
+		},
+		{
+			name:      "vscode.extension",
+			ecosystem: "VSCode:https://open-vsx.org",
+			want:      "vscode:open-vsx.org/vscode.extension",
+		},
+		{
+			name:      "org.example:package",
+			ecosystem: "Maven:https://maven.google.com",
+			want:      "maven:maven.google.com/org.example:package",
+		},
+		{
+			name:      "package",
+			ecosystem: "Ubuntu:Pro:18.04:LTS",
+			want:      "ubuntu:pro:18.04:lts/package",
+		},
+		{
+			name:      "package",
+			ecosystem: "Photon OS:3.0",
+			want:      "photon-os:3.0/package",
+		},
+		{
+			name:      "././../../this/is-a_problematic/example/../.././",
+			ecosystem: ".//.././.../ecosystem/../..././../",
+			want:      "../this",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.ecosystem+" "+test.name, func(t *testing.T) {
+			r := &report.Report{Name: test.name, Ecosystem: test.ecosystem}
+			if got := r.Path(); got != test.want {
+				t.Errorf("Path() = %v; want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestPath_CanonicalizeName(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "This_-IS.A_Package")
+	got := r.Path()
+	want := "pypi/this-is-a-package"
+	if got != want {
+		t.Errorf("Path() = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_WithID(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().ID = "MAL-1234-5678"
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+}
+
+func TestCanonicalizeName(t *testing.T) {
+	tests := []struct {
+		eco  osvschema.Ecosystem
+		name string
+		want string
+	}{
+		{
+			eco:  osvschema.EcosystemPyPI,
+			name: "This--Is__A1..Test_-.Example",
+			want: "this-is-a1-test-example",
+		},
+		{
+			eco:  osvschema.EcosystemCratesIO,
+			name: "This-Is-A1_Test_Example",
+			want: "this_is_a1_test_example",
+		},
+		{
+			eco:  osvschema.EcosystemRubyGems,
+			name: "This-is_a1.test_Example",
+			want: "This-is_a1.test_Example",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			r := testReport(test.eco, test.name)
+
+			if got := r.Name; got != test.want {
+				t.Errorf("Name = %v; want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestNormalize_Summary(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "Malicious code in example (RubyGems)"
+	if got := r.Vuln().Summary; got != want {
+		t.Errorf("Summary = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_TooManyOrigins(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.AddOrigin("test-origin", "deadbeef")
+	r.AddOrigin("another-test-origin", "00000000")
+
+	if err := r.Normalize(); err == nil || !errors.Is(err, report.ErrNormalizing) {
+		t.Fatalf("Normalize() = %v; want %v", err, report.ErrNormalizing)
+	}
+}
+
+func TestNormalize_DetailHeaderPresent(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.SetDetails("user")
+
+	if err := r.Normalize(); err == nil || !errors.Is(err, report.ErrNormalizing) {
+		t.Fatalf("Normalize() = %v; want %v", err, report.ErrNormalizing)
+	}
+}
+
+func TestNormalize_DatabaseSpecificStrip(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().DatabaseSpecific = map[string]any{
+		"object":    map[string]any{"a": "b"},
+		"array":     []any{"a", 1},
+		"scalar":    42,
+		"weirdtype": map[string]int{"meaning": 42},
+	}
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := map[string]any{
+		"object": map[string]any{"a": "b"},
+		"array":  []any{"a", 1},
+	}
+	if got := r.Vuln().DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_AffectedDatabaseSpecificStrip(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().Affected[0].DatabaseSpecific = map[string]any{
+		"object":    map[string]any{"a": "b"},
+		"array":     []any{"a", 1},
+		"scalar":    42,
+		"weirdtype": map[string]int{"meaning": 42},
+	}
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := map[string]any{
+		"object": map[string]any{"a": "b"},
+		"array":  []any{"a", 1},
+	}
+	if got := r.Vuln().Affected[0].DatabaseSpecific; !reflect.DeepEqual(got, want) {
+		t.Errorf("DatabaseSpecific = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_NoOrigin_DetailsUnchanged(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().Details = "  please do\nnot touch  "
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "  please do\nnot touch  "
+	if got := r.Vuln().Details; got != want {
+		t.Errorf("Details = %v; want %v", got, want)
+	}
+}
+
+func TestNormalize_Origin_DetailsChanged(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().Details = "  please move\nmy details  "
+	r.AddOrigin("test-origin", "deadbeef")
+
+	if err := r.Normalize(); err != nil {
+		t.Fatalf("Normalize() = %v; want no error", err)
+	}
+
+	want := "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-origin (deadbeef)\nplease move\nmy details\n"
+	if got := r.Vuln().Details; got != want {
+		t.Errorf("Details = %v; want %v", got, want)
+	}
+}
+
+func TestStripID(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-1"
+
+	r.StripID()
+
+	if got := r.ID(); got != "" {
+		t.Errorf("ID = %v; want no ID", got)
+	}
+}
+
+func TestAliasID(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-2"
+
+	r.AliasID()
+
+	want := []string{"TEST-1234-2"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestAliasID_ExistingAliases(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-3"
+	r.Vuln().Aliases = []string{"OTHER-5432-1"}
+
+	r.AliasID()
+
+	want := []string{"OTHER-5432-1", "TEST-1234-3"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestAliasID_Duplicate(t *testing.T) {
+	r := testReport(osvschema.EcosystemRubyGems, "example")
+	r.Vuln().ID = "TEST-1234-4"
+	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
+
+	r.AliasID()
+
+	want := []string{"TEST-1234-4", "OTHER-5432-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, want) {
+		t.Errorf("Aliases = %v; want %s", got, want)
+	}
+}
+
+func TestFilterSelf(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "example")
+	r.Vuln().ID = "TEST-1234-4"
+	r.Vuln().Aliases = []string{"TEST-1234-4", "OTHER-5432-1"}
+	r.Vuln().References = []osvschema.Reference{
+		{
+			Type: osvschema.ReferenceArticle,
+			URL:  "path/to/TEST-1234-4.json",
+		},
+		{
+			Type: osvschema.ReferenceReport,
+			URL:  "https://example.org/",
+		},
+	}
+
+	r.FilterSelf()
+
+	wantAliases := []string{"OTHER-5432-1"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, wantAliases) {
+		t.Errorf("Aliases = %v; want %s", got, wantAliases)
+	}
+
+	wantReferences := []osvschema.Reference{{Type: osvschema.ReferenceReport, URL: "https://example.org/"}}
+	if got := r.Vuln().References; !slices.Equal(got, wantReferences) {
+		t.Errorf("References = %v; want %s", got, wantReferences)
+	}
+}
+
+func TestApplyFilters(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "example")
+	r.Vuln().ID = "TEST-1234-1"
+	r.Vuln().Aliases = []string{"OTHER-5432-1", "ANOTHER-9999-123"}
+	r.Vuln().Related = []string{"OTHER-6789-1", "OTHER-9999-456", "ANOTHER-9999-789"}
+
+	f1, err := reportfilter.New("aliases", "^OTHER-")
+	if err != nil {
+		t.Fatalf("reportfilter.New() = error; want no error")
+	}
+	f2, err := reportfilter.New("related", "^ANOTHER-")
+	if err != nil {
+		t.Fatalf("reportfilter.New() = error; want no error")
+	}
+	fs := reportfilter.Filters{f1, f2}
+	r.ApplyFilter(fs)
+
+	wantAliases := []string{"ANOTHER-9999-123"}
+	if got := r.Vuln().Aliases; !slices.Equal(got, wantAliases) {
+		t.Errorf("Aliases = %v; want %v", got, wantAliases)
+	}
+
+	wantRelated := []string{"OTHER-6789-1", "OTHER-9999-456"}
+	if got := r.Vuln().Related; !slices.Equal(got, wantRelated) {
+		t.Errorf("Related = %v; want %v", got, wantRelated)
+	}
+}
+
+func TestInvalidReport(t *testing.T) {
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "PyPI"}}]}`
+	_, err := report.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error")
+	}
+}
+
+func TestPublished(t *testing.T) {
+	r := testReport(osvschema.EcosystemNPM, "example")
+	now := time.Now().UTC()
+	r.Vuln().Published = now
+
+	if got := r.Published(); !got.Equal(now) {
+		t.Errorf("Published() = %v; want %v", got, now)
+	}
+}
+
+func TestReader_ReadJSON_MultipleAffected_DefaultStrict(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg2"}, "versions": ["0"]}
+		]
+	}`
+	reader := &report.Reader{}
+	_, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error for multiple affected entries by default")
+	}
+}
+
+func TestReader_ReadJSON_MultipleAffected_Allowed(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg2"}, "versions": ["0"]}
+		]
+	}`
+	reader := &report.Reader{AllowMultipleAffected: true}
+	r, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err != nil {
+		t.Fatalf("ReadJSON = %v; want no error", err)
+	}
+	if len(r.Vuln().Affected) != 2 {
+		t.Errorf("len(Affected) = %d; want 2", len(r.Vuln().Affected))
+	}
+}
+
+func TestReader_ReadJSON_MultipleAffected_Duplicate(t *testing.T) {
+	rJSON := `{
+		"schema_version": "1.5.0",
+		"summary": "test report",
+		"affected": [
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["0"]},
+			{"package":{"ecosystem": "PyPI", "name": "pkg1"}, "versions": ["1"]}
+		]
+	}`
+	reader := &report.Reader{AllowMultipleAffected: true}
+	_, err := reader.ReadJSON(bytes.NewBufferString(rJSON))
+	if err == nil {
+		t.Error("ReadJSON = nil; want an error for duplicate affected packages")
+	}
+}
+
+func TestReport_Split(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"0"},
+	})
+
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
+	if len(reports) != 2 {
+		t.Fatalf("len(Split()) = %d; want 2", len(reports))
+	}
+
+	if reports[0].Name != "pkg1" || reports[0].Ecosystem != "PyPI" {
+		t.Errorf("report[0] = %s/%s; want pkg1/PyPI", reports[0].Ecosystem, reports[0].Name)
+	}
+	if reports[1].Name != "pkg2" || reports[1].Ecosystem != "PyPI" {
+		t.Errorf("report[1] = %s/%s; want pkg2/PyPI", reports[1].Ecosystem, reports[1].Name)
+	}
+}
+
+func TestReport_Split_Single(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
+	if len(reports) != 1 {
+		t.Fatalf("len(Split()) = %d; want 1", len(reports))
+	}
+	if reports[0] != r {
+		t.Errorf("Split() returned different instance; want same instance")
+	}
+}
+
+func TestReport_Split_WithOrigins(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected[0].Versions = []string{"1.0.0"}
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"2.0.0"},
+	})
+	r.AddOrigin("test-source", "deadbeef")
+
+	reports, err := r.Split()
+	if err != nil {
+		t.Fatalf("Split() = error; want no error: %v", err)
+	}
+	if len(reports) != 2 {
+		t.Fatalf("len(Split()) = %d; want 2", len(reports))
+	}
+
+	// Verify origins of reports[0]
+	o0 := reports[0].Origins()
+	if len(o0) != 1 {
+		t.Fatalf("len(origins[0]) = %d; want 1", len(o0))
+	}
+	if !reflect.DeepEqual(o0[0].Versions, []string{"1.0.0"}) {
+		t.Errorf("origins[0] versions = %v; want [1.0.0]", o0[0].Versions)
+	}
+
+	// Verify origins of reports[1]
+	o1 := reports[1].Origins()
+	if len(o1) != 1 {
+		t.Fatalf("len(origins[1]) = %d; want 1", len(o1))
+	}
+	if !reflect.DeepEqual(o1[0].Versions, []string{"2.0.0"}) {
+		t.Errorf("origins[1] versions = %v; want [2.0.0]", o1[0].Versions)
+	}
+}
+
+func TestReport_Split_WithTooManyOrigins(t *testing.T) {
+	r := testReport(osvschema.EcosystemPyPI, "pkg1")
+	r.Vuln().Affected = append(r.Vuln().Affected, osvschema.Affected{
+		Package:  osvschema.Package{Ecosystem: string(osvschema.EcosystemPyPI), Name: "pkg2"},
+		Versions: []string{"0"},
+	})
+	r.AddOrigin("test-source", "deadbeef")
+	r.AddOrigin("another-source", "abcdef")
+
+	_, err := r.Split()
+	if err == nil || !errors.Is(err, report.ErrSplitting) {
+		t.Fatalf("Split() = %v; want %v", err, report.ErrSplitting)
+	}
+}

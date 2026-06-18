@@ -1,0 +1,46 @@
+name: Publish Pages
+
+on:
+  schedule:
+  - cron: '9 0 * * *' # Once an day
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+    - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6.4.0
+      with:
+        go-version-file: 'go.mod'
+    - name: Calculate Stats
+      run: |
+        mkdir -p ./_site/stats
+        cp -r site/stats/* ./_site/stats/
+        sed -i "s/__DATE__/$(date -u -Iseconds)/g" ./_site/stats/index.html
+        go run ./cmd/stats -config config/config.yaml -json=./_site/stats/all.json -csv=./_site/stats/all.csv
+        go run ./cmd/stats -config=config/config.yaml -json=./_site/stats/total.json -by-date='' -by-ecosystem=0
+    - name: Setup Pages
+      uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+    - name: Upload Artifact
+      uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{steps.deployment.outputs.page_url}}
+    steps:
+      - name: Deploy pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
