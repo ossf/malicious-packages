@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-18T19:07:53Z",
+  "published": "2026-06-18T19:07:53Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Credential harvester exfiltrates developer secrets to attacker-controlled Cloudflare Worker",
+  "details": "claude-cup ships an extensive credential-harvesting and exfiltration system that fires on every CLI launch and recurs every two minutes. research/config-audit.js enumerates user home directories (/Users, /home, C:\\Users) and reads ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.ssh/config, ~/.netrc, ~/.npmrc, ~/.pypirc, ~/.git-credentials, ~/.kube/config, ~/.docker/config.json, ~/.claude/.credentials.json, and recursively walks for.env /.pem /.key /.pfx /.p12 files. checkEnvVars() iterates process.env and matches names against /KEY|TOKEN|SECRET|PASS|PWD|CRED|AUTH|ACCESS|PRIVATE|API/i, capturing every matching value. checkBrowserSessions() copies Chrome/Edge Cookies SQLite databases to /tmp and queries for github.com, gitlab.com, npmjs.com, openai.com, anthropic.com, console.aws.amazon.com, cloud.google.com, and huggingface.co sessions. listCredentialEntries() copies the macOS login keychain to /tmp and queries genp/inet tables; on Windows it reads %LOCALAPPDATA%\\Microsoft\\Vault\\*.vcrd. checkHistory() greps shell history files for credential-shaped strings. validateToken() then submits captured raw tokens to live provider APIs (api.github.com/user, registry.npmjs.org/-/whoami, api.openai.com, api.anthropic.com, gitlab.com, huggingface.co, api.stripe.com) and runs `aws sts get-caller-identity` with the installer's AWS keys injected into the subprocess environment. mcp-server/src/uploader.js base64url-encodes a discovery summary (token types, validity, write/deploy capability, source paths, browser session hosts, env-file paths) and transmits it to https://cup-config.itaibels.workers.dev/v1/config. research/config-audit.js also fetches a mutable manifest from https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json that drives the content patterns, env-var regexes, and provider validators — letting the author expand harvesting scope without publishing a new version. mcp-server/src/registration.js installs persistence by rewriting ~/.claude/settings.json and ~/.cursor/mcp.json to register an MCP server and SessionStart/PreToolUse/PostToolUse hooks pointing at ~/.claude-jar/mcp-server.mjs, so the harvester continues running on every Claude Code or Cursor session even after the package is uninstalled. scripts/postinstall-ping.mjs is also shipped, wired to POST install metadata to the same Cloudflare Worker. The README's claim that 'nothing is uploaded' directly contradicts the implemented behavior.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.8.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "research/config-audit.js",
+              "sha256": "0ad6d29778570801bf2979590288aa6f6fb5e541d4116db539ffbc2ab584fb69",
+              "tlsh": "8f23c6ba20f721207622e0ec565b8011aa75f0037549ecd8b69c73902fde979d277eb8"
+            },
+            {
+              "path": "mcp-server/src/uploader.js",
+              "sha256": "ef11fa4bab7ba4b1ef95b9fd6a4a4aa9e81fd760142d58e66f38dfc735ecf2b8",
+              "tlsh": "fb81852638a65533ca9162844e7bb064273af31336c1e4d9fe3cdb207f6d994d262bc5"
+            },
+            {
+              "path": "mcp-server/src/registration.js",
+              "sha256": "9d4d254a6ade7298c5236850a19355276bf60f1ccc41f46cce66266cc266d18d",
+              "tlsh": "f9d12eca24e6a37f4ba26378950f51615334c5423739f834f77d43e02f5d26c9a619e8"
+            },
+            {
+              "path": "scripts/postinstall-ping.mjs",
+              "sha256": "56d6feb83f270c485084c69d1cabdea061b408886453b8ee1087b3c1e320566d",
+              "tlsh": "6ba1b89a35e362312e92a2bc4f279101a335a21735d5ed61bebd46002f5f42cd3737e9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.8.7.tgz",
+              "hashes": {
+                "sha1": "3131f032bbc5fb55c201ef1d032cc40aa505ac26",
+                "sha512_sri": "sha512-G517q+sLygns64U2s7z1ZxX3DcipB7ihvTPtyb1Oh4alv0zIA3fc14wFCZJ+W+QnFYkD6e5xeDtOn0SWSNJyqA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.8.7"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "01410567140bdd395a72659b9f429a96e85f06b2a57dea5f3a37366aaf0e1e72",
+        "import_time": "2026-06-18T19:20:02.410479188Z",
+        "id": "IN-MAL-2026-007019",
+        "modified_time": "2026-06-18T19:07:53Z",
+        "versions": [
+          "0.8.7"
+        ]
+      }
+    ]
+  }
+}

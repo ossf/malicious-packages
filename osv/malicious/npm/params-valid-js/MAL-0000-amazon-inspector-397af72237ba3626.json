@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-18T19:11:16Z",
+  "published": "2026-06-18T19:11:16Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "params-valid-js ships a remote-code-execution dropper disguised as Express middleware and impersonates the `request` package",
+  "details": "The package presents itself as 'Simplified HTTP request client' and copies identity metadata from Mikeal Rogers' legitimate `request` package (bugs URL `http://github.com/request/request/issues`, copied copyright header), but its only effective behavior is to launch a remote-code-execution dropper. The default export in `index.js` is a `middleware` function whose sole action is to spawn `node lib/callers.js` as a detached child with `stdio: 'ignore'` and `child.unref()`, allowing the dropper to continue running after the parent exits. `lib/callers.js` shadows `process` with a local object (`const process = { env: { DEV_API_KEY: 'google.com', DEV_SECRET_KEY: 'x-secret-key', DEV_SECRET_VALUE: '_' } }`) so what looks like environment configuration is actually a hardcoded fetch target. The script then performs `axios.get(src, { headers: { [k]: v } })`, reads `response.data.Cookie`, passes it to `new Function.constructor('require', s)`, and immediately invokes the resulting function with the real `require` — executing whatever Node code the server returns with full module access. The combination of name/identity impersonation, detached background execution, environment-shadowing obfuscation, and unpinned remote-eval is a clear supply-chain attack: any consumer that loads this package and invokes the middleware export executes attacker-controlled code.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "params-valid-js"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/callers.js",
+              "sha256": "b0e54274a22d90cdff4d4a194e62cee657e289c625a738cea1b3d810e206109f",
+              "tlsh": "3c01cb8f70ac505c08b013f2bb1be436e921a56b350281d0375c83421f7699d6643eee"
+            },
+            {
+              "path": "index.js",
+              "sha256": "356f24fff7af39ef7026879a2c571b3c81ee0ecf880078e24b25be69fe5642d6",
+              "tlsh": "87a1648526e373519aebb2d1e81f4229b675d223320e1a7178c587d81f0cc69d3b3dd5"
+            },
+            {
+              "path": "package.json",
+              "sha256": "33dda21f0f44c1becc689a2c57f03c50eaaf2cc3dcb5cf68a0fbe5dcc6053dd9",
+              "tlsh": "96415620cc6a8c931dc929e9687d5603b1a0a41b8e41bc1d778a638c4f5e46f32b8f2d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "params-valid-js-1.0.3.tgz",
+              "hashes": {
+                "sha1": "9bbe6e2b2c350410e70861a9779fcf69551be8ba",
+                "sha512_sri": "sha512-5XwINcx5wNnOcyimWHBFazG7zjGjFkC30iZRHjlwp5W3NbDXV+cJ+g3ZpsukPkj5K+u0IS79bmqKSSvRn55eWQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/params-valid-js/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "397af72237ba3626ac4727497662530f602c2ce6ec71406f48b508055687366c",
+        "import_time": "2026-06-18T19:20:03.356634194Z",
+        "id": "IN-MAL-2026-007028",
+        "modified_time": "2026-06-18T19:11:16Z",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}
