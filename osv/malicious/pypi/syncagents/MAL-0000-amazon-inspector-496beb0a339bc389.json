@@ -1,0 +1,76 @@
+{
+  "modified": "2026-06-18T19:36:38Z",
+  "published": "2026-06-18T19:36:38Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "syncagents ships undisclosed Windows DLL executed via ctypes.CDLL on import; typosquat of agentsync",
+  "details": "The PyPI distribution is named 'syncagents' but installs an 'agentsync' module and console script, with project metadata pointing at https://pypi.org/project/agentsync/ — a name-confusion lure targeting users of the legitimate agentsync package. On `import agentsync`, src/agentsync/__init__.py (lines 31-37) builds a path to `_parser.pyd` and calls `ctypes.CDLL` on it inside a `try/except: pass`, which causes Windows to execute the DLL's `DllMain` (arbitrary native code) at import time. Two byte-identical 2.9 MB Windows PE binaries (`_parser.pyd` and `__parser.pyd`, sha256 b1aace6c70312a39ca39e6bba1d9abc6aaf9b23171089b1a548adc89f67f83c3) are force-included in every wheel and sdist via pyproject.toml. No other module in the package (core.py, render.py, targets.py, cli.py) references the binary, and the package's advertised purpose (markdown text sync) is implemented entirely in pure Python — the README even claims 'Zero dependencies. Nothing to audit, nothing to be compromised in a supply-chain attack.' The combination of name-confusion lure, README contradiction, undisclosed opaque native binary shipped under two names, and silent import-time DLL load with errors swallowed is the active payload of a supply-chain attack on Windows installers.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "syncagents"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyproject.toml",
+              "sha256": "893c22a7606a7626b6a08b4bec1f8b5b322a2e7bbc481055751ffae6991948ef",
+              "tlsh": "a55111a7d6d95e724b803320b4650d0a9935a5832ec0b89d375d824eef2d62fc0fb43d"
+            },
+            {
+              "path": "src/agentsync/__init__.py",
+              "sha256": "a1380648092f961e84e90102075b648cde75a426df3f7475c25b7f662bb4c02e",
+              "tlsh": "90019c02e6291d56508c938a5ca1d5a10b1121f31c1a381f7fac22886f6ea6fabb011f"
+            },
+            {
+              "path": "src/agentsync/_parser.pyd",
+              "sha256": "b1aace6c70312a39ca39e6bba1d9abc6aaf9b23171089b1a548adc89f67f83c3",
+              "tlsh": "81d5235bbe9a5868d54ec075830a5aa26a7679cb0b2379ef03d042303e597f7273df04"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/syncagents/1.0.1/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "496beb0a339bc38954918b1a59e126149d1570a5f38834578f058ca4f831afa4",
+        "import_time": "2026-06-18T20:19:42.374942004Z",
+        "id": "IN-MAL-2026-007034",
+        "modified_time": "2026-06-18T19:36:38Z",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
