@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-17T21:34:55Z",
+  "modified": "2026-06-18T20:21:32Z",
   "published": "2026-06-17T21:34:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6081",
   "summary": "Malicious code in disksweep (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (3bc79bc0cdfcad5c0e383a83f621365a84be1090e44364974ee8ec2bf1a12942)\nDuring import, package loads embedded native extension module. This library hooks on loading, spawns a new system process and likely attempts to inject the encrypted payload in it for further execution (T1055.012). The code uses heavy analysis evasion techniques. Decrypted payload revealed capabilities to steal all kind of credentials (browsers data, AI tools, env variables, SSH keys, ...), inject code to redirect cryptocurrency transactions, spy-like activities (screenshots, keylogger) and worm-like activities using discovered GitHub tokens to publish malicious code into CI. It establishes persistence in `%LOCALAPPDATA%\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe` and also attempts to perform lateral movement in Kubernetes and AWS environments.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-syncagents\n\n\nReasons (based on the campaign):\n\n\n - native-extension\n\n\n - infostealer\n\n\n - worm\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n\n\n - uses-telegram-bot\n\n\n - keylogger\n\n\n - clipboard-stealing\n\n\n - exfiltration-ssh-keys\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - exfiltration-env-variables\n\n\n - persistence\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5a6449a8f35de848928e7f17d88c87db80e5aee40e8b53c375e07fc7d43cc05e)\nOn every `import disksweep`, the package's top-level `src/disksweep/__init__.py` (lines 18-24) calls `ctypes.CDLL` on a 2.9 MB Windows binary (`_parser.pyd`) shipped inside the wheel. Loading a Windows PE via `ctypes.CDLL` invokes the DLL's `DllMain(DLL_PROCESS_ATTACH)` entry point, executing whatever native code the binary contains in the importing process. No Python code in the package ever calls into the DLL — it is loaded purely for its load-time side effects, and any exception is silently swallowed (`except: pass`). The README explicitly advertises 'Zero dependencies. Nothing to audit.' and the pure-Python `scan.py` already implements the full scanner functionality, so the binary's presence is unjustified by the advertised feature set. `pyproject.toml` (lines 87, 90) additionally force-includes a byte-identical copy of the binary under a second name (`__parser.pyd`, sha256 b1aace6c…f83c3, 2,905,600 bytes) that has no Python reference — a redundancy pattern consistent with AV-evasion / fallback-loading rather than a legitimate native acceleration library. Any Windows host that runs `pip install disksweep` followed by `import disksweep`, or invokes the `disksweep`/`sweep` CLI (which imports the package), will execute the opaque native code.\n\n## Source: kam193 (3bc79bc0cdfcad5c0e383a83f621365a84be1090e44364974ee8ec2bf1a12942)\nDuring import, package loads embedded native extension module. This library hooks on loading, spawns a new system process and likely attempts to inject the encrypted payload in it for further execution (T1055.012). The code uses heavy analysis evasion techniques. Decrypted payload revealed capabilities to steal all kind of credentials (browsers data, AI tools, env variables, SSH keys, ...), inject code to redirect cryptocurrency transactions, spy-like activities (screenshots, keylogger) and worm-like activities using discovered GitHub tokens to publish malicious code into CI. It establishes persistence in `%LOCALAPPDATA%\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe` and also attempts to perform lateral movement in Kubernetes and AWS environments.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-syncagents\n\n\nReasons (based on the campaign):\n\n\n - native-extension\n\n\n - infostealer\n\n\n - worm\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n\n\n - uses-telegram-bot\n\n\n - keylogger\n\n\n - clipboard-stealing\n\n\n - exfiltration-ssh-keys\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - exfiltration-env-variables\n\n\n - persistence\n",
   "affected": [
     {
       "package": {
@@ -13,7 +13,48 @@
       },
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/disksweep/__init__.py",
+              "sha256": "48908f78831e512520fdb1773c1ba73d6509ed28c8137e14394263ed2e89a058",
+              "tlsh": "aef0a31148740922d09ec3ce5474ccf00b3124e35d25587c7b991538af9dbcdb7d566d"
+            },
+            {
+              "path": "pyproject.toml",
+              "sha256": "248dbd1707c3cc66b41e64dd92de313d79d80560a93636f6b27e6ae1d884cff4",
+              "tlsh": "ae51fe7bc8d40d7c5660b05a64388804f865478f6394645b31b8418d0f7e6aec2ff4b5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "disksweep-1.0.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "18e10b284c14ad17d9f14a6e142eab103f1be71a5e057d9ed638c29735ecb8c6",
+                "md5": "4fc293cac03993d408756e4eb792df2a",
+                "sha256": "8b9e396e2c4e48e5d73300595ebb621c1bd667549ce21d46e90c4715bb694a42"
+              }
+            },
+            {
+              "filename": "disksweep-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "ca1a7bb5c1fb1ccf4dcea0e00456c36f7339e236ed229628d717de36a6553e90",
+                "md5": "13c895e6fa82efee10a19394b4fb47f6",
+                "sha256": "520ea669f80215e41142709cc62ff8cc184810f7ca1bda646fff89fc42262ffa"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -32,9 +73,20 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/disksweep"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/disksweep/1.0.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -47,11 +99,21 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-06-syncagents/disksweep",
-        "import_time": "2026-06-17T21:42:20.128411569Z",
-        "modified_time": "2026-06-17T21:34:55.578581Z",
-        "sha256": "3bc79bc0cdfcad5c0e383a83f621365a84be1090e44364974ee8ec2bf1a12942",
         "source": "kam193",
+        "sha256": "3bc79bc0cdfcad5c0e383a83f621365a84be1090e44364974ee8ec2bf1a12942",
+        "import_time": "2026-06-17T21:42:20.128411569Z",
+        "id": "pypi/2026-06-syncagents/disksweep",
+        "modified_time": "2026-06-17T21:34:55.578581Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5a6449a8f35de848928e7f17d88c87db80e5aee40e8b53c375e07fc7d43cc05e",
+        "import_time": "2026-06-18T20:19:42.506017374Z",
+        "id": "IN-MAL-2026-007035",
+        "modified_time": "2026-06-18T19:37:04Z",
         "versions": [
           "1.0.0"
         ]
