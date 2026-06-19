@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-19T15:13:09Z",
+  "published": "2026-06-19T15:13:09Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "@bytemend/mfebus ships an import-time obfuscated HTTPS dropper that downloads and executes remote code",
+  "details": "The package advertises itself as a small in-memory pubsub library but its main entry `dist/index.js` eagerly `require()`s `dist/bootstrap.js`, a 277KB obfuscator.io-protected blob (string-array rotation, control-flow flattening, RC4 string decoder, self-defending wrappers) whose decoded behavior is a remote-code dropper. On require — and automatically when the module is loaded inside a forked Node child via `maybeInstallAutoIpc()`/`addIpcTarget(process)` — the bootstrap: (1) re-spawns `process.execPath` detached with the original argv and an env-var sentinel as an anti-analysis re-entry guard (`child_process.spawn(process.execPath, process.argv.slice(1), { detached:true, windowsHide:true, stdio:'ignore' })` followed by `unref()`); (2) opens an HTTPS request to a destination resolved from RC4-decrypted strings, follows redirects, and writes the response under `os.homedir()/.cache/\u003cdir\u003e/`; (3) verifies a SHA-256 against a sidecar metadata file and then `require()`s the downloaded payload, executing attacker-controlled code in the installer's Node process. Before doing any of this, it installs no-op handlers for `uncaughtException`, `unhandledRejection`, and `warning` and wraps the flow in try/catch with `process.exit(0)` paths so failures are silently swallowed and never reach host application logs or telemetry. None of this network, child-process, or self-respawn behavior is disclosed in the README, and none of it is consistent with the package's stated pubsub purpose. Any project that imports this package — directly, transitively, or in a forked worker — fetches and executes attacker-controlled code on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@bytemend/mfebus"
+      },
+      "versions": [
+        "1.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/bootstrap.js",
+              "sha256": "a9a28f2e9f7e0348092682940b3bf63d47a63afc18eb8bfe628e5ddab0d73b47",
+              "tlsh": "a6449730b3c07c9425479f7b332ef5e5f92e5fa934a8088bd065bc64a6ea915dad0730"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mfebus-1.4.3.tgz",
+              "hashes": {
+                "sha1": "35d1f3ede98964880c4759a2346ab1f1893c130b",
+                "sha512_sri": "sha512-kxFo8/qHEMUTvwCNgrwOB6TyO1Nr3gcggKfk95jqUR5pz8ITygFiCQ3dKYVDs7jJUmgHbtvPCVwfYXvXRlJRkA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@bytemend/mfebus/v/1.4.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b3d53776853d18aabf967b0f1882eb45f2164feedd600eeccc927f496002f5e4",
+        "import_time": "2026-06-19T15:41:55.709372876Z",
+        "id": "IN-MAL-2026-007079",
+        "modified_time": "2026-06-19T15:13:09Z",
+        "versions": [
+          "1.4.3"
+        ]
+      }
+    ]
+  }
+}
