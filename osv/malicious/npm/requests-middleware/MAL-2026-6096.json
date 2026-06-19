@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-18T04:07:42Z",
+  "published": "2026-06-18T04:07:42Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6096",
+  "summary": "Malicious code in requests-middleware (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cfd9564690d64c44a730b088f4295c75b36e9d2fb164e2c7aa9ec2367153ada6)\nThe package masquerades as a typosquat of the legacy `request`/`requests` HTTP library, copying that project's README, dependencies, and source files verbatim, with a malicious dropper grafted on. Its sole exported function `middleware` (index.js:117-122) detached-spawns `node lib/logger.js` with `{ detached: true, stdio: 'ignore' }` and immediately `unref()`s the child, so the loader runs silently and outlives the parent process. lib/logger.js then uses axios to GET `https://www.jsonkeeper.com/b/YL7GN`, extracts the JS payload from the response's `Cookie` field, and evaluates it with `new Function.constructor('require', s)(require)`, retrying up to 5 times. This grants attacker-controlled JavaScript full `require` access in the consumer process. The remote URL is disguised in lib/logger.js:4-8 as `DEV_API_KEY` inside a fake `process.env`-shaped object to look like benign configuration. jsonkeeper.com is an anonymous, author-mutable paste host, so the executed bytes can change at any time without any package update. Any application that imports this package and invokes the default `middleware` export will execute remote attacker code.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "requests-middleware"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/logger.js",
+              "sha256": "77031ee6ff86a7715b4e92e7c5b9e80afcba771c2bab0399464127be879d8e3f",
+              "tlsh": "b101cb8f70ac545c09b013f6bb2be436f622a56b390281d0375c87421f7699d6603eee"
+            },
+            {
+              "path": "index.js",
+              "sha256": "dbe8c191d980fc8adef01004f8b162c26f76e14219f74a07e4b79652e1f8150b",
+              "tlsh": "dba1848526e373519aebb2d1e81f4229b675d223320e1a7178c997d81f0cc68d3b3dd6"
+            },
+            {
+              "path": "package.json",
+              "sha256": "b0d3028249f310dc72f34abbf29a75ea268c6b2e511eb744b76f337d9fdb9a1a",
+              "tlsh": "d3413320cc6add9319c929e5683d1643b1a0a42bde45fc0d778a539c0f4e46f32b8f6d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "requests-middleware-1.0.2.tgz",
+              "hashes": {
+                "sha1": "5a5c4ce6c4ce09d25bc3672100be6e7e1f41ba8e",
+                "sha512_sri": "sha512-tOLusaUJ29JgDnTGoKlmFbZ2Cd1NnO+LbC+1wK0HXP+0IPFZOqIOHbbW0Ca8GUeP7adc1tojvnrNLdB1AHmsjA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/requests-middleware/v/1.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-006974",
+        "import_time": "2026-06-18T05:42:06.147691991Z",
+        "modified_time": "2026-06-18T04:07:42Z",
+        "sha256": "cfd9564690d64c44a730b088f4295c75b36e9d2fb164e2c7aa9ec2367153ada6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  }
+}

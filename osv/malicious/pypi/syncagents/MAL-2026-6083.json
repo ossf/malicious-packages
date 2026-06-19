@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-17T21:32:55Z",
+  "modified": "2026-06-18T20:21:33Z",
   "published": "2026-06-17T21:32:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6083",
   "summary": "Malicious code in syncagents (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (ab19812d31784aada2fb7c8165db286c96871bd8645568766ffc22c070fd3bf2)\nDuring import, package loads embedded native extension module. This library hooks on loading, spawns a new system process and likely attempts to inject the encrypted payload in it for further execution (T1055.012). The code uses heavy analysis evasion techniques. Decrypted payload revealed capabilities to steal all kind of credentials (browsers data, AI tools, env variables, SSH keys, ...), inject code to redirect cryptocurrency transactions, spy-like activities (screenshots, keylogger) and worm-like activities using discovered GitHub tokens to publish malicious code into CI. It establishes persistence in `%LOCALAPPDATA%\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe` and also attempts to perform lateral movement in Kubernetes and AWS environments.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-syncagents\n\n\nReasons (based on the campaign):\n\n\n - native-extension\n\n\n - infostealer\n\n\n - worm\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n\n\n - uses-telegram-bot\n\n\n - keylogger\n\n\n - clipboard-stealing\n\n\n - exfiltration-ssh-keys\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - exfiltration-env-variables\n\n\n - persistence\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (aebf468a6887fb09002d4ae4aceab77e347034b389b02e252844f7d0d81fabd6)\nThe PyPI package 'syncagents' impersonates the legitimate PyPI package 'agentsync' — the README, PKG-INFO, CHANGELOG, and project URLs all point at pypi.org/project/agentsync/, the shipped Python module is named 'agentsync', and the Python source is a verbatim clone of upstream agentsync (the README itself notes 'syncagents' as an npm-side name, not a PyPI name). On top of that clone, the package force-includes an undocumented 2,905,600-byte Windows native module at src/agentsync/_parser.pyd. src/agentsync/__init__.py lines 29-37 load this DLL at import time via ctypes.CDLL, wrapped in a bare try/except so any failure is silently swallowed, with a 'Load native parser for performance' comment as cover. The Python implementation (render.py / core.py) never references _parser.pyd — the DLL is unreachable from the package's advertised functionality, contradicting the README's 'Zero dependencies. Nothing to audit' claim. Any Windows host that runs `pip install syncagents` followed by `import agentsync` (the name suggested by the cloned documentation, increasing the chance of accidental import via typo) will execute the DLL's DllMain with attacker-controlled native code. The combination of (a) name-squat against an established package with cloned cover content, (b) a large undocumented native binary unreferenced by the package's own Python code, and (c) a silenced import-time loader is a deliberate covert payload-delivery pattern.\n\n## Source: kam193 (ab19812d31784aada2fb7c8165db286c96871bd8645568766ffc22c070fd3bf2)\nDuring import, package loads embedded native extension module. This library hooks on loading, spawns a new system process and likely attempts to inject the encrypted payload in it for further execution (T1055.012). The code uses heavy analysis evasion techniques. Decrypted payload revealed capabilities to steal all kind of credentials (browsers data, AI tools, env variables, SSH keys, ...), inject code to redirect cryptocurrency transactions, spy-like activities (screenshots, keylogger) and worm-like activities using discovered GitHub tokens to publish malicious code into CI. It establishes persistence in `%LOCALAPPDATA%\\Microsoft\\EdgeUpdate\\MicrosoftEdgeUpdate.exe` and also attempts to perform lateral movement in Kubernetes and AWS environments.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-syncagents\n\n\nReasons (based on the campaign):\n\n\n - native-extension\n\n\n - infostealer\n\n\n - worm\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n\n\n - uses-telegram-bot\n\n\n - keylogger\n\n\n - clipboard-stealing\n\n\n - exfiltration-ssh-keys\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - exfiltration-env-variables\n\n\n - persistence\n",
   "affected": [
     {
       "package": {
@@ -14,7 +14,58 @@
       "versions": [
         "1.0.1",
         "1.0.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyproject.toml",
+              "sha256": "893c22a7606a7626b6a08b4bec1f8b5b322a2e7bbc481055751ffae6991948ef",
+              "tlsh": "a55111a7d6d95e724b803320b4650d0a9935a5832ec0b89d375d824eef2d62fc0fb43d"
+            },
+            {
+              "path": "src/agentsync/__init__.py",
+              "sha256": "a1380648092f961e84e90102075b648cde75a426df3f7475c25b7f662bb4c02e",
+              "tlsh": "90019c02e6291d56508c938a5ca1d5a10b1121f31c1a381f7fac22886f6ea6fabb011f"
+            },
+            {
+              "path": "src/agentsync/_parser.pyd",
+              "sha256": "b1aace6c70312a39ca39e6bba1d9abc6aaf9b23171089b1a548adc89f67f83c3",
+              "tlsh": "81d5235bbe9a5868d54ec075830a5aa26a7679cb0b2379ef03d042303e597f7273df04"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "syncagents-1.0.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "56c620972aff64fe93059a1cfab8ac4bfa0db145ba48ad30bffb246a5ad9f613",
+                "md5": "0ec198f8c57ff748f9f9a18b884eb85e",
+                "sha256": "b4ff678f3afca15946c2c8d7377c037fb19dac99ccfd01dc297392bbb2366167"
+              }
+            },
+            {
+              "filename": "syncagents-1.0.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "57d8b6ea89efb27fd50aefda3e3401e4457de44f8ec797341585b18406990218",
+                "md5": "b3896c702f12684e8bea50deeb363d57",
+                "sha256": "ad62ae86382d67bfa70f33bf4f7ce2e8911e41a9b310eac53f85d8b62ddb1c2f"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -33,9 +84,24 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/syncagents"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/syncagents/1.0.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/syncagents/1.0.2/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -48,13 +114,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-06-syncagents/syncagents",
-        "import_time": "2026-06-17T21:42:20.130963523Z",
-        "modified_time": "2026-06-17T21:32:55.933693Z",
-        "sha256": "ab19812d31784aada2fb7c8165db286c96871bd8645568766ffc22c070fd3bf2",
         "source": "kam193",
+        "sha256": "ab19812d31784aada2fb7c8165db286c96871bd8645568766ffc22c070fd3bf2",
+        "import_time": "2026-06-17T21:42:20.130963523Z",
+        "id": "pypi/2026-06-syncagents/syncagents",
+        "modified_time": "2026-06-17T21:32:55.933693Z",
         "versions": [
           "1.0.1",
+          "1.0.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "496beb0a339bc38954918b1a59e126149d1570a5f38834578f058ca4f831afa4",
+        "import_time": "2026-06-18T20:19:42.374942004Z",
+        "id": "IN-MAL-2026-007034",
+        "modified_time": "2026-06-18T19:36:38Z",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "aebf468a6887fb09002d4ae4aceab77e347034b389b02e252844f7d0d81fabd6",
+        "import_time": "2026-06-18T20:19:42.078344377Z",
+        "id": "IN-MAL-2026-007033",
+        "modified_time": "2026-06-18T19:36:37Z",
+        "versions": [
           "1.0.2"
         ]
       }

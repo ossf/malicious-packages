@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-17T04:18:32Z",
+  "modified": "2026-06-18T19:21:55Z",
   "published": "2026-06-17T04:18:32Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5973",
   "summary": "Malicious code in classbreeze-utils (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (bd50696fc7ff4ed1899df5a40dc90cbb7b5480f083bca92a2272884d7540783e)\nclassbreeze-utils ships a heavily obfuscated dropper appended to a copied @tailwindcss/typography plugin in src/index.js. On require(), a setTimeout fires a function that decodes an RC4-encrypted string array to construct an OS-specific remote URL (branching on win32/darwin/linux and reading %APPDATA% on Windows), fetches a binary via fetch(), writes it under os.homedir() (or %APPDATA%/Microsoft) with mode 0o700, then launches it via child_process.spawn with detached:true and stdio ignored. The package name is unrelated to Tailwind, but README.md is copied verbatim from @tailwindcss/typography (including '\u003ch1\u003etailwindTYPOGRAPHY Style\u003c/h1\u003e' and install instructions rewritten to 'npm install -D classbreeze-utils' / '@plugin \"classbreeze-utils\"'), so developers following copy-pasted Tailwind setup snippets can be tricked into installing it. The string-array obfuscation (shuffler with while(!![]) + push/shift on parseInt match, base64+URI+RC4 decoders) hides the module names ('fs','path','child_process'), OS detection branches, the download URL, and the dropped-file path. No version pinning, no signature verification, executable bit set, detached process — a textbook generic-binary dropper running at module load.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e19daf4f946816f5ba3c6e592eacc980861b281c6752b738de57fdd31f49279d)\nThe package masquerades as a Tailwind plugin: README and the top of src/index.js are a verbatim clone of @tailwindcss/typography (require('tailwindcss/plugin'), prose-* class generator), even though the package name has no relationship to Tailwind. Appended after the cloned plugin code at src/index.js:124+ is a heavily obfuscated IIFE using an RC4-decoded string array and AES-decipher key table to hide its strings and control flow. The decoded action table contains keys 'cmd.npx', 'cmd.npxwin', 'pkg.link', 'cmd.install', 'flag.yes', which are consumed by helpers that call child_process.spawn with detached:true, stdio:'ignore', windowsHide:true and creationFlags set to DETACHED_PROCESS to silently run `npx -y \u003cpkg.link\u003e`, fetching and executing an attacker-controlled package from the npm registry on the developer's machine. On Windows an additional path uses keys 'ext.vbs', 'vbs.tag', 'win.wscript': a VBS file is written to os.tmpdir() with a crypto.randomBytes(4) hex prefix and launched via wscript.exe (detached, windowsHide), followed by process.exit(0), to hide the dropper invocation from the console. The action table also contains 'env.api' and 'api.base' entries, and the spawn helper clones process.env and injects api.base as the env.api value into the child, so the downstream npx-fetched package receives a C2/telemetry endpoint via environment. Because require('classbreeze-utils') is the plugin entry point loaded by any Tailwind build that adds it, the dropper fires automatically as soon as a build that depends on it runs, executing arbitrary attacker-controlled code on the developer/CI machine.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "classbreeze-utils"
       },
       "versions": [
-        "0.7.8"
+        "0.7.8",
+        "0.7.10",
+        "0.7.9"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +64,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/classbreeze-utils/v/0.7.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/classbreeze-utils/v/0.7.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/classbreeze-utils/v/0.7.9"
     }
   ],
   "credits": [
@@ -66,13 +86,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006874",
-        "import_time": "2026-06-17T05:45:41.612565844Z",
-        "modified_time": "2026-06-17T04:18:32Z",
-        "sha256": "bd50696fc7ff4ed1899df5a40dc90cbb7b5480f083bca92a2272884d7540783e",
         "source": "amazon-inspector",
+        "sha256": "bd50696fc7ff4ed1899df5a40dc90cbb7b5480f083bca92a2272884d7540783e",
+        "import_time": "2026-06-17T05:45:41.612565844Z",
+        "id": "IN-MAL-2026-006874",
+        "modified_time": "2026-06-17T04:18:32Z",
         "versions": [
           "0.7.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "50647f0da027926236690384c4a16284d0625f569870e1d27bb6bc9213b72c00",
+        "import_time": "2026-06-18T19:20:02.515827648Z",
+        "id": "IN-MAL-2026-007020",
+        "modified_time": "2026-06-18T19:08:20Z",
+        "versions": [
+          "0.7.10"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e19daf4f946816f5ba3c6e592eacc980861b281c6752b738de57fdd31f49279d",
+        "import_time": "2026-06-18T19:20:02.59350664Z",
+        "id": "IN-MAL-2026-007021",
+        "modified_time": "2026-06-18T19:08:26Z",
+        "versions": [
+          "0.7.9"
         ]
       }
     ]
