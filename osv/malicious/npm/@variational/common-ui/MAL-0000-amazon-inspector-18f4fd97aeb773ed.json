@@ -1,0 +1,71 @@
+{
+  "modified": "2026-06-22T21:16:57Z",
+  "published": "2026-06-22T21:16:57Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Import-time credential exfiltration and reverse shell to hardcoded IP",
+  "details": "On require() of the package's main entry (lib/index.js), a setTimeout-scheduled block executes two attacker payloads. (1) Credential exfiltration: scrapes process.env for keys matching /KEY|SECR|TOK|PASS|PRIV|MNEM|AWS|FIRE|DB_|PG|SIGN|VAULT|SEED|DEPLOY/i, executes `id` and `whoami`, reads `/proc/1/environ`, and POSTs the resulting JSON (hostname, username, matching env vars, cwd, id output, container init env) to 2.25.186.116:8443/t. (2) Reverse shell: opens a TCP socket to 2.25.186.116:4444, spawns `/bin/sh -i`, and bidirectionally pipes stdio across the socket; on socket error falls back to a python3 socket+dup2+subprocess reverse shell. All sensitive strings (IP, `/bin/sh`, `python3`, `http`, `child_process`, `net`) are obfuscated via String.fromCharCode arrays to evade pattern scanners. The package advertises itself as 'shared UI constants and utilities' but ships only a handful of trivial constants alongside this payload, indicating the stated purpose is a cover for the backdoor. Any consumer that imports this module on a build server, CI runner, or developer workstation leaks credentials and grants the attacker an interactive shell on the host.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@variational/common-ui"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/index.js",
+              "sha256": "0ff140dea54654c9f58cc1bc63cf4f8c24505e56b71a5941f6257e4567a4f68e",
+              "tlsh": "db61679bfe3696fe3a322cf7853f80125567802b2641c4f0b5adcf026f5959801647e9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "483b289055e229049fe65e23a1d8adcf178ffbfc3867fa40cb5eda0210b23da8",
+              "tlsh": "1ff0acb34066650325dda2928c69a00bb170cd07498178080b8b136d82cf9b31bff92f"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@variational/common-ui/v/1.0.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "18f4fd97aeb773ed6463874da9c669759512170e56c7277f126de70dc6296154",
+        "import_time": "2026-06-22T22:14:22.326447927Z",
+        "id": "IN-MAL-2026-007176",
+        "modified_time": "2026-06-22T21:16:57Z",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  }
+}
