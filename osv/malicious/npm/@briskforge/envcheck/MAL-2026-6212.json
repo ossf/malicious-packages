@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-19T15:12:55Z",
+  "published": "2026-06-19T15:12:55Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6212",
+  "summary": "Malicious code in @briskforge/envcheck (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (09dba573f5d6cb00b09562870f2148b3e539786f5d801f2a263338301d759313)\nThe package advertises itself as a tiny environment-variable validator but ships lib/preflight.js, a heavily obfuscated (obfuscator.io string-array rotation, RC4 decoder, ~1228-entry string array, control-flow flattening) ~277KB bundle that runs on every call to the package's main entry point: lib/index.js invokes preflight.runPrepare() at the top of envcheck(). After deobfuscation, lib/preflight.js performs an HTTPS GET to a remote endpoint, AES-256-GCM-decrypts the response using hardcoded key/IV constants embedded in the bundle, writes the decrypted bytes to a cache directory, and spawns them detached via process.execPath / sh with stdio:'ignore' and windowsHide:true. The module also exports onInstall() and self-executes when run as a script (`if (require.main === module) { onInstall(); }`), with a BRISKFORGE_E13F_TAG environment marker used as an anti-double-exec guard. The remote source is mutable and the decrypted payload is opaque, so any installer that imports the package — or runs the file directly — executes whatever bytes the operator chooses to serve, with no integrity checks. Package metadata compounds the deception: repository.url, bugs.url, and homepage all point at https://github.com/validatorjs/validator.js, an unrelated well-known OSS project, while the publisher is an unrelated ProtonMail account (briskforge@pm.me) with no corresponding GitHub presence — a deliberate impersonation to borrow legitimacy from validatorjs on the npm listing page.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@briskforge/envcheck"
+      },
+      "versions": [
+        "0.5.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/preflight.js",
+              "sha256": "26ddfae644673e0ad65b63caaaf67c0f7dc6c2b2b4127bb5271f8d03fb62091a",
+              "tlsh": "6a449730b3c07c9425479f7b332ef5e5f92e5fa934a8088bd065bc64a6ea915dad0730"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ce6267dc0815b70056d905a964d70a1e61c7709d3efb9094756e50ae5a379fe4",
+              "tlsh": "540104b5c52428971fc876f49ce951c3a2a14807cc64fc0926d3012c97ddea712fd1bc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "envcheck-0.5.5.tgz",
+              "hashes": {
+                "sha1": "a8611562149aaa0e5f0107953073aa38813ecd16",
+                "sha512_sri": "sha512-+Ttoy2lN1+0bDees1E/xPulUHjiFLpi08djOdarmd+SlmVQKNmM6LIbr0273qbE4BJKCuylTC4fZYqDxKSRYnA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@briskforge/envcheck/v/0.5.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007078",
+        "import_time": "2026-06-19T15:41:55.645473286Z",
+        "modified_time": "2026-06-19T15:12:55Z",
+        "sha256": "09dba573f5d6cb00b09562870f2148b3e539786f5d801f2a263338301d759313",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.5"
+        ]
+      }
+    ]
+  }
+}

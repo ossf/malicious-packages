@@ -1,0 +1,100 @@
+{
+  "modified": "2026-06-19T15:43:42Z",
+  "published": "2026-06-19T15:12:42Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6210",
+  "summary": "Malicious code in @apexcraft/nano-key (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c46938b3634fb4de89ddf44b765e1c766c871a40fb31c54609c1b3526074e65c)\n@apexcraft/nano-key advertises itself as a 12-byte sortable ID generator (README and repository metadata are copied from yiwen-ai/xid-ts, an unrelated upstream project), but ships a 250KB obfuscator.io-style payload at dist/cjs/seed.cjs. package.json declares `\"postinstall\": \"node./dist/cjs/seed.cjs\"`, so the payload runs automatically on `npm install`. The same `runPrepare()` entry point is also invoked at module load: index.js line 25 calls `_seed.runPrepare()` inside `newState()`, which line 35 invokes as `defaultState = newState()` at top level — so any consumer that `require`s the package re-triggers the dropper. seed.cjs uses an RC4+base64 rotating string array decoder (`_0x554f` / `_0x1420`), control-flow flattening, a self-defending IIFE, and a debugger-protection loop to hide an AES-256-GCM-decrypted URL list. At runtime it `https.request`s those URLs, stages the response under `~/.cache` (or `%LOCALAPPDATA%` / `~/Library/Caches`), sha256-stamps the file, and executes it with `child_process.spawn(process.execPath, [file])`, with an alternate `bun` runtime branch. There is no signature or hash pinning of the fetched bytes, the destination is decrypted at runtime (mutable C2), and the package's stated purpose (ID generation) provides no legitimate reason to fetch and execute remote code. Installing or requiring this package hands arbitrary remote code execution to whoever controls the encrypted endpoint.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@apexcraft/nano-key"
+      },
+      "versions": [
+        "1.3.8",
+        "1.3.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/cjs/seed.cjs",
+              "sha256": "618dfffb6829356c131fded9f4c6528b73b4f9d7ff1fc1d3b457599a12584e29",
+              "tlsh": "d1449730b3c07c9425479f7b332ef5e5f92e5fa934a8088bd065bc64a6ea915dad0730"
+            },
+            {
+              "path": "package.json",
+              "sha256": "4f42c7bd6028949d5899aa16a5a028ae8ab93a03b9ee509445fcadb521a077f1",
+              "tlsh": "e0216b69c4b45d631be465e0ac6a1806a3710d078e64be0537df407caf8e1ab52bf3ac"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "nano-key-1.3.8.tgz",
+              "hashes": {
+                "sha1": "8edf857e84e1a2e28225c7e4a3bf99bea3a189a8",
+                "sha512_sri": "sha512-tr//m4xj70vcDmTb0nme74hwqRLk6PPewyeMHhfIGiR69ITBwXN8Fj4kZ4KPVT5OMLv/GIj607BS47YzZUdGvQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexcraft/nano-key/v/1.3.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexcraft/nano-key/v/1.3.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007076",
+        "import_time": "2026-06-19T15:41:55.51799058Z",
+        "modified_time": "2026-06-19T15:12:42Z",
+        "sha256": "a07948bbe7c664c2248fc90112dccc0258f9857706b50eed5f68e7ddd7dc6f62",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007077",
+        "import_time": "2026-06-19T15:41:55.586775548Z",
+        "modified_time": "2026-06-19T15:12:44Z",
+        "sha256": "c46938b3634fb4de89ddf44b765e1c766c871a40fb31c54609c1b3526074e65c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.4"
+        ]
+      }
+    ]
+  }
+}
