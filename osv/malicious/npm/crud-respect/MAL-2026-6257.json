@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-22T12:00:00Z",
+  "modified": "2026-06-22T16:39:36Z",
   "published": "2026-06-22T12:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6257",
   "summary": "Malicious code in crud-respect (npm)",
-  "details": "crud-respect is a dependency confusion proof-of-concept package published to the public npm registry by the account r0binak and self-labeled \"Security research PoC - Dependency Confusion Hunter\". It was published at the artificially high version 999.99.99, a floating-version bait used to outrank a private-registry package of the same name so that build pipelines preferring the highest available version resolve and install this public package instead. It belongs to the same r0binak dependency-confusion campaign as carousel-controller-mixin (MAL-2026-5856) and setka-editor (MAL-2026-5859). Packages in this campaign declare both preinstall and postinstall hooks that run callback.js on every npm install; the script collects installer identity and environment data (username, uid/gid, hostname, homedir, cwd, platform, Node version, local network interfaces, and the external IP via api.ipify.org) and probes for CI/cloud credential environment variables (AWS_ACCESS_KEY_ID, GITHUB_TOKEN, NPM_TOKEN, DOCKER_PASSWORD) plus GitHub Actions context. The collected data is exfiltrated to a hardcoded Discord webhook and via a DNS side-channel (base64-encoded host data prepended as a subdomain and resolved with dns.resolve()) to defeat egress HTTP filtering on CI networks. Regardless of the stated research intent, install-time exfiltration of host data and credential-presence flags is harmful to any pipeline that resolves this name.",
+  "details": "crud-respect is a dependency confusion proof-of-concept package published to the public npm registry by the account r0binak and self-labeled \"Security research PoC - Dependency Confusion Hunter\". It was published at the artificially high version 999.99.99, a floating-version bait used to outrank a private-registry package of the same name so that build pipelines preferring the highest available version resolve and install this public package instead. It belongs to the same r0binak dependency-confusion campaign as carousel-controller-mixin (MAL-2026-5856) and setka-editor (MAL-2026-5859). Packages in this campaign declare both preinstall and postinstall hooks that run callback.js on every npm install; the script collects installer identity and environment data (username, uid/gid, hostname, homedir, cwd, platform, Node version, local network interfaces, and the external IP via api.ipify.org) and probes for CI/cloud credential environment variables (AWS_ACCESS_KEY_ID, GITHUB_TOKEN, NPM_TOKEN, DOCKER_PASSWORD) plus GitHub Actions context. The collected data is exfiltrated to a hardcoded Discord webhook and via a DNS side-channel (base64-encoded host data prepended as a subdomain and resolved with dns.resolve()) to defeat egress HTTP filtering on CI networks. Regardless of the stated research intent, install-time exfiltration of host data and credential-presence flags is harmful to any pipeline that resolves this name.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a0a6cb4078e221ef4d76020340517c2ff466e9724950bc189368fd6239170cd9)\npackage.json declares both `preinstall` and `postinstall` hooks that execute `node callback.js`. On install, callback.js collects the OS username, uid/gid, home directory, hostname, current working directory, local and external IP (via https://api.ipify.org), CI-detection flags, and the entire `process.env` object without any filtering, then POSTs the JSON payload over plaintext HTTP to a hardcoded endpoint at http://132.243.20.244:8000/api/collect (callback.js line 6). A code comment in Russian explicitly states that all environment variables are sent without masking. The package self-describes as a 'Dependency Confusion Hunter' PoC and is published at version 999.99.99 — the canonical inflated-version pattern used to override legitimately-named internal packages during npm resolution. Any installer (especially CI systems where `process.env` typically contains NPM_TOKEN, GITHUB_TOKEN, AWS_* credentials, and other provider secrets) running `npm install crud-respect` ships its full secret environment to the hardcoded IP. The research-PoC framing does not change the installer-side impact: secrets are exfiltrated on every install.\n",
   "affected": [
     {
       "package": {
@@ -20,16 +20,62 @@
             }
           ]
         }
-      ]
+      ],
+      "versions": [
+        "999.99.99"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "callback.js",
+              "sha256": "3ac6ea43950a1f331c7e5bb3dbc52d98cf82b3691641d86d351a61d8def142f5",
+              "tlsh": "608195e915f6681401e76f85681f540a717ae0433a0bfda0fe6c42116fc6b7c93f1aa9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "6fb19411348abdfeae6bc4bcdb260e8a587c5b2e595071e287d16d198d3fd83f",
+              "tlsh": "14e0682069255a333cd4cebf0432a21a2010de0bd61c3c093b47018cb35d7764abb1af"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "crud-respect-999.99.99.tgz",
+              "hashes": {
+                "sha1": "8785dec2afcb736bfacde058437a7517f180a7de",
+                "sha512_sri": "sha512-jL7WvyyxExqWOwDbqOxXCTCQ9U69OHQ0ZhFhMrjef30GyFsVd14FxxivHr/h85uw3X6OsX65X8wYT7i66dq6mQ=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/crud-respect"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/crud-respect/v/999.99.99"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -39,6 +85,17 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "a0a6cb4078e221ef4d76020340517c2ff466e9724950bc189368fd6239170cd9",
+        "import_time": "2026-06-22T16:36:58.131823439Z",
+        "id": "IN-MAL-2026-007102",
+        "modified_time": "2026-06-22T16:25:55Z",
+        "versions": [
+          "999.99.99"
+        ]
+      }
+    ]
   }
 }
