@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-22T16:49:00Z",
+  "published": "2026-06-22T16:49:00Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of Anthropic SDK drops Python-based crypto-wallet stealer via postinstall C2",
+  "details": "Package masquerades as an Anthropic Claude SDK wrapper (package.json description: 'Official Anthropic Claude SDK wrapper'), while the bundled README is for an unrelated 'cachesync-helper' in-memory cache library and the actual code is a dropper. The postinstall hook runs `node lib/cli.js`, which schedules a `_prefetch()` routine that POSTs to four hardcoded bare-IP endpoints (104.194.134.33, 104.194.133.89, 107.189.20.82, 107.189.20.146) on port 8443 over TLS with `rejectUnauthorized: false`, base64-decodes files from the response, and writes them into OS-specific hidden directories disguised as system paths (`~/.local/share/com.apple.sync` on macOS, `~/.local/share/prometheus` on Linux, `%LOCALAPPDATA%\\Microsoft\\Windows Security\\Health` on Windows), with a `.cs_v2` marker to skip on re-run. If no Python is found, the dropper installs one via `winget install Python.Python.3.12`, `brew install python3`, or by downloading and running the Miniconda installer from repo.anaconda.com, then `pip install`s wallet-targeting libraries (bip-utils, mnemonic, eth-account, pycryptodome, psutil) and spawns the dropped `main.py` detached with stdio ignored and `_INTERNAL=1`. On macOS the script directly INSERTs rows into the user's TCC.db granting Full Disk Access (kTCCServiceSystemPolicySysAdminFiles, kTCCServiceSystemPolicyAppData) to Terminal, the running node binary, and /usr/bin/python3, bypassing the macOS consent prompt and giving the dropped Python payload unrestricted access to browser data, SSH keys, and wallet files. Indicators of evasion are pervasive: module and method names are reconstructed via `['ba','se','64'].join('')`, `['child','_pro','cess'].join('')`, `['exec','File','Sync'].join('')`, and `module.constructor._load` is reached via split-string concatenation to defeat static `require()` graph analysis.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "free-anthropic-claude"
+      },
+      "versions": [
+        "5.0.8"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/index.js",
+              "sha256": "4bfa365591c2bf5e33747550ccf5e60065de400b4724b9afa105e10261a499c1",
+              "tlsh": "8552648252fb20288596f07b1b1b4005b12bfe176246d8dc7a6c87dc9f9947452bbafc"
+            },
+            {
+              "path": "package.json",
+              "sha256": "d000d40119c1c7d907c21a14fc849e21248f8ec3e7e60707a182e2aada433136",
+              "tlsh": "36014918d03a1e9376c86f447db61046a270ae4b4a147c59379b422c4f8c23f6dba63e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "free-anthropic-claude-5.0.8.tgz",
+              "hashes": {
+                "sha1": "1022607c761f56a4334bac8c6dfa748bf94e5af2",
+                "sha512_sri": "sha512-oWYpks6S3xM+HDIyiHAEBJI2X5+Gf+jUVmk9sDdoABgB5d6tFd3lwYNPuq7de5dbrzfyPbdnEDtYFWjJkrSHVw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/free-anthropic-claude/v/5.0.8"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "5af6290ac98ba1963e5515db9677f0b725281e1a14c903271d28c50f33cd3f72",
+        "import_time": "2026-06-22T18:25:26.651841349Z",
+        "id": "IN-MAL-2026-007124",
+        "modified_time": "2026-06-22T16:49:00Z",
+        "versions": [
+          "5.0.8"
+        ]
+      }
+    ]
+  }
+}

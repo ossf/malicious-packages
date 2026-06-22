@@ -1,0 +1,85 @@
+{
+  "modified": "2026-06-22T16:48:51Z",
+  "published": "2026-06-22T16:48:51Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Windows postinstall dropper masquerading as Anthropic Claude CLI",
+  "details": "Package advertises itself as a 'Free Anthropic Claude CLI' but ships an in-memory cache stub plus a hidden Windows dropper. The package.json postinstall runs `node cli.js`, which calls `require('./index').createCache()` and holds the postinstall process alive with `setTimeout(() =\u003e process.exit(0), 240000)`. The CacheSync constructor schedules `_stealthInit` after a random 8-23s jitter; on Windows it issues HTTPS POSTs to `update.microsoft.com`, `cdn.msft.net`, and `edge.microsoft.com` at path `/api/v2/config` (Microsoft impersonation — these hostnames are not used by the package's stated purpose and the code reaches them via raw `https.request` to attacker-controlled infrastructure). The response field `p` is base64-decoded, written to `%LOCALAPPDATA%\\Microsoft\\Windows\\INetCache\\iecache.dat`, and executed with a detached hidden `pythonw.exe` via `child_process`. The cache-library framing, randomized delay, hidden-window spawn, fake-Microsoft C2 hostnames, and `_stealthInit` naming are an unambiguous remote-code dropper. Any Windows machine running `npm install free-anthropic-claude` is fully compromised.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "free-anthropic-claude"
+      },
+      "versions": [
+        "5.5.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "62a3c479b117ebe121ef7d70784cc7ceffa3766b5f949f4637b66ad8097a2248",
+              "tlsh": "c502318527f7611496a3e1bd4faf9402b119c02b6546c99cbd6c43cd8f8863486e6ffc"
+            },
+            {
+              "path": "cli.js",
+              "sha256": "93ef5750fc79185015d8893494811ea520bc480ff9e40d98bae4f0607aefe348",
+              "tlsh": "43c022886eca545fb9c044aa50b91e0290a6f0364b847aa428230d1a93906e83a3c9dd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "3615f5afac11f38469869a7ffa776c9e89c0a58dbc641c83da87874f8fdeeb36",
+              "tlsh": "80f0e224c43b1ee31ac81f853cb7140aa2919e1b49543c6a7397412c4f9e23f2cb962f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "free-anthropic-claude-5.5.0.tgz",
+              "hashes": {
+                "sha1": "df74c63f3f4a2c99f82503e5a536a8adbce7232f",
+                "sha512_sri": "sha512-8CCoWU2UW9XqMBzRcEw6VHKqoDL1EPoqQjzkR3pbmAMB5p5vIAM2KsE5F4xyPfd8KQsuWt5TZrk32RdmdlOfFA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/free-anthropic-claude/v/5.5.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "7c06842ef4209b97801c583d254fd866c7d1966897e2073d5e923b1b11bfe749",
+        "import_time": "2026-06-22T18:25:25.483404495Z",
+        "id": "IN-MAL-2026-007114",
+        "modified_time": "2026-06-22T16:48:51Z",
+        "versions": [
+          "5.5.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-22T16:49:01Z",
+  "published": "2026-06-22T16:49:01Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "free-anthropic-claude is a malicious dropper impersonating the Anthropic SDK",
+  "details": "This package impersonates the Anthropic Claude SDK (name and description claim to be an 'Official Anthropic Claude SDK wrapper', author is 'anthropic-tools') but ships a multi-stage dropper. The package.json declares `postinstall: node lib/cli.js`, which auto-executes on `npm install` and runs the following chain in lib/index.js:\n\n1. Hardcoded C2 over bare IPs: POSTs to four hardcoded IP addresses (107.189.20.82, 107.189.20.146, 104.194.134.33, 104.194.133.89) reconstructed from integer arrays, with TLS verification disabled (`rejectUnauthorized:false`). The JSON response is base64-decoded and written to disk as `main.py`, then executed via a detached Python process.\n2. Alternate-runtime dropper: if the host lacks a usable Python, the installer downloads Miniconda from repo.anaconda.com via curl/wget into `~/.local/share/prometheus/miniconda` (Linux), runs `winget install Python.Python.3.12` (Windows), or `brew install python3` (macOS) — installing an entire Python distribution solely to run the C2-supplied payload.\n3. macOS privacy bypass: on Darwin, sqlite3-INSERTs rows into `~/Library/Application Support/com.apple.TCC/TCC.db` granting kTCCServiceSystemPolicySysAdminFiles / SystemPolicyAppData to Terminal, the running node binary, and /usr/bin/python3 — subverting TCC so the dropped payload has broad filesystem access without user consent.\n4. Crypto-wallet stealer toolchain: pip-installs `bip-utils`, `mnemonic`, `pycryptodome`, `psutil`, `eth-account` with `--break-system-packages`, the canonical libraries for BIP39 seed-phrase parsing, BIP32 derivation, and Ethereum private-key handling.\n5. Persistence: writes a `.cs_v2` marker and `main.py` under disguised paths impersonating system directories (`~/.local/share/com.apple.sync` on macOS, `~/.local/share/prometheus` on Linux, `%LOCALAPPDATA%\\Microsoft\\Windows Security\\Health` on Windows). Subsequent `require()` of the package re-spawns the detached Python payload.\n6. Pervasive string-split obfuscation: module names and API calls are reconstructed via `['x','y'].join('')` (`['htt','ps']`, `['child','_pro','cess']`, `['exec','Sync']`, `['spa','wn']`, `['ba','se','64']`, `module['constr'+'uctor']['_l'+'oad']`) to evade static analysis.\n\nThe README is for an unrelated 'cachesync-helper' package, further confirming the lure-and-impersonation pattern.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "free-anthropic-claude"
+      },
+      "versions": [
+        "5.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/index.js",
+              "sha256": "b28d1dea0b92109571f67ebd31984abe6c0f5af1140e3073d3210ac43777a310",
+              "tlsh": "9162968261fb10388596f07b1b1b4005b12bff17a206d8dc797c879c9f8957452baafc"
+            },
+            {
+              "path": "package.json",
+              "sha256": "4bf52d64e685b7ea339477cb7bdbbd80268cb690edbd82717d719681e4322835",
+              "tlsh": "51014918d03a1e9376c82f447db61006a270ae4b4a143c59379b422c0f8c23f6dba63f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "free-anthropic-claude-5.2.0.tgz",
+              "hashes": {
+                "sha1": "20ca182bd6991ac46b5090a6b7734e052ad3b42a",
+                "sha512_sri": "sha512-iK/5Z27cDAXnjLolbreNfxr3vGqY/a1AFbZGeVTW+jpDcm8SpPAVtjGqnn3+99fOk2pWYUA2j4bXlxJTTEl+cQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/free-anthropic-claude/v/5.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "11bfe96b56a6615a50639b25de793e14044ea393c2029b26fa4e1b9e3dc5a22f",
+        "import_time": "2026-06-22T18:25:26.907141774Z",
+        "id": "IN-MAL-2026-007127",
+        "modified_time": "2026-06-22T16:49:01Z",
+        "versions": [
+          "5.2.0"
+        ]
+      }
+    ]
+  }
+}
