@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-23T19:41:03Z",
+  "published": "2026-06-23T19:41:03Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "@frostnode/waitfor ships obfuscated dropper that downloads and executes remote payload when poll() is called",
+  "details": "Package is published under scope `@frostnode` but its package.json homepage and repository point at `https://github.com/mmustra/rxjs-poll` — the legitimate `rxjs-poll` library by a different maintainer. The library source in `dist/cjs/index.js` is a near-verbatim copy of mmustra/rxjs-poll with one injected line: `var _trapHook = require('./tickinit.cjs')` at the top, and `_trapHook.runPrepare()` invoked from inside the package's only documented export, `poll(config)` (dist/cjs/index.js:204). `dist/cjs/tickinit.cjs` is a ~259KB obfuscator.io-protected blob (string-array shuffling, RC4-decoded property names, control-flow flattening, runtime `Function(...)` construction). It carries hardcoded base64 ciphertext that is decrypted at runtime via `crypto.createDecipheriv('aes-256-gcm', …)` to recover a C2 URL, then re-launches the user's node binary under an env-var sentinel, dynamically requires child_process/fs/os/https/crypto, downloads attacker-controlled bytes to `os.tmpdir()`, writes a `.lock` JSON with sha256, and spawns the downloaded file via `child_process.spawn(process.execPath, [tmpfile], {detached:true}).unref()`. tickinit.cjs additionally exports `onInstall = () =\u003e runPrepare()` and ends with `if (require.main === module) onInstall();`, providing extra trigger surfaces (direct `node tickinit.cjs` invocation, or a future postinstall hook) for the same dropper. Any consumer who imports `@frostnode/waitfor` and calls `poll()` — the documented and sole API — gets remote-code execution on their machine with no consent, no version pinning, and no signature verification of the downloaded payload. The AES-GCM-wrapped destination, repackaging of an unrelated maintainer's library under a new scope, and multiple redundant trigger paths are the canonical malicious-dropper fingerprint.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@frostnode/waitfor"
+      },
+      "versions": [
+        "0.10.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/cjs/tickinit.cjs",
+              "sha256": "2de602e6422a991346aaf0b74ed6bd525215f5177b9f7f267ccb4d82e919273d",
+              "tlsh": "a944732053c0bce421479fb6732eb1e8fa6e1aa87654089fd918bd54b7bd914dfe0870"
+            },
+            {
+              "path": "package.json",
+              "sha256": "517ff91e84756f03d15294e36950868beba1a6b8f1189d8696b12234496e89b0",
+              "tlsh": "4831156dc5f44e532ad825e8e85b0942a27258075e547e0133ce052c9f8c2ef12ff2ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "waitfor-0.10.6.tgz",
+              "hashes": {
+                "sha1": "db5e79be35928cc3f672d33eeff14747dc99f2db",
+                "sha512_sri": "sha512-Ab3IfuwOHrAskFGgH2yDRQdMR1XdIFmPBqGtdM00VIzpdmqq7FT2t3Fovds3jzk6HUWHYEnh/SjNa+924grW4w=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@frostnode/waitfor/v/0.10.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c332f4386c51821f983068e5df440f4fbc53c88d6ecc561ca41a8a444d3df998",
+        "import_time": "2026-06-23T20:48:30.170384358Z",
+        "id": "IN-MAL-2026-007351",
+        "modified_time": "2026-06-23T19:41:03Z",
+        "versions": [
+          "0.10.6"
+        ]
+      }
+    ]
+  }
+}
