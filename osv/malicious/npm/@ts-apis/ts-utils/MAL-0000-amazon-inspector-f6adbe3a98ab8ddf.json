@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-23T03:01:38Z",
+  "published": "2026-06-23T03:01:38Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Credential harvester, cloud-IMDS thief, and Sliver C2 implant dropper executes on require()",
+  "details": "On import, dist/index.js schedules a setTimeout that runs an obfuscated payload whose strings are constructed from numeric arrays via String.fromCharCode to evade review. The payload performs three categories of installer-side harm. First, mass secret-file harvesting: it reads ~/.ssh/id_{rsa,ed25519,ecdsa}, ~/.ssh/{config,authorized_keys,known_hosts}, ~/.aws/{credentials,config}, ~/.kube/config, ~/.npmrc, ~/.netrc, ~/.docker/config.json, ~/.git-credentials, GCP application_default_credentials.json, ~/.config/gh/hosts.yml, terraform credentials, Azure profile, Solana keypair, ~/.vault-token,.env files in CWD and parent directories, /var/run/secrets/kubernetes.io/serviceaccount/* and /run/secrets/*, and POSTs them to safdadfasf.com/cb/loopscale/exfil. Second, cloud workload-identity theft: it queries AWS IMDS at 169.254.169.254/latest/meta-data/iam/security-credentials/, GCP metadata.google.internal, and the ECS task-role endpoint at 169.254.170.2 (via AWS_CONTAINER_CREDENTIALS_RELATIVE_URI), and exfiltrates the returned IAM/GCP credentials to the same destination. It also iterates process.env selecting every variable matching a regex covering KEY|SECR|TOK|PASS|PRIV|MNEM|AWS|DB_|PG|SIGN|VAULT|SEED|INFURA|ALCHEMY|AUTH|CRED|MONGO|REDIS|API_|STRIPE|SENTRY/etc., and on Windows runs powershell env enumeration, cmdkey /list, and a recursive USERPROFILE scan for.env/.pem/.key/.pfx/id_rsa/credentials. Third, persistent backdoor: a 10-second polling loop hits https://safdadfasf.com/cb/loopscale/h?id=\u003csid\u003e, runs the returned JSON's 'c' field via child_process.execSync, and when the command begins with 'SLIVER' downloads a binary to /tmp/.\u003crandom\u003e, chmods 0755, and spawns it detached and unref'd — a Sliver C2 implant dropper. The package's advertised TypeScript-utility surface (logger, AWS Secrets Manager wrapper, TypeORM/Redis helpers) is cover for the implant; the author 'ts-apis' has no homepage or repository.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@ts-apis/ts-utils"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "4f609af8d1734c55722b09892727d3bbf9ad95df557b7a2712147542198920db",
+              "tlsh": "47b2fe74b3e42ba9b550d4ed1129990714f4f03738219885fae27227bbfd6a07c257b8"
+            },
+            {
+              "path": "package.json",
+              "sha256": "e080f4b56c7c14010dccbeb4e833e3f185b4644b49df6ed0ba5fcd69e0d8eaf0",
+              "tlsh": "29f0ac30ab01ed2396c962973e66125268608d4b0955bc0433eb023c47ed29f74ff77d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ts-utils-1.0.5.tgz",
+              "hashes": {
+                "sha1": "3cfb2a97d8c1b59c07555e06334c449d9d0a6987",
+                "sha512_sri": "sha512-iQ8zI8EQhbmzuTfuZ+aC42XejPsIEitGqF53/ZERNJzniDKVMhwvqueDHzr9Zn9vB7ZdjQRc3rqbuxCzCCnLHA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ts-apis/ts-utils/v/1.0.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f6adbe3a98ab8ddfafb044c7faa99be609d037118b8c4302e2f726355b01a1e4",
+        "import_time": "2026-06-23T03:13:43.861513053Z",
+        "id": "IN-MAL-2026-007193",
+        "modified_time": "2026-06-23T03:01:38Z",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  }
+}
