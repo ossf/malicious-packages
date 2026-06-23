@@ -1,0 +1,66 @@
+{
+  "modified": "2026-06-23T16:22:56Z",
+  "published": "2026-06-23T16:22:56Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of urlcat ships obfuscated install-time and load-time binary dropper",
+  "details": "@nullzero/urlcat impersonates the popular `urlcat` library (README and repository URL point at balazsbotond/urlcat) but ships a malicious payload. `package.json` declares `\"postinstall\": \"node lib/encoder.js\"`, causing the obfuscated loader to execute automatically on `npm install`. Additionally, the library entry `lib/index.js` invokes `encoder.runPrepare()` from inside the exported `cat()` function (line 67), so the same payload also fires whenever a consumer imports and uses the library. `lib/encoder.js` is a 263 KB obfuscator.io-packed file (string array `_0x36b9` of 1176 entries, RC4+base64 decoder, control-flow flattening, self-defending) deceptively labeled 'Encoder init'. Once deobfuscated, the string table contains AES-256-GCM decryption material (hardcoded base64 key/IV/tag passed to `createDecipheriv('aes-256-gcm', key, iv).setAuthTag(...)`) wired to filesystem and process primitives: writing a `.part` file, computing a sha256 digest, `chmod`, `unlinkSync`, and `spawn(process.execPath,...)` against paths under `/usr/bin`. The combined shape — typosquat name + obfuscation + hardcoded AES decryption of an embedded blob + write+chmod+spawn of the decrypted bytes + automatic execution at both install time and library-use time — is a binary dropper that compromises the installer's machine on `npm install` and again when any consumer requires this package.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@nullzero/urlcat"
+      },
+      "versions": [
+        "1.4.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/encoder.js",
+              "sha256": "3386843066d4c04883f0d29cb1e25fa913c293f0835bdb68390f73923cc21f08",
+              "tlsh": "30445151a3c9bc8012479f767b5ef2e9fa290aac745408afd404bd54bbfa507dbe0630"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "9c1a822d6369b344bb87e639f84077b5d6f096b02d36cb126754b30c32f2984e",
+        "import_time": "2026-06-23T16:54:17.041703632Z",
+        "id": "IN-MAL-2026-007313",
+        "modified_time": "2026-06-23T16:22:56Z",
+        "versions": [
+          "1.4.2"
+        ]
+      }
+    ]
+  }
+}

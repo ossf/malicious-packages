@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-23T16:22:58Z",
+  "published": "2026-06-23T16:22:58Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of `urlcat` ships obfuscated binary dropper triggered on first API call",
+  "details": "Package `@nullzero/urlcat` impersonates the legitimate `urlcat` URL-builder library — same advertised `cat(base, path, params)` API, README copied from upstream, and `package.json.repository.url` points to `git+https://github.com/balazsbotond/urlcat.git` (the real upstream maintainer's repo, not the `nullzero` publisher's). The package main `lib/index.js` line 64 calls `encoder.runPrepare()` at the top of every invocation of the exported `cat()` function. `lib/encoder.js` is a 263 KB obfuscator.io-packed file (rotated 1176-entry string array, RC4 decoder `_0x2f0d`, control-flow flattening) — far beyond anything a tiny URL composer requires. Decoded control flow in `lib/encoder.js` selects a platform-specific binary candidate (branches on `process.platform === 'win32'` to `'win.js'` / a bun-style executable, otherwise a node-typed binary), constructs a destination under `os.tmpdir()`, downloads it over `https.request` following up to 5 redirects with `User-Agent: node-installer`, sha256-checks against a `.meta` JSON sidecar, and then `spawn`s the dropped binary (or re-execs `process.execPath` against it) detached + unref'd, with a private env-var marker (`__7D0A53...`). The encoder also installs no-op handlers for `uncaughtException`, `unhandledRejection`, and `SIGINT` to suppress crashes, performs obfuscator.io-style debugger-detection (`Function('debugger')` regex self-check), and re-spawns the current node when run interactively so the payload runs only in the detached child. A URL-builder library has no legitimate need for a 263 KB obfuscated sibling, a platform-specific binary download, anti-debug guards, or a detached child re-exec. Any consumer who calls `cat()` triggers arbitrary code execution from an attacker-controlled binary on their machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@nullzero/urlcat"
+      },
+      "versions": [
+        "1.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "125d18a36639c394f9895bd11aab7ff4b226829e1a349fc59f881c6a40ee865c",
+              "tlsh": "0101f575d8742c631fe8a5909da51982f23108db8c547c0ab7d3022c8b4e56b23be1ac"
+            },
+            {
+              "path": "lib/encoder.js",
+              "sha256": "3386843066d4c04883f0d29cb1e25fa913c293f0835bdb68390f73923cc21f08",
+              "tlsh": "30445151a3c9bc8012479f767b5ef2e9fa290aac745408afd404bd54bbfa507dbe0630"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "urlcat-1.4.3.tgz",
+              "hashes": {
+                "sha1": "0ef51eb3b28e9fb419f6578797322c13b9786c8e",
+                "sha512_sri": "sha512-pj+CRlsAgGbtu8h74+eNrBKKmWwViQjSMDJZyUthSGRkEihCVKzVOid5ZPIyYcy59Nu5fcyl+SqDhCiGFKGQNw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "2c007ea1ba0e4bcd680cc3770361eefead0673eca418787720fa65c8c71a2e57",
+        "import_time": "2026-06-23T16:54:17.205940206Z",
+        "id": "IN-MAL-2026-007315",
+        "modified_time": "2026-06-23T16:22:58Z",
+        "versions": [
+          "1.4.3"
+        ]
+      }
+    ]
+  }
+}
