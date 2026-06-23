@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-23T19:37:49Z",
+  "published": "2026-06-23T19:37:49Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "analysis-chart ships an install-time Windows DLL dropper with persistence and self-deletion",
+  "details": "On `npm install`, the package's install lifecycle script `lib/chart-loader.js` downloads an encrypted payload from `https://github.com/Analysis-Chart/analysis-chart/releases/download/v1/payload.bin.enc`, XOR-decrypts it with a single-byte key (0x42), base64-decodes the result to a Windows PE/DLL (verified via MZ header), drops it to `%APPDATA%\\Microsoft\\Windows\\\u003crandom\u003e.dll`, and executes it via `spawn('rundll32.exe', [dllPath, 'Run'], { detached: true })`. It then establishes persistence by creating a Scheduled Task masquerading as `WindowsUpdateService` (`schtasks /create /tn \"WindowsUpdateService\" /tr \"rundll32.exe... Run\" /sc onlogon /rl HIGHEST /f`) that re-runs the DLL at every user logon at the highest run-level. After deployment, a detached `node -e` process recursively deletes the `analysis-chart` module folder and edits the host project's `package.json` to remove the `analysis-chart` entry from `dependencies`, hiding the package from forensic inspection. The package metadata advertises a 'lightweight chart analysis library' purpose, which has no relation to the native Windows DLL execution actually performed. The download host capitalization (`Analysis-Chart`) also mismatches the advertised repository (`analysis-chart`).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "analysis-chart"
+      },
+      "versions": [
+        "2.0.27"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/chart-loader.js",
+              "sha256": "d73d6e84bd46297974084f1a61b22db99d20e550399e170ca04cb8c7ebe41ff1",
+              "tlsh": "c7a14196a561a13085b1ebf9d363911eed67a2133241c3d4fa5cd1901fb35688163efc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "analysis-chart-2.0.27.tgz",
+              "hashes": {
+                "sha1": "3ff4224b32e1cc434639318c1e9648056feefabf",
+                "sha512_sri": "sha512-b0zwxXzagckScLMIRVs6qvh/xlQtl6ISRLip/p8y9zUr7j/cigQfFdsYjh2zm7LrXi0c7FJ2BFvRjXi06M1tFA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/analysis-chart/v/2.0.27"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "e2b0499237239c80cb1a3b4e34e11e17b4d8459f8294d55c068657f3082244d8",
+        "import_time": "2026-06-23T19:40:42.606943855Z",
+        "id": "IN-MAL-2026-007346",
+        "modified_time": "2026-06-23T19:37:49Z",
+        "versions": [
+          "2.0.27"
+        ]
+      }
+    ]
+  }
+}
