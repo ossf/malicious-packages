@@ -1,16 +1,26 @@
 {
-  "modified": "2026-06-23T16:56:04Z",
-  "published": "2026-06-23T16:22:33Z",
+  "modified": "2026-06-23T19:34:37Z",
+  "published": "2026-06-22T12:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6311",
   "summary": "Malicious code in @thymelab/logfx (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (edce595ab99f7bcc5404f8c1222a1d8f5a7cbbb1fc6cd6e02aabddaf19526839)\n@thymelab/logfx@2.15.5 ships a postinstall hook (`postinstall: node dist/bootstrap.js`) that runs a 282KB obfuscator.io-packed script on every `npm install`. The decoded control flow performs HTTPS GETs to a runtime-decrypted URL, AES-256-GCM-decrypts the response using an embedded key, sha256-verifies, stages files into `os.tmpdir()`, chmod's them, and re-spawns them via `process.execPath` using `child_process.spawn` with detached/unref'd handles. The script disables itself when `--inspect`/`--debug` are present (anti-analysis). The destination URL and decryption key are not pinned plaintext — they are decrypted at runtime, giving the publisher a mutable, attacker-controlled execution channel into every installer. Independently, `dist/logfx.js` is a near-verbatim copy of the `unjs/consola` logger and `package.json.repository`/`bugs.url` falsely point to `github.com/unjs/consola`, impersonating that project; an appended IIFE wraps the exported `withTag` API to call `require('./bootstrap').runPrepare()`, so the dropper also detonates when a consumer simply imports the package and uses its documented API. The combination of opaque obfuscation, runtime-decrypted remote URL, tmpdir staging with execPath respawn, anti-debug guard, and import-time trigger is a hostile install-time dropper, not a logging utility.\n",
+  "details": "@thymelab/logfx (malicious version 2.15.5, published by thymelab-v0et8w@wshu.net) is a trojanized npm package belonging to the wshu.net credential-stealer campaign. The campaign published trojanized look-alike utility packages across 12+ scopes whose publisher accounts all follow the pattern \u003cscope\u003e-\u003c6 random chars\u003e@wshu.net, with every scope created on June 4, 2026 in a ~40-minute burst. This package masquerades as a logger and ships real, working utility code so it passes a glance, while bundling a much larger malicious payload at dist/bootstrap.js. package.json declares a postinstall hook (\"node dist/bootstrap.js\") that runs the payload automatically on npm install. The payload is heavily obfuscated with javascript-obfuscator (hex-named identifiers, a while (!![]) array-rotation IIFE, base64+RC4 string decoding, control-flow flattening, and runtime-decrypted module resolution to stay out of the static module graph). At runtime it is a Chromium browser credential stealer: it reads Chromium Cookies and Login Data and decrypts saved passwords protected by AES-256-GCM (the v10/v11 app-bound key schemes), then exfiltrates them over HTTPS using a spoofed Mozilla/5.0 user agent. Malicious payload dist/bootstrap.js SHA-256: 4e927f22ad04f4ac9b487ae11412fc2a55210188789ac29f3a47ad77931907a5.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (edce595ab99f7bcc5404f8c1222a1d8f5a7cbbb1fc6cd6e02aabddaf19526839)\n@thymelab/logfx@2.15.5 ships a postinstall hook (`postinstall: node dist/bootstrap.js`) that runs a 282KB obfuscator.io-packed script on every `npm install`. The decoded control flow performs HTTPS GETs to a runtime-decrypted URL, AES-256-GCM-decrypts the response using an embedded key, sha256-verifies, stages files into `os.tmpdir()`, chmod's them, and re-spawns them via `process.execPath` using `child_process.spawn` with detached/unref'd handles. The script disables itself when `--inspect`/`--debug` are present (anti-analysis). The destination URL and decryption key are not pinned plaintext — they are decrypted at runtime, giving the publisher a mutable, attacker-controlled execution channel into every installer. Independently, `dist/logfx.js` is a near-verbatim copy of the `unjs/consola` logger and `package.json.repository`/`bugs.url` falsely point to `github.com/unjs/consola`, impersonating that project; an appended IIFE wraps the exported `withTag` API to call `require('./bootstrap').runPrepare()`, so the dropper also detonates when a consumer simply imports the package and uses its documented API. The combination of opaque obfuscation, runtime-decrypted remote URL, tmpdir staging with execPath respawn, anti-debug guard, and import-time trigger is a hostile install-time dropper, not a logging utility.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "@thymelab/logfx"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "2.15.3",
         "2.15.6",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@thymelab/logfx/v/2.15.4"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/wshu-net-npm-credential-stealer-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@thymelab/logfx"
     }
   ],
   "credits": [
@@ -91,46 +109,53 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007289",
-        "import_time": "2026-06-23T16:54:15.109954193Z",
-        "modified_time": "2026-06-23T16:22:33Z",
-        "sha256": "3c57907e48ed3dede63346844e2df299a60821c677e0b1821fdbdd2ac2702e7e",
         "source": "amazon-inspector",
+        "sha256": "3c57907e48ed3dede63346844e2df299a60821c677e0b1821fdbdd2ac2702e7e",
+        "import_time": "2026-06-23T16:54:15.109954193Z",
+        "id": "IN-MAL-2026-007289",
+        "modified_time": "2026-06-23T16:22:33Z",
         "versions": [
           "2.15.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-007296",
-        "import_time": "2026-06-23T16:54:15.750093021Z",
-        "modified_time": "2026-06-23T16:22:40Z",
-        "sha256": "d217a8cca41219fe27785abb745c50575b1d0de4203060c6ca533adf19316ce5",
         "source": "amazon-inspector",
+        "sha256": "d217a8cca41219fe27785abb745c50575b1d0de4203060c6ca533adf19316ce5",
+        "import_time": "2026-06-23T16:54:15.750093021Z",
+        "id": "IN-MAL-2026-007296",
+        "modified_time": "2026-06-23T16:22:40Z",
         "versions": [
           "2.15.6"
         ]
       },
       {
-        "id": "IN-MAL-2026-007290",
-        "import_time": "2026-06-23T16:54:15.159513532Z",
-        "modified_time": "2026-06-23T16:22:34Z",
-        "sha256": "edce595ab99f7bcc5404f8c1222a1d8f5a7cbbb1fc6cd6e02aabddaf19526839",
         "source": "amazon-inspector",
+        "sha256": "edce595ab99f7bcc5404f8c1222a1d8f5a7cbbb1fc6cd6e02aabddaf19526839",
+        "import_time": "2026-06-23T16:54:15.159513532Z",
+        "id": "IN-MAL-2026-007290",
+        "modified_time": "2026-06-23T16:22:34Z",
         "versions": [
           "2.15.5"
         ]
       },
       {
-        "id": "IN-MAL-2026-007291",
-        "import_time": "2026-06-23T16:54:15.244626966Z",
-        "modified_time": "2026-06-23T16:22:35Z",
-        "sha256": "6f08decce4aef5ebdd1c8e3dd2e68574440b1a0d1d4917e9ab1a893cd7c9ef35",
         "source": "amazon-inspector",
+        "sha256": "6f08decce4aef5ebdd1c8e3dd2e68574440b1a0d1d4917e9ab1a893cd7c9ef35",
+        "import_time": "2026-06-23T16:54:15.244626966Z",
+        "id": "IN-MAL-2026-007291",
+        "modified_time": "2026-06-23T16:22:35Z",
         "versions": [
           "2.15.4"
         ]
