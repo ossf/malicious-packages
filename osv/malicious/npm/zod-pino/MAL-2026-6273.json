@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-23T16:56:10Z",
+  "modified": "2026-06-23T19:42:43Z",
   "published": "2026-06-22T21:53:45Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6273",
   "summary": "Malicious code in zod-pino (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (81e8a23a71a5288646495c50a46c2814ffc0668d9c24ed04e1abd9e8758b5ea2)\nPackage is published under the name 'zod-pino' (suggesting a Zod/Pino logging integration) but the shipped contents are unrelated to that purpose. The tarball contains: (1) scripts/postinstall-agent.mjs — a postinstall lifecycle script that performs network operations (GET requests, ping/host enumeration) and installs an agent, executing automatically on `npm install`; (2) dist/secretScan/contentScanner.js and dist/secretScan/agentStartupAudit.js — modules that scan content for secrets and exfiltrate to https://huggingface.co endpoints via fetch(); (3) dist/hfCredentials.js — base64-decoded HuggingFace credentials handling; (4) dist/discordRelayUpload.js — code that POSTs collected data to remote endpoints with base64-encoded payloads and host enumeration (ping); (5) dist/relayServer.js — a relay server with multiple ping/network primitives; (6) dist/deploymentDefaults.js and scripts/encode-deployment.mjs — base64-encoded deployment configuration. The combination of a postinstall agent installer, a secret-scanning module that ships secrets to a remote endpoint, a Discord relay uploader, and base64-obfuscated configuration in a package whose name advertises an unrelated logging library is the shape of a credential-harvesting supply-chain attack. Installer impact: on `npm install`, the postinstall script auto-executes the agent, which scans the host for secrets and relays them to attacker-controlled endpoints (HuggingFace API used as exfiltration channel, Discord webhook for relay).\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c536e5a7ee3d5542e1ac822b30ba4525e52b2ae0c964d0c2470468d91b9b41c8)\nThe package is published under a name suggesting a Pino logger integration for Zod, but the tarball contents do not match that purpose and exhibit multiple installer-harm fingerprints:\n\n- scripts/postinstall-agent.mjs runs at install time and performs outbound network activity (GET requests, ping/host probing, identifier collection). A logging-schema package has no legitimate reason to ship a postinstall agent that beacons out.\n- dist/discordRelayUpload.js implements POST-based upload flows with base64 encoding/decoding of payloads and host-reachability probes (ping) — a Discord-channel relay used for off-host data delivery, unrelated to the package's advertised purpose.\n- dist/secretScan/contentScanner.js and dist/secretScan/agentStartupAudit.js implement a secret-scanning routine that fetches huggingface.co endpoints from an 'agent startup audit' code path, with base64 buffer handling consistent with credential extraction and transmission.\n- dist/hfCredentials.js handles base64-encoded Hugging Face credentials, and dist/deploymentDefaults.js plus scripts/encode-deployment.mjs perform multi-stage base64 decoding of deployment payloads — typical staged-payload obfuscation.\n- dist/relayServer.js bundles a long-lived relay/server component with repeated host-probe (ping) primitives.\n\nTaken together — install-time agent with outbound traffic, secret-scanning + credential modules, base64-staged deployment payloads, and a Discord upload relay, all in a package nominally advertised as a zod/pino integration — the shipped behavior matches an exfiltration/relay toolchain rather than a logging utility. Installing this package triggers the postinstall agent automatically.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,16 @@
       "versions": [
         "1.0.122",
         "1.0.123",
-        "1.0.124"
+        "1.0.124",
+        "1.0.126"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -102,6 +108,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/zod-pino/v/1.0.124"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zod-pino/v/1.0.126"
     }
   ],
   "credits": [
@@ -143,6 +153,16 @@
         "modified_time": "2026-06-23T15:55:42Z",
         "versions": [
           "1.0.124"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c536e5a7ee3d5542e1ac822b30ba4525e52b2ae0c964d0c2470468d91b9b41c8",
+        "import_time": "2026-06-23T19:40:39.923977128Z",
+        "id": "IN-MAL-2026-007332",
+        "modified_time": "2026-06-23T18:57:00Z",
+        "versions": [
+          "1.0.126"
         ]
       }
     ]
