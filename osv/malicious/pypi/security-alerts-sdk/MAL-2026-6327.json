@@ -1,0 +1,130 @@
+{
+  "modified": "2026-06-23T21:39:07Z",
+  "published": "2026-06-23T15:50:03Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6327",
+  "summary": "Malicious code in security-alerts-sdk (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8f881805b709189d00bc52dc57c407bfecdae44fb343f92634a301c31525f6b0)\nDespite advertising itself as a breach-monitoring SDK, this package executes a remote-access trojan and credential harvester against any installer that imports it. On `import security_alerts`, `analytics.py` auto-invokes `_start_enhanced_analytics()`, which spawns a daemon thread instantiating a `C2Client` that polls `http://142.93.211.30:5000/api/commands/\u003cvictim_id\u003e` every 45-120 seconds and executes each returned command via `subprocess.run(cmd, shell=True,..., cwd=os.path.expanduser('~'))`, posting stdout/stderr/returncode back to `/api/results`. Before activating, `C2Client._ce()` performs sandbox/VM/debugger evasion (checks hostname for `vmware`/`virtualbox`/`qemu`/`xen`/`hyperv`/`parallels`/`docker`, `/.dockerenv`, and `sys.gettrace()`) to avoid analyst environments. Separately, `AnalyticsCollector.start_collection` (triggered on first SecurityAlerts API call) reads `~/.ssh/` private keys, `~/.aws/credentials`+`config`, `~/.gitconfig`, `~/.git-credentials`, `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`, and walks the filesystem for `.env` files, then POSTs the contents to `http://142.93.211.30:5000/api/telemetry` under a `credentials` key. The benign-looking `monitor.py` and the security-themed branding (HaveIBeenPwned/GitHub breach monitoring) are cover for the credential-theft and remote-shell payload, with a generic protonmail author email and placeholder GitHub handle.\n\n## Source: kam193 (abfac31e96dfe4ed0e31b062d71b7b4bc03e718bba77a7334a79fd73ceb7ecd7)\nDuring import, package starts code that executes remote commands from C2 server. Separate code, invoked during the library usage, has exfiltrates credentials, browser's data, SSH keys, dotenv files and other sensitive data.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-security-alerts-sdk\n\n\nReasons (based on the campaign):\n\n\n - exfiltration-credentials\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-browser-data\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - infostealer\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-ssh-keys\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "security-alerts-sdk"
+      },
+      "versions": [
+        "1.0.3",
+        "1.0.0",
+        "1.0.1",
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "security_alerts/c2/client.py",
+              "sha256": "134040ff67c5ae81732678e896fc819effcb9bddeb5a275607aafad43f04a9fc",
+              "tlsh": "fd512081a995b410e393d16e5492a1d36b2b3c23450e6838bcfc27a0af4527180b8fe9"
+            },
+            {
+              "path": "security_alerts/analytics.py",
+              "sha256": "cd6ee308d935b3dc2f8c7a62d2a765f2364700e84346e7b14d8051385aef170a",
+              "tlsh": "6bc12212f6117e31d2eba57640a397a1633279176605283c7cbc4308df98221d1f3bae"
+            },
+            {
+              "path": "setup.py",
+              "sha256": "cefbc1d730b739366d9f43749dbb836dc122fe1b2de5e38c293add507c846085",
+              "tlsh": "9831ed7a5dce22f45a80804b543e6809282688132d59b8d9b9bc8209ffddbdf42b9079"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "security_alerts_sdk-1.0.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "10c1f6baff0444106895b89f6574ce6571ee57c41c3335b6c2ec1a0a3762a825",
+                "md5": "3a260a631ec207a8ea67ba0b5db6d338",
+                "sha256": "2dfcd91ba856386f336a2c49d0e43f4133c7e9c59c2c14d848b7c80fe7ee6947"
+              }
+            },
+            {
+              "filename": "security_alerts_sdk-1.0.3.tar.gz",
+              "hashes": {
+                "blake2b_256": "4c9b7be1b8c802e3a9c09b3d118017015963ecee6114160ef7d106e9837db901",
+                "md5": "78925a2ad5ca4c9c4c7f438b1f45301e",
+                "sha256": "197bd9f669e1d60631a4cd0e9a89f043d70a18875e68499cb2c431f8ac1038d3"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/security-alerts-sdk/1.0.3/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/security-alerts-sdk"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "142.93.211.30"
+      ],
+      "urls": [
+        "http://142.93.211.30:5000"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8f881805b709189d00bc52dc57c407bfecdae44fb343f92634a301c31525f6b0",
+        "import_time": "2026-06-23T16:54:11.658985588Z",
+        "id": "IN-MAL-2026-007250",
+        "modified_time": "2026-06-23T15:50:03Z",
+        "versions": [
+          "1.0.3"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "abfac31e96dfe4ed0e31b062d71b7b4bc03e718bba77a7334a79fd73ceb7ecd7",
+        "import_time": "2026-06-23T21:37:23.199931524Z",
+        "id": "pypi/2026-06-security-alerts-sdk/security-alerts-sdk",
+        "modified_time": "2026-06-23T20:39:38.457304Z",
+        "versions": [
+          "1.0.0",
+          "1.0.1",
+          "1.0.2",
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}

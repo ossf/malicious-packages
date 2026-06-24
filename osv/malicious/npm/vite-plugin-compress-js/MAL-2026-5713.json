@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-12T20:51:14Z",
+  "modified": "2026-06-23T16:56:10Z",
   "published": "2026-06-12T19:43:47Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5713",
   "summary": "Malicious code in vite-plugin-compress-js (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ba5cca8be2f19842c304f355a2219256b3af26e9df385ec314ea6899621110aa)\nOn module load, the package's initPlugin() function performs an HTTP GET to https://www.jsonkeeper.com/b/OTOAQ (an anonymous public JSON-paste host) and passes the response body's `.data` field to `new Function.constructor('require',...)(require)`, executing attacker-controlled JavaScript with full Node `require` access on the developer/build machine. The ESM entry invokes initPlugin() at top level; the CJS entry spawns a worker_threads Worker on __filename so the same fetch-and-exec runs in the worker. Evidence is in dist/index.cjs lines 148-156. The package name `vite-plugin-compress-js` mimics the legitimate `vite-plugin-compress` / `vite-plugin-compression` packages and copies their description (`Use gzip or brotli to compress resources.`) and surface API (gzip/brotli on closeBundle) as cover for the dropper. Runtime dependencies (`express`, `request`, `sqlite3`) are inconsistent with a compression plugin; `request` is the transport used by the dropper. Any project that adds this plugin to its Vite config triggers remote code execution at build time.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7f7b2710441863a429a2a1833e06f54e9afc23c87d1b40d7ee09e1995c6a65c2)\nOn module load, this Vite plugin performs an HTTP GET to https://www.jsonkeeper.com/b/XVHGD (an anonymous, mutable paste host) and passes the response's `data` field to `new Function.constructor(\"require\",...)`, then invokes the resulting function with `require` — granting the remote payload full Node.js capabilities (fs, child_process, network) inside the consumer's Vite build process. dist/index.mjs (lines ~124-128) calls the fetch+eval directly via initPlugin(); dist/index.cjs (lines ~130-141) wraps the same payload in `if (isMainThread) { new Worker(__filename) } else { initPlugin() }`, spawning a worker that re-loads the module with isMainThread=false and executes the network-fetched code in the worker thread to obscure the behavior from naive inspection. The package name and metadata (author 'Vben', debug name 'vite-plugin-compression', plugin name 'vite:compression') clone the well-known vite-plugin-compress / vite-plugin-compression packages, and an otherwise-unused `request` dependency exists solely to perform the C2 fetch. Any developer or build system that imports this package executes whatever JavaScript the operator currently has hosted at the jsonkeeper paste.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "vite-plugin-compress-js"
       },
       "versions": [
-        "0.5.5"
+        "0.5.5",
+        "0.5.6",
+        "0.5.7"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -55,6 +67,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/vite-plugin-compress-js/v/0.5.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-plugin-compress-js/v/0.5.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-plugin-compress-js/v/0.5.7"
     }
   ],
   "credits": [
@@ -69,23 +89,43 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006216",
-        "import_time": "2026-06-12T20:49:36.485443084Z",
-        "modified_time": "2026-06-12T19:43:47Z",
-        "sha256": "ba5cca8be2f19842c304f355a2219256b3af26e9df385ec314ea6899621110aa",
         "source": "amazon-inspector",
+        "sha256": "ba5cca8be2f19842c304f355a2219256b3af26e9df385ec314ea6899621110aa",
+        "import_time": "2026-06-12T20:49:36.485443084Z",
+        "id": "IN-MAL-2026-006216",
+        "modified_time": "2026-06-12T19:43:47Z",
         "versions": [
           "0.5.5"
         ]
       },
       {
-        "id": "IN-MAL-2026-006217",
-        "import_time": "2026-06-12T20:49:36.58515349Z",
-        "modified_time": "2026-06-12T19:43:48Z",
-        "sha256": "e3b05da4b2b34b75fb23780b1b8deeeb320c6b3983fbd53c70dc430b1c2e401b",
         "source": "amazon-inspector",
+        "sha256": "e3b05da4b2b34b75fb23780b1b8deeeb320c6b3983fbd53c70dc430b1c2e401b",
+        "import_time": "2026-06-12T20:49:36.58515349Z",
+        "id": "IN-MAL-2026-006217",
+        "modified_time": "2026-06-12T19:43:48Z",
         "versions": [
           "0.5.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "27be652b7788f48b10d05076a6abf2abd97da8878378034f6c24377fe6522010",
+        "import_time": "2026-06-23T16:54:12.109841367Z",
+        "id": "IN-MAL-2026-007256",
+        "modified_time": "2026-06-23T15:58:44Z",
+        "versions": [
+          "0.5.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7f7b2710441863a429a2a1833e06f54e9afc23c87d1b40d7ee09e1995c6a65c2",
+        "import_time": "2026-06-23T16:54:12.165796378Z",
+        "id": "IN-MAL-2026-007257",
+        "modified_time": "2026-06-23T15:58:47Z",
+        "versions": [
+          "0.5.7"
         ]
       }
     ]

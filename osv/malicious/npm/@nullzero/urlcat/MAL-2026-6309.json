@@ -1,0 +1,160 @@
+{
+  "modified": "2026-06-23T19:34:37Z",
+  "published": "2026-06-22T12:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6309",
+  "summary": "Malicious code in @nullzero/urlcat (npm)",
+  "details": "@nullzero/urlcat (version 1.4.2, published by nullzero-rlnozk@wshu.net) is a trojanized npm package belonging to the wshu.net credential-stealer campaign. The campaign published trojanized look-alike utility packages across 12+ scopes whose publisher accounts all follow the pattern \u003cscope\u003e-\u003c6 random chars\u003e@wshu.net, with every scope created on June 4, 2026 in a ~40-minute burst. Like the other packages in the campaign, it declares a postinstall hook (\"node lib/encoder.js\") that runs a bundled payload file automatically on npm install. The campaign payload is a Chromium browser credential stealer that reads Chromium Cookies and Login Data, decrypts saved passwords protected by AES-256-GCM (the v10/v11 app-bound key schemes), and exfiltrates them over HTTPS using a spoofed Mozilla/5.0 user agent, hidden behind javascript-obfuscator obfuscation (hex identifiers, a while (!![]) array-rotation IIFE, base64+RC4 string decoding, control-flow flattening, and runtime-decrypted module resolution). This package was unpublished from npm before the payload could be captured, so its specific payload was not independently verified; it is reported on the basis of its membership in the wshu.net campaign (matching publisher email pattern, scope-creation burst, and postinstall execution pattern).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2c007ea1ba0e4bcd680cc3770361eefead0673eca418787720fa65c8c71a2e57)\nPackage `@nullzero/urlcat` impersonates the legitimate `urlcat` URL-builder library — same advertised `cat(base, path, params)` API, README copied from upstream, and `package.json.repository.url` points to `git+https://github.com/balazsbotond/urlcat.git` (the real upstream maintainer's repo, not the `nullzero` publisher's). The package main `lib/index.js` line 64 calls `encoder.runPrepare()` at the top of every invocation of the exported `cat()` function. `lib/encoder.js` is a 263 KB obfuscator.io-packed file (rotated 1176-entry string array, RC4 decoder `_0x2f0d`, control-flow flattening) — far beyond anything a tiny URL composer requires. Decoded control flow in `lib/encoder.js` selects a platform-specific binary candidate (branches on `process.platform === 'win32'` to `'win.js'` / a bun-style executable, otherwise a node-typed binary), constructs a destination under `os.tmpdir()`, downloads it over `https.request` following up to 5 redirects with `User-Agent: node-installer`, sha256-checks against a `.meta` JSON sidecar, and then `spawn`s the dropped binary (or re-execs `process.execPath` against it) detached + unref'd, with a private env-var marker (`__7D0A53...`). The encoder also installs no-op handlers for `uncaughtException`, `unhandledRejection`, and `SIGINT` to suppress crashes, performs obfuscator.io-style debugger-detection (`Function('debugger')` regex self-check), and re-spawns the current node when run interactively so the payload runs only in the detached child. A URL-builder library has no legitimate need for a 263 KB obfuscated sibling, a platform-specific binary download, anti-debug guards, or a detached child re-exec. Any consumer who calls `cat()` triggers arbitrary code execution from an attacker-controlled binary on their machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@nullzero/urlcat"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.4.1",
+        "1.4.0",
+        "1.4.2",
+        "1.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/encoder.js",
+              "sha256": "ba5e1031746c82983a671e0b7b03d9f56b4a1258b7516ddfe286cdb487c363c3",
+              "tlsh": "2de0688d38f128706e594357b11b1c9172eda2081301a1108fce8bd8278453913e282f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "urlcat-1.4.3.tgz",
+              "hashes": {
+                "sha1": "0ef51eb3b28e9fb419f6578797322c13b9786c8e",
+                "sha512_sri": "sha512-pj+CRlsAgGbtu8h74+eNrBKKmWwViQjSMDJZyUthSGRkEihCVKzVOid5ZPIyYcy59Nu5fcyl+SqDhCiGFKGQNw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat/v/1.4.3"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/wshu-net-npm-credential-stealer-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nullzero/urlcat"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "0de6113e5b3433808a62d127830818bac2391c8f20882040433a811553668db7",
+        "import_time": "2026-06-23T16:54:17.120393864Z",
+        "id": "IN-MAL-2026-007314",
+        "modified_time": "2026-06-23T16:22:57Z",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "517e344b6aaf2fb41a8050673d5500fbaed6cdcf07578f5aba85c6fb0f5c0e59",
+        "import_time": "2026-06-23T16:54:17.713612334Z",
+        "id": "IN-MAL-2026-007323",
+        "modified_time": "2026-06-23T16:23:05Z",
+        "versions": [
+          "1.4.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9c1a822d6369b344bb87e639f84077b5d6f096b02d36cb126754b30c32f2984e",
+        "import_time": "2026-06-23T16:54:17.041703632Z",
+        "id": "IN-MAL-2026-007313",
+        "modified_time": "2026-06-23T16:22:56Z",
+        "versions": [
+          "1.4.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2c007ea1ba0e4bcd680cc3770361eefead0673eca418787720fa65c8c71a2e57",
+        "import_time": "2026-06-23T16:54:17.205940206Z",
+        "id": "IN-MAL-2026-007315",
+        "modified_time": "2026-06-23T16:22:58Z",
+        "versions": [
+          "1.4.3"
+        ]
+      }
+    ]
+  }
+}
