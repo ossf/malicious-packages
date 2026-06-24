@@ -1,0 +1,66 @@
+{
+  "modified": "2026-06-24T03:27:50Z",
+  "published": "2026-06-24T03:27:50Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall dropper fetches and executes remote payload on Windows",
+  "details": "scripts/postinstall.js runs automatically on `npm install` (Windows only) and behaves as a classic install-time dropper. It XOR-decodes (key 0x5A) a hardcoded host and port to produce `node22.lunes.host:3258`, performs an HTTP GET to `http://node22.lunes.host:3258/nl`, writes the response bytes to `%TEMP%/ms_\u003crand\u003e.js`, and launches them via a generated `wscript.exe //B //nologo \u003cvbs\u003e` shim with `detached:true` and `windowsHide`. The destination is plain HTTP with no version pin, no hash verification, and no integrity check — any bytes the operator of node22.lunes.host returns are executed on the installer's machine. After dropping the payload the script self-cleans: a `_tidy()` routine rewrites the package's own package.json to remove `scripts.postinstall` and `scripts.install`, then unlinks the postinstall script itself, frustrating post-incident review. The script also writes `%TEMP%/.nfc_root` as a coordination marker and probes for a sibling package `node-fetch-utils` (a likely typosquat of `node-fetch`) referencing a `node_launcher.js` that patches lockfiles, indicating a multi-package campaign with persistence beyond this tarball. The XOR obfuscation of the C2 host, port, and a `changeme-spectre` key is deliberate concealment of the destination from registry scanners. Installer impact: running `npm install node-core-libs` on Windows results in arbitrary attacker-controlled code execution under the installing user's account.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "node-core-libs"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "c6d02c1c1ce5f07dac99c2b513113f881050f856cb915c71e3f88d1e77efcb55",
+              "tlsh": "ec51a5595ab6d72c1af343edb3c75001e7a6e31230c1e1e5f98d9ac51f030a88a831e6"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/node-core-libs/v/1.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d33f74e3f73fd5580ecf994b7db0349ee540754d65d4467b8b04b8c79e3d257b",
+        "import_time": "2026-06-24T04:54:33.44620162Z",
+        "id": "IN-MAL-2026-007409",
+        "modified_time": "2026-06-24T03:27:50Z",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  }
+}
