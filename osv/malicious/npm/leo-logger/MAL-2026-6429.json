@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-25T00:00:00Z",
+  "modified": "2026-06-25T07:49:55Z",
   "published": "2026-06-24T23:04:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6429",
   "summary": "Malicious code in leo-logger (npm)",
-  "details": "The `leo-logger` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.",
+  "details": "The `leo-logger` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b98872e21922ce7f9c334cab2e829035050df2964019c2879a9646710afc501f)\nThe package's binding.gyp contains GYP command-expansion syntax (`\u003c!(...)` / `\u003c!@(...)`) at line 6 inside a sources/targets field. npm implicitly runs `node-gyp rebuild` whenever a binding.gyp is present — even with no declared install/postinstall script — and GYP evaluates these expressions as shell commands during the configure step. This causes the embedded command to execute on every `npm install` of this package, functionally equivalent to a malicious lifecycle hook. The package presents itself as a 'logger' but ships no native C/C++ source that would justify a node-gyp build configuration, so the binding.gyp's only effective purpose is to trigger command execution at install time.\n",
   "affected": [
     {
       "package": {
@@ -20,8 +20,31 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "32d1bc728d8e504952083a6adc488c309a401c7df4dc8f47b382ce32e4aebe21",
+              "tlsh": "48c08c3ca9380d1029d958285168d402a4b142a3494e2a81fade60284fa840b2898bad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "leo-logger-1.0.8.tgz",
+              "hashes": {
+                "sha1": "24a0d9e496ec07ca978fab602d5f5e0b39fa03a0",
+                "sha512_sri": "sha512-bU1nn+XpD2jU59t8HapcohZTHwFwaIYKcavIEu02cVINI0w5vL/milcJ4jIfNpwU5ERkdKbX2uELoEBEoyetxQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -29,9 +52,20 @@
     {
       "type": "ARTICLE",
       "url": "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/leo-logger/v/1.0.8"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -46,6 +80,17 @@
         "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
       ]
     },
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b98872e21922ce7f9c334cab2e829035050df2964019c2879a9646710afc501f",
+        "import_time": "2026-06-25T07:47:51.004099571Z",
+        "id": "IN-MAL-2026-007477",
+        "modified_time": "2026-06-25T06:30:37Z",
+        "versions": [
+          "1.0.8"
+        ]
+      }
+    ]
   }
 }
