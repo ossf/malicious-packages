@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-25T07:26:33Z",
+  "published": "2026-06-25T07:26:33Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Obfuscated payload wired into shipped node-gyp build artifacts",
+  "details": "Package advertises itself as a 7-function calculator but ships an undeclared 87KB heavily obfuscated file `lodash-compiler.js` (obfuscator.io string-array packing with rotation and control-flow flattening) that is not referenced from `index.js` or `package.json`. The published `binding.gyp` declares only a benign `noop` target, but the tarball also ships a pre-generated `build/` directory whose top-level Makefile includes `lodash_action.target.mk`, whose `all` target runs `node lodash-compiler.js`. When deobfuscated, the file performs a top-level `require('fs').writeFileSync('poc.txt','Security POC.')` — confirming arbitrary code execution via the build pipeline. The mismatch between the sanitized `binding.gyp` and the shipped Makefile is consistent with build-cache smuggling: a default `npm install` regenerates Makefiles from `binding.gyp` and neutralizes the payload, but `npm rebuild`, `make` invoked directly, or any node-gyp path that reuses cached build output will execute the obfuscated file. The filename impersonates lodash to evade casual review. The current payload writes a marker file, but the delivery mechanism (obfuscated, undeclared, hidden behind a sanitized gyp facade) provides the author with arbitrary code execution on rebuild paths.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "simple-node-calc-c"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lodash-compiler.js",
+              "sha256": "76ea9a26b2d83007306f2b6d258877119efbaf42b2b90c6aebfd88b58dd4c753",
+              "tlsh": "7c835f4462c0b5862f836b7a720fb0d6f0ab08dd76940c56e511fc91f4baf26e9f5a34"
+            },
+            {
+              "path": "build/Makefile",
+              "sha256": "d8ee6213d0d5bf5317c24e40e3d54908c1baa19b556dd7a7aa5edf6ed8e5a273",
+              "tlsh": "7752eb3f915e59eb0d4031f06549a6a8e91ae1f8877d3e72f80d3f46230a1b210f68ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "simple-node-calc-c-1.0.0.tgz",
+              "hashes": {
+                "sha1": "714884d96ecad46738f99ecb56a8cae2b2c8eb80",
+                "sha512_sri": "sha512-NKX7cJwKQLGfWU0hMXOfWNYw0rihqS2OGn8X4GM5w8HN6tmHE+o3kIgkWwwQbGqwwjSAixjy3Bqaz+mX5a91Rw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/simple-node-calc-c/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "289de4cd84a2ac40ef42f8b449ba58e9d8900d766a0638061ef2e75092b1f1a4",
+        "import_time": "2026-06-25T07:47:52.673482123Z",
+        "id": "IN-MAL-2026-007506",
+        "modified_time": "2026-06-25T07:26:33Z",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
