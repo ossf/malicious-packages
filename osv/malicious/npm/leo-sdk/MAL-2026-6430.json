@@ -1,0 +1,118 @@
+{
+  "modified": "2026-06-25T15:17:42Z",
+  "published": "2026-06-24T23:04:55Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6430",
+  "aliases": [
+    "GHSA-m9cg-qm5p-9pvq"
+  ],
+  "summary": "Malicious code in leo-sdk (npm)",
+  "details": "The `leo-sdk` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1919bbc80005a637a3e1161a28245bbe56baecb5a0d17e282cc5c2339e20b8d8)\nThe package contains a binding.gyp at the repo root whose contents use GYP command-expansion syntax (`\u003c!(...)`) inside its targets/sources configuration. npm implicitly invokes `node-gyp rebuild` whenever a binding.gyp is present — even without any declared install/postinstall script — and node-gyp/GYP evaluates `\u003c!(...)` expressions as shell commands during the configure step. This means arbitrary code embedded in the binding.gyp's command-expansion expression runs on every `npm install` of leo-sdk, on the installer's machine, with the installer's privileges. The mechanism is functionally identical to a postinstall lifecycle hook but is easy to miss because no `scripts` entry advertises it. This is a known install-time RCE pattern (CWE-506); the binding.gyp file's only effective purpose under this shape is to execute its embedded shell command at install, not to build a real native addon.\n\n## Source: ghsa-malware (15c6013655057c1991f97317416e2cd942ff320b361bc457c66d47152a200424)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "leo-sdk"
+      },
+      "versions": [
+        "6.0.19"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "32d1bc728d8e504952083a6adc488c309a401c7df4dc8f47b382ce32e4aebe21",
+              "tlsh": "48c08c3ca9380d1029d958285168d402a4b142a3494e2a81fade60284fa840b2898bad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "leo-sdk-6.0.19.tgz",
+              "hashes": {
+                "sha1": "d45ad3cffbcc7c4b354ebe9d71d002fa585379ec",
+                "sha512_sri": "sha512-wNl87pfXEYd7P6n9iPOqZ4rqGoUPG6EQfn11l401VqdjRIyeRpFFa2anRyT7sstzo9IBlAWDFUdYcLiYMX/eUA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/leo-sdk/v/6.0.19"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-m9cg-qm5p-9pvq"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "1919bbc80005a637a3e1161a28245bbe56baecb5a0d17e282cc5c2339e20b8d8",
+        "import_time": "2026-06-25T07:47:51.052375743Z",
+        "id": "IN-MAL-2026-007478",
+        "modified_time": "2026-06-25T06:30:38Z",
+        "versions": [
+          "6.0.19"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "15c6013655057c1991f97317416e2cd942ff320b361bc457c66d47152a200424",
+        "import_time": "2026-06-25T15:15:53.657373433Z",
+        "id": "GHSA-m9cg-qm5p-9pvq",
+        "modified_time": "2026-06-25T14:21:31Z",
+        "versions": [
+          "6.0.19"
+        ]
+      }
+    ]
+  }
+}

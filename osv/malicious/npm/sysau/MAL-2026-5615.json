@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-11T06:49:34Z",
+  "modified": "2026-06-24T22:34:40Z",
   "published": "2026-06-11T06:49:34Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5615",
   "summary": "Malicious code in sysau (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4b2cf08a271605de33b2c202bb8a5a6689251e9a4711a628a88c57ebf0ec4f07)\nOn install/load, index.js auto-runs a bootstrap that silently installs Python 3.12 (via winget, falling back to a /quiet curl of python-3.12.3-amd64.exe to %TEMP%), pip-installs keyboard, pyautogui, mss, pillow, requests, and uiautomation, and spawns the bundled pointer.py. pointer.py installs a global keyboard hook, a clipboard-monitor loop, and an always-on-top transparent overlay; every clipboard change longer than 5 characters and full-screen JPEG captures (triggered by alt+s) are POSTed to the hardcoded endpoint https://iq-overlay-pointer.vercel.app/api (pointer.py line 32: VERCEL_API_URL = 'https://iq-overlay-pointer.vercel.app/api'). UIAutomation is used to scrape accessibility text from arbitrary windows, and the server's response is auto-typed back into the active window via pyautogui/keyboard — a remote-controlled input channel. The package's declared purpose ('System binary configuration tool', author 'SysDev') is a deliberate cover story: nothing about the advertised function justifies silently dropping a Python runtime, registering global hotkeys, capturing the screen, or transmitting clipboard contents to a third-party Vercel deployment. Any developer who installs sysau exposes their clipboard, screen, and keystrokes to the package author.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2b9246e768a775d54485e7208d0ed4fc575af09bc78c3fde95c5cb24ebc2350d)\nPackage advertises itself as a 'System binary configuration tool' but ships pointer.py (spawned by index.js) which hardcodes VERCEL_API_URL='https://iq-overlay-pointer.vercel.app/api' and continuously transmits installer-side data to that endpoint. A monitor loop polls the system clipboard every 300ms and POSTs changes; the alt+s hotkey captures the full screen via mss/ImageGrab and uploads base64 image data; F8/F9/F10 hotkeys use the Windows UI Automation API (uiautomation library) to walk the control tree of arbitrary foreground applications (browsers, IDEs, email clients), extract Edit/Text/Document control values (including IAccessible2 Legacy patterns), and route them to the same endpoint via the clipboard channel. To enable this on machines without Python, index.js silently installs a Python runtime — first attempting winget --silent, then falling back to downloading python-3.12.3-amd64.exe from python.org to %TEMP% and executing it with `/quiet InstallAllUsers=0 PrependPath=1` (comments in the script describe this as 'GHOST INSTALLER... No UI, No Admin Popup'). It then pip-installs keyboard, pyautogui, mss, uiautomation, pywin32, and others before spawning pointer.py. pointer.py also installs system-wide keyboard hooks with keystroke suppression (`keyboard.on_press(..., suppress=True)`) and renders a 75%-alpha, overrideredirect, transparent-color tk overlay window labelled '.' — a stealth UI consistent with a covert surveillance/interview-cheating overlay rather than the advertised binary configuration utility. None of this behavior is disclosed in the package metadata.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "sysau"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -39,6 +45,15 @@
               "sha256": "3086edaf7571e07dae429dfdb9b8a5cbc513058d97cf7d76a118e17cf0333eae",
               "tlsh": "89e04f3389615ca345b44aa29a368a09b5728b3f00254c0f30bb901c97a29a345bab5c"
             }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sysau-1.0.3.tgz",
+              "hashes": {
+                "sha1": "a7ac1464bce9347c5f757cb5ee6c32a315c6bcec",
+                "sha512_sri": "sha512-pOONx8aJzTWPvWJHi60gPZEy8Hk5hbUkW4FSMGW3lb/qHLHGKG8bXCSIAHFAb6IcbClqKsDol78K6FQtHY3nnA=="
+              }
+            }
           ]
         }
       }
@@ -48,6 +63,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/sysau/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sysau/v/1.0.3"
     }
   ],
   "credits": [
@@ -62,13 +81,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005653",
-        "import_time": "2026-06-11T07:49:37.365147343Z",
-        "modified_time": "2026-06-11T06:49:34Z",
-        "sha256": "4b2cf08a271605de33b2c202bb8a5a6689251e9a4711a628a88c57ebf0ec4f07",
         "source": "amazon-inspector",
+        "sha256": "4b2cf08a271605de33b2c202bb8a5a6689251e9a4711a628a88c57ebf0ec4f07",
+        "import_time": "2026-06-11T07:49:37.365147343Z",
+        "id": "IN-MAL-2026-005653",
+        "modified_time": "2026-06-11T06:49:34Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2b9246e768a775d54485e7208d0ed4fc575af09bc78c3fde95c5cb24ebc2350d",
+        "import_time": "2026-06-24T22:32:48.109808254Z",
+        "id": "IN-MAL-2026-007443",
+        "modified_time": "2026-06-24T22:18:27Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]
