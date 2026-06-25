@@ -1,0 +1,100 @@
+{
+  "modified": "2026-06-25T06:28:31Z",
+  "published": "2026-06-25T05:56:41Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6438",
+  "summary": "Malicious code in polymarket-stake-math (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a8a5200cef3811ce98e489080709917dfafc2216a17f90329b9930e0f5f630a1)\nThe package ships a `postinstall` hook (`scripts/sync-peer.cjs`) that runs on every default `npm install`. The script compares the installed version against a hardcoded `TARGET_VERSION` ('3.4.0'); because the shipped version is 3.5.0, the mismatch branch always fires. It then invokes `execSync('npm pack polymarket-stake-math@3.4.0'...)`, extracts the resulting tarball, overwrites every file in the installed package directory with the 3.4.0 contents via `fs.cpSync(from, to, { recursive: true })`, and finally `require()`s the freshly-overwritten `index.js` and calls `from_str()`. This is a stager pattern: the published 3.5.0 tarball is a harmless-looking shell whose only on-install effect is to pull and execute whatever the maintainer (or anyone with publish rights) ships under the 3.4.0 coordinate, with no integrity pinning, no hash check, and against a mutable npm version that can be re-published or overridden. The payload coordinate is also fully controllable through `BACKUP_PAYLOAD_SPEC` / `BACKUP_PACKAGE_NAME` / `BACKUP_TARGET_VERSION` environment variables, so any process that can set env on the build host can redirect the postinstall to fetch and execute an arbitrary npm package (e.g. `BACKUP_PAYLOAD_SPEC=evilpkg@1.0.0`). The cover-story filename 'sync-peer.cjs', the silent self-overwrite of the on-disk package directory, and the env-var-overridable target all match a known supply-chain dropper shape.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "polymarket-stake-math"
+      },
+      "versions": [
+        "3.5.1",
+        "3.5.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/verify-peer.cjs",
+              "sha256": "2b2ab1dfc2ada82addbeed382e6cf83f092e399530e530753e181441d3b57cfd",
+              "tlsh": "535146d9199263764ab1fba49b32a42efd2780232551d370f6dc56a13f723748222dfc"
+            },
+            {
+              "path": "index.js",
+              "sha256": "be2ec6f84992c1c511bf6d116d73fb7ed6eb3f5f48d36044bb015bc0e2221054",
+              "tlsh": "9e11c0d44486f237d5b18fa05bbe44827e35c9333f46d181b1dc88e32ba03686652dec"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "polymarket-stake-math-3.5.1.tgz",
+              "hashes": {
+                "sha1": "bb50d647aae9c526629a3c9bc2a33cad2844f00c",
+                "sha512_sri": "sha512-i5sxIsOpBibSaXPkD1kYGKNPcwsSzZTbvSOVEu1tdGnCvTA0dKHe9rkzHIysUzfW2Ngg9TyVsBOXWdjukTKklw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/polymarket-stake-math/v/3.5.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/polymarket-stake-math/v/3.5.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007462",
+        "import_time": "2026-06-25T06:26:40.981246733Z",
+        "modified_time": "2026-06-25T05:56:41Z",
+        "sha256": "a134247c1d7f7368135b3c03705730b1312e2a6cb16d62f1375539f9b8c37c53",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.5.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007463",
+        "import_time": "2026-06-25T06:26:41.12589131Z",
+        "modified_time": "2026-06-25T05:56:42Z",
+        "sha256": "a8a5200cef3811ce98e489080709917dfafc2216a17f90329b9930e0f5f630a1",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.5.0"
+        ]
+      }
+    ]
+  }
+}
