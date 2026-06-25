@@ -1,10 +1,13 @@
 {
-  "modified": "2026-06-25T07:49:55Z",
+  "modified": "2026-06-25T16:10:42Z",
   "published": "2026-06-24T23:04:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6431",
+  "aliases": [
+    "GHSA-h98v-2hwg-56fx"
+  ],
   "summary": "Malicious code in leo-streams (npm)",
-  "details": "The `leo-streams` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d3ff734d4383132d10aecac8c51798f0f38e08e03b10b201356ea01f3b914911)\nThe package ships a binding.gyp containing GYP command-expansion syntax (`\u003c!(...)`) at line 6. npm implicitly runs `node-gyp rebuild` whenever a binding.gyp is present, and GYP evaluates `\u003c!(...)` as a shell command during the configure step — so the embedded command executes automatically on `npm install` even though the package declares no install/postinstall script. This pattern is a covert install-time code-execution channel that bypasses lifecycle-hook scrutiny. Installers running `npm install leo-streams` will execute whatever shell command is embedded in binding.gyp without consent or visibility.\n",
+  "details": "The `leo-streams` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d3ff734d4383132d10aecac8c51798f0f38e08e03b10b201356ea01f3b914911)\nThe package ships a binding.gyp containing GYP command-expansion syntax (`\u003c!(...)`) at line 6. npm implicitly runs `node-gyp rebuild` whenever a binding.gyp is present, and GYP evaluates `\u003c!(...)` as a shell command during the configure step — so the embedded command executes automatically on `npm install` even though the package declares no install/postinstall script. This pattern is a covert install-time code-execution channel that bypasses lifecycle-hook scrutiny. Installers running `npm install leo-streams` will execute whatever shell command is embedded in binding.gyp without consent or visibility.\n\n## Source: ghsa-malware (6c91bb62c907bdb4966609d6820ae88e694e4f1916693860210b8bcadc938543)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -16,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -56,6 +64,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/leo-streams/v/2.0.1"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-h98v-2hwg-56fx"
     }
   ],
   "credits": [
@@ -87,6 +99,16 @@
         "import_time": "2026-06-25T07:47:51.105493888Z",
         "id": "IN-MAL-2026-007479",
         "modified_time": "2026-06-25T06:30:39Z",
+        "versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "6c91bb62c907bdb4966609d6820ae88e694e4f1916693860210b8bcadc938543",
+        "import_time": "2026-06-25T16:08:55.413863221Z",
+        "id": "GHSA-h98v-2hwg-56fx",
+        "modified_time": "2026-06-25T15:18:07Z",
         "versions": [
           "2.0.1"
         ]

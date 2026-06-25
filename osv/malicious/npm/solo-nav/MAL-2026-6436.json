@@ -1,10 +1,13 @@
 {
-  "modified": "2026-06-25T07:49:57Z",
+  "modified": "2026-06-25T16:10:44Z",
   "published": "2026-06-24T23:04:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6436",
+  "aliases": [
+    "GHSA-v76j-hc7w-m3f5"
+  ],
   "summary": "Malicious code in solo-nav (npm)",
-  "details": "The `solo-nav` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (964dd343632ca7e543b0f74dc917ea0cab82fb36cee143057b6d658ce42d9525)\nThe package ships a binding.gyp at the package root containing GYP command-expansion syntax (`\u003c!(...)`) at line 6 within the targets/sources block. npm implicitly invokes `node-gyp rebuild` whenever a binding.gyp is present — even with no declared install/postinstall script — and GYP evaluates `\u003c!(...)` expressions as shell during its configure step. This causes the embedded command to execute on the installer's machine as a side effect of `npm install`, functionally equivalent to a lifecycle hook. The package does not ship native source files that would justify a real node-gyp build, so the binding.gyp's only purpose is to run the embedded command at install time. The mechanism delivers attacker-controlled code execution on any machine that installs this package.\n",
+  "details": "The `solo-nav` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (964dd343632ca7e543b0f74dc917ea0cab82fb36cee143057b6d658ce42d9525)\nThe package ships a binding.gyp at the package root containing GYP command-expansion syntax (`\u003c!(...)`) at line 6 within the targets/sources block. npm implicitly invokes `node-gyp rebuild` whenever a binding.gyp is present — even with no declared install/postinstall script — and GYP evaluates `\u003c!(...)` expressions as shell during its configure step. This causes the embedded command to execute on the installer's machine as a side effect of `npm install`, functionally equivalent to a lifecycle hook. The package does not ship native source files that would justify a real node-gyp build, so the binding.gyp's only purpose is to run the embedded command at install time. The mechanism delivers attacker-controlled code execution on any machine that installs this package.\n\n## Source: ghsa-malware (772e8bb3d030dbd7c4781d7681a8006c5899f1f80aff2c7de0a7d491eb86eecb)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -16,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -56,6 +64,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/solo-nav/v/1.0.1"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-v76j-hc7w-m3f5"
     }
   ],
   "credits": [
@@ -87,6 +99,16 @@
         "import_time": "2026-06-25T07:47:51.451965387Z",
         "id": "IN-MAL-2026-007484",
         "modified_time": "2026-06-25T06:31:06Z",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "772e8bb3d030dbd7c4781d7681a8006c5899f1f80aff2c7de0a7d491eb86eecb",
+        "import_time": "2026-06-25T16:08:55.424487556Z",
+        "id": "GHSA-v76j-hc7w-m3f5",
+        "modified_time": "2026-06-25T15:49:39Z",
         "versions": [
           "1.0.1"
         ]

@@ -1,10 +1,13 @@
 {
-  "modified": "2026-06-25T07:49:55Z",
+  "modified": "2026-06-25T16:10:42Z",
   "published": "2026-06-24T23:04:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6424",
+  "aliases": [
+    "GHSA-gwx3-mrcv-2c26"
+  ],
   "summary": "Malicious code in leo-connector-mongo (npm)",
-  "details": "The `leo-connector-mongo` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dc9ecc7f6488cb4c941a9184df1b6cf93ff87dc98f904d7b2b45025bd88f143a)\nThe package ships a binding.gyp at the root that uses GYP command-expansion syntax (`\u003c!(...)`) at line 6 within the targets/sources fields. npm implicitly runs `node-gyp rebuild` whenever a binding.gyp is present — even when no install/postinstall script is declared — and node-gyp's configure step evaluates `\u003c!(...)` as a shell command. This results in arbitrary command execution on the installer's machine during a default `npm install`, functionally equivalent to a malicious lifecycle hook. The command embedded in the GYP expansion runs with the installing user's privileges on every install of this version.\n",
+  "details": "The `leo-connector-mongo` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dc9ecc7f6488cb4c941a9184df1b6cf93ff87dc98f904d7b2b45025bd88f143a)\nThe package ships a binding.gyp at the root that uses GYP command-expansion syntax (`\u003c!(...)`) at line 6 within the targets/sources fields. npm implicitly runs `node-gyp rebuild` whenever a binding.gyp is present — even when no install/postinstall script is declared — and node-gyp's configure step evaluates `\u003c!(...)` as a shell command. This results in arbitrary command execution on the installer's machine during a default `npm install`, functionally equivalent to a malicious lifecycle hook. The command embedded in the GYP expansion runs with the installing user's privileges on every install of this version.\n\n## Source: ghsa-malware (79dd1c9b346a50c7a4c8f0a554af61230baa88cd24be085cbaf16dbe8f54d0a0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -16,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -56,6 +64,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/leo-connector-mongo/v/3.0.8"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-gwx3-mrcv-2c26"
     }
   ],
   "credits": [
@@ -87,6 +99,16 @@
         "import_time": "2026-06-25T07:47:50.805832863Z",
         "id": "IN-MAL-2026-007472",
         "modified_time": "2026-06-25T06:30:34Z",
+        "versions": [
+          "3.0.8"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "79dd1c9b346a50c7a4c8f0a554af61230baa88cd24be085cbaf16dbe8f54d0a0",
+        "import_time": "2026-06-25T16:08:55.412782321Z",
+        "id": "GHSA-gwx3-mrcv-2c26",
+        "modified_time": "2026-06-25T15:28:03Z",
         "versions": [
           "3.0.8"
         ]
