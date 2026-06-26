@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-26T20:21:45Z",
+  "published": "2026-06-26T20:21:45Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of buffer-reverse executing an obfuscated import-time binary dropper",
+  "details": "@krentzen/buffer-reverse impersonates the well-known buffer-reverse package (it copies the legitimate author, repo URL, README, and the genuine ~10-line reverse() function at the top of index.js as a cover story). Below that cover, index.js contains two ~46KB heavily obfuscated IIFEs (RC4 string-array decoder, anti-debug, control-flow flattening) that run at require() time. The decoded payload performs an import-time binary dropper sequence: it re-spawns the current Node process with child_process.spawn(process.execPath, argv, {detached:true, stdio:'ignore', env:{...process.env, \u003cmarker\u003e:set}}).unref() and returns in the parent (detaches from the consumer / npm install), then in the child issues an HTTPS GET (port 443) with full redirect handling (301/302/303/307/308), streams the response into a file under os.tmpdir(), writes a \u003cfile\u003e.json sidecar containing {status, size, sha256, downloadedAt}, fs.chmodSync(file, 0o755), and child_process.spawn(file, [], {detached:true, stdio:'ignore', windowsHide:true}).unref(). The fetched binary is unpinned, unsigned, and has no publisher tie-in. Any project that require()s this package executes attacker-controlled native code that survives the parent process.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@krentzen/buffer-reverse"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "43d1915e226a23be2198eb3815929cd84bf5a456f953ea9f146d6397457ed2c1",
+              "tlsh": "49931b867eda707f535261f3112b6182e56d9ca9734c8504e162ccecbea423ce3666bc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "buffer-reverse-1.0.3.tgz",
+              "hashes": {
+                "sha1": "6e19da71e241e3a143c97cea5c7a69c6555b74c2",
+                "sha512_sri": "sha512-5WV0QoPkOJ0Jxhby8CN8Jdz4he2ho+tr1Aj7IeGrpCq0OZJMl4xpRH56pUulxLcuWkmPZYRebcdyNKjQEe/V9w=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@krentzen/buffer-reverse/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "7b7fccd6dbb7ba8a92be0bcbb002f92c43ff0c5e4bb82666589834a7be69e6bf",
+        "import_time": "2026-06-26T20:38:47.655054661Z",
+        "id": "IN-MAL-2026-007661",
+        "modified_time": "2026-06-26T20:21:45Z",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}
