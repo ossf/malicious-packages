@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-26T19:01:37Z",
+  "published": "2026-06-26T19:01:37Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "disksweep loads undocumented Windows native binary via process.dlopen on import",
+  "details": "On require('disksweep'), src/index.js executes `process.dlopen(module, '\u003cpkg\u003e/bin/native/parser.node')` inside a swallowed try/catch, loading a 2.9 MB Windows PE binary (bin/native/parser.node, sha256 b1aace6c...) shipped in the tarball. The binary is undocumented: README explicitly markets the package as 'Zero dependencies. Installs instantly; nothing to audit', yet package.json's `files` array ships `bin/native/`. The pure-JS scanner in src/scan.js fully implements the advertised disk-sweep feature, and no exported symbol from the.node module is ever invoked — the binary is loaded purely for its native init side effects. There is no binding.gyp, no source for the binary, no prebuild-install metadata, no platform check, and no version pinning. The combination of (a) silent native-code execution on library import, (b) a documentation/payload mismatch that actively discourages auditing, (c) gratuitous binary unused by the advertised feature, and (d) errors silenced via empty catch is the canonical opaque-native-dropper shape. Any consumer that requires this package on Windows executes attacker-controlled native code with arbitrary capabilities (filesystem, network, persistence) under the host process.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "disksweep"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/index.js",
+              "sha256": "ed6538c324fdf2f6f86a0529c597f75f4034c58a03eaf5ad463f37219612b2f7",
+              "tlsh": "7c11524673d70270d0d77b4509afd011b96dd1c6770aede1d1aa03943ee08f04113dae"
+            },
+            {
+              "path": "README.md",
+              "sha256": "776c53765c8db42dcde34f029f08fb6aae7f49655b69c8aa03a52d7fb24cfa9e",
+              "tlsh": "97b1d76f23a1727e079344a3f372de12e7ad939d13193924594d526c364a29f434ee88"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "disksweep-1.0.0.tgz",
+              "hashes": {
+                "sha1": "e295ac4cf08ebee3f82b4c12a3ee31596f321f2b",
+                "sha512_sri": "sha512-S/JLk2WCnq40QqTfIf1IuhOXQBrEtEJNVpBDvpjY1+XM2st8sQiy4Q3JXyxlXPJPiiL+OZlS0rnNOwMS/cIxJg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/disksweep/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "49b8ad00b1eafea2b5bccbeee95cb7321b92c72f79ba917a9fc00f19104ebbcf",
+        "import_time": "2026-06-26T19:36:32.180550802Z",
+        "id": "IN-MAL-2026-007656",
+        "modified_time": "2026-06-26T19:01:37Z",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
