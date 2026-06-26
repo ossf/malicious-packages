@@ -1,0 +1,95 @@
+{
+  "modified": "2026-06-26T03:16:28Z",
+  "published": "2026-06-26T01:56:33Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6496",
+  "summary": "Malicious code in @dervix/ws (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (79b9ab7431b1a6a1250c089e2ea33f54ad92313f587fbd2aabc020c12be55f69)\nPackage `@dervix/ws` impersonates the popular `ws` WebSocket library — `package.json` copies the legitimate ws project's homepage (`https://github.com/websockets/ws`), repository, and author metadata while publishing under an unrelated scope. `lib/websocket.js` appends ~130KB of heavily obfuscated code after the genuine `socketOnError` function; this payload executes at `require()` time via `index.js`. On import the payload (1) re-spawns the current Node process detached with `stdio:'ignore'` and `windowsHide:true`, gated by an obfuscated marker env var so the parent returns cleanly while a daemonized child continues; (2) constructs an AES-256 key by XOR-combining four hardcoded hex Buffers; (3) issues an HTTPS GET (following 3xx redirects) to an encrypted-in-source URL, streams the response to a file under `os.tmpdir()`, and decrypts it via `createDecipheriv`; (4) `fs.chmodSync(path, 0o755)` and `child_process.spawn(path,...)` with `detached:true` then `unref()`s it. Dynamic `import('child_process')` / `import('path')` is used to defeat static `require` audits, and an `inspector.url()` check short-circuits execution when a debugger is attached. There is no signature verification, no version pinning, and the destination URL is RC4-decoded at runtime so it cannot be inspected statically. Combined with the cloned ws metadata, this is a deliberate typosquat dropper that lands and executes attacker-controlled binary code on any machine that installs and imports the package.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@dervix/ws"
+      },
+      "versions": [
+        "8.21.4",
+        "8.21.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/websocket.js",
+              "sha256": "30caa0b3ebb980d49f89ff3b9f545e4c0ff91b939e7ac91bfe9ee9b46d5b79b3",
+              "tlsh": "ced31a85befa31af51a251b3121f6186f1299c5ab308c458f41dcdecbf5523cd2b26ac"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ws-8.21.4.tgz",
+              "hashes": {
+                "sha1": "9fc819c0759204582891ca568505ab462871649b",
+                "sha512_sri": "sha512-cod5UXd7dbwOoPBDGoBI+tXE1IZ4tkfFc3rxPD0oFgRC29wrNvE2s/xOBX3NKSFfL9+UmIk1eTqNuhCuULNcWA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@dervix/ws/v/8.21.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@dervix/ws/v/8.21.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007578",
+        "import_time": "2026-06-26T03:14:43.240155747Z",
+        "modified_time": "2026-06-26T01:56:33Z",
+        "sha256": "09575a7546e1b46b4042a1d2437450ba5b76d3bee8993eba8c0226fe994939f7",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.21.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007579",
+        "import_time": "2026-06-26T03:14:43.309129987Z",
+        "modified_time": "2026-06-26T01:56:35Z",
+        "sha256": "79b9ab7431b1a6a1250c089e2ea33f54ad92313f587fbd2aabc020c12be55f69",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.21.3"
+        ]
+      }
+    ]
+  }
+}
