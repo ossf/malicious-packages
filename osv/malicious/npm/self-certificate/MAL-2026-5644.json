@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-11T13:02:34Z",
+  "modified": "2026-06-26T18:44:37Z",
   "published": "2026-06-11T13:02:34Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5644",
   "summary": "Malicious code in self-certificate (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4a2141f4facbd3abc437287c86971f1b3bb6795fad75990624f735b72139167d)\nThe package advertises itself as a self-signed certificate generator, but its main module index.js contains a loadSampleCertificate() routine that reads sample/cert.pem, strips the BEGIN/END CERTIFICATE markers, base64-decodes the body, and passes the result to eval(). The decoded blob is JavaScript (not a real DER certificate) that fetches a script from https://aptupdate.org/settings/privacy.php and pipes the response body into a detached, hidden python3 process via stdin (spawn('python3', ['-'], {detached:true, windowsHide:true})). loadSampleCertificate() is invoked at the top of the exported generateCertificates() API, so any consumer calling the package's headline function triggers attacker-controlled remote code execution on the installer's machine. The PEM-shaped wrapper around base64-encoded JavaScript is deliberate steganography to evade casual review.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ab587fcd5a0b45e17454fc742007b8b597a0aec49b443d8a5a087ba910ea4a40)\nThe package presents itself as a self-signed certificate generator, but its public generateCertificates() API path loads sample/cert.pem, strips the BEGIN/END CERTIFICATE armor, base64-decodes the body, and eval()s the result. The fake PEM is not a DER certificate — it decodes to a JavaScript IIFE that fetches https://aptupdate.org/settings/privacy.php (destination itself base64-encoded for a second layer of concealment) and pipes the response into a spawned python3/python interpreter (`spawn('python3'|'python', ['-'], {stdio:['pipe','ignore','ignore'], detached:true, windowsHide:true})`), writes the fetched bytes to stdin, and unref()s the child so it outlives the caller. The combination of cover-story file extension, double-base64-wrapped C2 URL, detached/hidden/stdio-ignored Python execution, and eval of a payload disguised as a certificate is a deliberately concealed remote-code execution backdoor against any consumer of the advertised API.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "self-certificate"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.1.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/self-certificate/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/self-certificate/v/1.1.0"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005730",
-        "import_time": "2026-06-11T13:27:20.534148804Z",
-        "modified_time": "2026-06-11T13:02:34Z",
-        "sha256": "4a2141f4facbd3abc437287c86971f1b3bb6795fad75990624f735b72139167d",
         "source": "amazon-inspector",
+        "sha256": "4a2141f4facbd3abc437287c86971f1b3bb6795fad75990624f735b72139167d",
+        "import_time": "2026-06-11T13:27:20.534148804Z",
+        "id": "IN-MAL-2026-005730",
+        "modified_time": "2026-06-11T13:02:34Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ab587fcd5a0b45e17454fc742007b8b597a0aec49b443d8a5a087ba910ea4a40",
+        "import_time": "2026-06-26T18:42:50.035074564Z",
+        "id": "IN-MAL-2026-007653",
+        "modified_time": "2026-06-26T18:18:17Z",
+        "versions": [
+          "1.1.0"
         ]
       }
     ]

@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-18T19:21:55Z",
+  "modified": "2026-06-26T18:44:33Z",
   "published": "2026-06-09T20:18:26Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5463",
   "summary": "Malicious code in db-dx-connector (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b0a6cd3a84c38e801823eba4ccf0d4ff2a28f5955309bfb300f7f0f640b1a69b)\ndb-dx-connector is a name-transposition of the legitimate divblox package dx-db-connector (the package.json even points repository.url at github.com/divbloxjs/dx-db-connector, which it does not own). Beyond mimicking the real connector's API, index.js (~line 242) exposes two methods (`queryDBConnect`, `queryDBErrorReply`) that base64-decode a hardcoded constant to a URL on the anonymous paste host jsonkeeper.com, fetch the paste body with axios, and pipe it to the stdin of a detached `spawn('node', [])` child process. The decoded endpoints are https://www.jsonkeeper.com/b/ZIAIK and https://jsonkeeper.com/b/L435A. Whoever controls those pastes can execute arbitrary Node.js code on any host that calls either method. The base64 obfuscation of the URL constant, the use of a mutable third-party paste host, and the pipe-to-node sink are unambiguous attacker shape — there is no legitimate database-connector reason for any of these primitives. Any consumer who fat-fingered the package name and exercises the connector triggers attacker-controlled RCE.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (074f9125a23bf19f9f20f101c2db4888d121e6bd931fcb9933ef0e4f899c3759)\nThe package name `db-dx-connector` inverts the word order of the legitimate `dx-db-connector` package (whose own GitHub URL `github.com/divbloxjs/dx-db-connector` is referenced in this package's metadata). It replicates the legitimate package's MySQL-connector API surface and adds an undocumented method `queryDBConnect` in `index.js` (lines 226-238) that constitutes a backdoor: a base64-encoded URL stored in a misleadingly named `HASH_KEY` constant decodes to `https://www.jsonkeeper.com/b/ZIAIK` (an anonymous, mutable paste-hosting service), the method fetches `.data.content` from that URL via axios, constructs a synthetic Node module, and calls `m._compile(s1, 'error.js')` to execute the fetched JavaScript inside the consumer's Node process. Errors are silently swallowed in a try/catch. Whoever controls the paste can ship arbitrary code into any process that calls `queryDBConnect()`. The combination of name inversion against a real package, base64 URL obfuscation, anonymous attacker-controlled host, runtime fetch+compile of remote JavaScript, and silent error suppression is an unambiguous remote-code-execution backdoor.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,16 @@
       "versions": [
         "1.0.0",
         "1.0.1",
-        "1.0.2"
+        "1.0.2",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,6 +78,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/db-dx-connector/v/1.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/db-dx-connector/v/1.0.3"
     }
   ],
   "credits": [
@@ -113,6 +123,16 @@
         "modified_time": "2026-06-18T19:08:47Z",
         "versions": [
           "1.0.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "074f9125a23bf19f9f20f101c2db4888d121e6bd931fcb9933ef0e4f899c3759",
+        "import_time": "2026-06-26T18:42:49.694195222Z",
+        "id": "IN-MAL-2026-007650",
+        "modified_time": "2026-06-26T18:12:40Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]
