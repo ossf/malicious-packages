@@ -1,21 +1,43 @@
 {
-  "modified": "2026-06-26T14:16:24Z",
+  "modified": "2026-06-27T15:59:37Z",
   "published": "2026-06-26T14:16:24Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6524",
   "summary": "Malicious code in ts-einkle (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (25da283df3c201222ff1542da14b7fe428ab18aad7641d3521d2d4274d373e0b)\npackage.json declares `postinstall=node test.js` which invokes index.js main() at install time. The code performs three concrete installer-side attacks. (1) Credential harvest: recursively scans process.cwd() for `.env`, `config.toml/json`, and `id.json` files and multipart-POSTs them to https://datasecure-service.vercel.app/api/v1. (2) Whole-filesystem document sweep: getScanPaths() returns os.homedir() on Unix and every Windows drive root (A:..Z:) on Windows; searchHashes recursively walks these and uploads matching `.txt/.json/.env/.doc/.docx/.xlsx/.pdf/.toml` files to the same attacker endpoint in 4MB batches along with username and platform metadata. (3) Persistent SSH backdoor on Linux: fetches an attacker-controlled public key from https://datasecure-service.vercel.app/api/ssh-key, appends it to ~/.ssh/authorized_keys (chmod 0600), then runs `sudo chown`, `sudo ufw enable`, and `sudo ufw allow 22/tcp` to ensure inbound SSH reachability. Cover-story strings (`[data-backup-upload]` log prefix, `polymarket-bot/0.1` User-Agent, empty package.json author/description/keywords) disguise the behavior as benign backup activity.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1ff02c0869d8d15a81a6172fd66e0f89de1502c21314fa81c6b7fbc7ecf559b4)\nOn npm install, this package's postinstall hook (test.js) invokes index.js, which recursively scans the user's home directory (and on Windows, all drive roots) for credential and config files matching patterns including.env,.env.example, env, id.json, config.toml, Config.toml, config.json, and config.json.example. Matched files are multipart-POSTed to https://datasecure-service.vercel.app/api/v1. On Linux, the script additionally fetches an attacker SSH public key from https://datasecure-service.vercel.app/api/ssh-key, appends it to ~/.ssh/authorized_keys with mode 0600, then runs `sudo ufw enable` and `sudo ufw allow 22/tcp` to ensure inbound SSH reachability — providing persistent remote shell access. Scan and block patterns plus the SSH key are pulled dynamically from /api/scan-patterns, /api/block-patterns, and /api/ssh-key so the operator can retarget without republishing. package.json also declares a dependency on the non-core npm package 'child_process' (a known typosquat of the Node built-in), and the package's metadata fields (description/author/keywords) are empty. The targeted file set (Solana/Anchor id.json wallets, Rust/Cargo config.toml, dotenv secrets) is consistent with a credential-harvesting and host-takeover implant.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "ts-einkle"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
-        "1.0.9"
+        "1.0.9",
+        "1.1.2",
+        "1.1.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,6 +69,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/ts-einkle/v/1.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ts-einkle/v/1.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ts-einkle/v/1.1.0"
     }
   ],
   "credits": [
@@ -61,13 +91,53 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007606",
-        "import_time": "2026-06-26T14:59:21.344860649Z",
-        "modified_time": "2026-06-26T14:16:24Z",
-        "sha256": "25da283df3c201222ff1542da14b7fe428ab18aad7641d3521d2d4274d373e0b",
         "source": "amazon-inspector",
+        "sha256": "25da283df3c201222ff1542da14b7fe428ab18aad7641d3521d2d4274d373e0b",
+        "import_time": "2026-06-26T14:59:21.344860649Z",
+        "id": "IN-MAL-2026-007606",
+        "modified_time": "2026-06-26T14:16:24Z",
         "versions": [
           "1.0.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b011dddf3acc2a1269d8bb864414696c8d44fadb2593544e4d26cb2ce641cf01",
+        "import_time": "2026-06-27T15:57:48.922434147Z",
+        "id": "IN-MAL-2026-007680",
+        "modified_time": "2026-06-27T15:45:38Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1ff02c0869d8d15a81a6172fd66e0f89de1502c21314fa81c6b7fbc7ecf559b4",
+        "import_time": "2026-06-27T15:57:48.966256979Z",
+        "id": "IN-MAL-2026-007681",
+        "modified_time": "2026-06-27T15:45:45Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "1.1.0"
         ]
       }
     ]
