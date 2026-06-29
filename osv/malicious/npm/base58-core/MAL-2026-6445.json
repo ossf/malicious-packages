@@ -1,24 +1,46 @@
 {
-  "modified": "2026-06-26T20:40:29Z",
+  "modified": "2026-06-29T05:08:55Z",
   "published": "2026-06-25T06:43:58Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6445",
   "summary": "Malicious code in base58-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c10874ae13f1937b6974bcaaec72996e54f85fc3de6bf5e53d732f6e1f37c8a3)\nThe package presents itself as a Base58 encoder/decoder but on require() arms a malicious payload that is time-gated to activate 72 hours after first import (ACTIVATION_DELAY = 72*60*60*1000 in dist/index.cjs:94-95) to evade CI and sandbox testing. Once active, it: (1) starts a 2.5s clipboard polling loop (dist/index.cjs:101-106) that detects BTC, ETH, and SOL addresses and silently rewrites the clipboard to hardcoded attacker wallets (bc1qjft9..., 0xd63eD4..., A7ajd7W5...), redirecting any crypto send the developer copies; (2) captures clipboard contents matching WIF private keys, BIP-39 seed phrases, and 0x-prefixed 64-char hex private keys, plus host metadata (hostname, platform, cwd), and POSTs them in plaintext to a hardcoded bare-IP C2 at http://2.27.62.51:8080/api/health (with:8081 fallback) via dist/index.cjs:96-97; (3) establishes persistence by appending a node -e loader to ~/.bashrc, ~/.zshrc, and ~/.profile and dropping base58-runtime.js into the Windows Start Menu Startup folder (dist/index.cjs:191-204), so the payload re-activates on every shell or login even after the package is removed; (4) uses execSync('powershell...') in dist/index.cjs:153 for Windows clipboard access. The package name impersonates the well-known base58/bs58 family, and the persistence loader references a sibling package '@base58/core' indicating coordinated namespace abuse. Crypto developers are the precise targeted victim profile.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0081cc9c4152afede923a3e8ee9eb2116b32c02b7f355edbd411f23b2e67273c)\nbase58-core@1.0.5 presents itself as a base58 encoding library (README markets it as @base58/core, public API mimics bs58/@scure/base) but on require of dist/index.js it arms a time-bombed payload that activates 72 hours after install. After activation, a 2.5s timer polls the OS clipboard, detects BTC/ETH/SOL addresses, and silently replaces them with attacker-controlled wallet addresses (bc1qjft978uykglsh0adcyx6xhkes56vqzs3fual3l, 0xd63eD44065eDb1e2ad2519B011c06412dA7B7c5B, A7ajd7W5WYdrnkeaiBRjVoK6uBEDvgnuZcpzQXqo18Ph), redirecting any outgoing crypto transfer made by a user on the installer's machine to the attacker. When clipboard contents match wallet addresses, WIF/hex private keys, or BIP-39 seed phrases, the package POSTs the matches together with hostname, platform, cwd, and up to 2000 chars of clipboard content to a hardcoded bare-IP endpoint at http://2.27.62.51:8080/api/health (with:8081 as backup) over plain HTTP. For persistence, it appends a hook to ~/.bashrc, ~/.zshrc, and ~/.profile that re-invokes the payload via `node -e \"require('@base58/core')._internal.activate()\"` on every shell, and on Windows drops base58-runtime.js into the Startup folder, ensuring the clipper survives reboots and host-process exits. The 72-hour activation delay and powershell-based execSync calls are anti-analysis measures to evade sandbox/CI review. Installer impact is direct financial theft (crypto-address substitution), credential/seed-phrase theft (clipboard exfiltration), and persistent compromise of the developer's shell environment.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "base58-core"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.1",
         "1.0.0",
         "1.0.2",
-        "1.0.3"
+        "1.0.3",
+        "1.0.5",
+        "1.0.4"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +104,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/base58-core/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base58-core/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base58-core/v/1.0.4"
     }
   ],
   "credits": [
@@ -133,6 +163,46 @@
         "modified_time": "2026-06-26T20:15:41Z",
         "versions": [
           "1.0.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "0081cc9c4152afede923a3e8ee9eb2116b32c02b7f355edbd411f23b2e67273c",
+        "import_time": "2026-06-29T05:07:05.124464493Z",
+        "id": "IN-MAL-2026-007709",
+        "modified_time": "2026-06-29T03:22:44Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "68c7a1f450b6c157edaef60638c547dfb284623a9a77e27a0abc9ebfaff87d83",
+        "import_time": "2026-06-29T05:07:05.009040945Z",
+        "id": "IN-MAL-2026-007708",
+        "modified_time": "2026-06-29T03:22:37Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "1.0.4"
         ]
       }
     ]
