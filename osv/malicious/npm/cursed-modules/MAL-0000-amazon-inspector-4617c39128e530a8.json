@@ -1,0 +1,90 @@
+{
+  "modified": "2026-06-30T20:57:58Z",
+  "published": "2026-06-30T20:57:58Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "cursed-modules exfiltrates host data, env vars, and AWS credentials to hardcoded attacker endpoints on install and require",
+  "details": "package.json wires preinstall, install, and postinstall to node install.js, and main is index.js whose top-level IIFE runs the same logic on require. Both scripts gate on a Docker-style hostname (^[0-9a-f]{12}$) then collect process.env, read filesystem paths (including /home/node, /app, /root), run aws sts get-caller-identity, curl the EC2 instance metadata service at 169.254.169.254/latest/meta-data/iam/security-credentials/ for IAM role credentials, and call aws secretsmanager list-secrets. Results are JSON-serialized, base64-encoded, wrapped in a YAML-looking 'ecto_module' manifest, and POSTed to http://154.57.164.82:30843/api/modules/ECT-... A second component, recon.js, reads installer-side secrets (/root/.npmrc, /home/user/.npmrc, Verdaccio configs and htpasswd, crontabs, /proc/1/environ, ps/netstat output) and PUTs base64/JSON payloads to http://154.57.164.76:30728/api/modules/ECT-654321 with a curl fallback. A shipped publish-and-arm.sh labels the campaign with ship_deck: 'dependency-confusion' and cargo_hold: 'verdaccio-proxy', and the package is published at version 999.0.2 — a high-version dependency-confusion pattern intended to outrank internal package versions in mixed registries. Installing or requiring this package in a container/CI environment immediately leaks environment variables, AWS IAM role credentials from IMDS, AWS Secrets Manager listings, and npm/Verdaccio registry tokens to attacker-controlled hosts.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "cursed-modules"
+      },
+      "versions": [
+        "999.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "3b05dd2f3052244c66d1817dd16806ef0c267f0d5558197b64991e568b466d2c",
+              "tlsh": "7b5184ca6a7ed531aaa833d5b5ea14067ed7d231318275e020cec7d539cc4f80272dab"
+            },
+            {
+              "path": "index.js",
+              "sha256": "f2f15905c587d079b448778e3d7550b94cacd7616dc2013112f332958af19d90",
+              "tlsh": "a851628a67b9a456a51830e1a1a710163ea3d0133086aaa072cdc7856fdc1bc9273cff"
+            },
+            {
+              "path": "recon.js",
+              "sha256": "5ba0821ccfeb4c40c15d18151bfa64508c8e3b71a1b2fbf3c7521131ab67b1c5",
+              "tlsh": "70e182dc3eb0b81163b6c859b62a5051ee63f5d7242cfd10f4ac2a601f8c26571d67bb"
+            },
+            {
+              "path": "publish-and-arm.sh",
+              "sha256": "486db09a257efef1a2238ad89d8505c8f0bb0a2e2f377588bb3a6a10718abb76",
+              "tlsh": "c211b582343170f7940ee657fc04233213f3b1e7612b7912a8ed21e827501f81278155"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cursed-modules-999.0.2.tgz",
+              "hashes": {
+                "sha1": "9dd22416e1244ead8cc844b3e9755041389d3258",
+                "sha512_sri": "sha512-aSTyIhequS4JJHogl+ATqcmneknClX+K6qQ4Ws4u5W7FfxjkvBtR9FmqdzbJOzRz2WrM81D5p8Pwx9cfn+rUjQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "4617c39128e530a8ef5de0335557b42968b70f1115bf5c0b37a13adc6ebdec3e",
+        "import_time": "2026-06-30T21:35:48.976787111Z",
+        "id": "IN-MAL-2026-007808",
+        "modified_time": "2026-06-30T20:57:58Z",
+        "versions": [
+          "999.0.2"
+        ]
+      }
+    ]
+  }
+}
