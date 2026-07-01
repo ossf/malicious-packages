@@ -1,0 +1,76 @@
+{
+  "modified": "2026-07-01T21:19:27Z",
+  "published": "2026-07-01T21:19:27Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "electron-orbit impersonates OrbitDB and stages env dump plus obfuscated TLS beacon",
+  "details": "The package presents itself as an Electron/OrbitDB-related component (name 'electron-orbit', author 'OrbitDB Archive', homepage pointing to the archived github.com/orbitdb-archive/orbit-electron repo) but its actual behavior is hostile to installers. (1) The postinstall script (package.json: \"postinstall\": \"node install.js\") writes the full process.env together with hostname and username into a file under bin/formatters/ and prepends ELF/MZ/Mach-O magic bytes so the staged env dump on disk looks like a native binary; an additional copy of process.env is written to install-log.json. (2) On require() of the main module, top-level code computes sha256(process.env.BuildType) and, when it matches a hardcoded digest, XOR-decodes a hidden URL and connects to electronorbit.blob.core.windows.net:443 over a hand-rolled TLS 1.3 client (custom buildClientHello/encryptRecord, raw net socket) that bypasses Node's https stack and certificate validation, fetching /icons/orbit.svg with a SAS token and discarding the response — a covert, env-gated check-in. The combination of name/author impersonation of a legitimate project, install-time staging of the installer's environment variables disguised as a native binary, and an obfuscated env-gated beacon over a custom TLS implementation is the structural shape of a targeted supply-chain attack against installers, not legitimate package behavior.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "electron-orbit"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/index.ts",
+              "sha256": "fbd7dfca26cda58655b65003e72d8506f379d7aa976b135d477761f353ca86db",
+              "tlsh": "be02a54a4a0750234e756778d79b4c45ff8650232a0e9d98fedc4a843fb2c6990b7eec"
+            },
+            {
+              "path": "install.js",
+              "sha256": "97dce4d75ebf26602656276344890d29e706d1e188021673a5bccffcd2118977",
+              "tlsh": "2bf113464aaa4674573203aa8d578d09f7359a1b0702425e7efd83885ff6c3094a3ffe"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ae95f2719aa6e86ccc7e5cc83edaadcb80162130a29b5258e1d659f30e5200cd",
+              "tlsh": "02319b37d554dc534af45bd5e8750f85f2340b5f4191ac4b74b2012c0fb659b00ae7ae"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/electron-orbit/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "77275717c30e5629daba99b0a9ae1dd5a30b7b3fb013fe66a66a8213ab32ad8e",
+        "import_time": "2026-07-01T22:03:00.97514881Z",
+        "id": "IN-MAL-2026-007939",
+        "modified_time": "2026-07-01T21:19:27Z",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "modified": "2026-07-01T21:16:54Z",
+  "published": "2026-07-01T21:16:54Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "electron-orbit exfiltrates process.env at install time and beacons to obfuscated Azure host on import",
+  "details": "Package impersonates the Electron and OrbitDB ecosystems (name 'electron-orbit', author 'OrbitDB Archive', homepage pointing at github.com/orbitdb-archive/orbit-electron) and performs a two-stage installer-side attack. the analysis — postinstall (`node install.js`, package.json line 47): enumerates process.env via an XOR-encoded property-name decoder (`__s(key,data)` XOR-with-index), filters only keys containing 'path', and writes the remaining variables together with hostname, username, and cwd to /tmp/electron_orbit_install_marker.txt. the assessment — on `require()` of the main module: reads that marker, XORs it with 'electron-orbit', and calls prefetchRegisteredIcons(), which uses a hand-rolled TLS 1.3 client over a raw net.connect(443) socket (bypassing Node's tls module and any tls-level instrumentation) to contact a host assembled from XOR-obfuscated fragments resolving to electronorbit.blob.core.windows.net (path /icons/orbit.*). The exfil host is only assembled when sha256(process.env.BuildType) equals a hardcoded digest (0ceaa396…8295), gating the beacon to a preselected target environment and keeping the code dormant on unrelated machines. The advertised 'Electron-style runtime discovery' functionality is a stub that writes a fake local bootstrap file consisting of platform magic bytes (ELF/PE/Mach-O) followed by JSON — cover content, not a functional runtime. The combination of bulk env enumeration, XOR obfuscation of exactly the strings that would trip scanners (process, env, node:net, connect, hostname, HTTP request line), custom TLS stack over raw sockets, env-hash targeting gate, and namespace impersonation is unambiguous exfiltration infrastructure.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "electron-orbit"
+      },
+      "versions": [
+        "1.0.22"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "74371bc877a042a9e43f531ec89a9ceb11fb1e002fa19f7c5190799ec713a09c",
+              "tlsh": "3ef1324286aa4670573213aa8d578d09f7369a170702525e7efd83885fb6c2094e3ffe"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "f189e725326535dae29e797ab9788e78f83def39a15dd37b6db91821c49ddb68",
+              "tlsh": "2732a8a07f50f0b5e3ad2695d4bba94bb3f558e0980d0408e16998cf3a70cd4c676fa9"
+            },
+            {
+              "path": "src/aetherls.ts",
+              "sha256": "2ae396708a27da2dd10e3abebf4fb9d02891c75ff796a3b0ffce8032e9a73ffa",
+              "tlsh": "a432a5853cb3a0758277b497d9dbec6ab3340802350ae994770e46c82f92cdcdb5a8dd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "f745d4191d25323909a4eaf267694a9d4d0fe899b04a262a6df9c37884bc772e",
+              "tlsh": "ac213637e4a4dd535af89b94a9790f89f2310b9f41545c0b74f2012c4bb646b01aebaf"
+            },
+            {
+              "path": "src/index.ts",
+              "sha256": "5b8d076b836f54680f7833c9b538effff04458b46ec31df80badf8bf7eb946d8",
+              "tlsh": "b012b64a561b51234e716378d75b0945efd590232a0ea9a8ffdc41c53fb283d80b7eac"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/electron-orbit/v/1.0.22"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "952200b7df4332004cc5fefbaa4bcb7d8f1ab097c295e79afae66fe19d23aae6",
+        "import_time": "2026-07-01T22:02:59.898992079Z",
+        "id": "IN-MAL-2026-007922",
+        "modified_time": "2026-07-01T21:16:54Z",
+        "versions": [
+          "1.0.22"
+        ]
+      }
+    ]
+  }
+}

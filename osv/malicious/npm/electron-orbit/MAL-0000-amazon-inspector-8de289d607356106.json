@@ -1,0 +1,76 @@
+{
+  "modified": "2026-07-01T21:18:03Z",
+  "published": "2026-07-01T21:18:03Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "electron-orbit harvests installer env vars on postinstall and exfiltrates via hand-rolled TLS client on import",
+  "details": "On `npm install`, the package's postinstall script (`install.js`, configured via package.json `\"postinstall\": \"node install.js\"`) writes a marker file to `os.tmpdir()/electron_orbit_install_marker.txt` containing `hostname`, `username`, `cwd`, and a JSON dump of `process.env` filtered only to drop keys containing the substring 'path'. This sweeps installer secrets such as `AWS_*`, `GITHUB_TOKEN`, `NPM_TOKEN`, and CI provider tokens. The reads of `process` and `env` are concealed via an XOR helper (`__s(key, data)`) that decodes to `globalThis['process']['env']`, hiding the access from static scanners. On `require()`/`import` of the package's main entry, top-level code reads back the staged marker file, XOR-transforms its contents with the key `electron-orbit`, and invokes a hand-rolled TLS 1.3 client implemented in `src/aetherls.ts` (raw `net.connect(443, host)` plus custom ClientHello/ECDHE/AES-GCM/HKDF) to send an HTTP GET (`User-Agent: aetherget/0.1`) carrying the transformed payload. The destination host is gated by a sha256-preimage check on `process.env.BuildType` matching the hardcoded digest `0ceaa396e2134a9937563e841539f30a9995e6e8646e60dcec24b26dc5748295`, a staged-rollout / anti-analysis kill switch. The package name and README invoke the 'Electron' brand but the code contains no Electron integration; the postinstall additionally writes a JSON blob with fabricated ELF/Mach-O/MZ magic bytes as a decoy 'native bootstrap'. The combination of bulk env harvest, XOR obfuscation of network primitives, env-var-gated activation, a custom TLS stack designed to evade standard network-monitoring hooks, and brand-impersonation framing is an unambiguous install-then-beacon supply-chain attack.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "electron-orbit"
+      },
+      "versions": [
+        "1.0.13"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "74371bc877a042a9e43f531ec89a9ceb11fb1e002fa19f7c5190799ec713a09c",
+              "tlsh": "3ef1324286aa4670573213aa8d578d09f7369a170702525e7efd83885fb6c2094e3ffe"
+            },
+            {
+              "path": "src/aetherls.ts",
+              "sha256": "2ae396708a27da2dd10e3abebf4fb9d02891c75ff796a3b0ffce8032e9a73ffa",
+              "tlsh": "a432a5853cb3a0758277b497d9dbec6ab3340802350ae994770e46c82f92cdcdb5a8dd"
+            },
+            {
+              "path": "src/index.ts",
+              "sha256": "9a90342a92100ffab3624f2e3e4c74d2d79725788ba6cb50f75f7e6186d1cbca",
+              "tlsh": "4b02b64a5a1b11230e706379e71b4545efd590232a0e9da8fedc42c52fb2c69c0b7fac"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/electron-orbit/v/1.0.13"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8de289d6073561060a409931399a18484fd826ada63e5fae4f2b30c618172ac4",
+        "import_time": "2026-07-01T22:03:00.311405766Z",
+        "id": "IN-MAL-2026-007929",
+        "modified_time": "2026-07-01T21:18:03Z",
+        "versions": [
+          "1.0.13"
+        ]
+      }
+    ]
+  }
+}

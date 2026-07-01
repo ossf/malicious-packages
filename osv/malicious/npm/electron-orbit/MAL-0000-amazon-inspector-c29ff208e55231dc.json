@@ -1,0 +1,81 @@
+{
+  "modified": "2026-07-01T21:17:32Z",
+  "published": "2026-07-01T21:17:32Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "electron-orbit exfiltrates installer environment variables to an attacker-controlled Azure Blob endpoint",
+  "details": "On `npm install`, the package's postinstall script (`install.js`, referenced from package.json scripts.postinstall) enumerates process.env — accessed via XOR-obfuscated property names that decode to `process`/`env` — filters out keys whose names contain 'path', and writes the remaining environment variable values to `/tmp/electron_orbit_install_marker.txt`. On `require('electron-orbit')`, top-level code reads that marker file back, XOR-encodes its contents with the ASCII key 'electron-orbit', hex-encodes the result, and embeds it in a URL query string. The destination is assembled from XOR-obfuscated fragments that decode to `electronorbit.blob.core.windows.net/icons/orbit.svg?\u003cencoded_env_vars\u003e`. Delivery uses a hand-rolled TLS 1.3 client (`aetherls`/`aead`/`hkdf` modules performing ClientHello, ECDHE P-256, HKDF-Expand-Label, AES-128-GCM record layer) built on `net.connect(443, host)` — also obtained via XOR-decoded `import('net')` and method name — bypassing Node's `https` module, any monkey-patched fetch/http hooks, and TLS-inspection proxies. The exfil URL is assembled only when sha256(process.env.BuildType) matches the hardcoded value `0ceaa396e2134a9937563e841539f30a9995e6e8646e60dcec24b26dc5748295`; on non-matching hosts the path degrades to a `%TEMP%` placeholder so the payload stays dormant on scanners and developer laptops and fires on the intended CI/build target. Environment variables in CI/build contexts routinely contain cloud credentials, publishing tokens, and secrets. The package name and `OrbitDB Archive` author string impersonate the archived OrbitDB/Electron project namespace; the real archived project does not ship this code.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "electron-orbit"
+      },
+      "versions": [
+        "1.0.20"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "74371bc877a042a9e43f531ec89a9ceb11fb1e002fa19f7c5190799ec713a09c",
+              "tlsh": "3ef1324286aa4670573213aa8d578d09f7369a170702525e7efd83885fb6c2094e3ffe"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "79751b5ac3e53b78fb196a4b70348eb6085312d25803bc40cca6c33875c5f049",
+              "tlsh": "2c42b8a07b50f0b5e39c2695d0bfa54b73f559e0ac0d0408e26998cf3a74cd4c6b6fa9"
+            },
+            {
+              "path": "src/aetherls.ts",
+              "sha256": "2ae396708a27da2dd10e3abebf4fb9d02891c75ff796a3b0ffce8032e9a73ffa",
+              "tlsh": "a432a5853cb3a0758277b497d9dbec6ab3340802350ae994770e46c82f92cdcdb5a8dd"
+            },
+            {
+              "path": "package.json",
+              "sha256": "3e157b69edeca8b57b4b9c260182d16d4e068e0c95d1a309c8e3f44e047bffe4",
+              "tlsh": "09213637e4a4dd535af89b94a9790f89f2310b9f41545c0b74f2012c4bb686b01aebaf"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/electron-orbit/v/1.0.20"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "c29ff208e55231dcf792181b153ecbf8d546a0f285f415ccae0358f0d0e757d1",
+        "import_time": "2026-07-01T22:03:00.17503458Z",
+        "id": "IN-MAL-2026-007926",
+        "modified_time": "2026-07-01T21:17:32Z",
+        "versions": [
+          "1.0.20"
+        ]
+      }
+    ]
+  }
+}

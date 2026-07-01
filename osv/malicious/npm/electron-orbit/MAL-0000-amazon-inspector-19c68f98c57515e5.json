@@ -1,0 +1,81 @@
+{
+  "modified": "2026-07-01T21:18:38Z",
+  "published": "2026-07-01T21:18:38Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "electron-orbit ships an obfuscated TLS exfiltration client and stages process.env at postinstall under a borrowed OrbitDB identity",
+  "details": "electron-orbit@1.0.10 is published under the name and author of the OrbitDB Archive's orbit-electron project but does not implement that functionality. Two installer-harm mechanisms are present:\n\n1. Postinstall env staging (install.js, run via package.json scripts.postinstall=\"node install.js\"): on `npm install`, the script dumps the installer's process.env (filtering keys containing 'path') along with cwd and hostname/username to /tmp/electron_orbit_install_marker.txt. The access to globalThis.process.env is constructed through an XOR string deobfuscator to hide the env-dump from static review.\n\n2. Obfuscated TLS exfiltration client on import (main module): the package ships a from-scratch TLS 1.3 implementation (AEAD/HKDF/ECDH handshake) with all key strings — 'node:net', 'connect', ALPN 'http/1.1', and the HTTP request line/headers — assembled at runtime via the same XOR deobfuscator. On require(), setupAutoRenderOnImport() calls retrieveIcon(), which dynamically imports node:net, opens a raw TCP socket to port 443 on a host taken from registeredIconSources, and issues an HTTP GET via the custom TLS stack (bypassing standard https/TLS interception). The destination host is selected by an environment-keyed gate: registeredIconSources.orbit is populated only when sha256(process.env.BuildType) is a substring of a hardcoded 64-hex-char value; otherwise the URL defaults to a non-functional '%TEMP%' placeholder. This SHA256-gated activation keeps the live exfil URL dormant on scanners and most developer machines and fires only in the attacker-known environment.\n\nThe combination — hand-rolled TLS client + XOR-obfuscated networking/process.env access + hash-gated payload activation + postinstall env dump + borrowed OSS identity that doesn't match the actual code — is engineered supply-chain malware, not a legitimate Electron/OrbitDB tool.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "electron-orbit"
+      },
+      "versions": [
+        "1.0.10"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "475a2829d8d19e251b4d9dbb13c1f797cd40ff13c722157f203aa6fcfa6bdd02",
+              "tlsh": "4d3298907f50f076d3ad2165d4bbe94bb3f559e0980e0408e169d4cf3a70c94c6bafa9"
+            },
+            {
+              "path": "src/index.ts",
+              "sha256": "070b00c888ef5a0b5731a3da59103926e603012e8ff8ce32318af86711afc907",
+              "tlsh": "ebf1944a5a1354230e706378e76b4459ff9660232a065dacfedc42842fb1c6980b7fbd"
+            },
+            {
+              "path": "install.js",
+              "sha256": "74371bc877a042a9e43f531ec89a9ceb11fb1e002fa19f7c5190799ec713a09c",
+              "tlsh": "3ef1324286aa4670573213aa8d578d09f7369a170702525e7efd83885fb6c2094e3ffe"
+            },
+            {
+              "path": "package.json",
+              "sha256": "1b035c1d7097580508f8cb24f152b4f86b11185b9a97a37b602a2e170abbf145",
+              "tlsh": "ca213637e4a4dd535af89b94a9790f85f2310b9f41545c0b74f2012c4bb686b01aebaf"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/electron-orbit/v/1.0.10"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "19c68f98c57515e576aef9cc6bd4d2801f813b382d3ea55091c423663d8106cf",
+        "import_time": "2026-07-01T22:03:00.584279878Z",
+        "id": "IN-MAL-2026-007933",
+        "modified_time": "2026-07-01T21:18:38Z",
+        "versions": [
+          "1.0.10"
+        ]
+      }
+    ]
+  }
+}
