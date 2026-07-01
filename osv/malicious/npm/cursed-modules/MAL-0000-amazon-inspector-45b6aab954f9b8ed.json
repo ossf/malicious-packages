@@ -1,0 +1,95 @@
+{
+  "modified": "2026-07-01T18:33:03Z",
+  "published": "2026-07-01T18:33:03Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "cursed-modules exfiltrates host data, AWS credentials, and registry secrets to hardcoded C2; ships shell-command backdoor",
+  "details": "cursed-modules@999.0.9 executes attacker-controlled code on three separate triggers and operates a bidirectional command channel against a hardcoded bare-IP C2 at 154.57.164.70.\n\n1) Install-time exfiltration: package.json wires preinstall, install, and postinstall all to `node install.js`. install.js reads /flag, /flag.txt, /app/flag.txt, /root/flag.txt, environment variables (including FLAG/HTB_FLAG), runs `id` and `hostname`, greps the filesystem for CTF flag patterns, serializes process.env, base64-encodes the payload wrapped in a fake `ecto_module` YAML manifest, and HTTP PUTs it to 154.57.164.70:31682/api/modules/ECT-987654.\n\n2) Require-time AWS credential theft: index.js (the declared `main`) runs an IIFE on require that, when the hostname matches a Docker container ID pattern, invokes `aws sts get-caller-identity`, fetches IAM credentials from the IMDS endpoint http://169.254.169.254/latest/meta-data/iam/security-credentials/, lists Secrets Manager secrets, reads /home/node sources and flag files, dumps process.env, and PUTs the base64-encoded result to 154.57.164.70:32447/api/modules/ECT-654321.\n\n3) Broader recon: recon.js reads /root/.npmrc, /home/user/.npmrc, project package.json/lock files, verdaccio configs, htpasswd files, cron jobs, and supervisord configs, then PUTs the data (with a curl fallback) to 154.57.164.70:30728/api/modules/ECT-654321 — directly harvesting npm registry tokens and private-registry credentials.\n\n4) Backdoor: rce.sh PUTs an arbitrary shell command to 154.57.164.70:32447 under module slot ECT-654321 and GETs the base64 command output from slot ECT-987654, completing a request/response command relay over the same C2.\n\nThe package self-identifies (publish-and-arm.sh, install.js manifest) as a deliberate dependency-confusion attack against verdaccio proxies; the 999.0.9 version is consistent with that pattern. Three independent lifecycle hooks plus a require-time IIFE guarantee the payload fires on default `npm install` and on any consumption of the module.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "cursed-modules"
+      },
+      "versions": [
+        "999.0.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "8e7321269955bc156d7e1d0adad3c91f251348e88d9e9a96add3d580fcca3799",
+              "tlsh": "543162da69bc9530b1b637b0a4ea04457bcbd575224378e4384ea4d62bcc8b800b71e5"
+            },
+            {
+              "path": "index.js",
+              "sha256": "b8bff1ad1f58aa616362d9987e547281abd655cab1475812a5c3b1c7760f66f1",
+              "tlsh": "cd51638667f9a412a55831e1a1a710563e93d0137186aae072cdc7c56fdc1bc9273cff"
+            },
+            {
+              "path": "recon.js",
+              "sha256": "5ba0821ccfeb4c40c15d18151bfa64508c8e3b71a1b2fbf3c7521131ab67b1c5",
+              "tlsh": "70e182dc3eb0b81163b6c859b62a5051ee63f5d7242cfd10f4ac2a601f8c26571d67bb"
+            },
+            {
+              "path": "rce.sh",
+              "sha256": "404a822aeb81241f2bceaf4a612ab5b74a1cfd2b8ec375fe5ad5130613e646aa",
+              "tlsh": "fa1123da2520e8f6416e4875eb5d9257a78bfd8900f0295aed4d2ec832442797012037"
+            },
+            {
+              "path": "publish-and-arm.sh",
+              "sha256": "486db09a257efef1a2238ad89d8505c8f0bb0a2e2f377588bb3a6a10718abb76",
+              "tlsh": "c211b582343170f7940ee657fc04233213f3b1e7612b7912a8ed21e827501f81278155"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cursed-modules-999.0.9.tgz",
+              "hashes": {
+                "sha1": "a91afe191da63509d726b484c066c8eb3ff1bc1a",
+                "sha512_sri": "sha512-BygRDx4gLaeqT1KATOgG2loSAgKrJxbqRxez15RV37R/51SMSGN0vFnIFgVwP6EQMry1Rns+NWGXxso1MiBw7g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.9"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "45b6aab954f9b8edbc759c97eabe39d7a070c4dbe852586422761ad0f8c7ad95",
+        "import_time": "2026-07-01T19:11:21.380628096Z",
+        "id": "IN-MAL-2026-007832",
+        "modified_time": "2026-07-01T18:33:03Z",
+        "versions": [
+          "999.0.9"
+        ]
+      }
+    ]
+  }
+}

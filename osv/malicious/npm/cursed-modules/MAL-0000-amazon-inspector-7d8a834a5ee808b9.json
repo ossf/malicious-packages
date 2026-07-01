@@ -1,0 +1,90 @@
+{
+  "modified": "2026-07-01T18:32:27Z",
+  "published": "2026-07-01T18:32:27Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "cursed-modules ships install-time recon, AWS credential theft, and a command-relay backdoor",
+  "details": "On npm install, all three lifecycle hooks (preinstall/install/postinstall) execute install.js, which runs shell reconnaissance (id, find for *flag*, grep for HTB{...} tokens across /), reads candidate flag files, serializes process.env, base64-encodes the bundle, and PUTs it to a remote endpoint. The main module index.js executes a require-time IIFE that, when the host matches a Docker container ID pattern, scrapes AWS environment variables, runs `aws sts get-caller-identity`, lists Secrets Manager entries, and curls the EC2 IMDS endpoint http://169.254.169.254/latest/meta-data/iam/security-credentials/ for IAM role credentials, then PUTs the base64-encoded bundle to http://154.57.164.70:32447. recon.js performs the same host/env collection plus targeted reads of Verdaccio configuration (config.yaml,.verdaccio-db.json, htpasswd) and the installer's.npmrc, exfiltrating to http://154.57.164.76:30728. rce.sh documents a two-way command-relay backdoor against 154.57.164.70:32447: an operator writes shell commands into one slot (ECT-654321) and reads base64-encoded command output from another (ECT-987654), with the install-time and require-time uploaders serving as the victim-side half of the relay. publish-and-arm.sh additionally automates a dependency-confusion attack, publishing the package to public npm and arming a Verdaccio-proxy takeover via a manifest PUT to the same C2 host.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "cursed-modules"
+      },
+      "versions": [
+        "999.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "fb1a8290fef776b6fcc0b411a70929e6907acc26d391ae894a483896d2f335ff",
+              "tlsh": "503144e926fdb83055b137e0a8f904467be7ab2131c3e6d4304d40922bdeab8045b5eb"
+            },
+            {
+              "path": "index.js",
+              "sha256": "b8bff1ad1f58aa616362d9987e547281abd655cab1475812a5c3b1c7760f66f1",
+              "tlsh": "cd51638667f9a412a55831e1a1a710563e93d0137186aae072cdc7c56fdc1bc9273cff"
+            },
+            {
+              "path": "rce.sh",
+              "sha256": "404a822aeb81241f2bceaf4a612ab5b74a1cfd2b8ec375fe5ad5130613e646aa",
+              "tlsh": "fa1123da2520e8f6416e4875eb5d9257a78bfd8900f0295aed4d2ec832442797012037"
+            },
+            {
+              "path": "publish-and-arm.sh",
+              "sha256": "486db09a257efef1a2238ad89d8505c8f0bb0a2e2f377588bb3a6a10718abb76",
+              "tlsh": "c211b582343170f7940ee657fc04233213f3b1e7612b7912a8ed21e827501f81278155"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cursed-modules-999.1.1.tgz",
+              "hashes": {
+                "sha1": "bd55a609385988a713412dbd6622cc500cf0bf73",
+                "sha512_sri": "sha512-d7ZaiCq4gMgRrnIRiU3nXcxQmzyuYmMyNzPTu71fRIiINQnE6TKFH9xOTuaQHQqtsymPkxjtRokdXXdUu1Tabw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.1.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "7d8a834a5ee808b937faac7aed6d638af545bd38563c4a4a4d91fb2af5311ac6",
+        "import_time": "2026-07-01T19:11:20.899380201Z",
+        "id": "IN-MAL-2026-007828",
+        "modified_time": "2026-07-01T18:32:27Z",
+        "versions": [
+          "999.1.1"
+        ]
+      }
+    ]
+  }
+}
