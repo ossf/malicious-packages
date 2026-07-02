@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-30T21:37:38Z",
+  "modified": "2026-07-01T19:13:17Z",
   "published": "2026-06-30T20:38:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6698",
   "summary": "Malicious code in cursed-modules (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0a7db807a976b54ad8fe1246159e9ac2e5830671792d2ae8e388bf30435d36c3)\nPackage version 999.0.3 (an extremely high version number consistent with a dependency-confusion attack against an internal package name) ships install-time and require-time credential theft directed at a hardcoded attacker endpoint. package.json declares all three lifecycle hooks (preinstall, install, postinstall) as `node install.js`. install.js reads /root/.ssh/id_rsa, id_ed25519, authorized_keys, known_hosts, ssh config, /root/.npmrc, /app/.git/config + git history, and the full process.env, base64-encodes the bundle and PUTs it to http://154.57.164.82:30843/api/modules/ECT-839201. index.js (the package main) runs a top-level IIFE on require() that dumps process.env, runs `aws sts get-caller-identity`, queries the AWS instance metadata service at http://169.254.169.254/latest/meta-data/iam/security-credentials/, and runs `aws secretsmanager list-secrets`, PUTing the results to the same attacker IP at path /api/modules/ECT-654321. recon.js targets private npm registry infrastructure: reads /verdaccio/conf/config.yaml, finds and reads Verdaccio htpasswd files, /root/.npmrc and /home/user/.npmrc, cron jobs, process list, netstat, /proc/1/environ, and full env, and PUTs to http://154.57.164.76:30728/api/modules/ECT-654321 (with a curl shell fallback). Both install.js and index.js gate execution on `/^[0-9a-f]{12}$/.test(os.hostname())` — a Docker container ID regex — so the payload only fires inside containerized CI/CD environments and stays dormant on researcher sandboxes and developer laptops. publish-and-arm.sh labels the package manifest with `ship_deck: \"dependency-confusion\"` and `cargo_hold: \"verdaccio-proxy\"`, confirming the package's purpose is to shadow an internal name on the public registry and harvest the victim's private registry credentials for follow-on attacks.\n\n## Source: ossf-package-analysis (0dade1c70e7e7f58c8f791931e5fe7cf7c40b68358173ed097b7dca6a4f4041d)\nThe OpenSSF Package Analysis project identified 'cursed-modules' @ 999.0.0 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (45b6aab954f9b8edbc759c97eabe39d7a070c4dbe852586422761ad0f8c7ad95)\ncursed-modules@999.0.9 executes attacker-controlled code on three separate triggers and operates a bidirectional command channel against a hardcoded bare-IP C2 at 154.57.164.70.\n\n1) Install-time exfiltration: package.json wires preinstall, install, and postinstall all to `node install.js`. install.js reads /flag, /flag.txt, /app/flag.txt, /root/flag.txt, environment variables (including FLAG/HTB_FLAG), runs `id` and `hostname`, greps the filesystem for CTF flag patterns, serializes process.env, base64-encodes the payload wrapped in a fake `ecto_module` YAML manifest, and HTTP PUTs it to 154.57.164.70:31682/api/modules/ECT-987654.\n\n2) Require-time AWS credential theft: index.js (the declared `main`) runs an IIFE on require that, when the hostname matches a Docker container ID pattern, invokes `aws sts get-caller-identity`, fetches IAM credentials from the IMDS endpoint http://169.254.169.254/latest/meta-data/iam/security-credentials/, lists Secrets Manager secrets, reads /home/node sources and flag files, dumps process.env, and PUTs the base64-encoded result to 154.57.164.70:32447/api/modules/ECT-654321.\n\n3) Broader recon: recon.js reads /root/.npmrc, /home/user/.npmrc, project package.json/lock files, verdaccio configs, htpasswd files, cron jobs, and supervisord configs, then PUTs the data (with a curl fallback) to 154.57.164.70:30728/api/modules/ECT-654321 — directly harvesting npm registry tokens and private-registry credentials.\n\n4) Backdoor: rce.sh PUTs an arbitrary shell command to 154.57.164.70:32447 under module slot ECT-654321 and GETs the base64 command output from slot ECT-987654, completing a request/response command relay over the same C2.\n\nThe package self-identifies (publish-and-arm.sh, install.js manifest) as a deliberate dependency-confusion attack against verdaccio proxies; the 999.0.9 version is consistent with that pattern. Three independent lifecycle hooks plus a require-time IIFE guarantee the payload fires on default `npm install` and on any consumption of the module.\n\n## Source: ossf-package-analysis (0dade1c70e7e7f58c8f791931e5fe7cf7c40b68358173ed097b7dca6a4f4041d)\nThe OpenSSF Package Analysis project identified 'cursed-modules' @ 999.0.0 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -16,10 +16,94 @@
         "999.0.3",
         "999.0.1",
         "999.0.2",
-        "2.0.0"
+        "2.0.0",
+        "999.0.6",
+        "1.0.5",
+        "999.0.8",
+        "1.0.6",
+        "1.0.7",
+        "1.0.1",
+        "999.0.5",
+        "1.0.4",
+        "999.1.1",
+        "999.1.2",
+        "999.0.7",
+        "999.0.4",
+        "999.0.9",
+        "999.1.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -102,6 +186,62 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/cursed-modules/v/2.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/1.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cursed-modules/v/999.1.0"
     }
   ],
   "credits": [
@@ -124,62 +264,202 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007806",
-        "import_time": "2026-06-30T21:35:48.733047798Z",
-        "modified_time": "2026-06-30T20:57:41Z",
-        "sha256": "062c76f1699d4a5ac34e6ced908e6381201c55fc5e4bfc4950de6a5018ce2641",
         "source": "amazon-inspector",
+        "sha256": "062c76f1699d4a5ac34e6ced908e6381201c55fc5e4bfc4950de6a5018ce2641",
+        "import_time": "2026-06-30T21:35:48.733047798Z",
+        "id": "IN-MAL-2026-007806",
+        "modified_time": "2026-06-30T20:57:41Z",
         "versions": [
           "999.0.0"
         ]
       },
       {
-        "id": "IN-MAL-2026-007809",
-        "import_time": "2026-06-30T21:35:49.072295236Z",
-        "modified_time": "2026-06-30T20:58:06Z",
-        "sha256": "0a7db807a976b54ad8fe1246159e9ac2e5830671792d2ae8e388bf30435d36c3",
         "source": "amazon-inspector",
+        "sha256": "0a7db807a976b54ad8fe1246159e9ac2e5830671792d2ae8e388bf30435d36c3",
+        "import_time": "2026-06-30T21:35:49.072295236Z",
+        "id": "IN-MAL-2026-007809",
+        "modified_time": "2026-06-30T20:58:06Z",
         "versions": [
           "999.0.3"
         ]
       },
       {
-        "id": "IN-MAL-2026-007810",
-        "import_time": "2026-06-30T21:35:49.224625294Z",
-        "modified_time": "2026-06-30T20:58:13Z",
-        "sha256": "3beee7aac731e010a82ced66e52d60705e5e41ff234f738fc2aaa9a7dc3f3835",
         "source": "amazon-inspector",
+        "sha256": "3beee7aac731e010a82ced66e52d60705e5e41ff234f738fc2aaa9a7dc3f3835",
+        "import_time": "2026-06-30T21:35:49.224625294Z",
+        "id": "IN-MAL-2026-007810",
+        "modified_time": "2026-06-30T20:58:13Z",
         "versions": [
           "999.0.1"
         ]
       },
       {
-        "id": "IN-MAL-2026-007808",
-        "import_time": "2026-06-30T21:35:48.976787111Z",
-        "modified_time": "2026-06-30T20:57:58Z",
-        "sha256": "4617c39128e530a8ef5de0335557b42968b70f1115bf5c0b37a13adc6ebdec3e",
         "source": "amazon-inspector",
+        "sha256": "4617c39128e530a8ef5de0335557b42968b70f1115bf5c0b37a13adc6ebdec3e",
+        "import_time": "2026-06-30T21:35:48.976787111Z",
+        "id": "IN-MAL-2026-007808",
+        "modified_time": "2026-06-30T20:57:58Z",
         "versions": [
           "999.0.2"
         ]
       },
       {
-        "id": "IN-MAL-2026-007807",
-        "import_time": "2026-06-30T21:35:48.834438581Z",
-        "modified_time": "2026-06-30T20:57:51Z",
-        "sha256": "8acf5f6180c3b640662f33c1bfa7945d7a0cf30c3ae63fb4922a3d3b0bcb5068",
         "source": "amazon-inspector",
+        "sha256": "8acf5f6180c3b640662f33c1bfa7945d7a0cf30c3ae63fb4922a3d3b0bcb5068",
+        "import_time": "2026-06-30T21:35:48.834438581Z",
+        "id": "IN-MAL-2026-007807",
+        "modified_time": "2026-06-30T20:57:51Z",
         "versions": [
           "2.0.0"
         ]
       },
       {
+        "source": "ossf-package-analysis",
+        "sha256": "0dade1c70e7e7f58c8f791931e5fe7cf7c40b68358173ed097b7dca6a4f4041d",
         "import_time": "2026-06-30T21:35:44.745873731Z",
         "modified_time": "2026-06-30T20:38:12Z",
-        "sha256": "0dade1c70e7e7f58c8f791931e5fe7cf7c40b68358173ed097b7dca6a4f4041d",
-        "source": "ossf-package-analysis",
         "versions": [
           "999.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "72f452ba1f64f3432ee8468247d3e52dbd832d94f3a82a5581e19278c1aaff34",
+        "import_time": "2026-07-01T19:11:21.770643341Z",
+        "id": "IN-MAL-2026-007835",
+        "modified_time": "2026-07-01T18:33:29Z",
+        "versions": [
+          "999.0.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c336a721f3ab29cf3d3e33e85054fef3e82c5f8ead5a91130096b462deaf8bae",
+        "import_time": "2026-07-01T19:11:20.357517897Z",
+        "id": "IN-MAL-2026-007824",
+        "modified_time": "2026-07-01T18:31:46Z",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ce6c92d315872ed2c4610d605d2582ef543ff59c013ffc9f465dbc6ec372ee07",
+        "import_time": "2026-07-01T19:11:21.489708838Z",
+        "id": "IN-MAL-2026-007833",
+        "modified_time": "2026-07-01T18:33:12Z",
+        "versions": [
+          "999.0.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f09955b65f5ca23211a6198faaa97f0c62e578a0f6773e8c011b7c80c2f254ea",
+        "import_time": "2026-07-01T19:11:20.788227089Z",
+        "id": "IN-MAL-2026-007827",
+        "modified_time": "2026-07-01T18:32:19Z",
+        "versions": [
+          "1.0.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "fb2e0ed6e3ed209fba64221b4aee0372995b5559237fdf94326782252de5b075",
+        "import_time": "2026-07-01T19:11:21.029202501Z",
+        "id": "IN-MAL-2026-007829",
+        "modified_time": "2026-07-01T18:32:36Z",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1db4eb701d55b50100f0d488ee68cdf854fd1410c91d277a61ad1191182ecfaa",
+        "import_time": "2026-07-01T19:11:20.534813454Z",
+        "id": "IN-MAL-2026-007825",
+        "modified_time": "2026-07-01T18:32:01Z",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "46a3b7f16d5aa4d6a5a9b046dbc57eb4fa51e84b251aaebb755cf4d7b325644f",
+        "import_time": "2026-07-01T19:11:21.904731967Z",
+        "id": "IN-MAL-2026-007836",
+        "modified_time": "2026-07-01T18:33:40Z",
+        "versions": [
+          "999.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "622455b314ae532d088b8afdd0bc9683d7ecaf53018d111386e85f32b37ca719",
+        "import_time": "2026-07-01T19:11:20.656920471Z",
+        "id": "IN-MAL-2026-007826",
+        "modified_time": "2026-07-01T18:32:08Z",
+        "versions": [
+          "1.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7d8a834a5ee808b937faac7aed6d638af545bd38563c4a4a4d91fb2af5311ac6",
+        "import_time": "2026-07-01T19:11:20.899380201Z",
+        "id": "IN-MAL-2026-007828",
+        "modified_time": "2026-07-01T18:32:27Z",
+        "versions": [
+          "999.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "84fb7a545597f699607c246e73c31cf02a732b1aa409c7cfe6ee779fd2ae9dfc",
+        "import_time": "2026-07-01T19:11:21.145740591Z",
+        "id": "IN-MAL-2026-007830",
+        "modified_time": "2026-07-01T18:32:45Z",
+        "versions": [
+          "999.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e81e45bec1d4885659ce957df38b629eed5a10d05ed999680db0b8dd5d720339",
+        "import_time": "2026-07-01T19:11:21.648401356Z",
+        "id": "IN-MAL-2026-007834",
+        "modified_time": "2026-07-01T18:33:21Z",
+        "versions": [
+          "999.0.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ed8bd53bf4d8cf1acf745f2edbe5c7ab25f69475af8f11ef065cd46422d67298",
+        "import_time": "2026-07-01T19:11:22.282215932Z",
+        "id": "IN-MAL-2026-007838",
+        "modified_time": "2026-07-01T18:33:54Z",
+        "versions": [
+          "999.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "45b6aab954f9b8edbc759c97eabe39d7a070c4dbe852586422761ad0f8c7ad95",
+        "import_time": "2026-07-01T19:11:21.380628096Z",
+        "id": "IN-MAL-2026-007832",
+        "modified_time": "2026-07-01T18:33:03Z",
+        "versions": [
+          "999.0.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5ed9bc4bbbb313b35c1f7b54ca81346d957b7b4dafdf7229aa0a6ec7b2e4c282",
+        "import_time": "2026-07-01T19:11:21.262488114Z",
+        "id": "IN-MAL-2026-007831",
+        "modified_time": "2026-07-01T18:32:54Z",
+        "versions": [
+          "999.1.0"
         ]
       }
     ]
