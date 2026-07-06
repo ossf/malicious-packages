@@ -1,0 +1,80 @@
+{
+  "modified": "2026-07-06T03:20:38Z",
+  "published": "2026-07-06T03:20:38Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "@marketfront/footer postinstall harvests installer secrets and exfiltrates via DNS TXT tunneling",
+  "details": "On `npm install`, scripts/postinstall.js — a 160KB obfuscator.io-style bundle with an RC4-decoded string array and runtime-assembled identifiers — collects installer-side secrets and host identity and tunnels them out over DNS to an attacker-controlled resolver. Data collection covers the entirety of `process.env` (bulk CI/build secrets such as AWS_*, GITHUB_TOKEN, NPM_TOKEN, database credentials), host identifiers from `os.userInfo()`/`os.hostname()`/`os.networkInterfaces()`, Windows environment variables (USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, TEMP, PROGRAMDATA, PROCESSOR_ARCHITECTURE), and the contents of well-known home-directory secret files including ~/.aws, ~/.ssh, ~/.npmrc, ~/.docker, ~/.gitconfig, ~/.netrc, and browser/shell profile paths. The harvested payload is JSON-serialized, gzipped via `zlib.gzipSync`, XOR-keyed, base32-encoded, split into 50-character chunks, and each chunk is emitted as a DNS TXT query of the form `\u003cseq\u003e.\u003ctotal\u003e.\u003cidx\u003e.\u003crand\u003e.\u003csubdomain\u003e.\u003cattacker-host\u003e` using a `dns.Resolver`'s `resolveTxt` — a channel specifically chosen to bypass HTTP egress filtering common on CI/build networks. The package's declared purpose (\"internal database utilities with connection pooling, query builder and migration support\") is a cover story: `main` points at `dist/index.js`, which only re-exports an absent `src/index.js`, so the tarball ships no functional library code — only the obfuscated postinstall. The `@marketfront` scope and `marketfront.io` publisher metadata additionally have the shape of an internal-name impersonation targeting a specific organization (dependency-confusion pattern).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@marketfront/footer"
+      },
+      "versions": [
+        "7.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "d8725facfc168ead9c030bd14e81cfb65b19696ee1605c83261197320b1d3c7e",
+              "tlsh": "72f3cb892740d447d89fdeff7e61e6f4e11a7cc2c3c0244af714b96cf89852a9a48b81"
+            },
+            {
+              "path": "package.json",
+              "sha256": "f15c779a9b1cfc00c16a2798e6b389d675088f1c45481bad8a16c9df0fa9f1b7",
+              "tlsh": "d1118c31e6228c2336d525dbbd751942b8355d2f0595fc2973c2816c4b8e16a70fe73d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "footer-7.0.0.tgz",
+              "hashes": {
+                "sha1": "351482b6eb859fe93d00aa316a70c8e4f52e3feb",
+                "sha512_sri": "sha512-kU6WdgMmnxC88co79l8AcO2c8YSrL/aV0x+jlCedBGW8Ag3i7a15gbyZucAOPFio9d6TaY2ZPpNpx7aSlZbcxA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/footer/v/7.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "df4b30bc8f0ba99a70d152a0b6aa01a9acc3605505c3c3c31c8c03cc5ea4a639",
+        "import_time": "2026-07-06T04:58:10.840028565Z",
+        "id": "IN-MAL-2026-008028",
+        "modified_time": "2026-07-06T03:20:38Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
+  }
+}

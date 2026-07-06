@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-06T03:19:25Z",
+  "published": "2026-07-06T03:19:25Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "@marketfront/commonecommerce ships an obfuscated postinstall dropper that harvests installer env, host, and file data and exfiltrates via HTTPS and DNS tunneling",
+  "details": "This package is a malicious install-time credential/host harvester wearing a fake corporate-telemetry cover story. On `npm install`, the `postinstall` lifecycle hook runs `scripts/postinstall.js`, a 162 KB obfuscator.io-style bundle that uses a shuffled string array with RC4+base64 decoders (`a0d/a0e/a0f`) to hide every literal, including all `require(...)` module names (`fs`, `http`, `https`, `dns`, `os`) and destination hosts. At install time it collects `process.env` in full, hostname/username/OS/CPU/arch, the npm user-agent, and named Windows env vars (`USERDOMAIN`, `COMPUTERNAME`, `APPDATA`, `LOCALAPPDATA`, `PROGRAMDATA`, `TEMP`, `NODE_OPTIONS`), plus reads local files via `fs.readFileSync` and directory listings via `readdirSync`. The collected data is RC4-encrypted and shipped over two parallel channels: (1) an HTTPS POST to a runtime-assembled host (`lpqgnt` builds `{hostname, port, path, method:'POST',...}` from decoded string-array entries), and (2) DNS-label tunneling (`oaulmd` chunks the encrypted payload with `/.{1,50}/g` and issues `resolve('\u003cchunk\u003e.\u003cidx\u003e.\u003crand\u003e.\u003chost\u003e')` queries against a hardcoded resolver) — a covert channel designed to bypass HTTP egress filtering. Before exfiltrating, the payload inspects `process.argv`, `process.execPath`, `process.env.NODE_OPTIONS`, and a wall-clock timing check to detect analysis environments, and defers execution behind a randomized `setTimeout`. The package presents itself as an internal 'Marketfront Platform Engineering' metrics client (author `platform@marketfront.io`, homepage `docs.marketfront.io`, README claiming 'anonymous telemetry to telemetry.marketfront.io' and instructing users to point `.npmrc` at `npm.marketfront.io`), but none of that infrastructure exists as a real organization — it is dependency-confusion cover. The advertised library API is non-functional: `dist/index.js` is a two-line stub re-exporting `../src/index.js`, and `src/` is not shipped, so the postinstall dropper is the only reachable code.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@marketfront/commonecommerce"
+      },
+      "versions": [
+        "7.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "c085083dca3ad2b17743ce8a4f71e959a3ee469e7caea7d780300d7940881b2e",
+              "tlsh": "a4f3ec892740d482d95fefbf7f61e6f4e0197cc6c3c5284af714b52cf89852a9a48b81"
+            },
+            {
+              "path": "package.json",
+              "sha256": "84efc12ab8808c48a1b8a27e7dfcbf486abf6a6c9958532207f350694425886c",
+              "tlsh": "8d11aa32c6214c3336d5299abe742d42b96a4d2f1895fc1c63c3406c4bcd16a21fe73d"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "ef33b25b7f17c5fc669db0d5c406e2eb41b8559b29f093d8aac7e3989dc2647a",
+              "tlsh": "35a0112a2ab2a282028200c2c0c3aa0200eac030008820220a088aac8088cc800ec8a8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "commonecommerce-7.0.0.tgz",
+              "hashes": {
+                "sha1": "2ddfcc51d1175208807fc81c008a51eb55cb9327",
+                "sha512_sri": "sha512-WzTF1uVHxcMTL8jvDS5MyWYRwstCXmHXINQYeICNhaI5vylJbYLT9DLre2aqK+E90YA6OIoZjAB7fZjU0kjX9Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/commonecommerce/v/7.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "b3c312ca92f800ad787ffb20a7c333e8308f503e9baa461359a978a9d9e808e9",
+        "import_time": "2026-07-06T04:58:10.413885208Z",
+        "id": "IN-MAL-2026-008020",
+        "modified_time": "2026-07-06T03:19:25Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
+  }
+}
