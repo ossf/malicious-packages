@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-02T00:00:00Z",
+  "modified": "2026-07-06T04:59:51Z",
   "published": "2026-07-02T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6787",
   "summary": "Malicious code in @marketfront/navbar (npm)",
-  "details": "The @marketfront/navbar package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.",
+  "details": "The @marketfront/navbar package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2a0a9490d91761fdf242bf7e3b9a97cc4f0df29f1306d7e476dad08aad25c17a)\nThe package registers scripts/postinstall.js as an npm postinstall hook. The script is heavily obfuscated (obfuscator.io-style string-array with RC4 decoder, hex-named functions, runtime string decoding) and, on npm install, harvests a full profile of the installing machine: os.hostname(), os.userInfo().username, os.homedir(), os.platform(), os.arch(), os.networkInterfaces(), process.argv0, process.cwd(), the complete process.env, npm_config_user_agent, and Windows-specific USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, TEMP, and PROGRAMDATA, along with the package name and version. The collected data is JSON-serialized, zlib-compressed, XOR-encrypted, and exfiltrated over two channels to a runtime-decoded remote host: an HTTPS POST and a DNS TXT tunnel that chunks the payload into subdomain labels via a custom dns.Resolver with attacker-specified servers. Payload execution is gated by anti-analysis checks — inspection of process.argv and NODE_OPTIONS for 'node_modules' / '.npm' tokens, a Date.now() timing threshold, and a global sentinel for single execution — designed to fire on real developer and CI installs while staying silent under scanners. The package presents itself as an 'Internal structured logger' under the name @marketfront/navbar, but has no working library surface: dist/index.js re-exports../src/index.js, which is not shipped in the tarball. The entire functional behavior is the install-time stealer. Developer and CI process environments routinely contain cloud provider tokens, npm publish tokens, registry credentials, and CI secrets, so the impact is credential compromise of the installer's account/infrastructure.\n",
   "affected": [
     {
       "package": {
@@ -21,14 +21,45 @@
           ]
         }
       ],
+      "versions": [
+        "7.0.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "0fbc5fed44589787d688a4a9c1b398db09c301c6fed388d97a1bbc862db31d99",
+              "tlsh": "7ef3db892740d453d85fdeffbf61e6f4e1197cc6c3c1284af714b86ce89852a9a48b81"
+            },
+            {
+              "path": "package.json",
+              "sha256": "886ca007a5e6dfde3ca2139a1d3e3732b0f46eb3bfcc12451cdbea1e80c5848c",
+              "tlsh": "4511eb31c6369c3372d4219abdb41e02b8364daf0889fc1963c3412c0b8d1ab10fda3d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "navbar-7.0.0.tgz",
+              "hashes": {
+                "sha1": "b38d6d07886b08f13c1d522c667a06f8cbcc6406",
+                "sha512_sri": "sha512-8IEM004fWJ1otz7mxF665ONKA1frOqOF27qvM6bQ1w5ZQija+9RTbBxHP3g5wwA4B7LiwcJ4N4Rji4odU8TKkQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -36,9 +67,20 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/marketfront-dependency-confusion-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/navbar/v/7.0.0"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -48,6 +90,17 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "2a0a9490d91761fdf242bf7e3b9a97cc4f0df29f1306d7e476dad08aad25c17a",
+        "import_time": "2026-07-06T04:58:11.100821248Z",
+        "id": "IN-MAL-2026-008035",
+        "modified_time": "2026-07-06T03:21:37Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
   }
 }

@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-02T00:00:00Z",
+  "modified": "2026-07-06T04:59:51Z",
   "published": "2026-07-02T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6781",
   "summary": "Malicious code in @marketfront/gotoauthpopup (npm)",
-  "details": "The @marketfront/gotoauthpopup package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.",
+  "details": "The @marketfront/gotoauthpopup package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (108121fd7d553c24c0990884bc6854df559111a77ae72d65a311d6f74fde6954)\n@marketfront/gotoauthpopup@7.0.0 declares a postinstall hook (scripts.postinstall: 'node scripts/postinstall.js') that automatically runs on npm install. scripts/postinstall.js is a single ~165 KB obfuscator.io-style bundle: an RC4-decoded rotated string array, a self-defending IIFE, and a guard that inspects process.argv and process.env.NODE_OPTIONS for debugger/inspector markers plus a busy-loop timing check and only executes the payload when no debugger is detected. When the guard passes, the script harvests installer host identity (hostname, username, homedir, arch, cpus, platform, release, network interfaces), a bulk dump of process.env, Windows-specific env (USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, PROGRAMDATA, TEMP), enumerates the user's home directory via fs.readdirSync, and reads targeted config/credential files via fs.readFileSync. The collected data is RC4-encrypted and POSTed via https.request to a C2 host that is assembled at runtime from atob() fragments so the destination does not appear as a plaintext string in the source. A parallel covert channel base32-encodes the same ciphertext, splits it into ~50-character DNS labels, and issues dns.resolve4() queries against the same host used as the authoritative resolver, providing DNS-tunnel exfiltration to bypass HTTP egress filtering. The package additionally impersonates internal corporate infrastructure — repository github.marketfront.io, bugs jira.marketfront.io, homepage docs.marketfront.io, and README instructing developers to configure registry=https://npm.marketfront.io — a dependency-confusion cover story to induce installation of what appears to be an internal auth SDK. The declared main points at../src/index.js which is not shipped, so the package has no legitimate library functionality; its only on-install effect is the dropper. README framing of the postinstall as 'anonymous telemetry' does not apply — the behavior is bulk credential and configuration harvest with anti-analysis evasion and a covert side channel.\n",
   "affected": [
     {
       "package": {
@@ -21,14 +21,45 @@
           ]
         }
       ],
+      "versions": [
+        "7.0.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "487ad3f51880831c28236164af5852e251b5d10759969ac9aeeea070827537d6",
+              "tlsh": "31f3eb892700d493d95fdeff7f61e6f4e11a7cc6c3c1244af714b96ce89852a9a48b80"
+            },
+            {
+              "path": "package.json",
+              "sha256": "3e6ffaa71adb259f768ded1e7c403dd3f60d9c3897a8c3a0cf91f63f34a9783f",
+              "tlsh": "0211c931c5325c33aad629aaad701942b966593f1896fc1c63c2809c4b8d46b11fda7e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "gotoauthpopup-7.0.0.tgz",
+              "hashes": {
+                "sha1": "5cf27a902bab0d16cb65b65a2fd26d75f188627f",
+                "sha512_sri": "sha512-6/y82d+bMiFiqSKRVeB30eJa315xpbhyT37zCqGvEQamRh5oednjB/ZuiqM1a4YeYpLyVtqcvJ1dEHlINapF6w=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -36,9 +67,20 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/marketfront-dependency-confusion-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/gotoauthpopup/v/7.0.0"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -48,6 +90,17 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "108121fd7d553c24c0990884bc6854df559111a77ae72d65a311d6f74fde6954",
+        "import_time": "2026-07-06T04:58:10.910257641Z",
+        "id": "IN-MAL-2026-008030",
+        "modified_time": "2026-07-06T03:20:55Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
   }
 }

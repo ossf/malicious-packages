@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-02T00:00:00Z",
+  "modified": "2026-07-06T04:59:51Z",
   "published": "2026-07-02T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6772",
   "summary": "Malicious code in @marketfront/customdealsfeed (npm)",
-  "details": "The @marketfront/customdealsfeed package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.",
+  "details": "The @marketfront/customdealsfeed package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dcdb247433e08e6bcd6ad2d50beedf663648e089d745d4608959d0e42efac2af)\nThe package has no legitimate runtime surface: package.json 'main' re-exports../src/index.js which is not shipped in the tarball, so require() throws. The only executed code is scripts/postinstall.js, a ~165KB obfuscator.io-style payload that runs automatically on npm install. It uses a string-array decoder plus RC4 and XOR routines to hide its behavior, and contains a sandbox-evasion guard that suppresses execution when NODE_OPTIONS or the package name match hardcoded analysis-environment values. At install time the decoded payload collects host and account identity (os.userInfo, hostname, platform, arch, network interfaces), enumerates environment variables (including USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, TEMP, PROGRAMDATA, npm_config_user_agent and a full process.env dump), executes shell commands via child_process, and reads candidate credential/wallet/keystore files under APPDATA/LOCALAPPDATA/TEMP/PROGRAMDATA using a JSON key/value walker. The collected data is bundled into an encrypted JSON blob and transmitted over HTTPS to a hardcoded endpoint, with a DNS side-channel that splits ciphertext into ~50-character chunks encoded as sub.sub.HOST queries to bypass egress filtering. The @marketfront scope and README instruction to add 'registry=https://npm.marketfront.io' to.npmrc — pointing at non-existent infrastructure — is a dependency-confusion lure targeting organizations that have not correctly pinned an internal scope, with a fake 'anonymous telemetry to telemetry.marketfront.io' cover story pre-authorizing the observed network activity.\n",
   "affected": [
     {
       "package": {
@@ -21,14 +21,50 @@
           ]
         }
       ],
+      "versions": [
+        "7.0.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "e84f1414abee6b653f4120484c2764621f391376238bbe01414d4caf9d60abb5",
+              "tlsh": "2ef3fb892744d482d95fdfbfbf21e6f4e11a7cc6c3c1244af714b86cf89852a9a58780"
+            },
+            {
+              "path": "package.json",
+              "sha256": "715c7e5d2b8d9649bb985d935d7e35300b299cce09d99c9f8606231d42e1fa8f",
+              "tlsh": "3a11aa31c6254c3336e5299afe785e42b966986b1895fc1ca3c3402c47cd16e21fea3e"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "ef33b25b7f17c5fc669db0d5c406e2eb41b8559b29f093d8aac7e3989dc2647a",
+              "tlsh": "35a0112a2ab2a282028200c2c0c3aa0200eac030008820220a088aac8088cc800ec8a8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "customdealsfeed-7.0.0.tgz",
+              "hashes": {
+                "sha1": "dad50bfb3d761a1e5899b9ee263ca705bf851f92",
+                "sha512_sri": "sha512-YqU5cKKmVIWhwiM3dEim7rV04tbOtIiRV6OAIgzM+cQsQbvoZ1E9rfZgja9v6MzKQ2mFz4WvjaCW/kxbEIgcLg=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -36,9 +72,20 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/marketfront-dependency-confusion-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/customdealsfeed/v/7.0.0"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -48,6 +95,17 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "dcdb247433e08e6bcd6ad2d50beedf663648e089d745d4608959d0e42efac2af",
+        "import_time": "2026-07-06T04:58:10.520826654Z",
+        "id": "IN-MAL-2026-008022",
+        "modified_time": "2026-07-06T03:19:45Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
   }
 }

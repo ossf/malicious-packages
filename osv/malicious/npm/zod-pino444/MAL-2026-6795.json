@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-06T03:14:21Z",
+  "modified": "2026-07-06T04:59:58Z",
   "published": "2026-07-06T03:06:05Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6795",
   "summary": "Malicious code in zod-pino444 (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (bcb90d28a4c4697db5173503735e9c4a9cbf9e9360265834b9b307bfcc3c6f3b)\nThe package name mimics the popular `zod` and `pino` libraries but its shipped code implements a credential-harvest and relay pipeline that fires on install. `scripts/postinstall-agent.mjs` runs as a postinstall lifecycle hook, performing host reconnaissance (ping/GET/id) before invoking the bundled agent modules under `dist/`. `dist/discordRelayUpload.js` POSTs collected data to Discord relay endpoints (with base64-encoded payload construction and network reconnaissance on lines 39, 227, 306, 321, 398). `dist/secretScan/agentStartupAudit.js` and `dist/secretScan/contentScanner.js` scan for secrets and exfiltrate them via `fetch` calls to `https://huggingface.co` endpoints (lines 490, 508, 563). `dist/hfCredentials.js` and `dist/deploymentDefaults.js` decode base64-embedded configuration/credentials at load time. The typosquat-style name, obfuscated base64 payloads across multiple modules, install-time execution, and hardcoded exfiltration destinations together match the active-attack fingerprint (credential collection + hardcoded C2 + install-time auto-execution). The safety filter withheld traced-code output for this package, consistent with operational malware content.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (560c3d47344d4da5dffac230236b5248d2f1856c221ffac7ff72d4e3b197957b)\nPackage zod-pino444@1.0.131 is a credential/secret harvester disguised behind a benign-sounding name. scripts/postinstall-agent.mjs is a lifecycle-triggered agent that runs on `npm install` and performs host reconnaissance (ping/GET, id enumeration). dist/discordRelayUpload.js is an exfiltration channel that POSTs collected data using base64-encoded payloads to remote endpoints (Discord relay pattern). dist/secretScan/contentScanner.js and dist/secretScan/agentStartupAudit.js implement a secret-scanning pipeline that harvests credentials from the installer's filesystem and transmits results to hardcoded huggingface.co endpoints via fetch(). dist/hfCredentials.js carries base64-encoded credential material used to authenticate the exfil channel. dist/deploymentDefaults.js and scripts/encode-deployment.mjs contain base64-encoded configuration/payload data used by the agent. dist/relayServer.js implements a persistent relay component. The combination of an auto-executed postinstall agent + on-host secret scanning + base64-obfuscated payloads + hardcoded outbound POST/fetch to attacker-controlled relay endpoints satisfies the active-attack fingerprint for installer-side credential theft.\n",
   "affected": [
     {
       "package": {
@@ -13,10 +13,16 @@
       },
       "versions": [
         "1.0.128",
-        "1.0.129"
+        "1.0.129",
+        "1.0.131"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -92,6 +98,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/zod-pino444/v/1.0.129"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zod-pino444/v/1.0.131"
     }
   ],
   "credits": [
@@ -106,23 +116,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007957",
-        "import_time": "2026-07-06T03:12:34.141087459Z",
-        "modified_time": "2026-07-06T03:06:05Z",
-        "sha256": "94d359a15f76e30c9a9140d2ca33e502c5ab39acf9a12dffa9cd865831bc919d",
         "source": "amazon-inspector",
+        "sha256": "94d359a15f76e30c9a9140d2ca33e502c5ab39acf9a12dffa9cd865831bc919d",
+        "import_time": "2026-07-06T03:12:34.141087459Z",
+        "id": "IN-MAL-2026-007957",
+        "modified_time": "2026-07-06T03:06:05Z",
         "versions": [
           "1.0.128"
         ]
       },
       {
-        "id": "IN-MAL-2026-007959",
-        "import_time": "2026-07-06T03:12:34.212355944Z",
-        "modified_time": "2026-07-06T03:06:20Z",
-        "sha256": "bcb90d28a4c4697db5173503735e9c4a9cbf9e9360265834b9b307bfcc3c6f3b",
         "source": "amazon-inspector",
+        "sha256": "bcb90d28a4c4697db5173503735e9c4a9cbf9e9360265834b9b307bfcc3c6f3b",
+        "import_time": "2026-07-06T03:12:34.212355944Z",
+        "id": "IN-MAL-2026-007959",
+        "modified_time": "2026-07-06T03:06:20Z",
         "versions": [
           "1.0.129"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "560c3d47344d4da5dffac230236b5248d2f1856c221ffac7ff72d4e3b197957b",
+        "import_time": "2026-07-06T04:58:10.180038222Z",
+        "id": "IN-MAL-2026-008014",
+        "modified_time": "2026-07-06T03:18:35Z",
+        "versions": [
+          "1.0.131"
         ]
       }
     ]
