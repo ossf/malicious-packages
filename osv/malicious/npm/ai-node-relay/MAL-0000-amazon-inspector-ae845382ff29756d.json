@@ -1,0 +1,66 @@
+{
+  "modified": "2026-07-08T22:58:02Z",
+  "published": "2026-07-08T22:58:02Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Obfuscated relay main self-executes a Fastify server and accepts gateway-controlled encryption-config overwrites",
+  "details": "ai-node-relay ships dist/index.js as its npm main entry, processed with javascript-obfuscator (string-array rotation, _0x-prefixed identifiers, base64 string decoder). The file ends with a top-level main() invocation that boots a Fastify server bound to 0.0.0.0:4001 and starts a heartbeat loop — any consumer who does `require('ai-node-relay')` immediately spawns a public-interface listener rather than getting a library handle. On startup the relay collects host fingerprint data (os.cpus, totalmem/freemem, platform, release, arch, uptime) and POSTs it with nodeId/url to `${GATEWAY_URL}/api/internal/node/register`; the destination is operator-configured via env var (default http://localhost:3007), matches the documented registration flow, and does not include installer secrets or an env-var dump. During periodic syncFromGateway, the gateway's JSON response is allowed to overwrite process.env.ENCRYPTION_KEY, ENCRYPTION_SECRET, ENCRYPTION_SALT, ENCRYPTION_AAD, and ENCRYPTION_ALGORITHM in the running process — a legitimate control-plane behavior given the operator chose the gateway, but one that materially expands the trust placed in whatever URL is configured. There is no install-time lifecycle hook, no fetch-and-execute of remote code, no credential scraping from ~/.aws/~/.ssh/~/.npmrc, and no hardcoded attacker destination. The combined pattern (obfuscation hiding the control flow + require()-time server bind to 0.0.0.0 + gateway-driven mutation of crypto material) warrants human review of maintainer trust and README accuracy before recommending the package, but it does not by itself constitute a supply-chain attack against installers.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ai-node-relay"
+      },
+      "versions": [
+        "0.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "beca9444ad766c56d0d38fc22454e52326ad1695aaf938b8d8be3b174562e6dc",
+              "tlsh": "dc0407052bd0a9a4634a4ffb7317f4e1e05b0d9a3849498fe29dbc64789ab13f9f0435"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ai-node-relay/v/0.0.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "ae845382ff29756db63bf611b9b6bdbd49c44be3bcc8b283512e6590182ac48b",
+        "import_time": "2026-07-08T23:27:55.653430617Z",
+        "id": "IN-MAL-2026-008957",
+        "modified_time": "2026-07-08T22:58:02Z",
+        "versions": [
+          "0.0.2"
+        ]
+      }
+    ]
+  }
+}

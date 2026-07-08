@@ -1,0 +1,71 @@
+{
+  "modified": "2026-07-08T23:05:00Z",
+  "published": "2026-07-08T23:05:00Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Conditional relay of caller traffic to third-party Render endpoint plus hardcoded default API key",
+  "details": "common-tg-service@1.3.222 ships two concerning runtime behaviors that activate when a consuming NestJS app mounts and uses the library, not at install or import time. (1) dist/utils/fetchWithTimeout.js hardcodes https://helper-thge.onrender.com/execute-request as a fallback destination: when an upstream HTTP call returns 403 or 495 and the consumer has not set process.env.bypassURL, the utility POSTs the original request — including the target URL, headers (which may carry consumer-supplied auth tokens), and body — to that Render-hosted endpoint controlled by a third party. (2) dist/guards/auth.guard.js accepts the static string 'santoor' as a valid API key whenever process.env.X_API_KEY is unset, and AppController exposes a generic /execute-request HTTP proxy guarded by that AuthGuard, enabling SSRF / arbitrary-traffic relay through any deployment that mounts AppModule without overriding the default. Neither path executes on `npm install` or on `require()`; both require the consumer to wire the library into a running server. The relay endpoint and the default-key + open-proxy combination together create a meaningful operational risk for downstream consumers, and the relay shape (caller traffic and headers silently forwarded to an author-controlled host on error) overlaps with the silent-relay threat class enough to warrant human review.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "common-tg-service"
+      },
+      "versions": [
+        "1.3.222"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/utils/fetchWithTimeout.js",
+              "sha256": "ab846b4523706a54989794d987a57d82076372ff2ae1363b8b3d849897c1831f",
+              "tlsh": "4e32725a2bf3552701e320a8922f64123633a9071a19fd507b5c97117f8859ceef3bd9"
+            },
+            {
+              "path": "dist/guards/auth.guard.js",
+              "sha256": "c551806048a3c62f8207520667f12985cf7af79ff896e5d36a5fe4aa63b4e86d",
+              "tlsh": "be1242da21f77560c32291ad8f0b6206b124e457380dedb57eac51d5afc9168c3f2aa8"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.222"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "6d4f3d2050ce23d25389449cc57d06e2e090679c70b82ce50179c8c2d71e991e",
+        "import_time": "2026-07-08T23:27:58.821162169Z",
+        "id": "IN-MAL-2026-009006",
+        "modified_time": "2026-07-08T23:05:00Z",
+        "versions": [
+          "1.3.222"
+        ]
+      }
+    ]
+  }
+}
