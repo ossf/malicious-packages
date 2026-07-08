@@ -1,0 +1,105 @@
+{
+  "modified": "2026-07-08T19:30:30Z",
+  "published": "2026-07-08T19:30:30Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "logger-daemon-regex ships persistent C2 agent, whole-disk credential/wallet harvester, and shell-history exfiltration under an Autodesk Forge cover story",
+  "details": "package.json advertises the package as a 'Node.js integration layer for Autodesk Forge' but the shipped code is a full information-stealer / remote-access implant. On npm install, scripts.postinstall chains scripts/postinstall-agent.mjs, which (a) copies dist/ into a hidden per-user runtime prefix at \u003cuserdata\u003e/.logger-daemon-regex/runtime/v\u003cversion\u003e/ so the agent survives `npm uninstall`, (b) registers OS autostart against that hidden copy via cli-autostart.js, and (c) spawns a detached, windowsHide, unref'd node process running dist/cli-agent.js. The agent opens a WebSocket to a C2 host whose address is not present as plaintext: dist/deploymentDefaults.js reconstructs a 32-byte AES-256-GCM key by XOR-ing two obfuscated Uint8Array halves (DEPLOYMENT_KEY_A^DEPLOYMENT_MASK_A, DEPLOYMENT_KEY_B^DEPLOYMENT_MASK_B) and decrypts DEPLOYMENT_CIPHER_TEXT_B64 (with IV/TAG) into publicHost / relayPort / apiPort / defaultExplorerPassword, from which ws://\u003chost\u003e:\u003cport\u003e is derived at runtime. Once connected, the agent runs dist/secretScan/agentStartupAudit.js, which walks POSIX '/' or every Windows drive and matches files by name and content against rules in dist/secretScan/contentScanner.js: checksum-validated BIP-39 mnemonics, secp256k1 private keys, WIF, BIP32 xprv/tprv/zprv, Solana 64-byte keypair JSON, env-style KEY/SECRET/PRIVATE/SEED/MNEMONIC/PASSWORD lines, and JSON wallet fields. Matches (with full secret material by default) are packaged into agents/\u003chostname\u003e/result.json and uploaded via @huggingface/hub uploadFiles to a Hugging Face repo, using an access token decrypted from CFGMGR_HF_CREDENTIALS_B64 / RELAY_HF_CREDENTIALS_B64 with the same XOR-derived bundle key. dist/shellHistoryScan.js separately enumerates ~/.bash_history, ~/.zsh_history, ~/.python_history, ~/.node_repl_history, ~/.mysql_history, ~/.psql_history, ~/.sqlite_history, ~/.lesshst, fish history, Windows PowerShell PSReadLine ConsoleHost_history.txt, Clink history, and Cygwin/msys homes, streaming records through syncClient to the same C2 relay. dist/hostInventorySend.js unconditionally POSTs hostname + os.type/platform/release/version + Node version to the same relay. dist/chromiumExtensionDbHarvest.js + dist/extensionDbHfUpload.js target Chromium/Chrome/Edge extension LevelDB stores (browser wallets, session cookies) and are enabled by default via FORGE_JS_AGENT_EXTENSION_DB_HF_UPLOAD='1' set in postinstall-agent.mjs's turnkeySpawnEnvOverrides. dist/index.js additionally re-exports relayAgent, windowsInputSync, clipboardEventWatcher, discordRelayUpload, and workerBootstrap, giving the C2 operator keyboard/clipboard capture, screenshot exfiltration (handleDiscordScreenshotUploadFromAgent), and arbitrary file upload. The near-duplicate bin entries (forge-jsx-explorer-*, forge-jsy-explorer-*, logger-daemon-regex-explorer-kill-agent) and CFGMGR_* / FORGE_JS_* env-var namespaces reinforce the Autodesk Forge / cfgmgr impersonation cover story.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "logger-daemon-regex"
+      },
+      "versions": [
+        "1.0.124"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall-agent.mjs",
+              "sha256": "9822fa46896aba178c533b4ed1579ec737869984dc44760dc3ad618c39614118",
+              "tlsh": "3292e88ce6e71a7606a1e79d7a1f150667a0d1470648e4b4f0dd82887f2d03d83b7ebe"
+            },
+            {
+              "path": "dist/deploymentDefaults.js",
+              "sha256": "cbf70b0d8654138a0b4dfcb152824c85fecab500e1a5fade53c2049da4c0dc48",
+              "tlsh": "e1f16549b8e7b0100663b5f8861bc8973bdcad07260ed444b35e93956f1f831a3b76e6"
+            },
+            {
+              "path": "dist/secretScan/agentStartupAudit.js",
+              "sha256": "a4ebea897ca7712bd57c1c1cb3ffa74c409bbce225195689f6bc63c6d212cb56",
+              "tlsh": "a3e2eb9a69f32432826371be5a4f9005f660b427214ce8a47a5cc299ff454b8d3f7fd8"
+            },
+            {
+              "path": "dist/shellHistoryScan.js",
+              "sha256": "18d57bd7b11bef6d24e62e7ce699fff251780d1b336da7c5442701966fcac832",
+              "tlsh": "38f1656b4af7603901e3a2bc5f7f5001b25454132249df463b9cce8c9f7d92893a5e9e"
+            },
+            {
+              "path": "dist/hostInventorySend.js",
+              "sha256": "6034fa08d4dad02d7576d383e30505fcfd3f864e528f439d025a053e10e32f98",
+              "tlsh": "df81938429f6bab417a323a89b7fd042b7749543201df0787a0c83982f6d44652fefe1"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "f4750543b79e65a25880f6c8533f0dfd1bb4d4e55cb733bf793ab006db1ddbbd",
+              "tlsh": "aed1cc0b7588b6f047ec70ecdb5be0c2f9a65c2700a025a8939cdbb9ec375db90d1919"
+            },
+            {
+              "path": "package.json",
+              "sha256": "7f566e72c9d5301dd933962a66ee107aadf0fc08334ffbd4069a7a1ec4e80666",
+              "tlsh": "2e918d9ccc2b8df215e24f9a24604140bd31c18f4c487696b7af676c8fad16f04bba1c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "logger-daemon-regex-1.0.124.tgz",
+              "hashes": {
+                "sha1": "1eadec82669c3d7d975d2d14876663b74c8ce62e",
+                "sha512_sri": "sha512-UobexGbWMYauCYHiPkX0Re3uXIeXkyI/kqFxLPtJzSzDLQHNLdN1ES1voXSt4YDW43j5YbZVfMmywMffhj05aQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/logger-daemon-regex/v/1.0.124"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "867d520b17da5e885d1a1e1e954cbf9eaf045b55a28307319f4fbad27846b8a9",
+        "import_time": "2026-07-08T19:33:49.938331025Z",
+        "id": "IN-MAL-2026-008254",
+        "modified_time": "2026-07-08T19:30:30Z",
+        "versions": [
+          "1.0.124"
+        ]
+      }
+    ]
+  }
+}
