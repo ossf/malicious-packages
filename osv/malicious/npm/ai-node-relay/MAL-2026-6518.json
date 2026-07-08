@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-08T17:03:23Z",
+  "modified": "2026-07-08T23:29:47Z",
   "published": "2026-06-26T11:16:52Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6518",
@@ -7,7 +7,7 @@
     "GHSA-25p7-8xj5-25qp"
   ],
   "summary": "Malicious code in ai-node-relay (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d52a729e61a47daa4fce45f76a2b6a3900b6664fdc599035b6cb1be327420e52)\nPackage ships a heavily obfuscated main bundle (dist/index.js, javascript-obfuscator string-array rotation and control-flow flattening) whose top-level main() boots a Fastify relay server on require()/start. Remote endpoints are derived from operator-supplied GATEWAY_URL / REDIS_URL / NODE_TOKEN env vars or config; no hardcoded exfiltration endpoint, install-time fetch+execute, credential scraping, or installer-secret reads were observed in the deobfuscated code. package.json scripts.start and scripts.dev hardcode the author's own gateway token (NODE_TOKEN=nt_6b136c93...) which only authenticates to the author's gateway per the README — author-side credential leak, not installer harm. Concerns warranting human review: (a) main entry self-executes a server and binds a port on require(), atypical for a library main; (b) the shipped bundle is obfuscated, reducing reviewability of a network-facing relay; (c) the author has leaked their own gateway token in shipped scripts. None of these constitute a supply-chain attack against installers, but the combination warrants reviewer judgment before recommending the package.\n\n## Source: ghsa-malware (15dbf12bf77945563589af277a5a11fc548f282dfb1ab8fb8b0e8253d28ec854)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ae845382ff29756db63bf611b9b6bdbd49c44be3bcc8b283512e6590182ac48b)\nai-node-relay ships dist/index.js as its npm main entry, processed with javascript-obfuscator (string-array rotation, _0x-prefixed identifiers, base64 string decoder). The file ends with a top-level main() invocation that boots a Fastify server bound to 0.0.0.0:4001 and starts a heartbeat loop — any consumer who does `require('ai-node-relay')` immediately spawns a public-interface listener rather than getting a library handle. On startup the relay collects host fingerprint data (os.cpus, totalmem/freemem, platform, release, arch, uptime) and POSTs it with nodeId/url to `${GATEWAY_URL}/api/internal/node/register`; the destination is operator-configured via env var (default http://localhost:3007), matches the documented registration flow, and does not include installer secrets or an env-var dump. During periodic syncFromGateway, the gateway's JSON response is allowed to overwrite process.env.ENCRYPTION_KEY, ENCRYPTION_SECRET, ENCRYPTION_SALT, ENCRYPTION_AAD, and ENCRYPTION_ALGORITHM in the running process — a legitimate control-plane behavior given the operator chose the gateway, but one that materially expands the trust placed in whatever URL is configured. There is no install-time lifecycle hook, no fetch-and-execute of remote code, no credential scraping from ~/.aws/~/.ssh/~/.npmrc, and no hardcoded attacker destination. The combined pattern (obfuscation hiding the control flow + require()-time server bind to 0.0.0.0 + gateway-driven mutation of crypto material) warrants human review of maintainer trust and README accuracy before recommending the package, but it does not by itself constitute a supply-chain attack against installers.\n\n## Source: ghsa-malware (15dbf12bf77945563589af277a5a11fc548f282dfb1ab8fb8b0e8253d28ec854)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,10 +25,16 @@
         }
       ],
       "versions": [
-        "0.0.1"
+        "0.0.1",
+        "0.0.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -65,6 +71,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/ai-node-relay/v/0.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ai-node-relay/v/0.0.2"
     }
   ],
   "credits": [
@@ -103,6 +113,16 @@
         "modified_time": "2026-07-08T16:35:05Z",
         "versions": [
           "0.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ae845382ff29756db63bf611b9b6bdbd49c44be3bcc8b283512e6590182ac48b",
+        "import_time": "2026-07-08T23:27:55.653430617Z",
+        "id": "IN-MAL-2026-008957",
+        "modified_time": "2026-07-08T22:58:02Z",
+        "versions": [
+          "0.0.2"
         ]
       }
     ]
