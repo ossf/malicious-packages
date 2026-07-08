@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-05T22:25:22Z",
+  "modified": "2026-07-08T21:29:39Z",
   "published": "2026-07-03T22:45:17Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6749",
   "summary": "Malicious code in ipa-user-collector (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (2df148f70b40274f48d5bc4d8ea5a97bb434a743cf7a5c1b271a5a5cd7fa3907)\nDuring installation the obfuscated code downloads a malicious executable from a remote location. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from c.lin.dl.wel1[.]ru. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.lin.dl.wel1[.]r and reconstruct the encoded executable from their TXT records. The executable is finally saved under a partially random name, executed, and removed after execution. The Linux executable contacts a few domains, but there is no more detailed information about its behavior available.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-haproxy-config-client\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - dependency-confusion\n\n\n - other\n\n\n - malware\n\n\n - covering-tracks\n\n\n - targetted-attack\n\n\n - data-stored-in-dns\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5719ec23d0195e518782dbc26a8a05b54fd827d1ec18d41619d163f7175eaa28)\nThe package ships an empty runtime module (src/ipa_user_collector/__init__.py contains only __version__) but overrides setup.py cmdclass for install, develop, and egg_info to run a helper that fetches and executes an attacker-controlled binary at install time. Hostnames and module names are XOR-obfuscated (key 0x5A) and imported dynamically via importlib to conceal indicators. The helper contacts a Cloudflare Workers endpoint (package-proxy.*.workers.dev) with a DNS TXT fallback (*.lin.dl.wel1.ru) to retrieve a payload from /pkg/package-proxy, writes it to /var/tmp/.cache_\u003crandom\u003e, chmods 0o755, spawns it detached via subprocess.Popen(start_new_session=True), and unlinks the file. A /tmp/.pip_ref cooldown marker suppresses repeated execution within 6 hours. The package name and 'TBank Engineering' vendor label appear crafted as a dependency-confusion lure for an internal-sounding utility. Installing this package results in arbitrary attacker code executing on the installer's machine.\n\n## Source: kam193 (2df148f70b40274f48d5bc4d8ea5a97bb434a743cf7a5c1b271a5a5cd7fa3907)\nDuring installation the obfuscated code downloads a malicious executable from a remote location. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from c.lin.dl.wel1[.]ru. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.lin.dl.wel1[.]r and reconstruct the encoded executable from their TXT records. The executable is finally saved under a partially random name, executed, and removed after execution. The Linux executable contacts a few domains, but there is no more detailed information about its behavior available.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-haproxy-config-client\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - dependency-confusion\n\n\n - other\n\n\n - malware\n\n\n - covering-tracks\n\n\n - targetted-attack\n\n\n - data-stored-in-dns\n",
   "affected": [
     {
       "package": {
@@ -13,7 +13,40 @@
       },
       "versions": [
         "8.5.3"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "6bc684db08c5d5bb10c76c1b3b1e401f6bcb10bcfc3324c7b713b9026c29cd83",
+              "tlsh": "25c151e2ec4ee1669237cc1e588ed993eb2a810792119413f4fcd744aff5070c6bd68a"
+            },
+            {
+              "path": "PKG-INFO",
+              "sha256": "5c46b95d46455460d77bf0251dd9f2e98254b47bbee3c44e34f9f7cb32f2700c",
+              "tlsh": "01c08c1876408472628d435a185d42a2a7ba4717906a089ad4316b1047e72ece69923a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ipa_user_collector-8.5.3.tar.gz",
+              "hashes": {
+                "blake2b_256": "1f4e358ef79350faa937e1496183ef6600aed2b0f38b5cf5c732bfdbc747fabf",
+                "md5": "31c33416ffb5d6c70f016b81ca45c66f",
+                "sha256": "9f38f33734ba53edaf0f587a257f161c40a323818dfadb619dad7787329023fb"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -24,9 +57,20 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/ipa-user-collector"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ipa-user-collector/8.5.3/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -81,6 +125,16 @@
         "import_time": "2026-07-05T22:23:38.891283932Z",
         "id": "pypi/2026-07-haproxy-config-client/ipa-user-collector",
         "modified_time": "2026-07-03T22:45:17.899969Z",
+        "versions": [
+          "8.5.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5719ec23d0195e518782dbc26a8a05b54fd827d1ec18d41619d163f7175eaa28",
+        "import_time": "2026-07-08T21:27:49.169622421Z",
+        "id": "IN-MAL-2026-008595",
+        "modified_time": "2026-07-08T20:33:45Z",
         "versions": [
           "8.5.3"
         ]
