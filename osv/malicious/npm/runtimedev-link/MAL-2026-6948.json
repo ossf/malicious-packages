@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-07T16:12:58Z",
+  "modified": "2026-07-08T18:36:16Z",
   "published": "2026-07-07T16:12:58Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6948",
@@ -7,7 +7,7 @@
     "GHSA-v63r-xv67-wj6q"
   ],
   "summary": "Malicious code in runtimedev-link (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (bad42e28746353937971161510019f72f4c501f54d3a40410710ae83e83db724)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e049b6382f522be35ebc44b090d56723dacfc2fe15ffa05b345fe46f5aea392a)\nThe package presents itself as \"Pure Node.js telemetry for RuntimeDev platform\" but implements a full remote-access trojan. The `runtimedev-link` bin, when invoked with a `--token` that encodes an `apiBase` and hash, enters a command loop that polls `POST /api/telemetry/poll-command` at the operator-supplied base URL and executes any returned `command` string through `/bin/sh` (or the Windows shell) via `execSync`, returning stdout/stderr to `/api/telemetry/command-result` (transport.js). The same agent handles server-issued `directoryScan` and `downloadRequest` operations, zipping arbitrary filesystem paths and uploading them base64-encoded to `/api/telemetry/upload-download`; every telemetry cycle reports hostname, username, OS info, home-directory tree, Chrome/Edge/Brave extension inventories, and the host's public IP fetched from api.ipify.org. On first run the agent installs cross-platform persistence: a Windows Task Scheduler entry marked `\u003cHidden\u003etrue\u003c/Hidden\u003e` with a LogonTrigger launched via `wscript.exe //B` against a generated VBS; a macOS LaunchAgent plist with `RunAtLoad` + `KeepAlive`; a Linux systemd `--user` unit with `Restart=always` plus `loginctl enable-linger`, falling back to crontab `@reboot` or XDG autostart. Credentials are staged at `~/.config/runtimedev-link/agent.env`. To further evade endpoint visibility, `lib/portable_runtime.js` downloads a standalone Node.js 22.22.0 tarball from nodejs.org, extracts it into `~/.local/share/runtimedev-link/runtime/`, chmods `bin/node` to 0755, and configures persistence to invoke that private interpreter against a copied agent CLI, decoupling ongoing execution from the user's Node/npm. The exfil/C2 destinations are configurable per token, so any attacker distributing a token targets their own infrastructure; the code paths themselves are unambiguously RAT machinery.\n\n## Source: ghsa-malware (bad42e28746353937971161510019f72f4c501f54d3a40410710ae83e83db724)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -24,14 +24,46 @@
           ]
         }
       ],
+      "versions": [
+        "1.0.13"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/transport.js",
+              "sha256": "f38f6533797ae59b428b8b383010145b6b6015bbe9473d493ed270db78fb3419",
+              "tlsh": "bc4286ca34f7351946a3b4a4962b51177616e203380fcce4b65c47106faa1386ab6fdf"
+            },
+            {
+              "path": "lib/persistence.js",
+              "sha256": "e8840034db06939cf5741fab31b83ee39c7e56ebed8f20e88dfb3a90c75a540f",
+              "tlsh": "ca62c39abdf3b1388ab69634025f942975edd2432a0eddb0f4ec01805f9a56c4273ddd"
+            },
+            {
+              "path": "lib/portable_runtime.js",
+              "sha256": "07dc30e8712b2493086fecd75421a025cb79b13d76291b300ca650557dba9df8",
+              "tlsh": "4cd1438a1af762344672d2a63e0fd44db297c40b224bdd94fb9c46c83f81538b5925de"
+            },
+            {
+              "path": "package.json",
+              "sha256": "8b48592df871b4ca52fea48aae3b18ef17ba0aff53d024cb31b1054a037c63e2",
+              "tlsh": "94e026218aa0192301cc9ab55eb70263d362cc0e010c7d146693221d039d13ab879368"
+            }
+          ]
+        }
       }
     }
   ],
@@ -39,26 +71,49 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-v63r-xv67-wj6q"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/runtimedev-link/v/1.0.13"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "GHSA-v63r-xv67-wj6q",
+        "source": "ghsa-malware",
+        "sha256": "bad42e28746353937971161510019f72f4c501f54d3a40410710ae83e83db724",
         "import_time": "2026-07-07T17:01:10.309498603Z",
+        "id": "GHSA-v63r-xv67-wj6q",
         "modified_time": "2026-07-07T16:12:58Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
-        ],
-        "sha256": "bad42e28746353937971161510019f72f4c501f54d3a40410710ae83e83db724",
-        "source": "ghsa-malware"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e049b6382f522be35ebc44b090d56723dacfc2fe15ffa05b345fe46f5aea392a",
+        "import_time": "2026-07-08T18:34:24.837276005Z",
+        "id": "IN-MAL-2026-008177",
+        "modified_time": "2026-07-08T18:17:04Z",
+        "versions": [
+          "1.0.13"
+        ]
       }
     ]
   }
