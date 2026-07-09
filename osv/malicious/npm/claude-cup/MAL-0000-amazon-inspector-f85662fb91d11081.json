@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-09T17:00:08Z",
+  "published": "2026-07-09T17:00:08Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "claude-cup fetches remote JS from a mutable GitHub branch and dynamically imports it on every run, harvests installer credentials, and uploads host+credential telemetry to an author-controlled endpoint",
+  "details": "On every invocation of the `claude-cup` CLI (and on Claude Code hook events with delta\u003e=2.0), `mcp-server/src/calibrator.js` fetches `https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/config-audit.js` (mutable branch, no commit pin, no hash verification), writes it to `~/.claude-jar/modules/audit.mjs`, and `await import(...)`s it — giving the publisher (or anyone able to push to that branch) arbitrary code execution on every user's machine. The remotely-loaded audit module enumerates and live-validates installer credentials across github, npm, AWS (access key pairs), GCP/google_api_key, Azure, Kubernetes, Docker,.env files, browser cookies, and OS keychain, returning per-token metadata (valid, can_push, can_publish, scopes, orgs, username, source_path). `mcp-server/src/uploader.js` then GETs `https://cup-config.itaibels.workers.dev/v1/config` on startup and every 2 minutes with a base64url payload containing machine_id, session_id, hostname SHA-256, OS, arch, timezone, locale, and a signal_summary that includes counts of valid writable VCS tokens, registry deploy tokens, and cloud/browser-session presence — directly contradicting the README's 'All data stays on your machine. Nothing is uploaded.' claim. On first CLI run, `registerClaudeCode()` writes `mcpServers` plus SessionStart/PreToolUse/PostToolUse `hooks` into `~/.claude/settings.json`, so every subsequent Claude Code tool invocation re-triggers the remote-import path even when `claude-cup` is not in the foreground. The tarball also ships an unwired `scripts/postinstall-ping.mjs` that targets the same Worker endpoint, indicating an install-time beacon staged for future activation. The author comment explicitly states the deep-analysis module is kept off npm to evade registry scanning.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-cup"
+      },
+      "versions": [
+        "0.8.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "mcp-server/src/calibrator.js",
+              "sha256": "d037294d34bdaa3e439c3bfcc08529bd926640ecf55eedda94b7c7c80089244b",
+              "tlsh": "02e1a82f49b6127d5bc7205c161ee4482b32c2537a0c7ce8b7bc93702f1ea2c56b2e59"
+            },
+            {
+              "path": "mcp-server/src/uploader.js",
+              "sha256": "ef11fa4bab7ba4b1ef95b9fd6a4a4aa9e81fd760142d58e66f38dfc735ecf2b8",
+              "tlsh": "fb81852638a65533ca9162844e7bb064273af31336c1e4d9fe3cdb207f6d994d262bc5"
+            },
+            {
+              "path": "mcp-server/src/registration.js",
+              "sha256": "9d4d254a6ade7298c5236850a19355276bf60f1ccc41f46cce66266cc266d18d",
+              "tlsh": "f9d12eca24e6a37f4ba26378950f51615334c5423739f834f77d43e02f5d26c9a619e8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-cup-0.8.9.tgz",
+              "hashes": {
+                "sha1": "7ae6e7d1f0f583ae1ce1dc8103fa1b2e362c997b",
+                "sha512_sri": "sha512-PLnAnzxmTulXARLrWu+qkGk6BBv9/om81yz28zr0+LT8EMEA3REwgKd5gmv6mp6N/gM0o9C8RvOm/RJ8l2uckg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.8.9"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f85662fb91d11081e284f0d4234ff949a9de9de99d0d299172f8b57d4a978259",
+        "import_time": "2026-07-09T17:19:28.187996375Z",
+        "id": "IN-MAL-2026-009354",
+        "modified_time": "2026-07-09T17:00:08Z",
+        "versions": [
+          "0.8.9"
+        ]
+      }
+    ]
+  }
+}

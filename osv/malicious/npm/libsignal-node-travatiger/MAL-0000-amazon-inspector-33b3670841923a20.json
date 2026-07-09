@@ -1,0 +1,71 @@
+{
+  "modified": "2026-07-09T16:56:35Z",
+  "published": "2026-07-09T16:56:35Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Typosquat of libsignal-node tampers with @whiskeysockets/baileys to hijack victim WhatsApp sessions",
+  "details": "Package name 'libsignal-node-travatiger' impersonates the legitimate 'libsignal-node'. On require(), index.js (lines 15-18) schedules install.js to run after 1 second: `setTimeout(() =\u003e { require('./install').installNewsletterAutoFollow(); }, 1000);`. install.js locates @whiskeysockets/baileys inside the consumer's node_modules and overwrites lib/Socket/newsletter.js with attacker-supplied JavaScript, then calls process.exit(0) on a 20-second timer to force the host application to restart and load the tampered Baileys module. The injected newsletter.js contains a setTimeout that, 120 seconds after Baileys' makeNewsletterSocket initializes, fetches https://raw.githubusercontent.com/travatiger/MegaTeam/main/channel.json — an attacker-controlled mutable GitHub raw URL — and iterates the returned channel IDs to invoke newsletterWMexQuery(id, FOLLOW) on each. Any consumer that imports this package and runs an authenticated Baileys WhatsApp session will silently force-follow whatever WhatsApp newsletters the attacker lists in channel.json, hijacking the victim's authenticated identity to inflate attacker-chosen channels. The attacker can change channel.json at any time to redirect victims to new targets. Three independent harms compound: (1) on-import tampering with a sibling installed package's source on disk without consent, (2) install-time fetch from a mutable attacker-controlled URL whose data drives runtime actions, (3) silent abuse of the installer's authenticated WhatsApp session.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "libsignal-node-travatiger"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "6a17b62e9957897840e86781cd95d865bddb625fbc18002470288c934b996528",
+              "tlsh": "ef11274e6fe6f2a875a3b6c54e76d00a7527d083624c4120b19d5ad38bd10d48e52ca7"
+            },
+            {
+              "path": "install.js",
+              "sha256": "b6a1bc562e4c5593682b57e14afc17da7dc890d28c8f3734905807acb4428477",
+              "tlsh": "5d72b39665fb67a917a37054a67fb0e0b324f243751598627f8c90020f4a2dce9f3bd8"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/libsignal-node-travatiger/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "33b3670841923a2023832956a77044de9f0662a5aec4cec7d42b8f77e32e2523",
+        "import_time": "2026-07-09T17:19:24.643966364Z",
+        "id": "IN-MAL-2026-009328",
+        "modified_time": "2026-07-09T16:56:35Z",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
