@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-09T15:55:43Z",
+  "modified": "2026-07-09T22:58:20Z",
   "published": "2026-07-09T15:55:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10064",
   "summary": "Malicious code in multer-orm (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (489805f0242c070653fa4e09c782d8135971a370b3ae292d31d721507332a12f)\nPackage name impersonates the popular `multer` middleware and copies its README/repo metadata. On `require('multer-orm')`, `index.js` loads `lib/feature.js`, which at module load fetches a JSON document from `https://hilbert-self.vercel.app/`, extracts a `downloader_url` field, downloads an opaque binary over http/https with no pinning or integrity check, writes it as `chrome.exe` under the Chrome `User Data` directory to masquerade as the browser, and executes it via `execFile`/`spawn` (chmod 755 on non-Windows). When running as administrator on Windows, the code first writes and runs a PowerShell script that calls `Add-MpPreference -ExclusionPath` on the staging directory to evade Windows Defender; when not elevated, it re-spawns itself via `powershell -Command Start-Process... -Verb RunAs -WindowStyle Hidden` to obtain UAC elevation. The dropper logic in `lib/feature.js` is hidden behind obfuscator.io-style string-array rotation that conceals identifiers such as `child_process`, `powershell`, `chrome.exe`, `Add-MpPreference`, and the C2 hostname. There is no legitimate `multipart/form-data` middleware functionality — the package exists solely to deliver the remote payload to anyone who mistypes `multer`.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7fb45c09aa7a237b2b9ff18ccf6426b76a4f46e5ea665c7747f35a345940e161)\nmulter-orm is a typosquat of the widely used `multer` middleware. Its README is copied from multer, but the package adds a load-time dropper in lib/feature.js that fires as soon as any consumer runs `require('multer-orm')`. On Windows the module IIFE auto-invokes a handler that fetches JSON from https://hilbert-self.vercel.app/, extracts a `downloader_url`, downloads the referenced binary into the Chrome User Data directory as `chrome.exe`, marks it executable, and runs it. When the current Node process is not elevated, the code re-spawns itself via `powershell Start-Process node -Verb RunAs -WindowStyle Hidden` to obtain admin rights, then writes a temporary PowerShell script that calls `Add-MpPreference -ExclusionPath` against roughly twenty existing directories (including the Chrome/Edge User Data paths where the payload is dropped), executed via cscript.exe, to disable Windows Defender scanning of the dropper's staging locations. The URLs, PowerShell commands, exclusion strings, and filesystem paths are hidden behind obfuscator.io-style string-array + rotation obfuscation in lib/feature.js. package.json also declares a self-referential dependency on `multer-orm`. Installing or requiring this package results in arbitrary remote code execution on the installer's Windows machine with attempted elevation to admin and antivirus tampering.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,40 @@
         "name": "multer-orm"
       },
       "versions": [
-        "2.0.6"
+        "2.0.6",
+        "2.0.2",
+        "2.0.7",
+        "2.0.5",
+        "2.0.4",
+        "2.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +82,26 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/multer-orm/v/2.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/multer-orm/v/2.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/multer-orm/v/2.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/multer-orm/v/2.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/multer-orm/v/2.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/multer-orm/v/2.0.3"
     }
   ],
   "credits": [
@@ -66,13 +116,63 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-009288",
-        "import_time": "2026-07-09T16:20:57.620659017Z",
-        "modified_time": "2026-07-09T15:55:43Z",
-        "sha256": "489805f0242c070653fa4e09c782d8135971a370b3ae292d31d721507332a12f",
         "source": "amazon-inspector",
+        "sha256": "489805f0242c070653fa4e09c782d8135971a370b3ae292d31d721507332a12f",
+        "import_time": "2026-07-09T16:20:57.620659017Z",
+        "id": "IN-MAL-2026-009288",
+        "modified_time": "2026-07-09T15:55:43Z",
         "versions": [
           "2.0.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6d9e8b40fa4ed9affdbbacaa281a4586632d08e92373a4691ca53a28c4788686",
+        "import_time": "2026-07-09T22:56:36.439616147Z",
+        "id": "IN-MAL-2026-009580",
+        "modified_time": "2026-07-09T22:16:24Z",
+        "versions": [
+          "2.0.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7fb45c09aa7a237b2b9ff18ccf6426b76a4f46e5ea665c7747f35a345940e161",
+        "import_time": "2026-07-09T22:56:36.175107854Z",
+        "id": "IN-MAL-2026-009577",
+        "modified_time": "2026-07-09T22:15:59Z",
+        "versions": [
+          "2.0.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b4d216f328acc30d2c0973e64ba2b4c96ecaf6d2c947bd69de960bfed401ef54",
+        "import_time": "2026-07-09T22:56:36.364842187Z",
+        "id": "IN-MAL-2026-009579",
+        "modified_time": "2026-07-09T22:16:14Z",
+        "versions": [
+          "2.0.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c40dcc479fcd125917a842f162c5ce866824bf1ce1d28cecfbafc4ca8a143eb4",
+        "import_time": "2026-07-09T22:56:36.281576582Z",
+        "id": "IN-MAL-2026-009578",
+        "modified_time": "2026-07-09T22:16:06Z",
+        "versions": [
+          "2.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "433be5dbe906a13f599d095cb06a9731b8d148d4d25796ba125b75cd69559936",
+        "import_time": "2026-07-09T22:56:36.515251364Z",
+        "id": "IN-MAL-2026-009581",
+        "modified_time": "2026-07-09T22:16:32Z",
+        "versions": [
+          "2.0.3"
         ]
       }
     ]
