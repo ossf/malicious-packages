@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-06T19:55:36Z",
+  "modified": "2026-07-09T22:04:37Z",
   "published": "2026-06-26T02:18:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6499",
@@ -7,7 +7,7 @@
     "GHSA-8fxp-pghh-7w6w"
   ],
   "summary": "Malicious code in mongoose-json-format (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2a3dc63cdceb40d6f0fe338bcdbe589689ab2897f44cbb6b7c3d0192b5bd09c5)\nOn require(), helpers.js instantiates a Helper whose constructor invokes createLog(). createLog() base64-decodes the string assigned to HASH_KEY (decoding to https://www.jsonkeeper.com/b/XVHGD, an anonymous mutable JSON paste host), fetches that URL, and passes the response body's `data.data` field as `threadContent` to createLogger() from the `log-format-thread` dependency. The package's advertised purpose is formatting Mongoose JSON output; there is no legitimate reason for it to retrieve content from a paste host at import time. The URL is hidden via base64 and given the misleading name HASH_KEY. Because jsonkeeper.com content is attacker-mutable and the fetched bytes are handed to a dependency for processing, any consumer that require()s this package becomes a vehicle for arbitrary attacker-controlled content delivered at import time.\n\n## Source: ghsa-malware (4b3b4e269246a3979e91e827093cc4161b3f4351957eae0d3f1ba80ae8a07502)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (910cc6eef707ac872daeb3a527e6dd9c75044ebb178f9eb48745f5cfd4123968)\nhelpers.js defines a createLog() helper that base64-decodes a constant HASH_KEY to https://www.jsonkeeper.com/b/XVHGD (an anonymous JSON-paste host) and fetches the response, then passes data.data to a createLogger() function from the log-format-thread dependency. The destination URL is stored as a base64 literal to avoid plain-text discovery. However, the helper is never invoked from the package's main entry (index.js) in this version, and helpers.js itself contains broken code (an `import { req } from \"request\"` for an unused symbol, and a top-level `await` inside a non-async function) that would prevent the module from loading cleanly if it were required. The fetched content is also passed only to a logger formatter, not to eval/exec/Function/require — so even on the dead code path, the bytes are not executed as code. The combination of obfuscated URL + anonymous paste host + tampering shape is suspicious and inconsistent with a legitimate JSON-formatting helper, but the harmful path is not reached by a default require() of this package and there is no install-time lifecycle hook driving the fetch.\n\n## Source: ghsa-malware (4b3b4e269246a3979e91e827093cc4161b3f4351957eae0d3f1ba80ae8a07502)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -20,6 +20,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -60,6 +65,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-8fxp-pghh-7w6w"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mongoose-json-format/v/3.0.0"
     }
   ],
   "credits": [
@@ -91,6 +100,16 @@
         "modified_time": "2026-07-06T18:54:13Z",
         "versions": [
           "3.0.1",
+          "3.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "910cc6eef707ac872daeb3a527e6dd9c75044ebb178f9eb48745f5cfd4123968",
+        "import_time": "2026-07-09T22:02:29.694023177Z",
+        "id": "IN-MAL-2026-009421",
+        "modified_time": "2026-07-09T21:53:30Z",
+        "versions": [
           "3.0.0"
         ]
       }
