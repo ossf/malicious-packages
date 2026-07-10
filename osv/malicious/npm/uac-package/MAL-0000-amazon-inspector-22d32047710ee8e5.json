@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-10T15:50:57Z",
+  "published": "2026-07-10T15:50:57Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "uac-package: postinstall rewrites installer source to inject a browser tracker that exfiltrates end-user auth tokens and form input to a hardcoded third-party endpoint",
+  "details": "On `npm install`, the package's postinstall hook (scripts/postinstall.js -\u003e integrate()) silently mutates the consuming project without any prompt or opt-in: it prepends `import 'uac-package/track'` to the app's source entry (src/main.{js,ts,tsx,jsx}), rewrites scripts.dev/preview/start in the installer's package.json to route through the package's CLI wrapper, and registers a plugin in vite.config.* / nuxt.config.*. The injected browser tracker (autoIdentity.mjs) scans localStorage, sessionStorage, and cookies for auth material — including access_token, id_token, refresh_token, and JWT/Firebase/Auth0/Clerk/Cognito/Supabase keys — decodes JWT payloads, and monkey-patches window.fetch and XMLHttpRequest to intercept responses from URLs matching /auth|login|session|me|user|token/. It also captures form field values on input/change events (up to 200 chars per field, non-password inputs) tied to a persistent deviceId. Collected identity data, intercepted auth responses, and form input are POSTed to a hardcoded destination at https://uac-backend.clay.in (endpoints including /api/activities). The package's stated purpose is click tracking / device detection; harvesting auth-token payloads, intercepting authentication API responses, and shipping form contents to a third-party server go materially beyond that scope and are not disclosed to the installer. The postinstall rewrite means this exfiltration channel ships into every production build of the installer's application by default.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "uac-package"
+      },
+      "versions": [
+        "1.4.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/integrate.js",
+              "sha256": "8cd1981b41c7162369d3e59ec9c7faac4f012b27ba721058d1d47a6abfe7360c",
+              "tlsh": "8ee12349684be61687f2ab79d9438409fb3ba1736208519579dd91dc3ff022081e3eef"
+            },
+            {
+              "path": "lib/autoIdentity.mjs",
+              "sha256": "21e0ace857aeeb5b4896e4cdfc6c66f0ce7f058a085f80b50928cf8647f2ae57",
+              "tlsh": "df52956e38f33034056750b9abdf7405b226a413384ee8d436ac87157fed52a96f2acd"
+            },
+            {
+              "path": "lib/track.mjs",
+              "sha256": "b25f814bb5b1b4132a92e40ca1abd2e2a819b0be9eaad39b6f194a71ada16f8c",
+              "tlsh": "ab5294ad7df2203d0577616c240bf01a3b7ac543290dcd92b7ac87606fd96298af1acc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "uac-package-1.4.5.tgz",
+              "hashes": {
+                "sha1": "b2e3f74febb5e561f043fe1318cd20f348674c1a",
+                "sha512_sri": "sha512-RWVOSP5ZJ7RGJEpNs4BPzM65WmWDuTlA7wTB9K0fWgiRDeGUTAOd4c6Kw7MWIXYHztoC4KNkN4WrwAykg20iGA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uac-package/v/1.4.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "22d32047710ee8e566af17a54d0bc0859b75a1d066ad0ac17673b2de87dc10e7",
+        "import_time": "2026-07-10T16:19:42.792779791Z",
+        "id": "IN-MAL-2026-009627",
+        "modified_time": "2026-07-10T15:50:57Z",
+        "versions": [
+          "1.4.5"
+        ]
+      }
+    ]
+  }
+}
