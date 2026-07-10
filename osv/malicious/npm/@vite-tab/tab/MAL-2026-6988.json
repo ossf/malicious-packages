@@ -1,0 +1,100 @@
+{
+  "modified": "2026-07-08T17:03:23Z",
+  "published": "2026-07-08T16:58:42Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6988",
+  "summary": "Malicious code in @vite-tab/tab (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (95af865d1cf7d45f2b4c2a73eebcfcd1a1a6aba9a36f33bf8256ef4d7235903c)\n`@vite-tab/tab` republishes Vite's codebase under a different name while impersonating the upstream project: `package.json` declares `bin: { vite: 'bin/vite.js' }` (hijacking the `vite` command on $PATH), `author: 'Evan You'`, `repository: git+https://github.com/vitejs/vite.git`, and `homepage: https://vitejs.dev`. Appended to `bin/vite.js` after the legitimate Vite bootstrap is a self-decoding string table (`var _$_4445=(function(k,p){...})(\"...\",4606094)`) built via a Fisher-Yates-style scramble with `\\x25`/`\\x23` substitution markers; all sensitive identifiers (`https`, `get`, `request`, `JSON.parse`, `child_process`, `spawn`, `eval`, host fragments) are referenced as indices into this table to defeat static review. At runtime the decoded routines perform an HTTPS GET followed by a JSON-RPC POST (`{jsonrpc, method, params, id:1}`) to a dynamically resolved hostname, base64-decode and XOR-decrypt the response, and pass it to `eval(r)`; a second fetched payload is launched via `child_process.spawn(..., {detached:true, windowsHide:true})`, with a 30-second throttle. The fetch loop runs every time a developer invokes the hijacked `vite` command, giving the publisher arbitrary remote code execution on the developer machine with persistence via detached child processes. The remote-hostname JSON-RPC lookup makes the C2 endpoint resistant to static domain blocking.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@vite-tab/tab"
+      },
+      "versions": [
+        "5.7.0",
+        "3.15.10"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "40b7a0e702ec8961f34ab2aa086db538db23c1b605f3af022f373b329450b6f4",
+              "tlsh": "e3a1bc21cda88da31ad424e9ec790142f13485578e65fc18339d57ad0f4e26f327ebae"
+            },
+            {
+              "path": "bin/vite.js",
+              "sha256": "00dc114cf515233dc0e0a7ac3457377cf0c36842b972b98e5723bfbdb473800d",
+              "tlsh": "f7e15c4cf1dc2c20175074d8ecae499b39fac803ee89c594b79cf6486fca411938abb5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tab-5.7.0.tgz",
+              "hashes": {
+                "sha1": "41f173d3d7d462d3c569c179ff569cd6fc541e72",
+                "sha512_sri": "sha512-zLAQx+2Rk/5JrrENP56BKJpTsy7acSU1BoAP49BlXRfx0z/LTd+0oavOkQ25yB/u3JMV845mQPJ6bnWOYT67Hg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@vite-tab/tab/v/5.7.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@vite-tab/tab/v/3.15.10"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-008163",
+        "import_time": "2026-07-08T17:01:35.87897206Z",
+        "modified_time": "2026-07-08T16:58:42Z",
+        "sha256": "62a19bf35a2cc4cea4177b45cf5e3abec489a0e87b1f3a294611d4c9d4bf76aa",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.7.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-008164",
+        "import_time": "2026-07-08T17:01:35.985361286Z",
+        "modified_time": "2026-07-08T16:59:25Z",
+        "sha256": "95af865d1cf7d45f2b4c2a73eebcfcd1a1a6aba9a36f33bf8256ef4d7235903c",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.15.10"
+        ]
+      }
+    ]
+  }
+}
