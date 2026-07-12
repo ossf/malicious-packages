@@ -1,0 +1,106 @@
+{
+  "modified": "2026-07-06T04:59:51Z",
+  "published": "2026-07-02T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6774",
+  "summary": "Malicious code in @marketfront/devtoolsloader (npm)",
+  "details": "The @marketfront/devtoolsloader package is part of a 25-package malicious campaign batch-published to the @marketfront npm scope by npm user 'marketfront' (marketfront@tutamail.com) within a roughly 3-minute window on 2026-07-01. All packages in the campaign were published at version 7.0.0 and use e-commerce/marketing frontend component names as cover.\n\nThe package declares a postinstall hook (node scripts/postinstall.js) that executes heavily obfuscated (obfuscator.io-style) code automatically at npm install time. Static analysis of the decoded payload revealed a credential harvester that dynamically requires fs, os, http, https, zlib, path and dns, then reads approximately 20 sensitive credential files including ~/.ssh, ~/.aws/credentials, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.netrc, ~/.pgpass, ~/.git-credentials, ~/.env and ~/.bash_history. Collected data is exfiltrated via a gzip-compressed HTTPS POST with a custom X-Secret header to the path /api/v1/events, alongside a DNS resolver beacon. The command-and-control host is concealed behind an additional RC4+XOR encryption layer around an embedded configuration blob and was not statically resolved.\n\nThe decoded behavioral payload (module requires, credential-file target list, exfiltration headers and endpoint) is byte-for-byte identical across sampled packages in the campaign. The campaign shares tooling and infrastructure patterns (obfuscated postinstall credential harvester, X-Secret header, /api/v1/events exfiltration path, RC4-concealed C2) with the earlier @emcd-vue campaign, indicating the same actor rotating scopes and disposable maintainer emails.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d449d3db7f73a80417996b67687dca9330bf5d0591233c639416a4f2e2b7eb22)\nThe package ships a heavily obfuscated postinstall script (scripts/postinstall.js, ~161 KB, obfuscator.io RC4 string-array with control-flow flattening) invoked from package.json (\"postinstall\": \"node scripts/postinstall.js\"). At npm install time the script collects host identifiers (os.userInfo(), os.networkInterfaces(), hostname), enumerates process.env against embedded char-code-encoded arrays of credential-shaped variable names (USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, TEMP, PROGRAMDATA, and additional token/secret-shaped keys), and reads installer-side dotfiles (shell history / rc files) via decoded absolute paths. The payload is XOR-encrypted and transmitted via https.request POST and DNS queries to a destination decoded from the obfuscated string array. Execution is gated on sandbox-evasion checks (process.argv[0]/argv[1] inspection, NODE_OPTIONS blocklist tokens, Date.now spin-loop timing) so the payload only fires on real developer machines. The package advertises a fictitious internal corporate infrastructure (@marketfront scope, github.marketfront.io, npm.marketfront.io) and ships no functional library — dist/index.js re-exports../src/index.js which is absent from the tarball — consistent with a dependency-confusion lure targeting developers expecting an internal @marketfront/* package. Installing this package on a developer or CI machine results in exfiltration of environment variables (including any credentials present in env), host identity, and shell history/config file contents to an attacker-controlled endpoint.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@marketfront/devtoolsloader"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "7.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "8efdcbeaeb6c1de975fff4f352178c383c1ce5f2b30d6884f335a2e515d767e8",
+              "tlsh": "0af3eb892740d447d85fdebfbf61e6f4e1197cc6c3c1284ab714b92cf89852a9a48b81"
+            },
+            {
+              "path": "package.json",
+              "sha256": "1d53388806216fabf12c9cab860660b45e26c5f631c619ed60f6d215c2b177d7",
+              "tlsh": "8111c935c5218c3372d061aabeb46e45b4660c6b088afc1d63c3407c8bce0ab61fd63e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "devtoolsloader-7.0.0.tgz",
+              "hashes": {
+                "sha1": "6e1b88e66a8ba4493727fe4fbd24fbd1e2206cfe",
+                "sha512_sri": "sha512-6OWfv1cjDVM33GMoSLF2LCPv0fY66oFeH7QNBjeuNiL6gSSj5nW4m7lLpEJesb1Cg3RQFLNd0tib/OuA5D99fw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/marketfront-dependency-confusion-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@marketfront/devtoolsloader/v/7.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d449d3db7f73a80417996b67687dca9330bf5d0591233c639416a4f2e2b7eb22",
+        "import_time": "2026-07-06T04:58:10.712289037Z",
+        "id": "IN-MAL-2026-008025",
+        "modified_time": "2026-07-06T03:20:11Z",
+        "versions": [
+          "7.0.0"
+        ]
+      }
+    ]
+  }
+}

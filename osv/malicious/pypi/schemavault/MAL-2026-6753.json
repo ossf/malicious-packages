@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-03T23:47:04Z",
+  "modified": "2026-07-09T22:58:24Z",
   "published": "2026-07-03T23:47:04Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6753",
   "summary": "Malicious code in schemavault (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (2af83487d12e2c9e16e3a5fae1ac369bacd5d39622a04c537edd0dbdda4a143a)\nThe campaign consists of multiple packages. The trigger sits in the package 'procwire,' which depends on two others. During installation, procwire uses schemavault and bytekit packages. The first one holds the URL holding malware (in two places, once as steganography in the bundled image and once as a fallback just as a list of encoded bytes). The bytekit implements simple custom decoding used to retrieve back the URL in the fallback method. Additionally, procwire is also a dependency of confighub, turning another package into malware. The downloaded executable is run and quickly removed. The executable likely contains an infostealer and contacts the domain 030502[.]xyz\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-procwire\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - The malicious code is intentionally included in a dependency of the package\n\n\n - malware\n\n\n - steganography\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4ae0aa9efa2a8389cfe9d5c41d5ab3689f4965c945a24613493f94f9de033ab1)\nschemavault 4.1.0 is presented as a schema-validation library but ships capabilities and data that have no relationship to schema validation. schemavault/_registry.py defines three underscore-prefixed byte arrays: `_ep` (36 bytes), `_p` (7 bytes), and `_k` (16 hex constants shaped like a symmetric key). None of these names are read anywhere in the schemavault package. schemavault/imaging.py exports `extract_metadata()`, an LSB steganography decoder that reads a length-prefixed hidden string from the shipped asset `schemavault/assets/logo.bmp` (first 16 bits = length, then length*8 bits of pixel-LSB characters); this function is likewise not invoked from anywhere in schemavault. setup.py declares `install_requires=['bytekit']` — an unpinned, generically named dependency unrelated to schema validation. The pattern is a two-package split: the primary package holds encoded payload material and a decoder utility, and the unpinned generically-named dependency is positioned to be the loader that actually decodes and executes the staged content on install or import. Because pip resolves `bytekit` without a version pin from whichever registry is configured, `pip install schemavault` pulls attacker-controlled code into the installer's environment. The dormant carrier data + LSB decoder + unrelated unpinned loader dep together match the staged-dropper shape rather than any legitimate schema-library composition.\n\n## Source: kam193 (2af83487d12e2c9e16e3a5fae1ac369bacd5d39622a04c537edd0dbdda4a143a)\nThe campaign consists of multiple packages. The trigger sits in the package 'procwire,' which depends on two others. During installation, procwire uses schemavault and bytekit packages. The first one holds the URL holding malware (in two places, once as steganography in the bundled image and once as a fallback just as a list of encoded bytes). The bytekit implements simple custom decoding used to retrieve back the URL in the fallback method. Additionally, procwire is also a dependency of confighub, turning another package into malware. The downloaded executable is run and quickly removed. The executable likely contains an infostealer and contacts the domain 030502[.]xyz\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-procwire\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - The malicious code is intentionally included in a dependency of the package\n\n\n - malware\n\n\n - steganography\n",
   "affected": [
     {
       "package": {
@@ -14,7 +14,40 @@
       "versions": [
         "4.1.0",
         "4.1.1"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "schemavault/_registry.py",
+              "sha256": "5c22d3cf713c52ee1e45fa62f1e2f08f300b521af05e4704717257e5f8fd4b53",
+              "tlsh": "64111faf727328662fc355af819776001935b25bac15b1a9b200854c6fcc1cd02b3a2e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "schemavault-4.1.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "cb91c9a89aea6f49b2daea3e2fecc80eee9a59de241a05a24a8071a52b770950",
+                "md5": "1e276f95072779c084b798b7098df0b9",
+                "sha256": "63a52f56d64b117203c46c529d7768e669e102555b54e245106e6d66f98dc7d1"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -25,9 +58,24 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/schemavault"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/schemavault/4.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/schemavault/4.1.0/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -48,14 +96,34 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-07-procwire/schemavault",
-        "import_time": "2026-07-04T00:45:00.562417606Z",
-        "modified_time": "2026-07-03T23:47:04.663247Z",
-        "sha256": "2af83487d12e2c9e16e3a5fae1ac369bacd5d39622a04c537edd0dbdda4a143a",
         "source": "kam193",
+        "sha256": "2af83487d12e2c9e16e3a5fae1ac369bacd5d39622a04c537edd0dbdda4a143a",
+        "import_time": "2026-07-04T00:45:00.562417606Z",
+        "id": "pypi/2026-07-procwire/schemavault",
+        "modified_time": "2026-07-03T23:47:04.663247Z",
         "versions": [
           "4.1.0",
           "4.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1de2c69f508471b25d7cfcb01691619cda57d94dc72da71c83ec825ece11c119",
+        "import_time": "2026-07-09T22:02:30.058647686Z",
+        "id": "IN-MAL-2026-009424",
+        "modified_time": "2026-07-09T21:53:57Z",
+        "versions": [
+          "4.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ae0aa9efa2a8389cfe9d5c41d5ab3689f4965c945a24613493f94f9de033ab1",
+        "import_time": "2026-07-09T22:56:36.066990665Z",
+        "id": "IN-MAL-2026-009576",
+        "modified_time": "2026-07-09T22:15:49Z",
+        "versions": [
+          "4.1.0"
         ]
       }
     ]

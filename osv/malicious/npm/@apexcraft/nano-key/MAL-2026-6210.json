@@ -1,16 +1,29 @@
 {
-  "modified": "2026-06-23T16:56:03Z",
+  "modified": "2026-07-07T13:58:52Z",
   "published": "2026-06-19T15:12:42Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6210",
+  "aliases": [
+    "GHSA-8x7w-vjr2-7q4m"
+  ],
   "summary": "Malicious code in @apexcraft/nano-key (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c46938b3634fb4de89ddf44b765e1c766c871a40fb31c54609c1b3526074e65c)\n@apexcraft/nano-key advertises itself as a 12-byte sortable ID generator (README and repository metadata are copied from yiwen-ai/xid-ts, an unrelated upstream project), but ships a 250KB obfuscator.io-style payload at dist/cjs/seed.cjs. package.json declares `\"postinstall\": \"node./dist/cjs/seed.cjs\"`, so the payload runs automatically on `npm install`. The same `runPrepare()` entry point is also invoked at module load: index.js line 25 calls `_seed.runPrepare()` inside `newState()`, which line 35 invokes as `defaultState = newState()` at top level — so any consumer that `require`s the package re-triggers the dropper. seed.cjs uses an RC4+base64 rotating string array decoder (`_0x554f` / `_0x1420`), control-flow flattening, a self-defending IIFE, and a debugger-protection loop to hide an AES-256-GCM-decrypted URL list. At runtime it `https.request`s those URLs, stages the response under `~/.cache` (or `%LOCALAPPDATA%` / `~/Library/Caches`), sha256-stamps the file, and executes it with `child_process.spawn(process.execPath, [file])`, with an alternate `bun` runtime branch. There is no signature or hash pinning of the fetched bytes, the destination is decrypted at runtime (mutable C2), and the package's stated purpose (ID generation) provides no legitimate reason to fetch and execute remote code. Installing or requiring this package hands arbitrary remote code execution to whoever controls the encrypted endpoint.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c46938b3634fb4de89ddf44b765e1c766c871a40fb31c54609c1b3526074e65c)\n@apexcraft/nano-key advertises itself as a 12-byte sortable ID generator (README and repository metadata are copied from yiwen-ai/xid-ts, an unrelated upstream project), but ships a 250KB obfuscator.io-style payload at dist/cjs/seed.cjs. package.json declares `\"postinstall\": \"node./dist/cjs/seed.cjs\"`, so the payload runs automatically on `npm install`. The same `runPrepare()` entry point is also invoked at module load: index.js line 25 calls `_seed.runPrepare()` inside `newState()`, which line 35 invokes as `defaultState = newState()` at top level — so any consumer that `require`s the package re-triggers the dropper. seed.cjs uses an RC4+base64 rotating string array decoder (`_0x554f` / `_0x1420`), control-flow flattening, a self-defending IIFE, and a debugger-protection loop to hide an AES-256-GCM-decrypted URL list. At runtime it `https.request`s those URLs, stages the response under `~/.cache` (or `%LOCALAPPDATA%` / `~/Library/Caches`), sha256-stamps the file, and executes it with `child_process.spawn(process.execPath, [file])`, with an alternate `bun` runtime branch. There is no signature or hash pinning of the fetched bytes, the destination is decrypted at runtime (mutable C2), and the package's stated purpose (ID generation) provides no legitimate reason to fetch and execute remote code. Installing or requiring this package hands arbitrary remote code execution to whoever controls the encrypted endpoint.\n\n## Source: ghsa-malware (a93a588a8c86cfaf399f05f0c68352ac421adb4cd95f3d9c4ec6d340595c6c5a)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "@apexcraft/nano-key"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.3.8",
         "1.3.4",
@@ -24,6 +37,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -132,6 +150,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@apexcraft/nano-key/v/1.3.3"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-8x7w-vjr2-7q4m"
     }
   ],
   "credits": [
@@ -233,6 +255,23 @@
         "modified_time": "2026-06-23T16:23:09Z",
         "versions": [
           "1.3.3"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "a93a588a8c86cfaf399f05f0c68352ac421adb4cd95f3d9c4ec6d340595c6c5a",
+        "import_time": "2026-07-07T13:57:11.606420529Z",
+        "id": "GHSA-8x7w-vjr2-7q4m",
+        "modified_time": "2026-07-07T13:35:24Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]

@@ -1,10 +1,13 @@
 {
-  "modified": "2026-07-01T19:13:16Z",
+  "modified": "2026-07-07T15:17:32Z",
   "published": "2026-06-25T06:43:58Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6445",
+  "aliases": [
+    "GHSA-3439-q8cv-mg5v"
+  ],
   "summary": "Malicious code in base58-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0081cc9c4152afede923a3e8ee9eb2116b32c02b7f355edbd411f23b2e67273c)\nbase58-core@1.0.5 presents itself as a base58 encoding library (README markets it as @base58/core, public API mimics bs58/@scure/base) but on require of dist/index.js it arms a time-bombed payload that activates 72 hours after install. After activation, a 2.5s timer polls the OS clipboard, detects BTC/ETH/SOL addresses, and silently replaces them with attacker-controlled wallet addresses (bc1qjft978uykglsh0adcyx6xhkes56vqzs3fual3l, 0xd63eD44065eDb1e2ad2519B011c06412dA7B7c5B, A7ajd7W5WYdrnkeaiBRjVoK6uBEDvgnuZcpzQXqo18Ph), redirecting any outgoing crypto transfer made by a user on the installer's machine to the attacker. When clipboard contents match wallet addresses, WIF/hex private keys, or BIP-39 seed phrases, the package POSTs the matches together with hostname, platform, cwd, and up to 2000 chars of clipboard content to a hardcoded bare-IP endpoint at http://2.27.62.51:8080/api/health (with:8081 as backup) over plain HTTP. For persistence, it appends a hook to ~/.bashrc, ~/.zshrc, and ~/.profile that re-invokes the payload via `node -e \"require('@base58/core')._internal.activate()\"` on every shell, and on Windows drops base58-runtime.js into the Startup folder, ensuring the clipper survives reboots and host-process exits. The 72-hour activation delay and powershell-based execSync calls are anti-analysis measures to evade sandbox/CI review. Installer impact is direct financial theft (crypto-address substitution), credential/seed-phrase theft (clipboard exfiltration), and persistent compromise of the developer's shell environment.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (048a186e2e59bb0b7d9986c7099e527390e38690292bc49e237578a471c56680)\nThe package advertises itself as a Base58 encoder/decoder but on require() schedules a delayed payload that performs multiple installer-side attacks. After a 72-hour activation delay, code in dist/index.cjs and dist/index.js enumerates installer-owned secret stores — MetaMask extension storage across Chrome/Chromium/Brave/Edge profiles, Telegram Desktop tdata sessions, ~/.ssh keys, ~/.npmrc _authToken values, browser profile inventories, and env/.env crypto secret variables — and POSTs the collected report to a hardcoded bare-IP endpoint at http://2.27.62.51:8080/api/health (with:8081 as backup). A setInterval clipboard monitor invokes pbpaste/xclip/PowerShell via child_process every 2.5 seconds, matches BTC/ETH/SOL address regexes plus WIF private keys, BIP39 seed phrases (12–24 words), and 64-hex private keys, rewrites detected wallet addresses to attacker-controlled destinations (bc1qjft978uykglsh0adcyx6xhkes56vqzs3fual3l, 0xd63eD44065eDb1e2ad2519B011c06412dA7B7c5B, A7ajd7W5WYdrnkeaiBRjVoK6uBEDvgnuZcpzQXqo18Ph), writes them back to the clipboard, and exfiltrates matched values and the original clipboard slice to the same endpoint. A persistence routine appends a node -e loader to ~/.bashrc, ~/.zshrc, and ~/.profile that re-invokes the payload on every shell start; on Windows it drops base58-runtime.js into the user Startup folder, keeping the clipboard hijacker and exfil active across reboots and beyond project uninstall. The 72-hour dormancy timer is designed to evade sandbox and CI dynamic analysis. The package name and keywords (bitcoin/solana/wallet/ipfs) impersonate legitimate Base58 libraries to target crypto developers.\n\n## Source: ghsa-malware (e697e341b967e796e17cc132952e12802f5e4e6ce8be1453d0434bf6c308081f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -30,10 +33,33 @@
         "1.0.4",
         "1.0.7",
         "1.0.8",
-        "1.0.6"
+        "1.0.6",
+        "1.0.10",
+        "1.0.11",
+        "1.0.12"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -142,6 +168,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/base58-core/v/1.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base58-core/v/1.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base58-core/v/1.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base58-core/v/1.0.12"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-3439-q8cv-mg5v"
     }
   ],
   "credits": [
@@ -263,6 +305,53 @@
         "modified_time": "2026-07-01T18:33:47Z",
         "versions": [
           "1.0.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "048a186e2e59bb0b7d9986c7099e527390e38690292bc49e237578a471c56680",
+        "import_time": "2026-07-06T04:58:10.290301539Z",
+        "id": "IN-MAL-2026-008017",
+        "modified_time": "2026-07-06T03:19:02Z",
+        "versions": [
+          "1.0.10"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "417a523add23d6946f26c4947dcd8db13d011ce847d03773c2da03945a6b4510",
+        "import_time": "2026-07-06T04:58:10.256278157Z",
+        "id": "IN-MAL-2026-008016",
+        "modified_time": "2026-07-06T03:18:49Z",
+        "versions": [
+          "1.0.11"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "df9bd7c3c83faab169afcb367f345db46d0eaeeeaa4e2ea010e0d8b01eb82973",
+        "import_time": "2026-07-06T04:58:10.209214643Z",
+        "id": "IN-MAL-2026-008015",
+        "modified_time": "2026-07-06T03:18:42Z",
+        "versions": [
+          "1.0.12"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "e697e341b967e796e17cc132952e12802f5e4e6ce8be1453d0434bf6c308081f",
+        "import_time": "2026-07-07T15:15:50.680353625Z",
+        "id": "GHSA-3439-q8cv-mg5v",
+        "modified_time": "2026-07-07T15:06:09Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]
