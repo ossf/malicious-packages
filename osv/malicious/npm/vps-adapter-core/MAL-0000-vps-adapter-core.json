@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-07-07T00:00:00Z",
+  "published": "2026-07-07T00:00:00Z",
+  "details": "The package 'vps-adapter-core' is a purpose-built malware package published by the npm account 'srm0rgan' (srm0rgan@proton.me) as part of a coordinated campaign of fake 'Paperclip' VPS-maintenance adapters (siblings: paperclip2, vps-maintenance, vps-maintenance-paperclip-adapter, paperclip-host-utils). Every published version (1.0.0, 1.0.1, 1.0.2) declares a `postinstall` script (`node postinstall.js`) that npm runs automatically during `npm install`, while `index.js` is a benign stub (`init()`/`status()`) that serves only as cover.\n\nThe postinstall payload performs four malicious actions with best-effort error suppression:\n\n1. SSH backdoor: appends the attacker's ed25519 public key (comment `eni@lo`, `AAAAC3NzaC1lZDI1NTE5AAAAIDGA+v9tfK8YVeZejZN2y99mNvefRmQx99lJtjKjIAK2`) to `~/.ssh/authorized_keys`, granting the operator persistent remote SSH access.\n\n2. Cron persistence: writes `/etc/cron.d/eni-persist` containing per-minute (`* * * * * root`) and `@reboot` entries that open bash reverse shells to 185.112.147.174 across ports 7007, 443, 80, 8080, 4444, 5555, 1337, and 9001 via `/dev/tcp`.\n\n3. Credential exfiltration: spawns a detached bash pipeline that dumps host identity, bash history, and a broad sweep of secrets — AWS/Azure/GCP/OCI credentials, kubeconfig, Docker config, git/pip/npm/netrc credentials, `.env` files, SSH private keys (id_rsa/id_ed25519/id_ecdsa/id_github/id_deploy_key), `/etc/shadow`, and `/etc/passwd` — plus a filesystem search for files matching 'maid' and for database files, then pipes the collected data to 185.112.147.174 over `/dev/tcp` across the same eight ports.\n\n4. Interactive reverse shells: spawns detached interactive bash reverse shells to the same host/ports.\n\nA `keepAlive()` timer re-runs the credential dump and reverse-shell spawns every 30 seconds, and a `cleanNpmStains()` routine deletes npm cache traces of the sibling campaign packages to hinder detection. Any developer workstation or CI job that runs `npm install vps-adapter-core` must be considered fully compromised; all credentials and SSH keys reachable from that host should be rotated from a separate, clean machine, and `/etc/cron.d/eni-persist` and the attacker key in `authorized_keys` removed.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "vps-adapter-core"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "package_integrity": [
+            {
+              "filename": "vps-adapter-core-1.0.0.tgz",
+              "hashes": {
+                "sha1": "b43f03947a6f6d67eea1bd711690f67d811c6aa3",
+                "sha512_sri": "sha512-eTu2yuqmdevBictXqPjATsDF5CJtJBhvoJZRyu+/g+ub+ynZ/P9047ON8n49dXWW2WTpHeyA7gut0FnHMkbs6w=="
+              }
+            },
+            {
+              "filename": "vps-adapter-core-1.0.1.tgz",
+              "hashes": {
+                "sha1": "ea1c84b5f1c4a650cded52ccedab7669e21d794e",
+                "sha512_sri": "sha512-5sl13tFXcMEj1tW0nxpEFYL1HoDRjru1xCtm0UuSlIkjMJ/8xhfSqcS1n1wzwQM633rm/hQFhEywXf5A4FOosQ=="
+              }
+            },
+            {
+              "filename": "vps-adapter-core-1.0.2.tgz",
+              "hashes": {
+                "sha1": "8805bdfcd819b42d2dbee9973d069627307afdf3",
+                "sha512_sri": "sha512-yZyipBlzypnANucaFGEDXkoB5s9qBFKGYluS2LjwjuMK2zvZamjEf3kYlxQplnBGzuhxrpiJ6a9v72kmi/XBKg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vps-adapter-core"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "185.112.147.174"
+      ],
+      "urls": [
+        "http://185.112.147.174:8080/npm/v1/security/audits/quick"
+      ]
+    }
+  }
+}
