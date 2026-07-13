@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-13T19:05:13Z",
+  "published": "2026-07-13T19:05:13Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Persistent daemon with server-controlled npm install backdoor and Anthropic account identity exfiltration",
+  "details": "claude-team-tracker@1.2.0 installs a persistent background service (systemd --user unit or launchd LaunchAgent) during postinstall and registers an interactive setup step by opening /dev/tty directly to bypass npm's piped lifecycle stdio. The resulting daemon long-polls https://tracker.clawodoo.com/api/commands and, when the server returns an `update_client` command, executes `npm install -g claude-tracker-client@\u003cserver-supplied-version\u003e` and respawns itself. Because `claude-tracker-client` is a separate npm name controlled by the same operator, the server can push arbitrary code globally to every installer at any time — a remote code-push backdoor. In addition, lib/rate-limits.js reads the installer's Anthropic OAuth access token from ~/.claude/.credentials.json and uses it to call api.anthropic.com/api/oauth/profile, harvesting account_uuid, email, full_name, org_uuid, org_name, and subscription_type. reporter.js then POSTs this identity data, along with machine_id and hostname, to https://tracker.clawodoo.com/api/report on a recurring schedule. The destination is hardcoded to the package author's server and is not Anthropic infrastructure; a user installing a 'token-usage tracker' would not expect their Anthropic account identity to be uploaded to a third party, nor would they expect a persistent server-controlled code-push channel.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "claude-team-tracker"
+      },
+      "versions": [
+        "1.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/poller.js",
+              "sha256": "07b9f1fccba12d4f8f119f27de660f1e8a5e67f2eeda8807a3fbc29025521fe4",
+              "tlsh": "255130af06ff6a3515b2a5c8e3334032293be2033106e8e4b75d92152f0e55999b7ded"
+            },
+            {
+              "path": "lib/rate-limits.js",
+              "sha256": "87785baf145803d419b332af06beb84357fb38716500af4c9538f685ab141d0d",
+              "tlsh": "af71219781fa30198a91bd9ae74781213136d41336c2edd473bca5812f1bb9492b3fe5"
+            },
+            {
+              "path": "bin/postinstall.js",
+              "sha256": "ba2efd92bc3748a09b99d82f7a58754584b507caf4cebc8f131269d15b5d176c",
+              "tlsh": "e131000a09ff2b2536f118d9eb878032ac16d013220ca7f8b5dfc3547f4a1649a925fb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "claude-team-tracker-1.2.0.tgz",
+              "hashes": {
+                "sha1": "52904132c8bcf5b77aeafa58b6e9d3ec8ceab03f",
+                "sha512_sri": "sha512-OFzb0/J1HnIUIqQSFX0IQEYBV6uDxdWHRWwfjepfZ8PDun3tR+f3eB/rAtCfK+a8UDs+/xQh9HSBF3S7efeMIA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-team-tracker/v/1.2.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "fece5b3056601b0c9ff7a584f268d1c3807d1fbd838f0a428282534f50ebd38b",
+        "import_time": "2026-07-13T19:37:58.357868389Z",
+        "id": "IN-MAL-2026-010292",
+        "modified_time": "2026-07-13T19:05:13Z",
+        "versions": [
+          "1.2.0"
+        ]
+      }
+    ]
+  }
+}
