@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-13T06:58:22Z",
+  "published": "2026-07-13T06:58:22Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "cold-debug-elevator ships a Chromium/Gecko browser credential stealer as its advertised API",
+  "details": "The package presents itself as a debugging utility but its exported API is a browser credential stealer targeting installer-owned secrets. The `extract(browserPath, outputPath)` entry point spawns Chrome/Edge/Brave under a debugger, locates the OSCrypt App-Bound Encryption provider inside chrome.dll/msedge.dll via Zydis disassembly (searching for the `OSCrypt.AppBoundProvider.Decrypt.ResultCode` string), sets a hardware execute breakpoint, and reads the 32-byte AppBound key out of process registers via ReadProcessMemory. It then DPAPI-decrypts the Local State master key and issues `SELECT... encrypted_value FROM cookies` and `SELECT origin_url, username_value, password_value FROM logins` against every Chrome/Edge/Brave profile, AES-GCM-decrypting cookies, saved passwords, autofill and history. A second entry point `extractGecko(outputPath)` loads nss3.dll from installed Firefox, Thunderbird, Waterfox, SeaMonkey, Pale Moon, LibreWolf and Tor Browser and calls PK11SDR_Decrypt to recover saved passwords from logins.json, then copies cookies.sqlite, formhistory.sqlite and places.sqlite from each profile. Output files are delimited with a `\u003cSage Private\u003e` branding string consistent with offensive tooling. binding.gyp references vcpkg paths outside the tarball (`\u003c(module_root_dir)\\..\\builder\\src\\Chromium-DebugElevator-main (1)\\...`), so `node-gyp rebuild` will fail on a normal install — the stealer is distributed as C++ source and runs only after a consumer builds it manually and invokes the API, but the shipped code has no purpose other than harvesting browser secrets from the machine that runs it.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "cold-debug-elevator"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/DebugChromium.cpp",
+              "sha256": "5c67ed354277aa56dd855134e2dea3ed219c482826f6f91f384df1bdc20b5740",
+              "tlsh": "c6b2d7c671bfb48f5ea2022040730016ec6cd4a1117fc676bcedc2a07ab55bdc9766ea"
+            },
+            {
+              "path": "src/GeckoExport.cpp",
+              "sha256": "c91800085ef9aec65e0dbc6761ef9a4df810ca547ec6552271eb3a7f9e12ef54",
+              "tlsh": "3e62948394967d18a8f133a1df97418af51b0827b7324ba0fd8f82442f77854a3b4eb5"
+            },
+            {
+              "path": "binding.gyp",
+              "sha256": "1efbb1184a7a5be643fe7f3ec71be981f2be821926174a4306b58de4d9801588",
+              "tlsh": "2c31aa13dd084e17a0ba627ef7584328ea94428b84741a4bb97d145d0f3b0534f9b1be"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cold-debug-elevator-1.0.3.tgz",
+              "hashes": {
+                "sha1": "cbe8afad10f83468f6b56824b6f4ded4d95c99af",
+                "sha512_sri": "sha512-WynPPN/04Zez1KgDDsFR68+2Nd1mMqGeGA1yMyHSJ0YSZxxJheuZW/Eig2z2htQGiaIdRRQ65yaHrzvtU+ZHWQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cold-debug-elevator/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "cae8ef53b42bfe7f208c404e2e973600fa174f41c5a2009814f5f0e892769195",
+        "import_time": "2026-07-13T07:40:12.961402838Z",
+        "id": "IN-MAL-2026-009848",
+        "modified_time": "2026-07-13T06:58:22Z",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}
