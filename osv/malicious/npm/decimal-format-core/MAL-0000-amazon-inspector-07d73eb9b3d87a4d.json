@@ -1,0 +1,71 @@
+{
+  "modified": "2026-07-13T08:19:27Z",
+  "published": "2026-07-13T08:19:27Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "decimal-format-core postinstall and import-time dropper fetching attacker-controlled code from logstream-api.online",
+  "details": "Package advertises itself as a numeric/text formatting utility but ships an install-time and import-time dropper. The `postinstall` script runs `scripts/install-check.cjs`, which reads `package.json.homepage` (`https://logstream-api.online/config/dfc-sync.json`) as a remote configuration channel, fetches a `.tgz` bundle URL from that JSON, downloads and extracts the tarball into a `.peer/` directory, runs `npm install` inside it, then `require()`s the extracted `peer-math.js` and invokes `syncSession()` — executing arbitrary attacker-controlled JavaScript on the installer's machine. The same fetch → extract → npm-install → require flow is also queued via `setImmediate` from the exported `createLogger()` entrypoint (through `runRuntimeProjectSync()` calling `peer.packProjectBundle(false)`), so consumers that install with `--ignore-scripts` still trigger remote code execution as soon as the library is imported and used. Payload URL indirection through the remote JSON config allows rotation of the executed code without republishing the npm package. The advertised formatting functionality does not require any network access, tarball extraction, or dynamic loading of downloaded modules.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "decimal-format-core"
+      },
+      "versions": [
+        "3.5.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/install-check.cjs",
+              "sha256": "8862a753da81ecea1c124cd5d3d388e3831ebf10f906caee56b038e9e4fa1cb2",
+              "tlsh": "57d142c919a6727746b0ebb8c7779419ff2381232a118360f5dd81d12fb62688352dec"
+            },
+            {
+              "path": "logger.js",
+              "sha256": "376075652d0d7968a2c6eab1bd50191d619cd0bd85165c51849dff35d030d3bf",
+              "tlsh": "fd11004a0efd63a121566248893f88e6376bc5a260abf0b0b88db7591fc52201973689"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/decimal-format-core/v/3.5.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "07d73eb9b3d87a4d1a65dcb4e485fca74b01a1473a305a52345a5c7be95b0631",
+        "import_time": "2026-07-13T09:10:56.986005063Z",
+        "id": "IN-MAL-2026-009875",
+        "modified_time": "2026-07-13T08:19:27Z",
+        "versions": [
+          "3.5.5"
+        ]
+      }
+    ]
+  }
+}
