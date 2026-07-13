@@ -1,0 +1,137 @@
+{
+  "modified": "2026-07-12T23:22:43Z",
+  "published": "2026-07-09T22:16:53Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10100",
+  "summary": "Malicious code in proxy-check-i (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2da390c130eb840eb129a5d43faf0a64a0f0f602070243613aa0e2f8ea8f6d04)\nThe package advertises itself as a wrapper for a 'qsshd executable' but the bundled Go binary is a reverse-SSH daemon that grants a remote operator persistent shell, exec, pty, and TCP port-forwarding on the installer's host. The entry point `proxy-check-i` (declared in the package's console_scripts, mapped to `qsshd.launcher:main`) uses `os.execv` to launch the bundled Go binary. The daemon establishes device identity by writing a `.device_lock` file under `$XDG_CONFIG_HOME`, `/dev/shm`, or `/tmp`, then repeatedly dials out to a relay via `github.com/mydearniko/overthing` (`tunnel.NewServer` with `RelayURI` and `ForwardAddr` pointing at the local SSH listener). SSH authentication only accepts a single hardcoded ed25519 public key embedded at build time via `//go:embed authorized_keys`, so only the key holder can connect. The reverse-connect design bypasses inbound firewalls. PyPI metadata is a cover story: PKG-INFO summary mentions only 'qsshd executable' with no README and no disclosure of SSH-server, authorized-keys, or outbound-relay behavior, so an installer cannot infer they are enabling a remote-shell daemon. Any host that runs `proxy-check-i` is remotely controllable by the key holder.\n\n## Source: kam193 (dd01be5624206ed8c0a5ba9535c9a9e79ed8770b37eb9ebc381edbe73cb5e779)\nThe embedded binary starts a relayed SSH-like server using a hardcoded authorized_key. Thanks to using a relay network, the attacked does not need to directly expose ports from the machine.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-proxy-check-i\n\n\nReasons (based on the campaign):\n\n\n - backdoor\n\n\n - The package contains code to execute remote commands (probably limited to a specific set) on the victim's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "proxy-check-i"
+      },
+      "versions": [
+        "0.1.0",
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "internal/sshd/authorized_keys",
+              "sha256": "2dca1f8128dd32da51ec6aea5e0a409773bfe8172655e72b94c7e832437ecd0f",
+              "tlsh": "5ea0243044d044035dcc150701c40d7fdd3135053fdc0f00504100141dfd5c1cc1403c"
+            },
+            {
+              "path": "cmd/qsshd/main.go",
+              "sha256": "3635d4483809bb7c3dab73fbc0b560dd2b0b470a1ce7d2a11d596119b2a52f33",
+              "tlsh": "f872b5e2db7d45160ba20069dc54d559ebbcd0394a3890f5f488a2fb30cc59fd1beac6"
+            },
+            {
+              "path": "PKG-INFO",
+              "sha256": "355069045531fb20f10b935c247fa039afc674bb9119de10452bea1e44394949",
+              "tlsh": "aad02b91638071f0b099cad6010c5a61545ad242568915d6c9e21fce098922887db030"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "proxy_check_i-0.1.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+              "hashes": {
+                "blake2b_256": "3fd6a6c4cb30258011fdfe2a1dd0b5086b35ece26cbb4fbd94549ef388676b00",
+                "md5": "60db2097a2f2022c9ed4f1b3641f647d",
+                "sha256": "d3ff7f14ed32e364dd5fbba8e213d66e827befb00de5f9ea6f144869e811aebf"
+              }
+            },
+            {
+              "filename": "proxy_check_i-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "93841f5f847c4b5f95e73df6abb3af40c7a2a92fa04bf6dac7b18e7a6d3fb78b",
+                "md5": "47b608ef1bb0133a43583bd56aa15920",
+                "sha256": "eac076dd2942038a9a40963d429b77755baaf6b06b71f237a12b4d76a48cc57f"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/proxy-check-i/0.1.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/proxy-check-i/0.1.1/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/proxy-check-i"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "2da390c130eb840eb129a5d43faf0a64a0f0f602070243613aa0e2f8ea8f6d04",
+        "import_time": "2026-07-09T22:56:36.667062536Z",
+        "id": "IN-MAL-2026-009583",
+        "modified_time": "2026-07-09T22:16:53Z",
+        "versions": [
+          "0.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ee0e907c752a42d6a2b084a971dd61af2b020ccf33026f9a7b40367615344b36",
+        "import_time": "2026-07-09T22:56:36.772525864Z",
+        "id": "IN-MAL-2026-009584",
+        "modified_time": "2026-07-09T22:17:01Z",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "dd01be5624206ed8c0a5ba9535c9a9e79ed8770b37eb9ebc381edbe73cb5e779",
+        "import_time": "2026-07-12T23:20:54.069849948Z",
+        "id": "pypi/2026-07-proxy-check-i/proxy-check-i",
+        "modified_time": "2026-07-12T22:57:45.503154Z",
+        "versions": [
+          "0.1.0",
+          "0.1.1"
+        ]
+      }
+    ]
+  }
+}

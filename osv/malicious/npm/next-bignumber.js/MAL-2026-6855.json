@@ -1,0 +1,93 @@
+{
+  "modified": "2026-07-08T19:35:40Z",
+  "published": "2026-07-06T18:54:12Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6855",
+  "aliases": [
+    "GHSA-8vr6-7cjp-qgrj"
+  ],
+  "summary": "Malicious code in next-bignumber.js (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (615f1e472f3fec95854738e64a4e4883676d514db833ca3bfa7a1008c0253a57)\nPackage impersonates the widely-used `bn.js` crypto library: README, repository URL, logo, and source files are copied verbatim from indutny/bn.js, but the package is published under an unrelated author. The `package.json` `author` field is `craig silverman` while `homepage` and `repository` point at `github.com/indutny/next-bignumber.js` (Fedor Indutny is the real bn.js maintainer), and the README retains the upstream sponsor links to `github.com/sponsors/indutny` — identity-spoofing metadata designed to mislead installers into believing they are getting an indutny package. The package adds a non-bn.js runtime dependency, `random-string-64`, with no mathematical purpose: `lib/bn.js:40` does `const getUniqueID = require('random-string-64').default;` (loaded at module top level on every `require('next-bignumber.js')`) and `BN.prototype.toString` invokes `getUniqueID(64); var test=213;` on the hot path of every crypto operation that calls `.toString()` on a BN (Ethereum, secp256k1, and similar workflows hit this constantly). Whatever `random-string-64` ships executes in the installer's/consumer's process on import and on every numeric stringification. The combination of a copied-upstream typosquat targeting a top-tier crypto library, mismatched/spoofed author metadata, and a gratuitous transitive dependency wired into a hot code path is a namespace-abuse dropper shape — the lure package itself is thin, but installing it silently pulls `random-string-64` into the installer's tree and executes it.\n\n## Source: ghsa-malware (cac4f683d978bbfcebc9eb96a314e21c97d5d7874f023377d78c51697ea8c074)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "next-bignumber.js"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/bn.js",
+              "sha256": "82778bc6189d811e4fbb56c0fd2dc9649caafc47a69cccc0ed60cebb311661b0",
+              "tlsh": "19938844abb720599a4b753c4faf60886a74e41b5847dd08bd8ce3e06f5502482fdffa"
+            },
+            {
+              "path": "package.json",
+              "sha256": "132d01c3991cbc23d121ce3076920ddfa9ded785a5a5ccd49f23b31215b08bcb",
+              "tlsh": "56115c54c8594ca31bd566e658f82007f522885bc884fc1db3a7421d8f1f16f22fe9bc"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-8vr6-7cjp-qgrj"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/next-bignumber.js/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "cac4f683d978bbfcebc9eb96a314e21c97d5d7874f023377d78c51697ea8c074",
+        "import_time": "2026-07-06T19:53:47.940601814Z",
+        "id": "GHSA-8vr6-7cjp-qgrj",
+        "modified_time": "2026-07-06T18:54:23Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "615f1e472f3fec95854738e64a4e4883676d514db833ca3bfa7a1008c0253a57",
+        "import_time": "2026-07-08T19:33:44.068754637Z",
+        "id": "IN-MAL-2026-008201",
+        "modified_time": "2026-07-08T19:23:07Z",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
