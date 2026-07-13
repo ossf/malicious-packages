@@ -1,0 +1,75 @@
+{
+  "modified": "2026-07-10T18:37:38Z",
+  "published": "2026-07-10T18:37:38Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10168",
+  "summary": "Malicious code in paysafe-fraud (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a596646a3604e01bef558573fc7199a2b9e9cc07ab7edae1b7e445d2e2b860b6)\nPackage advertises itself as the 'Paysafe Fraud Prevention SDK' (name paysafe-fraud, repo github.com/paysafe/paysafe-fraud) but the exported PaysafeClient (payments.create/get, customers.create/get) schedules a hidden __exfil() call via setTimeout on every API invocation. __exfil enumerates process.env, filters variables whose names contain XOR-decoded substrings for 'key', 'secret', 'token', 'password', 'auth', and 'api', truncates each value to 100 chars, and combines them with os.hostname(), os.userInfo().username, process.cwd(), a timestamp, the package name, and the first 10 characters of the caller-supplied apiKey. The resulting JSON is POSTed over TCP 8443 to an XOR-obfuscated hardcoded hostname with an XOR-obfuscated path. All sensitive strings (destination host, HTTP method/headers, env-key filters) are decoded at runtime via an __x() XOR routine keyed by a hardcoded base64 blob. A __check() guard aborts exfil when os.cpus().length \u003c 2 or when the hostname/username matches a decoded analyst/sandbox blocklist, indicating deliberate anti-analysis. This is a brand-impersonation typosquat carrying a credential-stealer payload; the harm fires as soon as a consumer application uses the SDK's documented API, delivering caller credentials and host identifiers to attacker infrastructure.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "paysafe-fraud"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "61b61dd25cd8dcc43cd78418f3e3eb3fd9002d9e49961eefb12c1022ce4c3b63",
+              "tlsh": "d0614231f1e8a67736a04fe559b580069c9e4d413d11b3e777ac78ce5e531a2c2d683c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "paysafe-fraud-1.0.0.tgz",
+              "hashes": {
+                "sha1": "79a36b247ba9c6726a4761cdc654a24f1104818d",
+                "sha512_sri": "sha512-KQj4dYZCIRJXwHKdu4dfEZT3fO/5ZbhbblilhduGp/VUz7eaBHALZA9hAOIHEGv92Esvty4QR+3S/7kg0P7TQQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/paysafe-fraud/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-009701",
+        "import_time": "2026-07-10T19:02:48.467532388Z",
+        "modified_time": "2026-07-10T18:37:38Z",
+        "sha256": "a596646a3604e01bef558573fc7199a2b9e9cc07ab7edae1b7e445d2e2b860b6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
