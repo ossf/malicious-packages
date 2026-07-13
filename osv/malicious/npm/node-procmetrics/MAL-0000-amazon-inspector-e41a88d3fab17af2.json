@@ -1,0 +1,75 @@
+{
+  "modified": "2026-07-13T14:00:34Z",
+  "published": "2026-07-13T14:00:34Z",
+  "schema_version": "1.7.4",
+  "id": "",
+  "summary": "Postinstall installs persistent C2 agent using npm dist-tags as command channel",
+  "details": "install.js executes automatically via the package.json postinstall hook. It XOR-decodes (key 0x5A) a hardcoded npm registry auth token and writes it into the installer's global npm config at //registry.npmjs.org/:_authToken, replacing the installer's own npm authentication with an attacker-controlled identity. It then polls registry.npmjs.org for this package's dist-tags, base64-decodes the 'cmd' field, and executes the resulting string via spawnSync('bash', ['-c', cmd],...) in an infinite loop, giving the publisher arbitrary shell execution on any machine that installs the package. The output and exit code of each executed command are base64-encoded, placed into a synthesized package.json description field under /tmp/pm-pkg, and pushed back to the public npm registry via 'npm publish --access public' using the hijacked token, using the registry itself as the exfiltration channel. For persistence, install.js copies itself to /tmp/.pm-agent.js and spawns a detached, unref'd Node process pointing at that file, so the polling loop survives past the npm install invocation. The combination of covert channel via dist-tags, XOR-obfuscated embedded credential, credential replacement in the installer's npm config, and detached persistent process is unambiguous backdoor behavior at install time.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "node-procmetrics"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "64510a5a725576ef286eb3773cdf6953e5905c5eeaeac6b7417089faa159b89b",
+              "tlsh": "ae41659656f7533166f254e9e617e81f367be1127645dee0f8dc43260f0351042a30b9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "node-procmetrics-1.0.1.tgz",
+              "hashes": {
+                "sha1": "94ce63df42f3bdc531cb5fe0751b15477fad75f4",
+                "sha512_sri": "sha512-L9bYaAP6tSSXQeVJTA506TPkM0MK/i/6BvwhhSYG/H7793EAp7J0Ir2gjN08hOLS5Gha2M9IsOP0ITspwc+3pQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/node-procmetrics/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "e41a88d3fab17af2429cc051cce026d47622123ce4005d3fbdda844dfca2783a",
+        "import_time": "2026-07-13T14:19:32.886694136Z",
+        "id": "IN-MAL-2026-010236",
+        "modified_time": "2026-07-13T14:00:34Z",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
