@@ -1,0 +1,81 @@
+{
+  "modified": "2026-07-13T21:29:25Z",
+  "published": "2026-07-13T21:29:25Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10495",
+  "summary": "Malicious code in @quukk/opencode-clawmessenger (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (74e48f1438950e47277df7d6b0df77f7e2ecf2315323b0012a293299bbb91b9c)\nThe package is a remote-controlled bridge: after the user runs `opencode-clawmessenger setup` and binds via QR code, the installed wrapper authenticates to https://newsradar.dreamdt.cn/im, connects to a RongCloud IM channel, and processes inbound `device_control` (start/stop/restart/status/reload), `service_chat_message`, and `chat_message` types from that channel. Chat content is forwarded to a local OpenCode AI session at http://127.0.0.1:19877 and responses are returned over IM (dist/core/message-handler.js: `case RongyunMessageTypeEnum[...DEVICE_CONTROL...]: await this['handleDeviceControl'](...)` with `_cmd_map = {1:'start',2:'stop',3:'restart',4:'status',5:'reload'}`; dist/core/auto-register.js: `DEFAULT_SERVER_URL='https://newsradar.dreamdt.cn/im'`). Whoever controls the dreamdt.cn relay or the bound RongCloud account can therefore drive the installer's local OpenCode AI agent and start/stop/restart processes on the installer's machine. Compounding concerns: (a) the entire `dist/` tree plus `scripts/opencode-wrapper.js` is shipped through javascript-obfuscator (string-array + base64 + control-flow flattening) per package.json's `prepublishOnly: npm run build \u0026\u0026 npm run obfuscate`, hiding the full set of message handlers from review; (b) `getAppSecret()` in dist/core/auto-register.js fetches the RongCloud appSecret over HTTPS with `rejectUnauthorized: false`, allowing any on-path attacker to MITM the credential-bearing call and inject an attacker-controlled secret; (c) on `setup`, dist/core/installer.js renames the system `opencode` binary to `opencode-original.*` and drops a wrapper in LOCALAPPDATA / Program Files / nvm / Scoop / npm global bin so future invocations of `opencode` go through this bridge. The harmful behavior is gated behind the user-invoked `setup` subcommand rather than an npm lifecycle hook, but the combination of a hardcoded third-party command channel, executed `device_control` opcodes, system-binary substitution, disabled TLS verification on a credential fetch, and whole-tree obfuscation places the installer's OpenCode environment under remote third-party control once setup is completed.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@quukk/opencode-clawmessenger"
+      },
+      "versions": [
+        "1.1.10"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "04458c470693984fa12188f2758916d2e9d1dd4c31b590735495e672e38f7314",
+              "tlsh": "cb51f810dca94c6309ca00b16cb7461a6138a8075a18fd1c77e843ad8f1e7bf217fb2e"
+            },
+            {
+              "path": "dist/core/message-handler.js",
+              "sha256": "d3f7ed2fb111f86010cac21fbafcfbe9076c597417da6c6b453661edda282eea",
+              "tlsh": "9963d8552ea41084338a1ab7b227b8e5e6474ddc74584d8fe2987d2431ea217fef4f70"
+            },
+            {
+              "path": "dist/core/auto-register.js",
+              "sha256": "9d121474fa90e94c1816e41643d85b091d8c453651d7aa52df9634c63c288e9c",
+              "tlsh": "9362c5056e95a6c0b34b0b7b3a2334d5d91b08a5342c898fe3047fd43c79293fea5a78"
+            },
+            {
+              "path": "dist/core/installer.js",
+              "sha256": "3c959c2124dc977abffec74726049fa40f66cd4f1f786041ee546fcbaa1bc5a8",
+              "tlsh": "8653c640aac4641423875bbbba2bb0d5f93b0cdd35c44887c119bea87566727e5f3a32"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@quukk/opencode-clawmessenger/v/1.1.10"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010323",
+        "import_time": "2026-07-13T21:49:33.791356972Z",
+        "modified_time": "2026-07-13T21:29:25Z",
+        "sha256": "74e48f1438950e47277df7d6b0df77f7e2ecf2315323b0012a293299bbb91b9c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.10"
+        ]
+      }
+    ]
+  }
+}
