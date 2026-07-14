@@ -1,10 +1,13 @@
 {
-  "modified": "2026-07-08T21:55:58Z",
+  "modified": "2026-07-14T05:14:04Z",
   "published": "2026-06-01T07:04:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5163",
+  "aliases": [
+    "GHSA-gj65-7753-2q9f"
+  ],
   "summary": "Malicious code in @emcd-vue/auth (npm)",
-  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to pose as an internal Vue.js front-end tooling package from \"EMCD Platform Engineering.\" The package contains no functional library code — the entire package is a delivery vehicle for a multi-stage dropper embedded in a 137.5 KB single-line obfuscated postinstall hook (JScrambler/WaCk-style; 811-element encoded string array).\n\n**Trigger:** `scripts.postinstall` → `scripts/postinstall.js`\n\n**Execution flow:**\n- Checks `EMCD_VUE_NO_TELEMETRY` env var as a kill-switch (README misleadingly documents a different, non-functional kill-switch name)\n- Computes a per-host/project dedup key to execute only once\n- Detects platform (`linux-x64`, `darwin-arm64`, `win`)\n- Downloads platform-specific second-stage: `GET https://oob.moika.tech/payload/{platform}` with `X-Secret: l95HdDaz3kQx1Zsg3WxH6HvKANf51RY1`\n- Writes payload to `~/.emcd-vue_init.js` (dot-prefixed hidden file)\n- Spawns payload as a detached, unref'd process — persists after npm exits\n- Beacons installation metadata to `https://oob.moika.tech/report`\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f8bc285b34b9a2e8abc8e2a86a7a0c8738823d504bbc7e30a4e56b1ec9810162)\n@emcd-vue/auth@6.4.5 is a hollow shell package whose only functional content is a malicious postinstall script. package.json advertises this as an 'Internal @wildberries/service-router package' (a dependency-confusion lure targeting builds that expect an internal @wildberries/* mirror), but dist/index.js is a one-line re-export `module.exports = require('../src/index.js')` pointing at a path that does not exist in the tarball — the package provides no library functionality. scripts/postinstall.js is heavily obfuscated using an obfuscator.io-style shuffled string array with RC4 + base64 decoders and hex-encoded property accesses; critical strings (host, URL path, secret header) are assembled only at runtime via `atob(...)+atob(...)` concatenation to evade static inspection. On `npm install` the script issues an HTTPS GET with a custom `X-Secret` header to the runtime-assembled URL, writes the response buffer to a randomly-named.js file under `os.tmpdir()`, and spawns it with `process.execPath` (Node) detached, `stdio:'ignore'`, `windowsHide:true`, then `.unref()`s the child so it survives the installer. Host-identifying data is exfiltrated as part of the fetch (hostname-keyed string selection via `os.hostname()`, CWD walk-up via `process.cwd()`, Node version check), and the spawned child receives the installer's full `process.env` plus additional atob-decoded secret values, handing any environment-resident credentials to the attacker-controlled payload.\n",
+  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to pose as an internal Vue.js front-end tooling package from \"EMCD Platform Engineering.\" The package contains no functional library code — the entire package is a delivery vehicle for a multi-stage dropper embedded in a 137.5 KB single-line obfuscated postinstall hook (JScrambler/WaCk-style; 811-element encoded string array).\n\n**Trigger:** `scripts.postinstall` → `scripts/postinstall.js`\n\n**Execution flow:**\n- Checks `EMCD_VUE_NO_TELEMETRY` env var as a kill-switch (README misleadingly documents a different, non-functional kill-switch name)\n- Computes a per-host/project dedup key to execute only once\n- Detects platform (`linux-x64`, `darwin-arm64`, `win`)\n- Downloads platform-specific second-stage: `GET https://oob.moika.tech/payload/{platform}` with `X-Secret: l95HdDaz3kQx1Zsg3WxH6HvKANf51RY1`\n- Writes payload to `~/.emcd-vue_init.js` (dot-prefixed hidden file)\n- Spawns payload as a detached, unref'd process — persists after npm exits\n- Beacons installation metadata to `https://oob.moika.tech/report`\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f8bc285b34b9a2e8abc8e2a86a7a0c8738823d504bbc7e30a4e56b1ec9810162)\n@emcd-vue/auth@6.4.5 is a hollow shell package whose only functional content is a malicious postinstall script. package.json advertises this as an 'Internal @wildberries/service-router package' (a dependency-confusion lure targeting builds that expect an internal @wildberries/* mirror), but dist/index.js is a one-line re-export `module.exports = require('../src/index.js')` pointing at a path that does not exist in the tarball — the package provides no library functionality. scripts/postinstall.js is heavily obfuscated using an obfuscator.io-style shuffled string array with RC4 + base64 decoders and hex-encoded property accesses; critical strings (host, URL path, secret header) are assembled only at runtime via `atob(...)+atob(...)` concatenation to evade static inspection. On `npm install` the script issues an HTTPS GET with a custom `X-Secret` header to the runtime-assembled URL, writes the response buffer to a randomly-named.js file under `os.tmpdir()`, and spawns it with `process.execPath` (Node) detached, `stdio:'ignore'`, `windowsHide:true`, then `.unref()`s the child so it survives the installer. Host-identifying data is exfiltrated as part of the fetch (hostname-keyed string selection via `os.hostname()`, CWD walk-up via `process.cwd()`, Node version check), and the spawned child receives the installer's full `process.env` plus additional atob-decoded secret values, handing any environment-resident credentials to the attacker-controlled payload.\n\n## Source: ghsa-malware (dfd43164e739de65fb308237cdf44f0f849d11ae459d967c0aae2be068af476a)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +32,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -99,6 +107,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@emcd-vue/auth/v/6.4.9"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-gj65-7753-2q9f"
     }
   ],
   "credits": [
@@ -167,6 +179,23 @@
         "modified_time": "2026-07-08T21:35:14Z",
         "versions": [
           "6.4.9"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "dfd43164e739de65fb308237cdf44f0f849d11ae459d967c0aae2be068af476a",
+        "import_time": "2026-07-14T05:12:22.003323132Z",
+        "id": "GHSA-gj65-7753-2q9f",
+        "modified_time": "2026-07-14T05:00:24Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]
