@@ -48,6 +48,13 @@ func (r *Report) RawDetails() string {
 	return r.raw.Details
 }
 
+// HasDetailsHeader determines whether or not the details header may be present.
+func (r *Report) HasDetailsHeader() bool {
+	// Evaluate the header without the surrounding whitespace as it may be present
+	// with the whitespace stripped from another source.
+	return strings.Contains(r.raw.Details, strings.TrimSpace(detailHeader))
+}
+
 // ParseDetails attempts to separate the report details into its various parts.
 //
 // If it fails to parse the details an error will be returned, and user and
