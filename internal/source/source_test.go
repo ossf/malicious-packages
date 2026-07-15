@@ -138,3 +138,52 @@ func TestSource_Enabled(t *testing.T) {
 		t.Fatalf("Enabled() = true; want false")
 	}
 }
+
+func TestSource_Recursion(t *testing.T) {
+	tests := []struct {
+		name string
+		yaml string
+		want source.RecursionBehaviour
+		err  bool
+	}{
+		{
+			name: "default when empty",
+			yaml: "id: test\n",
+			want: source.RecursionFail,
+		},
+		{
+			name: "allow",
+			yaml: "id: test\nrecursion: allow\n",
+			want: source.RecursionAllow,
+		},
+		{
+			name: "fail",
+			yaml: "id: test\nrecursion: fail\n",
+			want: source.RecursionFail,
+		},
+		{
+			name: "ignore",
+			yaml: "id: test\nrecursion: ignore\n",
+			want: source.RecursionIgnore,
+		},
+		{
+			name: "invalid",
+			yaml: "id: test\nrecursion: invalid\n",
+			err:  true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dec := yaml.NewDecoder(bytes.NewBuffer([]byte(test.yaml)))
+			var s *source.Source
+			err := dec.Decode(&s)
+			if (err != nil) != test.err {
+				t.Fatalf("Decode() error = %v, want err %v", err, test.err)
+			}
+			if !test.err && s.Recursion != test.want {
+				t.Errorf("Recursion = %v, want %v", s.Recursion, test.want)
+			}
+		})
+	}
+}

@@ -63,6 +63,11 @@ func (o *OriginRef) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// HasOrigins returns true if there are any origin references associated with the report.
+func (r *Report) HasOrigins() bool {
+	return len(r.origins) > 0
+}
+
 func (r *Report) getOrigin(sourceID, shasum string) *OriginRef {
 	for _, o := range r.origins {
 		if o.Source == sourceID && o.SHASum == shasum {
