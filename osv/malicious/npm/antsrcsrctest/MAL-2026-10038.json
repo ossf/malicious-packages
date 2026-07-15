@@ -1,21 +1,36 @@
 {
-  "modified": "2026-07-09T15:28:28Z",
-  "published": "2026-07-09T15:28:28Z",
+  "modified": "2026-07-13T06:50:46Z",
+  "published": "2026-07-09T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10038",
   "summary": "Malicious code in antsrcsrctest (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (80da6b239fe02ae1bbf7086d885062181d9ea048490ad77911a63ae4c393cc42)\nOn `npm install`, the declared preinstall script (preinstall.js) POSTs the installer's full `process.env`, `os.hostname()`, `os.platform()`, cwd, container-detection artifacts (`/.dockerenv`, `/proc/1/cgroup`, `/proc/self/mountinfo`), and the output of shell reconnaissance commands (`id`, `whoami`, `hostname`, `ps aux`) to `http://101.35.44.248` over plain HTTP. The script additionally issues `curl` requests to the Alibaba Cloud instance metadata service at `100.100.100.200`, including the `latest/meta-data/ram/security-credentials/` path that returns temporary IAM credentials for the instance role, and forwards the response to the same attacker endpoint. The package advertises itself as \"a simple date formatting utility\" and index.js contains only a 7-line date formatter, confirming a decoy cover story for install-time credential theft and environment exfiltration.\n",
+  "details": "The npm package `antsrcsrctest` masquerades as a \"simple date formatting utility\" (`index.js` exports a harmless `formatDate()` function that is never referenced by the malicious code) but is a credential-harvesting and cloud-metadata-stealing reconnaissance tool. It declares a `preinstall: node preinstall.js` hook, so the payload executes automatically on `npm install`, before the package is ever imported or used. `preinstall.js` collects `os.hostname()`, `os.platform()`, `process.cwd()`, and the victim's entire `process.env` (all environment variables, frequently containing API keys, tokens and secrets); fingerprints container context by checking for `/.dockerenv` and reading `/proc/1/cgroup` and `/proc/self/mountinfo`; runs local reconnaissance commands via `child_process.execSync` (`id`, `whoami`, `hostname`, `ps aux`); and performs SSRF against the Alibaba Cloud (Aliyun) instance metadata service at `http://100.100.100.200/latest/meta-data/`, specifically probing `/latest/meta-data/ram/security-credentials/` in an attempt to steal cloud IAM role credentials. All of the above (including the full environment variable dump) is exfiltrated via two plaintext HTTP POST requests (to `/` and `/env`) to a hardcoded C2 endpoint `http://101.35.44.248` (raw IP, port 80, no TLS) using Node's built-in `http` module. All errors are silently swallowed so the attack is invisible to the installer. The package was published by npm user `xingzhigege` (`xingzhi@foxmail.com`).\n\nAnalysis performed via static review only (npm registry metadata and package source retrieved as text via the npm registry and unpkg CDN) — the package was not installed or executed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (80da6b239fe02ae1bbf7086d885062181d9ea048490ad77911a63ae4c393cc42)\nOn `npm install`, the declared preinstall script (preinstall.js) POSTs the installer's full `process.env`, `os.hostname()`, `os.platform()`, cwd, container-detection artifacts (`/.dockerenv`, `/proc/1/cgroup`, `/proc/self/mountinfo`), and the output of shell reconnaissance commands (`id`, `whoami`, `hostname`, `ps aux`) to `http://101.35.44.248` over plain HTTP. The script additionally issues `curl` requests to the Alibaba Cloud instance metadata service at `100.100.100.200`, including the `latest/meta-data/ram/security-credentials/` path that returns temporary IAM credentials for the instance role, and forwards the response to the same attacker endpoint. The package advertises itself as \"a simple date formatting utility\" and index.js contains only a 7-line date formatter, confirming a decoy cover story for install-time credential theft and environment exfiltration.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "antsrcsrctest"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +67,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/antsrcsrctest/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/antsrcsrctest"
     }
   ],
   "credits": [
@@ -61,16 +80,32 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "ips": [
+        "101.35.44.248"
+      ],
+      "urls": [
+        "http://101.35.44.248/",
+        "http://101.35.44.248/env"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-009101",
-        "import_time": "2026-07-09T16:20:40.706334025Z",
-        "modified_time": "2026-07-09T15:28:28Z",
-        "sha256": "80da6b239fe02ae1bbf7086d885062181d9ea048490ad77911a63ae4c393cc42",
         "source": "amazon-inspector",
+        "sha256": "80da6b239fe02ae1bbf7086d885062181d9ea048490ad77911a63ae4c393cc42",
+        "import_time": "2026-07-09T16:20:40.706334025Z",
+        "id": "IN-MAL-2026-009101",
+        "modified_time": "2026-07-09T15:28:28Z",
         "versions": [
           "1.0.0"
         ]
