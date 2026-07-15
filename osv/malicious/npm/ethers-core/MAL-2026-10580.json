@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-14T12:55:50Z",
+  "modified": "2026-07-15T04:54:43Z",
   "published": "2026-07-14T12:55:50Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10580",
   "summary": "Malicious code in ethers-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c45244535e6a0091daf7b425d3d8c5040f26b487db54fdae84efc63a17fbf76d)\nethers-core@6.13.7 impersonates the ethers.js ecosystem ('official sub-library of ethers.js') and executes dist/index.min.js from a package.json postinstall hook on npm install. The bundled script scans installer home paths (~/.aws/credentials, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.npmrc, wallet keystores, mnemonic files,.env*) and reads named credential environment variables (AWS_SECRET_ACCESS_KEY, GITHUB_TOKEN, NPM_TOKEN, PRIVATE_KEY, MNEMONIC), then double-base64 encodes the results and POSTs them to a hardcoded Telegram bot endpoint at api.telegram.org and to a webhook.site endpoint. It additionally extracts hex/WIF private keys from scanned files, queries balances via cloudflare-eth.com and blockchain.info, and transfers funds to hardcoded attacker addresses 0x72bC6c8584713676cD5B56B0f94e1A6af3161f05 (ETH) and bc1qvg0vmlxf2ly248my69r2k6zut8s4q93j9mqvtf (BTC). For persistence it appends a node loader line to ~/.bashrc, ~/.zshrc and ~/.profile, writes an XDG autostart entry at ~/.config/autostart/sys-core.desktop, and drops /tmp/sys-core.js which beacons on an interval.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3959190c7c321e0d6f512b89b3c54a6399f3e6f7daecd0563ff753a6a6fed2f5)\nPackage name typosquats the popular 'ethers' library. package.json declares a postinstall pointing at dist/index.min.js, whose sole top-level statement is eval(Buffer.from('\u003cbase64\u003e','base64').toString()). The decoded payload enumerates installer secrets (env vars including PRIVATE_KEY, MNEMONIC, AWS_SECRET_ACCESS_KEY, GITHUB_TOKEN, NPM_TOKEN; files including.env, ~/.aws/credentials, ~/.ssh/id_rsa, ~/.npmrc, wallet.json, keystore.json, seed.txt) and POSTs them to a hardcoded Telegram bot endpoint at api.telegram.org. Any 64-hex or WIF private key recovered is loaded into an ethers.Wallet, balance-checked against cloudflare-eth.com, and drained via sendTransaction to hardcoded attacker ETH/BTC addresses (ETH 0x72bC6c85847136..., BTC bc1qvg0vmlxf2ly248my69r2k6zut8s4q93j9mqvtf); BTC transactions are pushed via blockchain.info/pushtx. Persistence is established by appending 'node /tmp/sys-core.js \u0026' to ~/.bashrc, ~/.zshrc, and ~/.profile, writing ~/.config/autostart/sys-core.desktop, and dropping /tmp/sys-core.js, which polls an attacker webhook via child_process.exec. A companion config/attacker-config.json ships the attacker's Telegram bot token, chat_id, wallet destinations, and target secret path/env-var list.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "ethers-core"
       },
       "versions": [
-        "6.13.7"
+        "6.13.7",
+        "6.13.5"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/ethers-core/v/6.13.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ethers-core/v/6.13.5"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-010503",
-        "import_time": "2026-07-14T13:35:49.813639239Z",
-        "modified_time": "2026-07-14T12:55:50Z",
-        "sha256": "c45244535e6a0091daf7b425d3d8c5040f26b487db54fdae84efc63a17fbf76d",
         "source": "amazon-inspector",
+        "sha256": "c45244535e6a0091daf7b425d3d8c5040f26b487db54fdae84efc63a17fbf76d",
+        "import_time": "2026-07-14T13:35:49.813639239Z",
+        "id": "IN-MAL-2026-010503",
+        "modified_time": "2026-07-14T12:55:50Z",
         "versions": [
           "6.13.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "3959190c7c321e0d6f512b89b3c54a6399f3e6f7daecd0563ff753a6a6fed2f5",
+        "import_time": "2026-07-15T01:37:34.782555096Z",
+        "id": "IN-MAL-2026-010590",
+        "modified_time": "2026-07-15T00:55:11Z",
+        "versions": [
+          "6.13.5"
         ]
       }
     ]
