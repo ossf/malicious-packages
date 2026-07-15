@@ -362,4 +362,3 @@ func TestHasDetailsHeader(t *testing.T) {
 		})
 	}
 }
-
