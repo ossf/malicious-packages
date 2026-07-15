@@ -163,12 +163,13 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 			return fmt.Errorf("failed parsing report: %w", err)
 		}
 
-		if src.HasOrigins() {
+		// TODO: strengthen this test using references as well.
+		if src.HasDetailsHeader() {
 			switch s.Recursion {
 			case source.RecursionFail:
-				return fmt.Errorf("report %s contains existing origins (recursion=fail)", key)
+				return fmt.Errorf("report %s is recursive (recursion=fail)", key)
 			case source.RecursionIgnore:
-				log.Printf("[%s] Skipping report %s: contains existing origins (recursion=ignore)", s.ID, key)
+				log.Printf("[%s] Skipping report %s: is recursive (recursion=ignore)", s.ID, key)
 				return nil
 			case source.RecursionAllow:
 				// Proceed with normal ingestion behavior.

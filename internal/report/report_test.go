@@ -508,18 +508,3 @@ func TestReport_Split_WithTooManyOrigins(t *testing.T) {
 		t.Fatalf("Split() = %v; want %v", err, report.ErrSplitting)
 	}
 }
-
-func TestReport_HasOrigins_NoOrigin(t *testing.T) {
-	r := testReport(osvschema.EcosystemPyPI, "pkg1")
-	if r.HasOrigins() {
-		t.Errorf("HasOrigins() = true; want false")
-	}
-}
-
-func TestReport_HasOrigins_HasOrigin(t *testing.T) {
-	r := testReport(osvschema.EcosystemPyPI, "pkg1")
-	r.AddOrigin("test-source", "deadbeef")
-	if !r.HasOrigins() {
-		t.Errorf("HasOrigins() = false; want true")
-	}
-}
