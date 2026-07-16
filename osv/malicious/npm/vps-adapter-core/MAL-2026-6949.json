@@ -1,13 +1,13 @@
 {
-  "modified": "2026-07-08T15:21:00Z",
-  "published": "2026-07-07T16:16:40Z",
+  "modified": "2026-07-15T05:51:45Z",
+  "published": "2026-07-07T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6949",
   "aliases": [
     "GHSA-hvxm-858v-vhw9"
   ],
   "summary": "Malicious code in vps-adapter-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (721f18c9af5bbc2ee66386230d6d7c389cf862f4e5982c65a6368117a05b2f93)\nOn `npm install`, the package's declared postinstall script (postinstall.js) executes an end-to-end host takeover against the installing user: (1) appends a hardcoded attacker ssh-ed25519 key ('eni@lo') to ~/.ssh/authorized_keys, granting persistent SSH access; (2) writes /etc/cron.d/eni-persist to re-open reverse bash shells to 185.112.147.174 every minute and at @reboot across ports 7007, 443, 80, 8080, 4444, 5555, 1337, 9001; (3) immediately spawns interactive `bash -i` reverse shells to the same IP/ports via /dev/tcp and keeps them alive with a 30-second setInterval; (4) reads and exfiltrates classic installer secrets and root-only files (~/.aws/credentials, ~/.ssh/id_*, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.git-credentials, ~/.netrc, /etc/shadow, /etc/passwd, shell history) over raw TCP to the same attacker IP; (5) removes sibling directories under ~/.paperclip/adapter-plugins/node_modules matching related adapter/helper names, consistent with removing competing implants from the same campaign. Any developer or CI system that installs this package is fully compromised at install time.\n\n## Source: ghsa-malware (9d8b04479e04cd28084836c7eb146dae23c03b7b318a98e415adce6433acadf3)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "The package 'vps-adapter-core' is a purpose-built malware package published by the npm account 'srm0rgan' (srm0rgan@proton.me) as part of a coordinated campaign of fake 'Paperclip' VPS-maintenance adapters (siblings: paperclip2, vps-maintenance, vps-maintenance-paperclip-adapter, paperclip-host-utils). Every published version (1.0.0, 1.0.1, 1.0.2) declares a `postinstall` script (`node postinstall.js`) that npm runs automatically during `npm install`, while `index.js` is a benign stub (`init()`/`status()`) that serves only as cover.\n\nThe postinstall payload performs four malicious actions with best-effort error suppression:\n\n1. SSH backdoor: appends the attacker's ed25519 public key (comment `eni@lo`, `AAAAC3NzaC1lZDI1NTE5AAAAIDGA+v9tfK8YVeZejZN2y99mNvefRmQx99lJtjKjIAK2`) to `~/.ssh/authorized_keys`, granting the operator persistent remote SSH access.\n\n2. Cron persistence: writes `/etc/cron.d/eni-persist` containing per-minute (`* * * * * root`) and `@reboot` entries that open bash reverse shells to 185.112.147.174 across ports 7007, 443, 80, 8080, 4444, 5555, 1337, and 9001 via `/dev/tcp`.\n\n3. Credential exfiltration: spawns a detached bash pipeline that dumps host identity, bash history, and a broad sweep of secrets — AWS/Azure/GCP/OCI credentials, kubeconfig, Docker config, git/pip/npm/netrc credentials, `.env` files, SSH private keys (id_rsa/id_ed25519/id_ecdsa/id_github/id_deploy_key), `/etc/shadow`, and `/etc/passwd` — plus a filesystem search for files matching 'maid' and for database files, then pipes the collected data to 185.112.147.174 over `/dev/tcp` across the same eight ports.\n\n4. Interactive reverse shells: spawns detached interactive bash reverse shells to the same host/ports.\n\nA `keepAlive()` timer re-runs the credential dump and reverse-shell spawns every 30 seconds, and a `cleanNpmStains()` routine deletes npm cache traces of the sibling campaign packages to hinder detection. Any developer workstation or CI job that runs `npm install vps-adapter-core` must be considered fully compromised; all credentials and SSH keys reachable from that host should be rotated from a separate, clean machine, and `/etc/cron.d/eni-persist` and the attacker key in `authorized_keys` removed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (721f18c9af5bbc2ee66386230d6d7c389cf862f4e5982c65a6368117a05b2f93)\nOn `npm install`, the package's declared postinstall script (postinstall.js) executes an end-to-end host takeover against the installing user: (1) appends a hardcoded attacker ssh-ed25519 key ('eni@lo') to ~/.ssh/authorized_keys, granting persistent SSH access; (2) writes /etc/cron.d/eni-persist to re-open reverse bash shells to 185.112.147.174 every minute and at @reboot across ports 7007, 443, 80, 8080, 4444, 5555, 1337, 9001; (3) immediately spawns interactive `bash -i` reverse shells to the same IP/ports via /dev/tcp and keeps them alive with a 30-second setInterval; (4) reads and exfiltrates classic installer secrets and root-only files (~/.aws/credentials, ~/.ssh/id_*, ~/.kube/config, ~/.docker/config.json, ~/.npmrc, ~/.git-credentials, ~/.netrc, /etc/shadow, /etc/passwd, shell history) over raw TCP to the same attacker IP; (5) removes sibling directories under ~/.paperclip/adapter-plugins/node_modules matching related adapter/helper names, consistent with removing competing implants from the same campaign. Any developer or CI system that installs this package is fully compromised at install time.\n\n## Source: ghsa-malware (9d8b04479e04cd28084836c7eb146dae23c03b7b318a98e415adce6433acadf3)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n\n## Source: ossf-package-analysis (30e5ecc5aff58afdc90139a153ca99fa5266a698f7af82695f7235d1e9b919da)\nThe OpenSSF Package Analysis project identified 'vps-adapter-core' @ 1.0.2 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -50,6 +50,11 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
         ],
         "indicators": {
@@ -58,6 +63,29 @@
               "path": "postinstall.js",
               "sha256": "8eb534d4be66535431156ebdbd866377b437d5059c5aafc7516bee94ad87bc6b",
               "tlsh": "b6a131f27eb4a310707e54fd698e602a6bd7aa7b3181bd9430cbce399f5904c208d664"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vps-adapter-core-1.0.0.tgz",
+              "hashes": {
+                "sha1": "b43f03947a6f6d67eea1bd711690f67d811c6aa3",
+                "sha512_sri": "sha512-eTu2yuqmdevBictXqPjATsDF5CJtJBhvoJZRyu+/g+ub+ynZ/P9047ON8n49dXWW2WTpHeyA7gut0FnHMkbs6w=="
+              }
+            },
+            {
+              "filename": "vps-adapter-core-1.0.1.tgz",
+              "hashes": {
+                "sha1": "ea1c84b5f1c4a650cded52ccedab7669e21d794e",
+                "sha512_sri": "sha512-5sl13tFXcMEj1tW0nxpEFYL1HoDRjru1xCtm0UuSlIkjMJ/8xhfSqcS1n1wzwQM633rm/hQFhEywXf5A4FOosQ=="
+              }
+            },
+            {
+              "filename": "vps-adapter-core-1.0.2.tgz",
+              "hashes": {
+                "sha1": "8805bdfcd819b42d2dbee9973d069627307afdf3",
+                "sha512_sri": "sha512-yZyipBlzypnANucaFGEDXkoB5s9qBFKGYluS2LjwjuMK2zvZamjEf3kYlxQplnBGzuhxrpiJ6a9v72kmi/XBKg=="
+              }
             }
           ]
         }
@@ -80,6 +108,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/vps-adapter-core/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vps-adapter-core"
     }
   ],
   "credits": [
@@ -89,9 +121,32 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "ips": [
+        "185.112.147.174"
+      ],
+      "urls": [
+        "http://185.112.147.174:8080/npm/v1/security/audits/quick"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "source": "ghsa-malware",
@@ -138,6 +193,15 @@
         "modified_time": "2026-07-08T14:30:33Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "ossf-package-analysis",
+        "sha256": "30e5ecc5aff58afdc90139a153ca99fa5266a698f7af82695f7235d1e9b919da",
+        "import_time": "2026-07-15T05:49:40.218119321Z",
+        "modified_time": "2026-07-07T09:49:29Z",
+        "versions": [
+          "1.0.2"
         ]
       }
     ]

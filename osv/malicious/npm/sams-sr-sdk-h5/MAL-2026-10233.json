@@ -1,0 +1,148 @@
+{
+  "modified": "2026-07-14T03:23:30Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10233",
+  "aliases": [
+    "GHSA-3r2r-29px-gqp6"
+  ],
+  "summary": "Malicious code in sams-sr-sdk-h5 (npm)",
+  "details": "The sams-sr-sdk-h5 package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (a 'sams' internal namespace) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511664042999808.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8ef694ad4b3de8241aaab7efc741aa6f3714b40f105ffe7c4e8dffc75debdd73)\nThe package's declared preinstall script runs examples/verify.js, which fetches the installer's public egress IP via a Cloudflare trace endpoint and then deliberately throws an exception captured by Sentry and flushed to a hardcoded DSN (https://\u003ckey\u003e@o4510485815754752.ingest.us.sentry.io/4511664042999808) with sendDefaultPii=true. Running `npm install sams-sr-sdk-h5` is enough to transmit host metadata (OS, hostname, runtime, public IP, stack) to the author's Sentry project without any user action. Separately, the library's init() falls back to the same hardcoded DSN when the caller does not supply a dsn option or SENTRY_DSN environment variable, so any consumer that follows the advertised usage silently routes their application errors and end-user PII/IPs to the author-controlled Sentry account. Package name and stub README (only a title and an `npm install` line) are also consistent with a dependency-confusion attempt against an internal `sams` SDK namespace.\n\n## Source: ghsa-malware (a69c3581df6ce12c03a9afadd8d47d25cf846316d791ff5a945e5c5579c905df)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "sams-sr-sdk-h5"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "7.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "425f6ab4c2a84960e75e6ce8b27f8e0ad6e38e59150d82273b5c6e3c2f485e81",
+              "tlsh": "f6f044608d742f2319c4a7a16c69014a67a08e4701a43d0c37cb132d4b8c36b24bf29d"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "5ab98e889c98f884877b56882a1f317d178edb825add5decc2e744cbe852e5f5",
+              "tlsh": "7d12969a34f6232311e250f0025f90d97365d67a3339e9e071594be92fc90b8d6b3ec9"
+            },
+            {
+              "path": "README.md",
+              "sha256": "4256405b9d3747c4399e241cd04065c7f87542b520af4ef62fee1362df427009",
+              "tlsh": "55a022ec20a02f203fa203fe0e220f0c3cf838a80033c00c08ab3338000cf820002a0e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sams-sr-sdk-h5-7.0.0.tgz",
+              "hashes": {
+                "sha1": "215d07e88ce26bc9b62f43c8a82bc269237963ba",
+                "sha512_sri": "sha512-SyTNc4jak2mMx+AtxogjfbC4EZr5a86caWxOu4vqx0XUtfg7YnbZ0a1Ca2REvVstEBhYL7OgqXARP+KffmtBHA=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://7e34427f173ba983645d92627c088f7c@o4510485815754752.ingest.us.sentry.io/4511664042999808"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/sams-sr-sdk-h5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/sams-sr-sdk-h5/v/7.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-3r2r-29px-gqp6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8ef694ad4b3de8241aaab7efc741aa6f3714b40f105ffe7c4e8dffc75debdd73",
+        "import_time": "2026-07-13T10:37:36.896370959Z",
+        "id": "IN-MAL-2026-010197",
+        "modified_time": "2026-07-13T09:20:53Z",
+        "versions": [
+          "7.0.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "a69c3581df6ce12c03a9afadd8d47d25cf846316d791ff5a945e5c5579c905df",
+        "import_time": "2026-07-14T03:21:41.90071223Z",
+        "id": "GHSA-3r2r-29px-gqp6",
+        "modified_time": "2026-07-14T01:04:58Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

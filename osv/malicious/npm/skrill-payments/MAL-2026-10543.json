@@ -1,0 +1,75 @@
+{
+  "modified": "2026-07-14T03:38:30Z",
+  "published": "2026-07-14T03:38:30Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10543",
+  "summary": "Malicious code in skrill-payments (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3e517423e768b0086d0579e460801e0b14cb6e6751a810b23bd9f41954d92779)\nPackage impersonates a Paysafe/Skrill payments SDK (name 'skrill-payments', class PaysafeClient, spoofed 'github.com/paysafe/skrill-payments' repository URL) but implements no real Skrill API — advertised methods (payments.create/get, customers.create/get) return mock `{success:true}` responses and instead invoke a hidden __exfil routine. On any advertised method call, after a ~19.7s delay, the package enumerates process.env, filters keys whose names contain 'key', 'secret', 'token', 'pass', 'auth', or 'api', and packages the first 100 characters of each matching value together with the hostname, OS username, cwd, package name, timestamp, and a prefix of the caller-supplied apiKey. The payload is JSON-serialized and POSTed via require('http').request to a hardcoded remote host on port 8443. All sensitive strings (destination hostname, HTTP method, env-var substrings, and the 'http'/'os' require targets) are stored as base64 ciphertext XOR-decoded at runtime with a hardcoded 16-byte key; the C2 hostname uses an additional char-shift+reverse layer. Delivery is gated only by a sandbox-evasion check that aborts when CPU count \u003c 2 or when the hostname/username matches analyst-environment substrings — deliberate anti-analysis logic. The combination of impersonation-as-lure, mock API surface, XOR/base64 string obfuscation, credential-shaped env-var scraping, hardcoded C2 exfiltration, and sandbox evasion is unambiguous supply-chain malware targeting developer workstations that install or use the package.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "skrill-payments"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "313853a82bce61052c00e6a6af85b5069e007a76122c727f31661bc636b12f14",
+              "tlsh": "00614e30b2e9a53776a04fe55db6c085984e9d013d01f397bb6c34ce8f935a282da83c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "skrill-payments-1.0.0.tgz",
+              "hashes": {
+                "sha1": "7798d4d1758015ac77098205ea67d5e71994d0d8",
+                "sha512_sri": "sha512-BjHWbGWmuByglIn66cUioPkgVpfRDoBULXVXuRucKgEu8NMgdAI4IUBJ7ZeQ4LvrTW26hLj3wPTAaAaZEqzXVA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/skrill-payments/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010379",
+        "import_time": "2026-07-14T04:31:59.915168654Z",
+        "modified_time": "2026-07-14T03:38:30Z",
+        "sha256": "3e517423e768b0086d0579e460801e0b14cb6e6751a810b23bd9f41954d92779",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
