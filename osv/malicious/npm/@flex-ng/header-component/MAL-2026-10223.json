@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:25Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10223",
+  "aliases": [
+    "GHSA-4xgj-9m4q-8g8v"
+  ],
+  "summary": "Malicious code in @flex-ng/header-component (npm)",
+  "details": "The @flex-ng/header-component package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (the @flex-ng organizational scope) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511632071262208.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (79525ec099f129b72ed7d7eb8e57dbe97677cf7078e85c495540cb2bb9510f2b)\nPackage is published under a UI-suggestive name (`@flex-ng/header-component`) but ships no UI/header code — it ships only Sentry error-reporting code plus an install-time telemetry trigger. The `preinstall` lifecycle script in package.json runs `npm install @sentry/node \u0026\u0026 node examples/verify.js`. `examples/verify.js` fetches the installer's public IP from Cloudflare's `/cdn-cgi/trace`, initializes Sentry against a hardcoded author-owned DSN (`o4510485815754752.ingest.us.sentry.io/4511632071262208`) with `sendDefaultPii: true`, then deliberately triggers and flushes a captured exception. The Sentry event payload includes the installer's public IP, hostname, OS, runtime, and environment context, all transmitted to the author's ingest project on `npm install` without user consent or README disclosure. `src/index.js` additionally hardcodes the same DSN as `DEFAULT_DSN`, so any consumer that later calls `init()` without arguments silently routes their error telemetry (with PII enabled) to the same author-controlled destination. The name/purpose mismatch (header component vs. error-reporter with install-time beacon) functions as cover for unannounced install-time data collection.\n\n## Source: ghsa-malware (cefa098be23f46a22882e8ac057468b28fde7292b5cf8bb17fadaa069c424108)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@flex-ng/header-component"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "0.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "434dbbe1e3c26c4617267037d40993a667ad1c138a6363c3e9da381513469d2f",
+              "tlsh": "9c014420ce342f2314c4b3a19d7d004aa7608e4745a87d08b7cb062d4b8e36b28bf2dd"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "0a89b2b24fa0394cc3ef2e89bbedc50c48b29dbc31b83a1b3f5804be77d7ce8a",
+              "tlsh": "b412979a35f6332201e250f0025f90d97365d6763379a9a0b14a4be92fcd078d6b3ec9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "header-component-0.1.0.tgz",
+              "hashes": {
+                "sha1": "569b289a1b98ac03f4a9ba52ae1b772126115930",
+                "sha512_sri": "sha512-BT9yyvwNDO/tF4FGXeIuMK4/QTB6k40PA+9f3POKtHGLVQnQhW6MObsFEPs8p3O8EwFe9RhqVQ0YYB9zYIp+3A=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://f4e0634481690329cda8e1396ffac3bc@o4510485815754752.ingest.us.sentry.io/4511632071262208"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@flex-ng/header-component"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@flex-ng/header-component/v/0.1.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-4xgj-9m4q-8g8v"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "79525ec099f129b72ed7d7eb8e57dbe97677cf7078e85c495540cb2bb9510f2b",
+        "import_time": "2026-07-13T09:10:56.147390332Z",
+        "id": "IN-MAL-2026-009865",
+        "modified_time": "2026-07-13T08:18:02Z",
+        "versions": [
+          "0.1.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "cefa098be23f46a22882e8ac057468b28fde7292b5cf8bb17fadaa069c424108",
+        "import_time": "2026-07-14T03:21:41.905856014Z",
+        "id": "GHSA-4xgj-9m4q-8g8v",
+        "modified_time": "2026-07-14T01:05:09Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

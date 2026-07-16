@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-10T15:19:41Z",
+  "modified": "2026-07-13T07:42:04Z",
   "published": "2026-07-10T15:19:41Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10127",
   "summary": "Malicious code in eth-react-redirection (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (581bd6ff87fb89c83d76fffd9fac9aab57039cd200f8d9f8991ce3a997511644)\nPackage published as a React navigation library but ships code from an unrelated logger fork with an injected remote-execute payload. lib/levels.js contains a top-level IIFE that performs an HTTP GET to http://mongos-hooks-api.vercel.app/defy/v3 and, on a 404 response, passes a `token` field from the response body to `new Function.constructor('require', res.token)(require)`, running arbitrary attacker-supplied JavaScript with the package's `require` binding. lib/const.js stores a base64-encoded secondary URL under the misleading name DEV_API_KEY that decodes to https://jsonkeeper.com/b/4NAKK, an anonymous JSON-paste host usable as a backup payload source. index.js additionally spawns a detached Node child process (process.execPath on lib/caller.js) with stdio ignored and unref()'d on every require. The package.json name and description advertise a React navigation library, while index.js is a chai assertions plugin and lib/ is a fork of pino/flowlimit — a masquerade shape. The remote-execution path fires on module load, so any consumer that requires this package triggers execution of code fetched over plain HTTP from an attacker-controlled endpoint.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cbd414dae34760c2eda09d2093a62a14d694f759350676e88229319a16594e78)\nOn require(), index.js calls callCallerAsOrigin() which spawns lib/caller.js as a detached, stdio-ignored child process (spawn(process.execPath, [script], { detached: true, stdio: 'ignore' }); child.unref()). The worker POSTs to a runtime-reconstructed URL using axios in a retry loop and, on error responses (401/404 shape), reads a `token` field from response.data and passes it to `new module.exports.constructor(arg, token)(require)` — the Node Function constructor — executing attacker-controlled JavaScript in the installer's Node process with the host `require` handed in. lib/caller.js and lib/config.js are wrapped in `Function(name, \"...\")({...})` with custom base-alphabet decoders that reconstruct every function name, HTTP header, method, and URL fragment at runtime, deliberately concealing the destination and the exec sink. Package metadata is a cover story: package.json describes the package as a React navigation library, keywords list chai/testing/jwt/xss/sqli, and index.js actually exports a chai-plugin while also launching the background code-fetch worker. The combination of detached-on-import worker, obfuscated remote endpoint, Function-constructor execution of response bytes, and retry/poll loop is a live remote-code-execution and polling C2 channel triggered by installing and importing this package.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "eth-react-redirection"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.1",
+        "1.0.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +74,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/eth-react-redirection/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/eth-react-redirection/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/eth-react-redirection/v/1.0.2"
     }
   ],
   "credits": [
@@ -76,13 +96,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-009615",
-        "import_time": "2026-07-10T15:23:37.331898287Z",
-        "modified_time": "2026-07-10T15:19:41Z",
-        "sha256": "581bd6ff87fb89c83d76fffd9fac9aab57039cd200f8d9f8991ce3a997511644",
         "source": "amazon-inspector",
+        "sha256": "581bd6ff87fb89c83d76fffd9fac9aab57039cd200f8d9f8991ce3a997511644",
+        "import_time": "2026-07-10T15:23:37.331898287Z",
+        "id": "IN-MAL-2026-009615",
+        "modified_time": "2026-07-10T15:19:41Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "418cda644047def7636e5f2a4f93a5d075e4c7e1788e3ebe2fdcbaeda1cfec9a",
+        "import_time": "2026-07-13T07:40:11.925865404Z",
+        "id": "IN-MAL-2026-009833",
+        "modified_time": "2026-07-13T06:50:36Z",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "cbd414dae34760c2eda09d2093a62a14d694f759350676e88229319a16594e78",
+        "import_time": "2026-07-13T07:40:11.825623831Z",
+        "id": "IN-MAL-2026-009832",
+        "modified_time": "2026-07-13T06:50:26Z",
+        "versions": [
+          "1.0.2"
         ]
       }
     ]

@@ -1,10 +1,13 @@
 {
-  "modified": "2026-07-08T22:53:33Z",
+  "modified": "2026-07-13T09:12:52Z",
   "published": "2026-06-30T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6689",
+  "aliases": [
+    "GHSA-jpc6-jpfr-f453"
+  ],
   "summary": "Malicious code in decimal-format-core (npm)",
-  "details": "Malicious npm package published as part of a coordinated DeFi-themed infostealer campaign. `decimal-format-core` uses a dropper technique: a `postinstall` hook executes `scripts/install-check.cjs` at install time, which fetches a second-stage infostealer payload from the C2 domain `logstream-api.online`. The infostealer harvests cryptocurrency wallet vaults (MetaMask, Phantom, Solflare, OKX, Coinbase, TrustWallet, Backpack, TronLink), Chrome/Firefox/Brave cookies and credentials, SSH keys, AWS credentials, `.npmrc` tokens, Docker config, shell history, and password manager databases, then exfiltrates the data to the attacker-controlled server.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (41dcb1eea736b0aba6c078a55b8b60553925e6981452e5c4f56e57e419801f87)\nOn npm install, the package's postinstall script (scripts/install-check.cjs) fetches a JSON config from https://logstream-api.online/config/dfc-sync.json, reads a peerBundle URL from it, downloads a tarball to a temp directory, extracts it into a.peer/ directory, runs `npm install` inside the extracted tree, then require()s the extracted peer-math.js module and invokes syncSession(). The fetched payload is not pinned, hashed, or signature-verified, and the source host is fully attacker-controlled and mutable. This executes arbitrary remote code in the installer's context as a default consequence of `npm install`. The package presents itself with description 'Logform-style numeric and text formatting utilities for Node.js loggers' and keywords (logform, logger, format) that target users searching for the legitimate logform logging library, while the README frames the remote fetch-and-exec as a benign 'Enterprise sync / peer bundle' feature; the path runs by default with no opt-in because resolvePeerBundleUrl falls through to the hardcoded homepage URL when env vars are unset.\n",
+  "details": "Malicious npm package published as part of a coordinated DeFi-themed infostealer campaign. `decimal-format-core` uses a dropper technique: a `postinstall` hook executes `scripts/install-check.cjs` at install time, which fetches a second-stage infostealer payload from the C2 domain `logstream-api.online`. The infostealer harvests cryptocurrency wallet vaults (MetaMask, Phantom, Solflare, OKX, Coinbase, TrustWallet, Backpack, TronLink), Chrome/Firefox/Brave cookies and credentials, SSH keys, AWS credentials, `.npmrc` tokens, Docker config, shell history, and password manager databases, then exfiltrates the data to the attacker-controlled server.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (07d73eb9b3d87a4d1a65dcb4e485fca74b01a1473a305a52345a5c7be95b0631)\nPackage advertises itself as a numeric/text formatting utility but ships an install-time and import-time dropper. The `postinstall` script runs `scripts/install-check.cjs`, which reads `package.json.homepage` (`https://logstream-api.online/config/dfc-sync.json`) as a remote configuration channel, fetches a `.tgz` bundle URL from that JSON, downloads and extracts the tarball into a `.peer/` directory, runs `npm install` inside it, then `require()`s the extracted `peer-math.js` and invokes `syncSession()` — executing arbitrary attacker-controlled JavaScript on the installer's machine. The same fetch → extract → npm-install → require flow is also queued via `setImmediate` from the exported `createLogger()` entrypoint (through `runRuntimeProjectSync()` calling `peer.packProjectBundle(false)`), so consumers that install with `--ignore-scripts` still trigger remote code execution as soon as the library is imported and used. Payload URL indirection through the remote JSON config allows rotation of the executed code without republishing the npm package. The advertised formatting functionality does not require any network access, tarball extraction, or dynamic loading of downloaded modules.\n\n## Source: ghsa-malware (7418b3fb88f3b25773cddacaa807900d6e5aab486723f17a4bc6306f1aa247fd)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -26,10 +29,27 @@
         "3.5.2",
         "3.2.0",
         "3.1.0",
-        "3.3.0"
+        "3.3.0",
+        "3.5.5",
+        "3.5.4"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -116,6 +136,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/decimal-format-core/v/3.3.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-jpc6-jpfr-f453"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/decimal-format-core/v/3.5.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/decimal-format-core/v/3.5.5"
     }
   ],
   "credits": [
@@ -184,6 +216,42 @@
         "modified_time": "2026-07-08T22:45:18Z",
         "versions": [
           "3.3.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "7418b3fb88f3b25773cddacaa807900d6e5aab486723f17a4bc6306f1aa247fd",
+        "import_time": "2026-07-13T07:24:22.601964502Z",
+        "id": "GHSA-jpc6-jpfr-f453",
+        "modified_time": "2026-07-13T06:49:21Z",
+        "versions": [
+          "3.5.5",
+          "3.5.4",
+          "3.5.3",
+          "3.5.2",
+          "3.3.0",
+          "3.2.0",
+          "3.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d0f9f6c8a5a3e88e1d6ad2df471da63ffd6eb76952455de784307a92d40dcd19",
+        "import_time": "2026-07-13T07:40:11.974620916Z",
+        "id": "IN-MAL-2026-009834",
+        "modified_time": "2026-07-13T06:50:55Z",
+        "versions": [
+          "3.5.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "07d73eb9b3d87a4d1a65dcb4e485fca74b01a1473a305a52345a5c7be95b0631",
+        "import_time": "2026-07-13T09:10:56.986005063Z",
+        "id": "IN-MAL-2026-009875",
+        "modified_time": "2026-07-13T08:19:27Z",
+        "versions": [
+          "3.5.5"
         ]
       }
     ]
