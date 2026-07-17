@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-12T19:46:14Z",
+  "modified": "2026-07-15T04:54:44Z",
   "published": "2026-05-26T09:03:51Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4789",
   "summary": "Malicious code in ggk-happy (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2a22c29c3d374a49fdb69fb941f2fb81e42b69006b8ed154eba8d365c755b245)\nggk-happy presents itself as the slopus/happy CLI (Mobile/Web client for Claude Code) — author metadata, homepage (happy.engineering), and repository (github.com/slopus/happy) all point at the legitimate upstream and the README still documents `api.cluster-fluster.com` as the default server. The shipped code, however, hardcodes different defaults: `dist/types-CzmQ1hnz.cjs:174-175` sets `DEFAULT_SERVER_URL = \"https://happy-api.ask-ggk.com\"` and `DEFAULT_WEBAPP_URL = \"https://happy.ask-ggk.com\"`, so any user running the CLI as documented routes every Claude Code session, login/auth flow, and machine metadata to ask-ggk.com instead of the publisher referenced in the README. In addition, at runtime the CLI fetches an opaque `rtk` binary from `https://minio.ask-ggk.com/happy/rtk-\u003cplatform\u003e.{zip,tar.gz}` (mutable `latest`-style URL, no checksum or signature verification), writes it to `~/.local/share/ggkhappy/rtk/bin/rtk` (or the Windows LOCALAPPDATA equivalent), executes it as `rtk gain --all --format json`, and POSTs the result together with the user's `machineId` and auth `token` to `https://guguke.ask-ggk.com/api/v1/agent/rtk/gain/report` (`dist/index-PJG4KRwn.cjs:5856-5864`). The downloaded binary's purpose has no relation to the advertised \"Claude Code client\" function, the host is not the impersonated publisher, and the same attacker domain mints the auth tokens being reported back. A `scripts/postinstall.cjs` hook additionally runs `node bin/happy.mjs install` on global installs, accelerating first contact with the attacker infrastructure. Combined, this is brand impersonation + silent relay of session traffic + runtime fetch-and-execute of an unverified binary from non-publisher infrastructure + exfiltration of host identity and binary output.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d747cc7acd8bbc1defbf475aa3202fd332fd43135a6fedddfcc37356ce02eb54)\nPackage presents itself as the legitimate slopus/happy CLI (README instructs `npm install -g happy`; homepage, repository, bugs, and author fields all point at happy.engineering / github.com/slopus/happy), but the published name is ggk-happy and the shipped code has been modified in ways that harm installers:\n\n1. Backend redirection: DEFAULT_SERVER_URL is hardcoded to https://happy-api.ask-ggk.com and DEFAULT_WEBAPP_URL to https://happy.ask-ggk.com — third-party hosts not disclosed in the README, which still references api.cluster-fluster.com. All coding-agent sessions (Claude Code / Codex prompts, source code, auth tokens, machine metadata) flow to ask-ggk.com instead of the publisher advertised in package metadata.\n\n2. Remote-control surface pointed at attacker infrastructure: ApiSessionClient / ApiMachineClient open a socket.io connection to the redirected server and register RPC handlers named `bash`, `readFile`, `writeFile`, `listDirectory`, `getDirectoryTree`, `ripgrep`, `difftastic`. The `bash` handler runs `execAsync(data.command, options)` on parameters supplied by the remote server. Whoever operates happy-api.ask-ggk.com can execute arbitrary shell commands and read/write files on the installer's machine.\n\n3. Install-time auto-takeover: scripts/postinstall.cjs, on global or root install, unconditionally spawns `node bin/happy.mjs install`, running the full auth/registration flow (browser opened to happy.ask-ggk.com, machine registered to happy-api.ask-ggk.com, daemon started) at `npm install -g` time. Auto-takeover is opt-out via env var, not opt-in, so `sudo npm install -g ggk-happy` immediately binds the machine to the third-party backend, with elevated privileges on Linux/macOS root installs.\n\n4. Unpinned binary dropper: RTK_DOWNLOAD_URLS fetches platform-specific `rtk` binaries from https://minio.ask-ggk.com/happy/rtk-*.{zip,tar.gz} (win32/darwin/linux, x64/arm64) with no hash or signature verification, stages them to ~/.local/share/ggkhappy/rtk/bin/rtk (or %LOCALAPPDATA%\\ggkhappy\\rtk\\bin\\rtk.exe), and later invokes them via execFile. Purpose of the binary is not documented.\n\n5. Covert identity reporting: readRtkIdentity() reads the installer's machineId from ~/.happy settings and the auth token from ~/.happy/access.key and POSTs them, together with platform/version fields, to https://guguke.ask-ggk.com/api/v1/agent/rtk/gain/report — a side channel to a host not referenced in README documentation.\n\nThis is not a legitimate fork: the surface identity (name, homepage, repo, README install command) still claims to be slopus/happy, while all backends, the remote-shell RPC destination, the runtime binary source, and the identity reporter have been repointed to ask-ggk.com infrastructure. Installers who follow the README believe they are installing the upstream project and instead grant an undisclosed operator remote code execution over their machine and full visibility into their AI coding sessions.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,64 @@
       "versions": [
         "1.0.9",
         "1.2.12",
-        "1.2.0"
+        "1.2.0",
+        "1.2.20",
+        "1.2.32",
+        "1.2.22",
+        "1.2.34",
+        "1.2.33",
+        "1.2.28",
+        "1.2.24",
+        "1.2.30",
+        "1.2.43"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -75,6 +129,42 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.20"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.32"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.22"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.34"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.33"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.28"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.24"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.30"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ggk-happy/v/1.2.43"
     }
   ],
   "credits": [
@@ -147,6 +237,96 @@
         "modified_time": "2026-06-12T19:08:35Z",
         "versions": [
           "1.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "8cb5826da59bc61db01dbe0b71bf00c1932a6a6bc79293f1879a8fdb64d0dabb",
+        "import_time": "2026-07-10T17:10:16.832447207Z",
+        "id": "IN-MAL-2026-009681",
+        "modified_time": "2026-07-10T17:09:24Z",
+        "versions": [
+          "1.2.20"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "97ef437e04b12cf0bd32eb41630ccebdbc727814212f3c0add12619d59ac7fef",
+        "import_time": "2026-07-10T17:10:16.626340314Z",
+        "id": "IN-MAL-2026-009678",
+        "modified_time": "2026-07-10T17:08:55Z",
+        "versions": [
+          "1.2.32"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "cf0e8198b84dd9df37c352c939343660948d17ce31b3384c41723355ba62a7e9",
+        "import_time": "2026-07-10T17:10:16.740547242Z",
+        "id": "IN-MAL-2026-009680",
+        "modified_time": "2026-07-10T17:09:14Z",
+        "versions": [
+          "1.2.22"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d747cc7acd8bbc1defbf475aa3202fd332fd43135a6fedddfcc37356ce02eb54",
+        "import_time": "2026-07-10T17:10:16.67730085Z",
+        "id": "IN-MAL-2026-009679",
+        "modified_time": "2026-07-10T17:09:04Z",
+        "versions": [
+          "1.2.34"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ec02faf45c54c3f61e7e76ffa930c4c8b857549bfaf926068a1d4e98511ac8a4",
+        "import_time": "2026-07-10T17:10:16.591985563Z",
+        "id": "IN-MAL-2026-009677",
+        "modified_time": "2026-07-10T17:08:48Z",
+        "versions": [
+          "1.2.33"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "20275cf82cf180bdcedd07fe3cacef619d3ca1defaeec4a5394d3f1c7040a2eb",
+        "import_time": "2026-07-10T17:10:16.977001553Z",
+        "id": "IN-MAL-2026-009682",
+        "modified_time": "2026-07-10T17:09:37Z",
+        "versions": [
+          "1.2.28"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2620a8d259e7aed95ac5db9903446f1a6d1dbb1eda2e231161a1072eb3dccbd5",
+        "import_time": "2026-07-10T17:10:16.526250213Z",
+        "id": "IN-MAL-2026-009676",
+        "modified_time": "2026-07-10T17:08:41Z",
+        "versions": [
+          "1.2.24"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6f1158fe29b2785476527d307a4d8f18d9df499b1367854168254f8c2fe59e42",
+        "import_time": "2026-07-10T17:10:16.464718669Z",
+        "id": "IN-MAL-2026-009675",
+        "modified_time": "2026-07-10T17:08:33Z",
+        "versions": [
+          "1.2.30"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f5a77378a670c49dacce164d0641478d74ac59f24550fa6dbab806f2420b6de9",
+        "import_time": "2026-07-15T04:32:07.527124518Z",
+        "id": "IN-MAL-2026-010617",
+        "modified_time": "2026-07-15T04:03:17Z",
+        "versions": [
+          "1.2.43"
         ]
       }
     ]

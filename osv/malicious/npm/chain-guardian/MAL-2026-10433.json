@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-13T09:21:39Z",
+  "published": "2026-07-13T09:21:39Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10433",
+  "summary": "Malicious code in chain-guardian (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1c281292766d55cda3ff1b006154150aa05d567a4f8115534788ffbbc014f3e7)\nchain-guardian presents itself as a mocha gas reporter (typosquatting eth-gas-reporter) but its main entry index.js contains an always-true gate (`var opt = 1; if (!opt) {... } else {... }`) that forces construction of the reporter to invoke utils.connectNet. connectNet resolves lib/syncResolve.js and spawns it via `spawn('node', [u_src], { detached: true, stdio: ['ignore'] })` followed by `progs.unref()`, so the child continues running after mocha exits with its output suppressed. lib/syncResolve.js fetches http://check-server-state.vercel.app/server/v2 over plaintext HTTP and, on a 404 response whose body carries a `token` field, passes that field to `new Function('require', error.response.data.token)` and invokes the resulting function with the real `require`, giving the remote host arbitrary code execution in the developer or CI Node process. A duplicate benign `Gas` reporter function is defined but never exported, serving as cover for the dropper path.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "chain-guardian"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/syncResolve.js",
+              "sha256": "95637f53aade70cdffc21c7fcaf2e150a1d523862dbfebc99f82992abc22da20",
+              "tlsh": "1b1114e82c9532690771a7f9e7034416f566a4331510c1953f9d41c31f3584892a3fdd"
+            },
+            {
+              "path": "index.js",
+              "sha256": "db6f048ab50bdad5c12883185a63f731a1ff1f9d98055ea63e34e9d28137415f",
+              "tlsh": "b3f1fe322eb7153745e3faac9bcba061d12696372201cfad7a8c93104f5447894efbe4"
+            },
+            {
+              "path": "lib/utils.js",
+              "sha256": "c72c5b5ee9484f977d1d31f953b7df86f4f39f28ffba442c5d0091afac8f04a1",
+              "tlsh": "c90231961cf760d3112a35e8ab1b6011e568b65b3208daf5bead53443f0633cd0e7ae9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "chain-guardian-1.1.0.tgz",
+              "hashes": {
+                "sha1": "4ecce034a442353ce169d5b613969442d7172d73",
+                "sha512_sri": "sha512-cHzxQfl+CwLrL27+owL1d6fC83eQp+2pNZufnAH5azqybQplHPn5INX3iMY9fWn7qefvUQEwU1wuTodh/GVCvg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-guardian/v/1.1.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010201",
+        "import_time": "2026-07-13T10:37:37.263356127Z",
+        "modified_time": "2026-07-13T09:21:39Z",
+        "sha256": "1c281292766d55cda3ff1b006154150aa05d567a4f8115534788ffbbc014f3e7",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  }
+}

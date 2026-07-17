@@ -1,22 +1,45 @@
 {
-  "modified": "2026-07-08T21:29:33Z",
+  "modified": "2026-07-15T16:47:44Z",
   "published": "2026-07-04T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6788",
+  "aliases": [
+    "GHSA-ch48-496p-pfv8"
+  ],
   "summary": "Malicious code in datefmt-helper (npm)",
-  "details": "The npm package `datefmt-helper` is a supply-chain dropper disguised as a benign date-formatting utility (its `description` reads \"dates formatting utility with locale support\"). The package ships no source repository and places its real behaviour in an install script.\n\nA `postinstall` lifecycle hook (`postinstall: node postinstall.js`) executes automatically on `npm install`, before the package is ever imported. The install script uses HTTP / `curl` / `wget` primitives to download a second-stage payload from the hardcoded external IP `115.190.124.243`, then executes it via a Node child process — the classic download-and-execute pattern. Any developer workstation or CI runner that installs the package (directly or transitively) hands arbitrary code execution to the operator of that endpoint.\n\nDetected and classified independently by codelake Research from the live npm feed on 2026-07-02; at the time of reporting the package was not present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3d7f5d0b1ca6df789353a5558b55adc3da08246c73ad0d1aba92f7321b4afec2)\nOn npm install, the package's postinstall lifecycle script downloads and immediately executes an attacker-controlled payload from a hardcoded bare IP over plain HTTP (http://115.190.124.243:8761/). On Linux, the response body is piped directly into `sh`. On Windows, `certutil.exe -urlcache -split -f` stages the payload to C:\\Users\\Public\\run.bat and then executes it. The fetch is unpinned, unauthenticated, and unverified, giving whoever controls 115.190.124.243 arbitrary code execution on every machine that installs the package. The package presents itself as a lightweight date-formatting utility with author `date-fns-lite`, mimicking the date-fns ecosystem; the trivial index.js is a decoy while the postinstall dropper is the actual behavior.\n",
+  "details": "The npm package `datefmt-helper` is a supply-chain dropper disguised as a benign date-formatting utility (its `description` reads \"dates formatting utility with locale support\"). The package ships no source repository and places its real behaviour in an install script.\n\nA `postinstall` lifecycle hook (`postinstall: node postinstall.js`) executes automatically on `npm install`, before the package is ever imported. The install script uses HTTP / `curl` / `wget` primitives to download a second-stage payload from the hardcoded external IP `115.190.124.243`, then executes it via a Node child process — the classic download-and-execute pattern. Any developer workstation or CI runner that installs the package (directly or transitively) hands arbitrary code execution to the operator of that endpoint.\n\nDetected and classified independently by codelake Research from the live npm feed on 2026-07-02; at the time of reporting the package was not present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d92b853245953aa75db608f0ae2e5de2321301b94ca6b48f55746a1bd60b6ea4)\nOn `npm install`, the package's postinstall script fetches an unauthenticated payload over plain HTTP from a hardcoded bare IP (115.190.124.243:8761) and executes it. On Unix, `curl`/`wget` output is piped directly to `sh`. On Windows, `certutil.exe -urlcache -split -f` downloads a batch file to C:\\Users\\Public\\run.bat and executes it. The fetched content is unpinned, unverified, and mutable — the operator of the endpoint can serve arbitrary code at any time. The package advertises itself as a lightweight date formatter (`date-fns-lite` branding, impersonating the date-fns ecosystem), but the payload has no relationship to date formatting. The typosquat/impersonation branding combined with an install-time dropper is a supply-chain attack lure.\n\n## Source: ghsa-malware (6c9b82c471edb6b2caeb78c78887556e4c313efc0ba29a88a482b0f93d378807)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "datefmt-helper"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0",
         "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,6 +80,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/datefmt-helper/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/datefmt-helper/v/1.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-ch48-496p-pfv8"
     }
   ],
   "credits": [
@@ -93,6 +124,33 @@
         "modified_time": "2026-07-08T20:34:26Z",
         "versions": [
           "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "d92b853245953aa75db608f0ae2e5de2321301b94ca6b48f55746a1bd60b6ea4",
+        "import_time": "2026-07-09T16:20:57.504713224Z",
+        "id": "IN-MAL-2026-009286",
+        "modified_time": "2026-07-09T15:55:25Z",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "6c9b82c471edb6b2caeb78c78887556e4c313efc0ba29a88a482b0f93d378807",
+        "import_time": "2026-07-15T16:46:11.977901813Z",
+        "id": "GHSA-ch48-496p-pfv8",
+        "modified_time": "2026-07-15T16:12:55Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]

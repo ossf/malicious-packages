@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-08T23:29:48Z",
+  "modified": "2026-07-09T22:58:18Z",
   "published": "2026-05-02T08:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-3288",
@@ -7,7 +7,7 @@
     "GHSA-wvhv-cgwm-v2hv"
   ],
   "summary": "Malicious code in common-tg-service (npm)",
-  "details": "Malicious npm package published by user `shetty123` as part of a Telegram account hijacking framework targeting Indian Telegram users. All 502 published versions (1.0.1 through 1.3.207) are malicious. Pairs with `ams-ssk`, which provides the operator's server-side AMS/CMS infrastructure.\n\n`common-tg-service` performs full Telegram account takeover at runtime when the service is initialized (no install-time hooks, which lets it bypass scanners that gate on preinstall/postinstall lifecycle scripts). Behavior includes: implanting a hardcoded 2FA password (`Ajtdmwajt1@`) and recovery email on hijacked accounts; polling an operator-controlled Gmail inbox over IMAP (`imap.gmail.com`) to auto-submit 2FA confirmation codes; revoking all device authorizations except the attacker's session; harvesting OTP codes by monitoring Telegram chat 777000 and forwarding them to the operator; running SRP ownership checks against managed accounts and flagging rotated 2FA as unrecoverable; and fetching remote JSON configuration from `npoint.io` so operators can change behavior without re-publishing.\n\nBlocked outbound requests are laundered through a relay at `helper-thge.onrender.com`. Stolen accounts and updates are exfiltrated to attacker-controlled Telegram channels (`-1001801844217` and `-1001972065816`). Operator infrastructure includes `paidgirl.site`, `cms.paidgirl.site`, `report-upi.netlify.app`, and `promoteClients2.glitch.me`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7cd3b6dd4751c7296aa980af903101344ab538b1a9ead17da5699ab21bcfdfdb)\nThis package wires a global NestJS AuthGuard (registered via APP_GUARD in AppModule) that grants authenticated access to any deployed consumer service under several attacker-controlled conditions: (1) any HTTP request carrying header or query parameter `apiKey=santoor` (case-insensitive) is treated as authenticated — see dist/guards/auth.guard.js line 80; (2) requests originating from a hardcoded list of five public IPs (31.97.59.2, 148.230.84.50, 13.228.225.19, 18.142.128.26, 54.254.162.138) are unconditionally allowed — dist/guards/auth.guard.js lines 14–20; (3) requests with an Origin header matching author-owned web properties (paidgirl.site, zomcall.netlify.app, tgchats.netlify.app, tg-chats.netlify.app, report-upi.netlify.app) are accepted — dist/guards/auth.guard.js lines 21–27; and (4) a long IGNORE_PATHS list bypasses auth entirely on destructive routes (/exit, /sendtoall, /sendmessage, /sendtochannel, /joinchannel, /leavechannel, /executehs, /executehsl, etc.). AppController exposes POST /execute-request (dist/app.controller.js lines 80–105), which proxies arbitrary HTTP requests server-side — combined with the master key this turns every consumer deployment into an open SSRF/relay reachable by anyone who reads the public tarball. CloudinaryService.downloadAndExtractZip fetches https://cms.paidgirl.site/folders/${folderName}/files/download-all and runs AdmZip.extractAllTo(process.cwd(), true) on the result with no integrity check (dist/cloudinary.js lines 69, 84) — the author can overwrite arbitrary files (including dist/index.js, package.json) in the deployed app's working directory and achieve code execution on the next start. generateTGConfig defaults SOCKS5 proxy fetch and IP-management to https://cms.paidgirl.site/ip-management with x-api-key `santoor` (dist/components/Telegram/utils/generateTGConfig.js line 97), routing the installer's Telegram MTProto sessions through author-selected proxies. fetchWithTimeout silently re-POSTs any 403/495 request — including its original headers and body — to https://helper-thge.onrender.com/execute-request (dist/utils/fetchWithTimeout.js lines 80–85), exfiltrating auth tokens and request payloads to an author-operated relay. On bootstrap, InitModule.onModuleInit posts the installer's clientId to api.telegram.org chat_id `-1001801844217` (dist/utils/logbots.js line 24), with subsequent unauthorized-attempt logs sent to the same author channel by default. The combined effect: every installer that imports AppModule grants the author persistent remote access, code-execution capability, MTProto traffic interception, and a silent-relay exfiltration channel.\n\n## Source: ghsa-malware (3e16628ad8dc1e6a6c98044a97ae5b72aec56f8a5a5bbc5bdff50bdaf51d978e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "Malicious npm package published by user `shetty123` as part of a Telegram account hijacking framework targeting Indian Telegram users. All 502 published versions (1.0.1 through 1.3.207) are malicious. Pairs with `ams-ssk`, which provides the operator's server-side AMS/CMS infrastructure.\n\n`common-tg-service` performs full Telegram account takeover at runtime when the service is initialized (no install-time hooks, which lets it bypass scanners that gate on preinstall/postinstall lifecycle scripts). Behavior includes: implanting a hardcoded 2FA password (`Ajtdmwajt1@`) and recovery email on hijacked accounts; polling an operator-controlled Gmail inbox over IMAP (`imap.gmail.com`) to auto-submit 2FA confirmation codes; revoking all device authorizations except the attacker's session; harvesting OTP codes by monitoring Telegram chat 777000 and forwarding them to the operator; running SRP ownership checks against managed accounts and flagging rotated 2FA as unrecoverable; and fetching remote JSON configuration from `npoint.io` so operators can change behavior without re-publishing.\n\nBlocked outbound requests are laundered through a relay at `helper-thge.onrender.com`. Stolen accounts and updates are exfiltrated to attacker-controlled Telegram channels (`-1001801844217` and `-1001972065816`). Operator infrastructure includes `paidgirl.site`, `cms.paidgirl.site`, `report-upi.netlify.app`, and `promoteClients2.glitch.me`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e769b4a4ea131df52366622b66d63dfbc7c1f5642ac8478c37f86d6c25477bb8)\nThe package presents itself as a generic 'Common Telegram service for NestJS applications' but functions as one party's production application published as a library. Multiple installer-harming behaviors are present:\n\n1. Authentication backdoor. AppModule registers AuthGuard as a global APP_GUARD. dist/guards/auth.guard.js line 84 accepts the literal string 'santoor' as a valid x-api-key (or apiKey query parameter) and grants access to any route. Any NestJS service that imports AppModule from this package exposes every endpoint to anyone who sends `x-api-key: santoor`. The same value is baked into the shipped Swagger UI as the default auth value.\n\n2. Silent relay of consumer outbound HTTP. dist/utils/fetchWithTimeout.js (used package-wide) automatically POSTs the original request (URL, method, headers, body, params) to https://helper-thge.onrender.com/execute-request whenever an upstream call returns 403 or 495, unless the consumer overrides process.env.bypassURL. The relay endpoint is author-controlled and authenticated with the same 'santoor' shared secret, so the author can read every mirrored request — including any auth headers or bodies the consumer's service was sending to its own upstreams.\n\n3. Default proxy and IP-management routing through author infrastructure. dist/components/Telegram/utils/generateTGConfig.js line 97 defaults PROXY_API_URL to https://cms.paidgirls.site/ip-management and PROXY_API_KEY to 'santoor'. With proxying enabled, all MTProto traffic for the consumer's Telegram sessions is routed through SOCKS5 proxies chosen by the author, who can intercept, drop, or correlate the consumer's Telegram identities.\n\n4. Remote zip drop into the consumer's working directory. dist/cloudinary.js line 87 fetches https://cms.paidgirls.site/folders/\u003cfolderName\u003e/files/download-all, writes the response to process.cwd()/temp.zip, and calls zip.extractAllTo(process.cwd(), true) — overwriting any files in the consumer's working directory with whatever the author's server returns. There is no hash check, signature, or version pinning, and the destination is mutable. If extracted files land where the consumer's process later loads code or config, this is full RCE in the consumer's environment.\n\n5. Hardcoded couplings that are not disclosed. dist/guards/auth.guard.js lines 15-26 hardcode ALLOWED_IPS and ALLOWED_ORIGINS for paidgirls.site, zomcall.netlify.app, and tgchats.netlify.app, and the package wires logging notifications to specific Telegram channels owned by the author.\n\nTaken together, importing AppModule from this package gives the author master authentication on the consumer's API, a persistent traffic-mirroring channel, control of the consumer's Telegram proxy path, and an ability to write arbitrary files into the consumer's process CWD on demand.\n\n## Source: ghsa-malware (3e16628ad8dc1e6a6c98044a97ae5b72aec56f8a5a5bbc5bdff50bdaf51d978e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -36,10 +36,52 @@
         "1.3.223",
         "1.3.224",
         "1.3.229",
-        "1.3.222"
+        "1.3.222",
+        "1.3.230",
+        "1.3.228",
+        "1.3.232",
+        "1.3.233",
+        "1.3.235",
+        "1.3.239",
+        "1.3.237"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -198,6 +240,34 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.222"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.230"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.228"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.232"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.233"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.235"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.239"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/common-tg-service/v/1.3.237"
     }
   ],
   "credits": [
@@ -370,6 +440,76 @@
         "modified_time": "2026-07-08T23:05:00Z",
         "versions": [
           "1.3.222"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2967bb9b9ae0330832ed15a5b7308086467b4667496a59a5dc3aff6a03b3421e",
+        "import_time": "2026-07-09T17:19:27.95247843Z",
+        "id": "IN-MAL-2026-009352",
+        "modified_time": "2026-07-09T16:59:49Z",
+        "versions": [
+          "1.3.230"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e769b4a4ea131df52366622b66d63dfbc7c1f5642ac8478c37f86d6c25477bb8",
+        "import_time": "2026-07-09T17:19:28.427582586Z",
+        "id": "IN-MAL-2026-009356",
+        "modified_time": "2026-07-09T17:00:25Z",
+        "versions": [
+          "1.3.228"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6c8e0cda37f0b2f45f104a859fd55393122727c036d3da2bef621b00a5987015",
+        "import_time": "2026-07-09T22:56:34.037859375Z",
+        "id": "IN-MAL-2026-009556",
+        "modified_time": "2026-07-09T22:13:04Z",
+        "versions": [
+          "1.3.232"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "705e7bafbb3e475d34402297e60d65c4977b4d0b093854d6cbb80d5968a30c63",
+        "import_time": "2026-07-09T22:56:34.498270371Z",
+        "id": "IN-MAL-2026-009561",
+        "modified_time": "2026-07-09T22:13:43Z",
+        "versions": [
+          "1.3.233"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "83f12485ef05070641e6f0cf84b2033a6d69548eae420f07b413bea412007ede",
+        "import_time": "2026-07-09T22:56:33.614117488Z",
+        "id": "IN-MAL-2026-009551",
+        "modified_time": "2026-07-09T22:12:25Z",
+        "versions": [
+          "1.3.235"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9089f2a82d1c3a551b9d7a15f48c70f163cf1798e715a98bf19688b15d226dbd",
+        "import_time": "2026-07-09T22:56:34.966735169Z",
+        "id": "IN-MAL-2026-009566",
+        "modified_time": "2026-07-09T22:14:28Z",
+        "versions": [
+          "1.3.239"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a26f18f79eac39fa511ea423e7ba11f400bddc3b576627119a256ca0af213221",
+        "import_time": "2026-07-09T22:56:34.134714434Z",
+        "id": "IN-MAL-2026-009557",
+        "modified_time": "2026-07-09T22:13:11Z",
+        "versions": [
+          "1.3.237"
         ]
       }
     ]

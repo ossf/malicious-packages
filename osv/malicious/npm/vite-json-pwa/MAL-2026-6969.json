@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-08T21:29:38Z",
+  "modified": "2026-07-09T16:23:05Z",
   "published": "2026-07-08T08:21:06Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6969",
@@ -7,7 +7,7 @@
     "GHSA-3f72-wf55-pqjc"
   ],
   "summary": "Malicious code in vite-json-pwa (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (08b3a45c4ee8248fa8a7a4fbf117192aefce7a29d4575b4b498e7271878ab035)\nvite-json-pwa@1.1.2 impersonates the popular vite-plugin-pwa (mirroring its VitePWA/cachePreset/configField API surface) and injects a remote code loader into the plugin's runtime path. The exported configField API invokes getUseropt, which uses child_process.spawn to launch a detached node process running dist/client/dev/reactopt.js with stdio:'ignore' and child.unref(), hiding output and outliving the parent. reactopt.js performs an HTTP GET to https://www.jsonkeeper.com/b/TUJAY (an anonymous, author-mutable paste host disguised behind variable names DEV_API_KEY / DEV_SECRET_KEY and a shadow process.env object), takes the returned string body, wraps it in new Function('require', s), and invokes it with the host's require — giving attacker-controlled JavaScript full Node privileges on the developer/build machine. The reactopt.js name and client/dev/ path are cover-story camouflage; a Vite plugin has no legitimate reason to fork a hidden detached node child that eval's remote paste-bin content. Any consumer whose Vite config invokes the plugin's configField will pull and execute whatever JavaScript the attacker currently hosts at jsonkeeper.com/b/TUJAY.\n\n## Source: ghsa-malware (da660f2033a7177d94363a6e8df210ba23bb1fde45059eb74722d3dec56f0094)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9f9204782dfa050ba762ce8c8a35c01e9f7b1e8bf82e140854d182f9614080b6)\nvite-json-pwa@1.1.1 impersonates the legitimate vite-plugin-pwa package (author metadata claims 'inna voik' while funding/homepage point at the real vite-pwa/antfu project) and re-exports its API alongside an added `configField(...)` middleware factory. When a consumer invokes `configField` (the expected pattern for a drop-in vite-plugin-pwa replacement), it spawns a detached, stdio-ignored `node` child running `dist/client/dev/reactopt.js`. That helper uses axios to GET `https://www.jsonkeeper.com/b/J7GQS`, extracts a `Cookie` field from the JSON body, and executes it via `new Function('require', s)(require)` — arbitrary attacker-controlled Node code with full privileges in the developer/build process tree. The remote URL is disguised inside a fake local `process = { env: { DEV_API_KEY: 'https://www.jsonkeeper.com/b/J7GQS',... } }` object to make the hardcoded C2 look like an env-var lookup, and the file/export names ('reactopt.js', 'configField') are cover-story identifiers designed to blend into a legitimate-looking build. jsonkeeper.com is a mutable public paste service, so the payload can be swapped at any time. The detached spawn plus `stdio: 'ignore'` and a retry loop are chosen to hide execution and ensure delivery.\n\n## Source: ghsa-malware (da660f2033a7177d94363a6e8df210ba23bb1fde45059eb74722d3dec56f0094)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,10 +25,16 @@
         }
       ],
       "versions": [
-        "1.1.2"
+        "1.1.2",
+        "1.1.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -70,6 +76,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/vite-json-pwa/v/1.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-json-pwa/v/1.1.1"
     }
   ],
   "credits": [
@@ -108,6 +118,16 @@
         "modified_time": "2026-07-08T20:34:39Z",
         "versions": [
           "1.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9f9204782dfa050ba762ce8c8a35c01e9f7b1e8bf82e140854d182f9614080b6",
+        "import_time": "2026-07-09T16:20:51.200387382Z",
+        "id": "IN-MAL-2026-009206",
+        "modified_time": "2026-07-09T15:43:51Z",
+        "versions": [
+          "1.1.1"
         ]
       }
     ]
