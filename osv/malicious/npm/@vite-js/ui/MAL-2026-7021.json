@@ -1,21 +1,45 @@
 {
-  "modified": "2026-07-08T20:37:36Z",
+  "modified": "2026-07-20T00:58:42Z",
   "published": "2026-07-08T20:37:36Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-7021",
+  "aliases": [
+    "GHSA-x4cp-w826-x466"
+  ],
   "summary": "Malicious code in @vite-js/ui (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (914257e4d1eecae3fc48e98c8a2a406ed8021ed159c4a43a96c57453d0a1f320)\nPackage @vite-js/ui@7.15.16 impersonates the legitimate `vite` package: it copies the author name, homepage (vitejs.dev), README, and exposes a `bin` named `vite`, but publishes under an unrelated scope. Its `bin/vite.js` contains the legitimate Vite launcher followed by an appended obfuscated IIFE that uses a seeded permutation cipher and placeholder-swap encoding to reconstruct the Function constructor name and a decoded payload string, then invokes `Function(...)` with the decoded body — an eval-equivalent RCE primitive that fires whenever a developer runs the `vite` CLI provided by this package. The obfuscation shape (custom character-shuffle descrambler, hex/comma-obfuscated string tables) is combined with runtime dependencies uncharacteristic of a build tool (`@solana/web3.js`, `axios`, `socket.io-client`, `form-data`), consistent with the wallet-stealer / exfiltration family seen in prior npm typosquat incidents. Running `npx vite` or the installed `vite` bin from this package executes attacker-controlled code on the developer's machine.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (476576198de86a58304788ac79ac3c8ca21b5029d9e824e3ffab41f539146c3b)\nPackage `@vite-js/ui` impersonates the official `vite` package: package.json declares author 'Evan You', homepage 'https://vitejs.dev', ships an unmodified Vite README and a near-verbatim Vite `dist/` tree, and exposes `bin.vite` pointing at `bin/vite.js` — so any developer who installs this and runs the documented `vite` command executes this package's CLI. Appended to the legitimate Vite bin code in `bin/vite.js` is a heavily obfuscated IIFE that reconstructs strings from a packed blob via a custom shuffler (keyed by 4606094, with `%`/`#1`/`#0` substitutions) to hide the identifiers `http`, `child_process`, `JSON`, `eval`, and `spawn`. At runtime it issues a JSON-RPC HTTP fetch, XOR-decodes the response using a key derived from a remote field, passes the decoded buffer to `eval(r)`, and then calls `child_process.spawn` with `{detached:true, stdio:..., windowsHide:true}` on a second fetched-and-decoded payload — a hidden, detached process that outlives the CLI invocation and provides a persistent execution channel. A short time-gate throttles re-trigger. Legitimate Vite has no such bootstrap; the custom string-array obfuscator covers only the network/eval/spawn surface, which is the canonical dropper-plus-backdoor shape.\n\n## Source: ghsa-malware (2a50c8b2f094ae17cba108b06050cbe0f67744af814caa7a3e834e5f6653aaee)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "@vite-js/ui"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
-        "7.15.16"
+        "7.15.16",
+        "7.15.10"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +76,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@vite-js/ui/v/7.15.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@vite-js/ui/v/7.15.10"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-x4cp-w826-x466"
     }
   ],
   "credits": [
@@ -66,13 +98,40 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-008609",
-        "import_time": "2026-07-08T21:27:50.06242356Z",
-        "modified_time": "2026-07-08T20:37:36Z",
-        "sha256": "914257e4d1eecae3fc48e98c8a2a406ed8021ed159c4a43a96c57453d0a1f320",
         "source": "amazon-inspector",
+        "sha256": "914257e4d1eecae3fc48e98c8a2a406ed8021ed159c4a43a96c57453d0a1f320",
+        "import_time": "2026-07-08T21:27:50.06242356Z",
+        "id": "IN-MAL-2026-008609",
+        "modified_time": "2026-07-08T20:37:36Z",
         "versions": [
           "7.15.16"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "476576198de86a58304788ac79ac3c8ca21b5029d9e824e3ffab41f539146c3b",
+        "import_time": "2026-07-14T04:31:58.959303925Z",
+        "id": "IN-MAL-2026-010363",
+        "modified_time": "2026-07-14T03:33:24Z",
+        "versions": [
+          "7.15.10"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "2a50c8b2f094ae17cba108b06050cbe0f67744af814caa7a3e834e5f6653aaee",
+        "import_time": "2026-07-20T00:57:10.771536244Z",
+        "id": "GHSA-x4cp-w826-x466",
+        "modified_time": "2026-07-20T00:19:28Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]

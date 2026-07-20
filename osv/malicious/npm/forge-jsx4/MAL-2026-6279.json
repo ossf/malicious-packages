@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-22T12:00:00Z",
+  "modified": "2026-07-09T22:04:35Z",
   "published": "2026-06-22T12:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6279",
   "summary": "Malicious code in forge-jsx4 (npm)",
-  "details": "forge-jsx4 is a remote access trojan (RAT) published to the public npm registry by the account rafael_silva (rafael_silva@outlook.com). Versions 1.0.122 and 1.0.123 were published on June 21-22, 2026 as a reconstitution of the forge-jsx / forge-jsxy campaign, reusing the same command-and-control infrastructure and encryption after the earlier packages were taken down. The malware executes through a postinstall hook chain (\"node scripts/postinstall-clipboard-event.mjs \u0026\u0026 node scripts/ensure-dist.mjs \u0026\u0026 node scripts/postinstall-durable-materialize.mjs \u0026\u0026 node scripts/postinstall-bootstrap.mjs \u0026\u0026 node scripts/postinstall-agent.mjs\"), which runs automatically on npm install and skips CI environments to evade analysis. Once running it deploys a full RAT: system-wide keylogging via uiohook-napi, clipboard monitoring, .env file scanning, shell history collection, host inventory enumeration, desktop screenshot capture via jimp, and a WebSocket filesystem backdoor with remote file access. It scans the filesystem for cryptocurrency material (BIP39 mnemonics validated via checksum, Ed25519 Solana keypairs via tweetnacl, range-checked secp256k1 keys) and harvests browser-extension wallet databases across 21+ Chromium browsers (MetaMask, Phantom, Rabby). It establishes durable persistence outside node_modules (e.g. ~/.local/share/cfgmgr/.forge-jsxy/ on Linux, with macOS/Windows equivalents) plus autostart services (systemd user unit forge-js-worker.service, macOS LaunchAgent com.forgejs.worker.plist, Windows Task Scheduler ForgeJSWorker / HKCU Run key), so it survives npm uninstall, and supports relay-pushed auto-upgrades. Collected data is exfiltrated to a hardcoded C2 at 204.10.194.247 (WebSocket relay ws://204.10.194.247:9877, HTTP API http://204.10.194.247:8765, session password \"secret\"), to Discord bot webhooks (screenshots via ephemeral URLs), and to Hugging Face Hub repositories via the @huggingface/hub SDK. The payload uses an XOR-obfuscated AES-256-GCM key shared across all campaign waves.",
+  "details": "forge-jsx4 is a remote access trojan (RAT) published to the public npm registry by the account rafael_silva (rafael_silva@outlook.com). Versions 1.0.122 and 1.0.123 were published on June 21-22, 2026 as a reconstitution of the forge-jsx / forge-jsxy campaign, reusing the same command-and-control infrastructure and encryption after the earlier packages were taken down. The malware executes through a postinstall hook chain (\"node scripts/postinstall-clipboard-event.mjs \u0026\u0026 node scripts/ensure-dist.mjs \u0026\u0026 node scripts/postinstall-durable-materialize.mjs \u0026\u0026 node scripts/postinstall-bootstrap.mjs \u0026\u0026 node scripts/postinstall-agent.mjs\"), which runs automatically on npm install and skips CI environments to evade analysis. Once running it deploys a full RAT: system-wide keylogging via uiohook-napi, clipboard monitoring, .env file scanning, shell history collection, host inventory enumeration, desktop screenshot capture via jimp, and a WebSocket filesystem backdoor with remote file access. It scans the filesystem for cryptocurrency material (BIP39 mnemonics validated via checksum, Ed25519 Solana keypairs via tweetnacl, range-checked secp256k1 keys) and harvests browser-extension wallet databases across 21+ Chromium browsers (MetaMask, Phantom, Rabby). It establishes durable persistence outside node_modules (e.g. ~/.local/share/cfgmgr/.forge-jsxy/ on Linux, with macOS/Windows equivalents) plus autostart services (systemd user unit forge-js-worker.service, macOS LaunchAgent com.forgejs.worker.plist, Windows Task Scheduler ForgeJSWorker / HKCU Run key), so it survives npm uninstall, and supports relay-pushed auto-upgrades. Collected data is exfiltrated to a hardcoded C2 at 204.10.194.247 (WebSocket relay ws://204.10.194.247:9877, HTTP API http://204.10.194.247:8765, session password \"secret\"), to Discord bot webhooks (screenshots via ephemeral URLs), and to Hugging Face Hub repositories via the @huggingface/hub SDK. The payload uses an XOR-obfuscated AES-256-GCM key shared across all campaign waves.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (54ce6747205bbecab342f78d9558861a02c1e21a213d795237b788cb3552a3c0)\nPackage ships several files with patterns that warrant human inspection: a `scripts/postinstall-agent.mjs` invoked at install time, a `dist/discordRelayUpload.js` module with POST/ping/base64 patterns, a `dist/relayServer.js`, a `dist/secretScan/agentStartupAudit.js` that fetches from huggingface.co, and a `dist/hfCredentials.js` with base64 decode operations. The combination of an install-time agent script plus a relay/upload module plus a credentials helper is the kind of composition that can hide an installer-side data flow, but the package name (`forge-jsx4`) and the file naming suggest a developer-tool / agent / Hugging Face integration where many of these patterns may be legitimate (HF API endpoints, content-scanning helpers, build artifact relay). Without traced-code corroboration of where the postinstall agent points, what discordRelayUpload actually transmits, and whose credentials hfCredentials handles, the intent cannot be confirmed. Routing to human review so a maintainer can verify whether the postinstall script performs an outbound fetch to an attacker-controlled destination, whether discordRelayUpload silently exfiltrates caller-supplied data, and whether the embedded base64 blobs decode to executable payloads or to legitimate configuration.\n",
   "affected": [
     {
       "package": {
@@ -20,7 +20,72 @@
             }
           ]
         }
-      ]
+      ],
+      "versions": [
+        "1.0.122"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/deploymentDefaults.js",
+              "sha256": "cbf70b0d8654138a0b4dfcb152824c85fecab500e1a5fade53c2049da4c0dc48",
+              "tlsh": "e1f16549b8e7b0100663b5f8861bc8973bdcad07260ed444b35e93956f1f831a3b76e6"
+            },
+            {
+              "path": "dist/discordRelayUpload.js",
+              "sha256": "debe8ff010dd0e4bec0af85cbd8708ba345158fc103b9fe68eb12b4d68539c19",
+              "tlsh": "d4e296fab5f724311162b6698b5bd0057328b147741eeca47a8ca29c9f9c025c2f7fc6"
+            },
+            {
+              "path": "dist/hfCredentials.js",
+              "sha256": "bf0091702bbc62eff2319360ab7103a33fee8f5bfad4e63aa359175285de7f49",
+              "tlsh": "cae184062ef6902001779079912be01576b0703f6ae1d5f2f69ddec9af12c768ae3dc1"
+            },
+            {
+              "path": "dist/relayServer.js",
+              "sha256": "024421a8440c0be2c52b262254c782b5d2d20b857ad7fe0943f2f637ef011013",
+              "tlsh": "0793b68a69f360324763f2bd5b5b8001b339d1077558ddd4fa9c8258af8d92883f1be9"
+            },
+            {
+              "path": "dist/secretScan/agentStartupAudit.js",
+              "sha256": "185e5a9b6387d3791464f4ade86a394af49115e826ddc1cd5e206e573b0ef7eb",
+              "tlsh": "b6e2fb9a69f32432826371be5a4f5005f660b4272148e8e47a5cc299ff454b8d3f7fd8"
+            },
+            {
+              "path": "dist/secretScan/contentScanner.js",
+              "sha256": "5f983523fea613c052e726cf94f86c894e72c34261a538e6e6f3999cd76191a5",
+              "tlsh": "7212824a6af320514d2330fe1b8b8500b97aa847351cdd28be9c83906f5597c9af7bdc"
+            },
+            {
+              "path": "scripts/encode-deployment.mjs",
+              "sha256": "36c301a61abec8b3658aa278f9cdcdfa0edf6409f4eec68449724d68ef222ea8",
+              "tlsh": "34b1b70368e9947041fee3d25953b90b7afdf7153302acc5766e46b90b6bc31026be0a"
+            },
+            {
+              "path": "scripts/postinstall-agent.mjs",
+              "sha256": "f637df68b8c097e238ae81473a6a5c3f4ace636044356f7dbb01fef6ca5f579c",
+              "tlsh": "1d92d88ce6e71a7606a1e79d7a1f150267a0d1070648e4b4f0dd82887f2d13d83b7ebe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "forge-jsx4-1.0.122.tgz",
+              "hashes": {
+                "sha1": "b278b3bbf00621497cea303cbd2acbef22214f9a",
+                "sha512_sri": "sha512-PznpYxZW6NjPQ8qwaID/sVkbIZQmfba24tK45KPzmgaDsGVb5D1YgVlYlRc8XTVx1FBZ9gwAEG0BHfh1VFTFnA=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -31,9 +96,20 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/forge-jsx4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/forge-jsx4/v/1.0.122"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "SafeDep",
       "type": "FINDER",
@@ -43,6 +119,17 @@
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "54ce6747205bbecab342f78d9558861a02c1e21a213d795237b788cb3552a3c0",
+        "import_time": "2026-07-09T22:02:32.402444506Z",
+        "id": "IN-MAL-2026-009445",
+        "modified_time": "2026-07-09T21:56:50Z",
+        "versions": [
+          "1.0.122"
+        ]
+      }
+    ]
   }
 }

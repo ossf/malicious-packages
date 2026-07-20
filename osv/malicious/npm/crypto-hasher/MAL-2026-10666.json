@@ -1,0 +1,100 @@
+{
+  "modified": "2026-07-15T10:38:45Z",
+  "published": "2026-07-15T06:19:59Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10666",
+  "aliases": [
+    "GHSA-886f-w6pq-7w7j"
+  ],
+  "summary": "Malicious code in crypto-hasher (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5162012006c5d2576c6f93540445f10185d44acfb5cef39764f7a2b45c45d205)\ncrypto-hasher@3.1.3 impersonates the hash-wasm library. Its main entrypoint (dist/index.umd.js) injects code into the WASM Interface `update()` method so that any consumer hashing data containing the trigger string 'alicebob100' silently spawns a detached `node dist/hasher.umd.min.js alicebob100` child process. The spawned dist/hasher.umd.min.js connects to Ethereum Sepolia RPC endpoints (Infura, Alchemy) with base64-obfuscated URLs, reads encrypted material and a password from a smart contract via ABI methods (getCwPrivatePublic, getSPubKey, getPWD, getTData1, setCPubKey), performs X25519 ECDH against a hardcoded peer public key followed by PBKDF2/AES-GCM decryption to recover a wallet private key, and exfiltrates host reconnaissance (platform, release, arch, hostname, cpus, memory, uptime) to Slack (chat.postMessage with a hardcoded Bearer token and channel id) and Telegram (api.telegram.org/bot\u003ctoken\u003e/sendMessage with a hardcoded chat id). A second component, dist/hmac.min.js, is spawned with a derived key and polls Slack conversations.history every 10 seconds; JSON chunk messages posted by a specific operator user id are reassembled, AES-GCM/PBKDF2-decrypted, written to disk, chmod 0755, and executed under the installer's Node runtime — a persistent remote code execution backdoor. An 'exitexitexit' command deletes hasher.umd.min.js, hmac.min.js, and edits LICENSE (splice at line 355) as anti-forensics. Destinations, tokens, and the peer public key are hidden with obfuscator.io-style string-array rotation and base64 wrapping.\n\n## Source: ghsa-malware (375e93abc29932ca708e13a1d4bc4f7da55895d901011fb5b15303ef21cf9e95)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "crypto-hasher"
+      },
+      "versions": [
+        "3.1.3",
+        "3.1.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.umd.js",
+              "sha256": "0c5583aa895551ddf4d57a53974a2a9e8074bbd5a12b301ba8c394cc594c86fa",
+              "tlsh": "77444d1646b35d6613a336e4b34f120b6c54640f919cdf74bd8ccda0af8653c89dbae8"
+            },
+            {
+              "path": "dist/hasher.umd.min.js",
+              "sha256": "1c3a8f0143852eecf57cee6061e197f150f09e7150ff620ab5cadd2ebc6eeab5",
+              "tlsh": "214229cdbaa87e3107da647d92587803c99c9c146b2df541f88eda8f314c3848563f79"
+            },
+            {
+              "path": "dist/hmac.min.js",
+              "sha256": "ad08a4c5b8e48c67f1ede7fad28de9232c8be8b3bcf9e91ceb21f0c5c9204d12",
+              "tlsh": "aaa1d5cc4bad317b07e1245ea8d7150315f9ec01aa469294f842c79a3d5e7901283ff8"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-886f-w6pq-7w7j"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/crypto-hasher/v/3.1.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "ghsa-malware",
+        "sha256": "375e93abc29932ca708e13a1d4bc4f7da55895d901011fb5b15303ef21cf9e95",
+        "import_time": "2026-07-15T07:00:48.957007453Z",
+        "id": "GHSA-886f-w6pq-7w7j",
+        "modified_time": "2026-07-15T06:20:00Z",
+        "versions": [
+          "3.1.3",
+          "3.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5162012006c5d2576c6f93540445f10185d44acfb5cef39764f7a2b45c45d205",
+        "import_time": "2026-07-15T10:36:58.467367571Z",
+        "id": "IN-MAL-2026-010668",
+        "modified_time": "2026-07-15T10:31:28Z",
+        "versions": [
+          "3.1.3"
+        ]
+      }
+    ]
+  }
+}

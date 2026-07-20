@@ -1,10 +1,13 @@
 {
-  "modified": "2026-07-08T20:34:40Z",
+  "modified": "2026-07-14T05:14:04Z",
   "published": "2026-06-01T07:05:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5165",
+  "aliases": [
+    "GHSA-q777-mww2-r86p"
+  ],
   "summary": "Malicious code in @emcd-vue/loans (npm)",
-  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to distribute multiple malicious packages posing as internal tooling. This package was published 90 seconds after sibling package `@emcd-vue/auth` on 2026-06-01 by the same anonymous account (`emcd-vue@proton.me`).\n\nConfirmed to use identical infrastructure and dropper logic as `@emcd-vue/auth`: downloads a platform-specific second-stage payload from `https://oob.moika.tech/payload/{platform}` using `X-Secret: l95HdDaz3kQx1Zsg3WxH6HvKANf51RY1`, writes it to `~/.emcd-vue_init.js` (dot-prefixed hidden file), and executes it as a detached, unref'd process that persists after npm exits. Beacons installation metadata to `https://oob.moika.tech/report` on completion.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (febfe36bf4efb63283bdcac20e625459b8f63358c2e32921a747f29bb2d65917)\nThe package ships a heavily obfuscated postinstall script (scripts/postinstall.js) that executes automatically on `npm install`. The file uses hex-mangled identifier names (_0x2556a0, _0x3929dc, _0x2f9082, etc.) consistent with string-array obfuscators commonly used to hide network exfiltration, credential harvesting, or remote payload execution. Obfuscation in a lifecycle hook is not a legitimate engineering practice — install-time scripts in legitimate packages are readable shell or plain JS. The package name (@emcd-vue/loans) advertises a Vue.js loans component, which has no plausible reason to require obfuscated postinstall logic. Installing this package will run the obfuscated code automatically with the privileges of the developer or build system performing `npm install`.\n",
+  "details": "Part of a coordinated multi-package supply-chain attack impersonating EMCD (emcd.io), a legitimate Russian cryptocurrency exchange and mining pool. The attacker registered the `@emcd-vue` npm scope to distribute multiple malicious packages posing as internal tooling. This package was published 90 seconds after sibling package `@emcd-vue/auth` on 2026-06-01 by the same anonymous account (`emcd-vue@proton.me`).\n\nConfirmed to use identical infrastructure and dropper logic as `@emcd-vue/auth`: downloads a platform-specific second-stage payload from `https://oob.moika.tech/payload/{platform}` using `X-Secret: l95HdDaz3kQx1Zsg3WxH6HvKANf51RY1`, writes it to `~/.emcd-vue_init.js` (dot-prefixed hidden file), and executes it as a detached, unref'd process that persists after npm exits. Beacons installation metadata to `https://oob.moika.tech/report` on completion.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7b5f346a554fe9f5f7cfc733c36d4c92c373aea12e245ef70e1031f41ff76f05)\nOn `npm install`, the declared postinstall script `scripts/postinstall.js` executes a heavily obfuscated (obfuscator.io-style) bundle that collects host identifiers (hostname, username, homedir), the full `process.env` (with Windows-specific keys such as USERDOMAIN, COMPUTERNAME, APPDATA, LOCALAPPDATA, TEMP, PROGRAMDATA), the tail of shell history, and the contents of a hardcoded list of files under the user's home directory that the package itself never created. The collected object is transmitted to a remote endpoint over HTTP(S) and additionally over a covert DNS channel: the payload is base32-encoded into subdomain labels and issued as `dns.Resolver().resolveTxt(...)` queries in chunks, bypassing HTTP egress filters. Endpoint hostnames, header names, and API strings are reconstructed at runtime via a shuffled string array with RC4/XOR decoders. Before exfiltrating, the script checks `process.argv` and `NODE_OPTIONS` for debugger indicators and performs a timing check to detect sandboxes, skipping the exfil if analysis instrumentation is detected. The package also exhibits dependency-confusion shape: metadata references an internal-looking scope and registry (`@emcd-vue`, `npm.emcd-vue.io`, `github.emcd-vue.io`) while being published to the public npm registry, and `dist/index.js` re-exports a `../src/index.js` that is absent from the tarball, so the package has no functional library surface — the postinstall is its only executable code.\n\n## Source: ghsa-malware (21b6c74231987d412324ad5320918c42d954a7921042a39b549415cd799b6ad6)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -24,10 +27,21 @@
       "versions": [
         "7.1.8",
         "7.1.7",
-        "7.1.9"
+        "7.1.9",
+        "7.2.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -85,6 +99,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@emcd-vue/loans/v/7.1.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@emcd-vue/loans/v/7.2.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-q777-mww2-r86p"
     }
   ],
   "credits": [
@@ -143,6 +165,33 @@
         "modified_time": "2026-07-08T20:18:19Z",
         "versions": [
           "7.1.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "7b5f346a554fe9f5f7cfc733c36d4c92c373aea12e245ef70e1031f41ff76f05",
+        "import_time": "2026-07-09T16:20:57.818890016Z",
+        "id": "IN-MAL-2026-009291",
+        "modified_time": "2026-07-09T15:56:12Z",
+        "versions": [
+          "7.2.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "21b6c74231987d412324ad5320918c42d954a7921042a39b549415cd799b6ad6",
+        "import_time": "2026-07-14T05:12:22.023293842Z",
+        "id": "GHSA-q777-mww2-r86p",
+        "modified_time": "2026-07-14T05:00:30Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
         ]
       }
     ]
