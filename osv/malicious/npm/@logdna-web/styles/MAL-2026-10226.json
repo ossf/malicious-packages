@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:25Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10226",
+  "aliases": [
+    "GHSA-qcrg-93h5-r265"
+  ],
+  "summary": "Malicious code in @logdna-web/styles (npm)",
+  "details": "The @logdna-web/styles package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (the @logdna-web scope (LogDNA/Mezmo-style naming)) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511632708141056.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (578fbb4ba04912bad5d72e105ec24a7d02ad2ae610058ba2f866955e13df40e3)\nPackage is published under a scope that impersonates the legitimate @logdna / LogDNA brand and is named 'styles', but its actual purpose is error reporting via Sentry. package.json declares scripts.preinstall = 'npm install @sentry/node \u0026\u0026 node examples/verify.js'. The preinstall script (examples/verify.js) fetches the installer machine's public IP from Cloudflare's /cdn-cgi/trace endpoint, then deliberately triggers an exception which @sentry/node — initialized with a hardcoded DSN at o4510485815754752.ingest.us.sentry.io (project 4511632708141056) belonging to the package author — captures and uploads, sending the installer's egress IP and event metadata to the author's Sentry project at npm install time without disclosure or opt-out. Separately, src/index.js exports an init() that falls back to the same hardcoded DEFAULT_DSN whenever the caller does not pass options.dsn and SENTRY_DSN is unset, and forces sendDefaultPii:true, so any consumer who calls init() without explicit configuration silently routes their captured errors, user context, and IPs to the author's Sentry project rather than their own. The scope/name mismatch with the advertised 'styles' purpose, combined with install-time IP exfiltration and a silent-relay default in the public API, is consistent with opportunistic targeting of developers searching for LogDNA packages.\n\n## Source: ghsa-malware (8b4b91f17d77d1d1b576161c6f5fd8d6ef6d9a1f288f37cb72f3e06c98e690f5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@logdna-web/styles"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "0.8.40"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "87ddae1280dc5464c046e2bc225a3e94202c36a5abdfcb671dc48665d8e20214",
+              "tlsh": "aef04414cd342f2305d4b3656c69014aa7208e4742a43e0837db022d8b8836f15ff2ad"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "22be77b2d2a78e9e453f2959720a745085b7a63f79296829f55656712ea9b076",
+              "tlsh": "a812969a34fa632301e251f0025f90d97365c6773379a9e0715a8be92fc90b8d6b3ec5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "styles-0.8.40.tgz",
+              "hashes": {
+                "sha1": "5e60772615e60019d7723f06e03484fa1ec48942",
+                "sha512_sri": "sha512-taued7he1U9UAa2y9Z5R/kixsU4RvTjbL8Mn3XSBiKLzSo4+jfrK80kvEYVxYaFIu3cRRGPq1GqFr18CVYuvHg=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://d36ae09c7674a306f10e4592772b48b0@o4510485815754752.ingest.us.sentry.io/4511632708141056"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@logdna-web/styles"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@logdna-web/styles/v/0.8.40"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-qcrg-93h5-r265"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "578fbb4ba04912bad5d72e105ec24a7d02ad2ae610058ba2f866955e13df40e3",
+        "import_time": "2026-07-13T09:10:56.431880518Z",
+        "id": "IN-MAL-2026-009869",
+        "modified_time": "2026-07-13T08:18:35Z",
+        "versions": [
+          "0.8.40"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "8b4b91f17d77d1d1b576161c6f5fd8d6ef6d9a1f288f37cb72f3e06c98e690f5",
+        "import_time": "2026-07-14T03:21:41.970019857Z",
+        "id": "GHSA-qcrg-93h5-r265",
+        "modified_time": "2026-07-14T01:05:09Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

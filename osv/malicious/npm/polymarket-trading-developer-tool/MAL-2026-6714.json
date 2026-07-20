@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-01T20:37:24Z",
+  "modified": "2026-07-09T16:23:03Z",
   "published": "2026-07-01T20:37:24Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6714",
   "summary": "Malicious code in polymarket-trading-developer-tool (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ef1cd8b921e779a17329eff2166e4ca81602e51e9079399e39157c8cf7aee4ec)\nThe package impersonates Polymarket developer tooling and ships a postinstall script (scripts/install-check.cjs) that, on `npm install`, fetches a JSON config from https://pm-trading-dev-tools-be.vercel.app/config/clob-math.json, reads a `bundle`/`peerBundle`/`url` field from the response, downloads the referenced tarball to a temp directory, extracts it with `tar -xzf --strip-components=1`, runs `npm install` inside the extracted directory, then `require`s `peer-math.js` from it and invokes `syncSession()`. The tarball URL is unpinned, unversioned, unverified (no hash/signature), and served from a mutable author-controlled Vercel host that is not affiliated with Polymarket. The script's name (`install-check.cjs`) and swallowed error message (`[polymarket-stake-math] install check skipped`) present the behavior as a benign compatibility probe. This is a textbook install-time RCE dropper with a config-indirection layer so the executed payload can be swapped after publish, combined with brand impersonation of Polymarket to amplify reach.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (30ffc35841039a7a95d8b5590db211f34b662975513f3a054b8be282f0858c99)\nThe package's postinstall lifecycle script performs install-time remote code execution. It reads a bundle URL from a JSON config hosted at pm-trading-dev-tools-be.vercel.app/config/clob-math.json (the package's declared homepage), downloads the referenced.tgz archive to a temporary directory, extracts it, runs `npm install --omit=dev` inside the extracted directory (executing lifecycle scripts of any transitive dependencies declared in the fetched package.json), then require()s peer-math.js from the fetched bundle and invokes its syncSession() export in-process. There is no integrity check, no pinned version, and no signature verification; the config endpoint is mutable and can point the loader at any URL. The behavior also honors PSM_PEER_URL / PSM_SYNC_CONFIG environment overrides. The shipped library code (kelly.js) is a small helper serving as cover; the package name and Polymarket branding present as a legitimate developer tool while the postinstall pipeline delivers arbitrary attacker-controlled JavaScript to the installer's machine.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "polymarket-trading-developer-tool"
       },
       "versions": [
-        "0.1.1"
+        "0.1.1",
+        "0.1.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/polymarket-trading-developer-tool/v/0.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/polymarket-trading-developer-tool/v/0.1.2"
     }
   ],
   "credits": [
@@ -66,13 +76,23 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007885",
-        "import_time": "2026-07-01T21:04:20.02224047Z",
-        "modified_time": "2026-07-01T20:37:24Z",
-        "sha256": "ef1cd8b921e779a17329eff2166e4ca81602e51e9079399e39157c8cf7aee4ec",
         "source": "amazon-inspector",
+        "sha256": "ef1cd8b921e779a17329eff2166e4ca81602e51e9079399e39157c8cf7aee4ec",
+        "import_time": "2026-07-01T21:04:20.02224047Z",
+        "id": "IN-MAL-2026-007885",
+        "modified_time": "2026-07-01T20:37:24Z",
         "versions": [
           "0.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "30ffc35841039a7a95d8b5590db211f34b662975513f3a054b8be282f0858c99",
+        "import_time": "2026-07-09T16:20:53.073230601Z",
+        "id": "IN-MAL-2026-009232",
+        "modified_time": "2026-07-09T15:47:30Z",
+        "versions": [
+          "0.1.2"
         ]
       }
     ]

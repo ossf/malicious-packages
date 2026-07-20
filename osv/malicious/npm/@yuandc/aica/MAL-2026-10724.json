@@ -1,0 +1,105 @@
+{
+  "modified": "2026-07-16T18:55:47Z",
+  "published": "2026-07-16T18:38:56Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10724",
+  "summary": "Malicious code in @yuandc/aica (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a9352926e7ceab9460eb3fecae1dfd1bcb9417efa9488e6f7f858149a47e1f31)\nPackage runs a persistent worker (invoked via the `aica start` CLI) that long-polls the hardcoded endpoint https://aca.kinghon.com.cn:8843/ for three streams of server-directed work. (1) `/api/client/jobs/claim` returns prompts that are handed to a local Codex/Claude ACP agent with tool execution enabled in a server-chosen working directory, giving the remote server arbitrary shell/tool execution on the host. (2) `/api/client/machine-operations/claim` returns operations dispatched to `listMachineFilesystemRoots`, `listMachineDirectory`, `registerMachineProject`, and `listProjectDirectory`; on Windows the worker shells out to PowerShell (`Get-CimInstance Win32_LogicalDisk`, `Get-ChildItem`) to enumerate drives and directories, on POSIX it lists home and `/`, and results are POSTed to `/api/client/machine-operations/\u003cid\u003e/complete`. (3) `/api/client/file-requests/claim` returns file-read requests; `streamFileRequest` opens the server-specified path and pipes `fs.createReadStream` bytes to `/api/client/file-requests/\u003cid\u003e/stream`. Path traversal is bounded to a registered project root, but the project root itself is selected by the server via `register_project`/`upsertLocalProject` and can be any directory the running user can read. The combined capabilities give the operator of aca.kinghon.com.cn remote code execution and arbitrary file read on the host for as long as the worker runs.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@yuandc/aica"
+      },
+      "versions": [
+        "0.1.4",
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/core/job-worker.js",
+              "sha256": "91557f51996a01d8e0a6f72230c75ffd8b83b47e822697bdf60969344654a2b1",
+              "tlsh": "90521ae5706ba9748f9a51e8c23b0002e63c4f0ab9cee0b1f72d9d956d19485e173f68"
+            },
+            {
+              "path": "dist/core/machine-filesystem-worker.js",
+              "sha256": "920ac3b778e67a06fc36bf9d6cdd15c4621b4c2bd8fddc431595d6925cce270a",
+              "tlsh": "6b02d885f1d579713ae713d082aa1101f0391c95368f20e4b2acdec37e36c294bb7e2a"
+            },
+            {
+              "path": "dist/core/aca-config.js",
+              "sha256": "ba6843d146aff4963ab7449c1b48bb65505f3c9006ead4c0e3ed270641b2f4fc",
+              "tlsh": "8231dc28f0f3e0a3b3ccc44544511c16f7361a0e9721326396eeeaa23f644d56223a6b"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aica-0.1.4.tgz",
+              "hashes": {
+                "sha1": "935bd824395243539ae0adcc1afccb2c0581f615",
+                "sha512_sri": "sha512-rgYL6MVW7aIqcz2r6P7j84lEvkx7QKkX7zxnJLuRoCODWFX2rK6Np2oLpMG38WnSFxwrhonzhKikFyO/pqAPaQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yuandc/aica/v/0.1.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yuandc/aica/v/0.1.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010730",
+        "import_time": "2026-07-16T18:54:01.612164011Z",
+        "modified_time": "2026-07-16T18:38:56Z",
+        "sha256": "8355e83832bc91135980d5227d4b7a72e7d3584f746d0a392bb80dafbe7edc94",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-010737",
+        "import_time": "2026-07-16T18:54:01.965957212Z",
+        "modified_time": "2026-07-16T18:39:55Z",
+        "sha256": "a9352926e7ceab9460eb3fecae1dfd1bcb9417efa9488e6f7f858149a47e1f31",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      }
+    ]
+  }
+}

@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-29T05:59:14Z",
+  "modified": "2026-07-09T17:21:20Z",
   "published": "2026-06-29T05:59:14Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6576",
   "summary": "Malicious code in checkmarx-claude-cache (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4cbdcac8329a6ad9662ef7af8e0f68cd616f5451dc0a1fce9d2bcab5a7943c8a)\nPackage name and description impersonate the Checkmarx security vendor (`checkmarx-claude-cache`, \"Checkmarx caching setup for Claude Fable access\") but the package is not published under any Checkmarx-owned scope. bin/cli.js fetches a setup script over HTTPS from a hardcoded base URL `https://download.east-1.us.com` (a host crafted to resemble AWS region naming, unrelated to checkmarx.com) at `/release/windows/install` or `/release/mac/install`, then pipes the response body directly into an interpreter via `execSync(\"powershell -NoProfile -NonInteractive -Command -\", { input: script })` on Windows or `execSync(\"bash\", { input: script })` elsewhere. The fetch is unpinned, unverified (no hash or signature check), and uses spoofed per-OS User-Agent strings (`PowerShell/7.4.0` on Windows, `curl/8.4.0` otherwise) to mimic native OS downloaders — a payload-gating pattern typical of malware delivery infrastructure. Running the CLI executes arbitrary attacker-controlled code on the installer's machine.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (26a16e61d88e467ada75205ee93a9339cdf2fb65f3ded068282b4d83b6cb05e9)\nWhen the CLI runs (the documented `npx checkmarx-claude-cache` invocation pattern), bin/cli.js performs an HTTPS GET to a hardcoded URL on a lookalike host — `https://download.east-1.us.com/release/{windows,mac}/install` — and pipes the response body directly into a shell interpreter via execSync: `bash` on macOS/Linux and `powershell -NoProfile -NonInteractive -Command -` on Windows. The response bytes are opaque, unpinned, and not verified via hash or signature, so whatever the server returns at fetch time runs on the installer's machine with the user's privileges. The request uses a forged curl/PowerShell User-Agent to blend with legitimate installer traffic. The package name and README impersonate Checkmarx (a security vendor) and Anthropic's Claude product to make the `npx` invocation appear trustworthy; neither vendor publishes this package, and `download.east-1.us.com` mimics AWS region naming but has no relation to Checkmarx's real infrastructure at checkmarx.com. The package contains no other functionality — the brand impersonation is the lure and the remote fetch-and-exec is the payload.\n",
   "affected": [
     {
       "package": {
@@ -22,10 +22,16 @@
         }
       ],
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +68,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/checkmarx-claude-cache/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/checkmarx-claude-cache/v/1.0.1"
     }
   ],
   "credits": [
@@ -76,23 +86,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007761",
+        "source": "amazon-inspector",
+        "sha256": "4cbdcac8329a6ad9662ef7af8e0f68cd616f5451dc0a1fce9d2bcab5a7943c8a",
         "import_time": "2026-06-29T07:09:10.742684817Z",
+        "id": "IN-MAL-2026-007761",
         "modified_time": "2026-06-29T05:59:14Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
         ],
-        "sha256": "4cbdcac8329a6ad9662ef7af8e0f68cd616f5451dc0a1fce9d2bcab5a7943c8a",
-        "source": "amazon-inspector",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "26a16e61d88e467ada75205ee93a9339cdf2fb65f3ded068282b4d83b6cb05e9",
+        "import_time": "2026-07-09T17:19:25.447232313Z",
+        "id": "IN-MAL-2026-009334",
+        "modified_time": "2026-07-09T16:57:23Z",
+        "versions": [
+          "1.0.1"
         ]
       }
     ]

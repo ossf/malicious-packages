@@ -1,13 +1,13 @@
 {
-  "modified": "2026-07-07T16:00:31Z",
-  "published": "2026-07-07T16:00:26Z",
+  "modified": "2026-07-13T06:45:22Z",
+  "published": "2026-07-06T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6938",
   "aliases": [
     "GHSA-3gfp-7x5j-mp63"
   ],
   "summary": "Malicious code in pinokio-redis (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (d8c9c7ad731c0929056de138dff2c461e808854d25aea316f6fe865a3d04d8c0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "pinokio-redis is a malicious npm package and part of the multi-wave \"forge-jsx\" cross-platform RAT campaign (Wave 4). It was published by npm account 'donimique' (donimiqueakers@gmail.com). The package.json description ('Node.js integration layer for Autodesk Forge') and the bundled README.md (literally titled \"# forge-jsx\") do not match the package name or the shipped code.\n\nOn npm install the declared postinstall chain (postinstall-clipboard-event.mjs, ensure-dist.mjs, postinstall-durable-materialize.mjs, postinstall-bootstrap.mjs, postinstall-agent.mjs) runs scripts/postinstall-agent.mjs, which spawns dist/cli-agent.js as a detached, window-hidden background process. The agent connects over WebSocket to a command-and-control relay whose host, ports and default password are stored as an AES-256-GCM blob in dist/deploymentCipherData.js and decrypted at runtime by XOR-reconstructing a 32-byte key from two halves embedded in dist/deploymentDefaults.js. The decrypted C2 configuration is publicHost 212.193.3.61, relayPort 9877 (WebSocket relay), apiPort 8765 (HTTP API), default password 'secret'. Postinstall also registers OS-level autostart (Windows Run key, macOS LaunchAgent, Linux systemd/XDG autostart; service name forge-js-worker) pointing at a durable copy of the agent stored in a hidden '.forge-jsxy' directory under the platform application-data folder, so the implant survives removal of the npm package.\n\nOnce running it performs credential-grade theft: dist/secretScan/agentStartupAudit.js walks the filesystem for BIP39-checksum-valid mnemonics, secp256k1/WIF private keys and BIP32 extended keys (xprv/tprv/zprv); dist/chromiumExtensionDbHarvest.js enumerates Chromium/Edge/Brave/Vivaldi/Yandex/Opera profiles across Windows, macOS and Linux and copies extension LevelDB stores (including MetaMask/Phantom-shaped wallet stores); harvested data is uploaded to the Hugging Face Hub using an embedded hf_ write token (dist/hfCredentials.js) or delivered via the relay; dist/hostInventorySend.js POSTs host inventory (hostname/platform/node/OS) to the relay and dist/discordRelayUpload.js forwards agent-side PNG screenshots to per-client Discord channels.\n\nThis is the first wave of the campaign to ship rotated AES key material (new DEPLOYMENT_KEY_A/KEY_B/MASK_A/MASK_B byte arrays, hex 12335cede9edad1edbce89fd3ef0836c8edd3778e48f3f38f2330198ec8b1eb0), verified byte-identical across the four donimique-account packages (zod-pino434, zod-pino444, zredis-typed, pinokio-redis) — a single shared build. C2 212.193.3.61 (AS206216, Advin Services LLC, Nurnberg DE) is reused from the Wave 3 pino-zod/zod-pino IP rotation. The campaign is definitively linked by shared C2 infrastructure, the hardcoded '.forge-jsxy' durable directory, the dist/deploymentCipherData.js + dist/deploymentDefaults.js XOR-key fingerprint, and the '# forge-jsx' README tell that spans multiple package names and npm accounts. Only one version of pinokio-redis (1.0.127) exists and all versions are malicious. Tarball SHA-256: a400b0342add77fd3a58e086334b35e11d79e234b180bb360f48adcd61ec4acd, SHA-1: 04b6035df92ef9eb790d64d425c05c51fce46ca7.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2593226767577439cd32d202e0e5e07ef74a6526f9ad7cb42f4bad087d04aa30)\nThe package name presents as a Redis client for Pinokio, but the shipped tarball contains a credential-harvest and data-relay toolkit that has no relationship to Redis. dist/discordRelayUpload.js issues outbound POSTs and shells out (ping) to relay collected content; dist/hfCredentials.js and dist/secretScan/contentScanner.js decode base64-embedded blobs (Buffer.from(..., 'base64')) at runtime; dist/secretScan/agentStartupAudit.js performs fetch() calls to huggingface.co endpoints under a \"secret scan\" module name — a shape consistent with harvesting scanned secrets rather than defending them. dist/deploymentDefaults.js and scripts/encode-deployment.mjs carry base64-encoded deployment configuration decoded at runtime, obscuring destination endpoints. scripts/postinstall-agent.mjs runs at npm install (postinstall) and issues network activity (GET, ping) on install without user interaction, providing auto-execution on default install. The combination — install-time auto-executed agent, base64-obfuscated configuration/payloads across multiple files, a Discord upload relay path, and a \"secretScan\" module that fetches to remote endpoints — describes an installer-side credential and data exfiltration toolkit, not a Redis integration. Name/purpose mismatch, install-time execution, and multi-file obfuscation together satisfy the active-attack shape.\n\n## Source: ghsa-malware (d8c9c7ad731c0929056de138dff2c461e808854d25aea316f6fe865a3d04d8c0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -24,14 +24,76 @@
           ]
         }
       ],
+      "versions": [
+        "1.0.127"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/deploymentDefaults.js",
+              "sha256": "cbf70b0d8654138a0b4dfcb152824c85fecab500e1a5fade53c2049da4c0dc48",
+              "tlsh": "e1f16549b8e7b0100663b5f8861bc8973bdcad07260ed444b35e93956f1f831a3b76e6"
+            },
+            {
+              "path": "dist/discordRelayUpload.js",
+              "sha256": "debe8ff010dd0e4bec0af85cbd8708ba345158fc103b9fe68eb12b4d68539c19",
+              "tlsh": "d4e296fab5f724311162b6698b5bd0057328b147741eeca47a8ca29c9f9c025c2f7fc6"
+            },
+            {
+              "path": "dist/hfCredentials.js",
+              "sha256": "bf0091702bbc62eff2319360ab7103a33fee8f5bfad4e63aa359175285de7f49",
+              "tlsh": "cae184062ef6902001779079912be01576b0703f6ae1d5f2f69ddec9af12c768ae3dc1"
+            },
+            {
+              "path": "dist/relayServer.js",
+              "sha256": "f8802a28e0550799d735e7b510d6301f0f1e371fafd5b2fbd048ceed69133855",
+              "tlsh": "6393b68a69f360324763f2bd5b5b8001b339d1077558ddd4fa9c8258af8d92883f1be9"
+            },
+            {
+              "path": "dist/secretScan/agentStartupAudit.js",
+              "sha256": "185e5a9b6387d3791464f4ade86a394af49115e826ddc1cd5e206e573b0ef7eb",
+              "tlsh": "b6e2fb9a69f32432826371be5a4f5005f660b4272148e8e47a5cc299ff454b8d3f7fd8"
+            },
+            {
+              "path": "dist/secretScan/contentScanner.js",
+              "sha256": "5f983523fea613c052e726cf94f86c894e72c34261a538e6e6f3999cd76191a5",
+              "tlsh": "7212824a6af320514d2330fe1b8b8500b97aa847351cdd28be9c83906f5597c9af7bdc"
+            },
+            {
+              "path": "scripts/encode-deployment.mjs",
+              "sha256": "36c301a61abec8b3658aa278f9cdcdfa0edf6409f4eec68449724d68ef222ea8",
+              "tlsh": "34b1b70368e9947041fee3d25953b90b7afdf7153302acc5766e46b90b6bc31026be0a"
+            },
+            {
+              "path": "scripts/postinstall-agent.mjs",
+              "sha256": "f637df68b8c097e238ae81473a6a5c3f4ace636044356f7dbb01fef6ca5f579c",
+              "tlsh": "1d92d88ce6e71a7606a1e79d7a1f150267a0d1070648e4b4f0dd82887f2d13d83b7ebe"
+            }
+          ]
+        },
+        "iocs": {
+          "ips": [
+            "212.193.3.61"
+          ]
+        }
       }
     }
   ],
@@ -39,26 +101,64 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-3gfp-7x5j-mp63"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pinokio-redis/v/1.0.127"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-forge-jsxy-npm-rat-evolution/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pinokio-redis"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "GHSA-3gfp-7x5j-mp63",
+        "source": "ghsa-malware",
+        "sha256": "d8c9c7ad731c0929056de138dff2c461e808854d25aea316f6fe865a3d04d8c0",
         "import_time": "2026-07-07T16:09:37.81067542Z",
+        "id": "GHSA-3gfp-7x5j-mp63",
         "modified_time": "2026-07-07T16:00:31Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
-        ],
-        "sha256": "d8c9c7ad731c0929056de138dff2c461e808854d25aea316f6fe865a3d04d8c0",
-        "source": "ghsa-malware"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "2593226767577439cd32d202e0e5e07ef74a6526f9ad7cb42f4bad087d04aa30",
+        "import_time": "2026-07-09T22:56:35.191586463Z",
+        "id": "IN-MAL-2026-009568",
+        "modified_time": "2026-07-09T22:14:43Z",
+        "versions": [
+          "1.0.127"
+        ]
       }
     ]
   }
