@@ -97,6 +97,22 @@ func TestIndicatorsUnmarshalJSON_ValidationErrors(t *testing.T) {
 			name:  "invalid url",
 			input: `{"urls": ["://domain"]}`,
 		},
+		{
+			name:  "invalid file source",
+			input: `{"files": [{"path": "x.js", "source": "email"}]}`,
+		},
+		{
+			name:  "invalid file sha256",
+			input: `{"files": [{"path": "x.js", "digests": {"sha256": "not-a-hash"}}]}`,
+		},
+		{
+			name:  "invalid file tlsh",
+			input: `{"files": [{"path": "x.js", "digests": {"tlsh": "xyz"}}]}`,
+		},
+		{
+			name:  "empty file entry",
+			input: `{"files": [{"note": "no path and no digest"}]}`,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -105,5 +121,52 @@ func TestIndicatorsUnmarshalJSON_ValidationErrors(t *testing.T) {
 				t.Fatalf("Unmarshal() = %v; want = %v", err, report.ErrUnexpectedOSV)
 			}
 		})
+	}
+}
+
+func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
+	in := `{
+		"files": [
+			{
+				"path": "package/postinstall.js",
+				"source": "package-archive",
+				"digests": {"sha256": "bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"}
+			},
+			{
+				"path": "/tmp/stage2.bin",
+				"note": "second stage fetched from C2",
+				"source": "downloaded",
+				"digests": {
+					"sha256": "987872707c668af0739f7d0193c1db906eb87e0749a5801a8a166a0aa2735136",
+					"tlsh": "T10123456789012345678901234567890123456789012345678901234567890123456789"
+				}
+			}
+		]
+	}`
+	want := report.Indicators{
+		Files: []report.FileIndicator{
+			{
+				Path:    "package/postinstall.js",
+				Source:  "package-archive",
+				Digests: &report.FileDigests{SHA256: "bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"},
+			},
+			{
+				Path:   "/tmp/stage2.bin",
+				Note:   "second stage fetched from C2",
+				Source: "downloaded",
+				Digests: &report.FileDigests{
+					SHA256: "987872707c668af0739f7d0193c1db906eb87e0749a5801a8a166a0aa2735136",
+					TLSH:   "T10123456789012345678901234567890123456789012345678901234567890123456789",
+				},
+			},
+		},
+	}
+
+	var got report.Indicators
+	if err := got.UnmarshalJSON([]byte(in)); err != nil {
+		t.Fatalf("Unmarshal() = %v; want nil", err)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Unmarshal() = %v, want %v", got, want)
 	}
 }

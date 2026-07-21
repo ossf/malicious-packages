@@ -34,6 +34,12 @@ elaborated in the next section. All strings contain UTF-8 text.
 			"domains": [ string ],
 			"urls": [ string ],
 			"ips": [ string ],
+			"files": [ {
+				"path": string,
+				"note": string,
+				"source": string,
+				"digests": { "sha256": string, "tlsh": string }
+			} ],
 		},
 		"malicious-packages-origins" : [ {
 			"source": string,
@@ -76,6 +82,54 @@ a scheme/authority should be present.
 
 If the URL contains only a host (e.g. `example.com`), then add the host to
 either `domains` or `ips` field instead.
+
+### iocs.files[] field
+
+The `files` field is a JSON array of objects, each describing a single file
+associated with the malicious package.
+
+Files are recorded separately from the network indicators above, and each entry
+carries its own `source` so that consumers can distinguish package artifacts
+(the published tarball/wheel, which may only ever be processed as a stream) from
+files that are dropped or generated at run time (for example a second-stage
+payload downloaded from a C2, or content decoded from data embedded in the
+archive). Keeping these apart avoids mixing, e.g., ten package tarballs and two
+dropped files into a single flat list.
+
+Each object may contain the following fields. An entry must have at least a
+`path` or one digest under `digests`.
+
+#### iocs.files[].path field
+
+The `path` field is an optional string giving the file name as observed, either
+relative or absolute. It is limited to 1024 characters. It may be omitted when
+the file never has a stable path (e.g. an in-memory second stage identified only
+by its digest).
+
+#### iocs.files[].note field
+
+The `note` field is an optional free-text string describing the file. It is
+limited to 512 characters.
+
+#### iocs.files[].source field
+
+The `source` field is an optional string recording where the file came from. It
+must be one of:
+
+- `package-archive` — the file is part of the published package artifact.
+- `downloaded` — the file was retrieved at run time (e.g. from a C2).
+- `generated` — the file was produced at run time from code in the archive or
+  data downloaded from a C2 (e.g. base64-decoded or decrypted).
+
+#### iocs.files[].digests field
+
+The `digests` field is an optional JSON object mapping a hash algorithm name to
+the file's digest under that algorithm. Recognised algorithms are:
+
+- `sha256` — a lowercase hex-encoded SHA-256 digest (64 hex characters).
+- `tlsh` — a hex-encoded [TLSH](https://tlsh.org/) fuzzy hash (70 hex
+  characters, optionally prefixed with the `T1` version marker), useful for
+  clustering variants of the same payload.
 
 ## malicious-packages-origins fields
 
