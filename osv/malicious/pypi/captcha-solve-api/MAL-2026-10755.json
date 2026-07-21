@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-16T18:42:07Z",
+  "modified": "2026-07-20T17:03:39Z",
   "published": "2026-07-16T18:42:07Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10755",
   "summary": "Malicious code in captcha-solve-api (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ee854f4888e58f81b9e22e7addd740d28a717be453133c10267dd91fc5e50cee)\nThe package advertises itself as a REST client for a captcha-solving API, but the shipped captcha_solve_api module is a ~20-line stub. The tarball's real payload is two top-level modules (_telemetry_init, _telemetry_transport, ~117 KB) installed as global site modules together with a telemetry.pth file copied into site-packages by a custom install command. The.pth contains `import _telemetry_init`, which Python auto-executes on every interpreter start — independent of whether captcha_solve_api is ever imported. _telemetry_init spawns a daemon thread that instantiates _telemetry_transport.Client and calls initialize()/track(). The runtime collects host identifiers (platform.node() hostname, cpu_count, OS/arch, Python version, session identifiers) and POSTs JSON envelopes to /api/envelope on a destination host that is not hardcoded: a ServiceDiscovery class issues DNS TXT queries to 8.8.8.8 and 1.1.1.1 and base64-decodes concatenated TXT chunks to reconstruct the endpoint, allowing the operator to rotate destinations after install and evade domain/IP allowlists. Author metadata is a generic placeholder ('Platform Engineering') and the DSN docstring uses dev@example.com. The 'telemetry'/'analytics SDK' framing does not match the advertised captcha-solving purpose and is not part of the captcha_solve_api namespace.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ee854f4888e58f81b9e22e7addd740d28a717be453133c10267dd91fc5e50cee)\nThe package advertises itself as a REST client for a captcha-solving API, but the shipped captcha_solve_api module is a ~20-line stub. The tarball's real payload is two top-level modules (_telemetry_init, _telemetry_transport, ~117 KB) installed as global site modules together with a telemetry.pth file copied into site-packages by a custom install command. The.pth contains `import _telemetry_init`, which Python auto-executes on every interpreter start — independent of whether captcha_solve_api is ever imported. _telemetry_init spawns a daemon thread that instantiates _telemetry_transport.Client and calls initialize()/track(). The runtime collects host identifiers (platform.node() hostname, cpu_count, OS/arch, Python version, session identifiers) and POSTs JSON envelopes to /api/envelope on a destination host that is not hardcoded: a ServiceDiscovery class issues DNS TXT queries to 8.8.8.8 and 1.1.1.1 and base64-decodes concatenated TXT chunks to reconstruct the endpoint, allowing the operator to rotate destinations after install and evade domain/IP allowlists. Author metadata is a generic placeholder ('Platform Engineering') and the DSN docstring uses dev@example.com. The 'telemetry'/'analytics SDK' framing does not match the advertised captcha-solving purpose and is not part of the captcha_solve_api namespace.\n\n## Source: kam193 (6745bff1a72b44a9e53129210993aa7a3d0b95e8d9a0a2b2cdfe91324a8e8477)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
   "affected": [
     {
       "package": {
@@ -12,7 +12,9 @@
         "name": "captcha-solve-api"
       },
       "versions": [
-        "0.0.1"
+        "0.0.1",
+        "8.5.3",
+        "8.5.4"
       ],
       "database_specific": {
         "cwes": [
@@ -53,6 +55,30 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/captcha-solve-api/0.0.1/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/captcha-solve-api"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/06f1c2f0c66cf13ab6702414e8dce7c4115939f3e9cf95e9a8baade58961c016/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/230f81f18608800912def92e18999874e004cd9fb4a554f759f77e4dd2030081/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/c98444d6aebfd87f2f4412e1d7aafe8fe3fe080139ca1111049ea83fe828cd1d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/1360bb7437f5e7790747bc4e31eedcd19f88f23b20362a42368f4179b8b9e27d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
     }
   ],
   "credits": [
@@ -62,18 +88,70 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "package-proxy.cf8oobworker.workers.dev",
+        "package-proxy.cf5oobworker.workers.dev",
+        "package-proxy.cf25-6eb.workers.dev",
+        "package-proxy.cf17-ddb.workers.dev",
+        "win.dl.well1.site",
+        "tina.dl.well1.site",
+        "tin.dl.well1.site",
+        "ldr.dl.well1.site"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-010751",
-        "import_time": "2026-07-16T18:54:02.771178464Z",
-        "modified_time": "2026-07-16T18:42:07Z",
-        "sha256": "ee854f4888e58f81b9e22e7addd740d28a717be453133c10267dd91fc5e50cee",
         "source": "amazon-inspector",
+        "sha256": "ee854f4888e58f81b9e22e7addd740d28a717be453133c10267dd91fc5e50cee",
+        "import_time": "2026-07-16T18:54:02.771178464Z",
+        "id": "IN-MAL-2026-010751",
+        "modified_time": "2026-07-16T18:42:07Z",
         "versions": [
           "0.0.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "429dcc1b806027e55c9761344777e12e795b2d7302197287a85593acf1da2094",
+        "import_time": "2026-07-20T16:06:06.874609633Z",
+        "id": "pypi/2026-07-andreiiiiiii_i/captcha-solve-api",
+        "modified_time": "2026-07-20T14:11:28.873462Z",
+        "versions": [
+          "0.0.1",
+          "8.5.3",
+          "8.5.4"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "6745bff1a72b44a9e53129210993aa7a3d0b95e8d9a0a2b2cdfe91324a8e8477",
+        "import_time": "2026-07-20T17:01:49.031661827Z",
+        "id": "pypi/2026-07-andreiiiiiii_i/captcha-solve-api",
+        "modified_time": "2026-07-20T14:11:28.873462Z",
+        "versions": [
+          "0.0.1",
+          "8.5.3",
+          "8.5.4"
         ]
       }
     ]
