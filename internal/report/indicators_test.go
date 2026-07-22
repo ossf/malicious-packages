@@ -99,15 +99,23 @@ func TestIndicatorsUnmarshalJSON_ValidationErrors(t *testing.T) {
 		},
 		{
 			name:  "invalid file source",
-			input: `{"files": [{"path": "x.js", "source": "email"}]}`,
+			input: `{"files": [{"paths": ["x.js"], "source": "email"}]}`,
 		},
 		{
 			name:  "invalid file sha256",
-			input: `{"files": [{"path": "x.js", "digests": {"sha256": "not-a-hash"}}]}`,
+			input: `{"files": [{"paths": ["x.js"], "digests": {"sha256": "not-a-hash"}}]}`,
+		},
+		{
+			name:  "invalid file md5",
+			input: `{"files": [{"paths": ["x.js"], "digests": {"md5": "zz"}}]}`,
 		},
 		{
 			name:  "invalid file tlsh",
-			input: `{"files": [{"path": "x.js", "digests": {"tlsh": "xyz"}}]}`,
+			input: `{"files": [{"paths": ["x.js"], "digests": {"tlsh": "xyz"}}]}`,
+		},
+		{
+			name:  "invalid file ssdeep",
+			input: `{"files": [{"paths": ["x.js"], "digests": {"ssdeep": "notssdeep"}}]}`,
 		},
 		{
 			name:  "empty file entry",
@@ -125,39 +133,57 @@ func TestIndicatorsUnmarshalJSON_ValidationErrors(t *testing.T) {
 }
 
 func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
+	// The sha256 in the first file and the tlsh in the second are supplied in
+	// UPPER-case to exercise case-insensitive validation + lowercase normalization.
 	in := `{
 		"files": [
 			{
-				"path": "package/postinstall.js",
+				"paths": ["package/postinstall.js"],
 				"source": "package-archive",
-				"digests": {"sha256": "bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"}
+				"digests": {"sha256": "BD13913906ED463642719633F36F04CF10AE6F9C9360FCDE842F8B6B1DAF0B02"}
 			},
 			{
-				"path": "/tmp/stage2.bin",
-				"note": "second stage fetched from C2",
-				"source": "downloaded",
+				"paths": ["/tmp/stage2.bin", "/var/tmp/stage2.bin"],
+				"note": "second stage dropped from a C2",
+				"source": "dropped",
 				"digests": {
+					"md5": "d41d8cd98f00b204e9800998ecf8427e",
+					"sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
 					"sha256": "987872707c668af0739f7d0193c1db906eb87e0749a5801a8a166a0aa2735136",
-					"tlsh": "T10123456789012345678901234567890123456789012345678901234567890123456789"
+					"tlsh": "T10123456789012345678901234567890123456789012345678901234567890123456789",
+					"ssdeep": "12:AbCd+/12:XyZ"
 				}
+			},
+			{
+				"source": "in-memory",
+				"note": "decoded payload that never hit disk",
+				"digests": {"sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
 			}
 		]
 	}`
 	want := report.Indicators{
 		Files: []report.FileIndicator{
 			{
-				Path:    "package/postinstall.js",
+				Paths:   []string{"package/postinstall.js"},
 				Source:  "package-archive",
 				Digests: &report.FileDigests{SHA256: "bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"},
 			},
 			{
-				Path:   "/tmp/stage2.bin",
-				Note:   "second stage fetched from C2",
-				Source: "downloaded",
+				Paths:  []string{"/tmp/stage2.bin", "/var/tmp/stage2.bin"},
+				Note:   "second stage dropped from a C2",
+				Source: "dropped",
 				Digests: &report.FileDigests{
+					MD5:    "d41d8cd98f00b204e9800998ecf8427e",
+					SHA1:   "da39a3ee5e6b4b0d3255bfef95601890afd80709",
 					SHA256: "987872707c668af0739f7d0193c1db906eb87e0749a5801a8a166a0aa2735136",
-					TLSH:   "T10123456789012345678901234567890123456789012345678901234567890123456789",
+					TLSH:   "t10123456789012345678901234567890123456789012345678901234567890123456789",
+					SSDEEP: "12:AbCd+/12:XyZ",
 				},
+			},
+			{
+				Source:  "in-memory",
+				Note:    "decoded payload that never hit disk",
+				Digests: &report.FileDigests{SHA256: "0000000000000000000000000000000000000000000000000000000000000000"},
 			},
 		},
 	}

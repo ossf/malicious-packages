@@ -18,17 +18,22 @@ const (
 
 var (
 	validDomainCharsRE = regexp.MustCompile("[a-zA-Z0-9_.-]+")
-	sha256RE           = regexp.MustCompile("^[0-9a-f]{64}$")
-	// TLSH digest: 70 hex characters, optionally prefixed with the "T1"
-	// version marker emitted by newer TLSH implementations.
-	tlshRE = regexp.MustCompile("^(?:T1)?[0-9A-Fa-f]{70}$")
+	// Hex digests are validated case-insensitively and normalized to lowercase.
+	md5RE    = regexp.MustCompile("^(?i)[0-9a-f]{32}$")
+	sha1RE   = regexp.MustCompile("^(?i)[0-9a-f]{40}$")
+	sha256RE = regexp.MustCompile("^(?i)[0-9a-f]{64}$")
+	// TLSH: 70 hex characters, optionally prefixed with the "T1" version marker
+	// emitted by newer TLSH implementations.
+	tlshRE = regexp.MustCompile("^(?i)(?:t1)?[0-9a-f]{70}$")
+	// ssdeep: "<blocksize>:<hash>:<hash>" (base64-ish; case-sensitive, not hex).
+	ssdeepRE = regexp.MustCompile(`^[0-9]+:[A-Za-z0-9/+]+:[A-Za-z0-9/+]+$`)
 )
 
 // validFileSources enumerates the allowed values for FileIndicator.Source.
 var validFileSources = map[string]bool{
 	"package-archive": true,
-	"downloaded":      true,
-	"generated":       true,
+	"dropped":         true,
+	"in-memory":       true,
 }
 
 type Indicators struct {
@@ -42,28 +47,33 @@ type Indicators struct {
 //
 // It intentionally distinguishes files by their Source so that package
 // artifacts (the published tarball/wheel, which may only ever be processed as a
-// stream) can be recorded separately from files dropped or generated at run
-// time (e.g. a second-stage payload downloaded from a C2, or content decoded
-// from data embedded in the archive).
+// stream) are recorded separately from other files associated with the malware,
+// such as a second stage dropped at run time or a payload that only ever lived
+// in memory.
 type FileIndicator struct {
-	// Path is the file name (relative or absolute) as observed. Optional when
-	// at least one digest is supplied (e.g. an in-memory second stage).
-	Path string `json:"path,omitempty"`
+	// Paths lists the file names (relative or absolute) at which the file was
+	// observed — the same content can appear in several places. Optional for a
+	// file that never hit disk (Source "in-memory"), which is identified by its
+	// digest alone.
+	Paths []string `json:"paths,omitempty"`
 	// Note is optional free text describing the file.
 	Note string `json:"note,omitempty"`
 	// Source records where the file came from: one of "package-archive",
-	// "downloaded" or "generated". Optional.
+	// "dropped" or "in-memory". Optional.
 	Source string `json:"source,omitempty"`
 	// Digests holds one or more content hashes of the file.
 	Digests *FileDigests `json:"digests,omitempty"`
 }
 
 // FileDigests holds content hashes for a FileIndicator, keyed by algorithm.
+// sha256 is preferred and recommended at a minimum. Hex digests may be supplied
+// in any case; they are normalized to lowercase.
 type FileDigests struct {
-	// SHA256 is a lowercase hex-encoded SHA-256 digest (64 characters).
+	MD5    string `json:"md5,omitempty"`
+	SHA1   string `json:"sha1,omitempty"`
 	SHA256 string `json:"sha256,omitempty"`
-	// TLSH is a hex-encoded TLSH fuzzy hash, useful for clustering variants.
-	TLSH string `json:"tlsh,omitempty"`
+	TLSH   string `json:"tlsh,omitempty"`
+	SSDEEP string `json:"ssdeep,omitempty"`
 }
 
 // UnmarshalJSON implements the json.Unmashaler interface.
@@ -103,26 +113,53 @@ func (i *Indicators) UnmarshalJSON(b []byte) error {
 		}
 	}
 
-	for idx, f := range r.Files {
+	for idx := range r.Files {
+		f := &r.Files[idx] // pointer so digest normalization persists
 		if f.Source != "" && !validFileSources[f.Source] {
 			return fmt.Errorf("%w invalid file source '%s'", ErrUnexpectedOSV, f.Source)
 		}
-		if len(f.Path) > maxPathLength {
-			return fmt.Errorf("%w file path too long (%d > %d)", ErrUnexpectedOSV, len(f.Path), maxPathLength)
+		for _, p := range f.Paths {
+			if len(p) > maxPathLength {
+				return fmt.Errorf("%w file path too long (%d > %d)", ErrUnexpectedOSV, len(p), maxPathLength)
+			}
 		}
 		if len(f.Note) > maxNoteLength {
 			return fmt.Errorf("%w file note too long (%d > %d)", ErrUnexpectedOSV, len(f.Note), maxNoteLength)
 		}
-		hasDigest := f.Digests != nil && (f.Digests.SHA256 != "" || f.Digests.TLSH != "")
-		if f.Path == "" && !hasDigest {
-			return fmt.Errorf("%w file[%d] must have a path or at least one digest", ErrUnexpectedOSV, idx)
+		d := f.Digests
+		hasDigest := d != nil && (d.MD5 != "" || d.SHA1 != "" || d.SHA256 != "" || d.TLSH != "" || d.SSDEEP != "")
+		if len(f.Paths) == 0 && !hasDigest {
+			return fmt.Errorf("%w file[%d] must have at least one path or one digest", ErrUnexpectedOSV, idx)
 		}
-		if f.Digests != nil {
-			if f.Digests.SHA256 != "" && !sha256RE.MatchString(f.Digests.SHA256) {
-				return fmt.Errorf("%w invalid sha256 digest '%s'", ErrUnexpectedOSV, f.Digests.SHA256)
+		if d != nil {
+			// Hex digests are validated case-insensitively and normalized to
+			// lowercase; ssdeep is case-sensitive (base64-ish) so it is left as-is.
+			if d.MD5 != "" {
+				if !md5RE.MatchString(d.MD5) {
+					return fmt.Errorf("%w invalid md5 digest '%s'", ErrUnexpectedOSV, d.MD5)
+				}
+				d.MD5 = strings.ToLower(d.MD5)
 			}
-			if f.Digests.TLSH != "" && !tlshRE.MatchString(f.Digests.TLSH) {
-				return fmt.Errorf("%w invalid tlsh digest '%s'", ErrUnexpectedOSV, f.Digests.TLSH)
+			if d.SHA1 != "" {
+				if !sha1RE.MatchString(d.SHA1) {
+					return fmt.Errorf("%w invalid sha1 digest '%s'", ErrUnexpectedOSV, d.SHA1)
+				}
+				d.SHA1 = strings.ToLower(d.SHA1)
+			}
+			if d.SHA256 != "" {
+				if !sha256RE.MatchString(d.SHA256) {
+					return fmt.Errorf("%w invalid sha256 digest '%s'", ErrUnexpectedOSV, d.SHA256)
+				}
+				d.SHA256 = strings.ToLower(d.SHA256)
+			}
+			if d.TLSH != "" {
+				if !tlshRE.MatchString(d.TLSH) {
+					return fmt.Errorf("%w invalid tlsh digest '%s'", ErrUnexpectedOSV, d.TLSH)
+				}
+				d.TLSH = strings.ToLower(d.TLSH)
+			}
+			if d.SSDEEP != "" && !ssdeepRE.MatchString(d.SSDEEP) {
+				return fmt.Errorf("%w invalid ssdeep digest '%s'", ErrUnexpectedOSV, d.SSDEEP)
 			}
 		}
 	}
