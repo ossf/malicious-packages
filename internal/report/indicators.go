@@ -114,58 +114,72 @@ func (i *Indicators) UnmarshalJSON(b []byte) error {
 	}
 
 	for idx := range r.Files {
-		f := &r.Files[idx] // pointer so digest normalization persists
-		if f.Source != "" && !validFileSources[f.Source] {
-			return fmt.Errorf("%w invalid file source '%s'", ErrUnexpectedOSV, f.Source)
-		}
-		for _, p := range f.Paths {
-			if len(p) > maxPathLength {
-				return fmt.Errorf("%w file path too long (%d > %d)", ErrUnexpectedOSV, len(p), maxPathLength)
-			}
-		}
-		if len(f.Note) > maxNoteLength {
-			return fmt.Errorf("%w file note too long (%d > %d)", ErrUnexpectedOSV, len(f.Note), maxNoteLength)
-		}
-		d := f.Digests
-		hasDigest := d != nil && (d.MD5 != "" || d.SHA1 != "" || d.SHA256 != "" || d.TLSH != "" || d.SSDEEP != "")
-		if len(f.Paths) == 0 && !hasDigest {
-			return fmt.Errorf("%w file[%d] must have at least one path or one digest", ErrUnexpectedOSV, idx)
-		}
-		if d != nil {
-			// Hex digests are validated case-insensitively and normalized to
-			// lowercase; ssdeep is case-sensitive (base64-ish) so it is left as-is.
-			if d.MD5 != "" {
-				if !md5RE.MatchString(d.MD5) {
-					return fmt.Errorf("%w invalid md5 digest '%s'", ErrUnexpectedOSV, d.MD5)
-				}
-				d.MD5 = strings.ToLower(d.MD5)
-			}
-			if d.SHA1 != "" {
-				if !sha1RE.MatchString(d.SHA1) {
-					return fmt.Errorf("%w invalid sha1 digest '%s'", ErrUnexpectedOSV, d.SHA1)
-				}
-				d.SHA1 = strings.ToLower(d.SHA1)
-			}
-			if d.SHA256 != "" {
-				if !sha256RE.MatchString(d.SHA256) {
-					return fmt.Errorf("%w invalid sha256 digest '%s'", ErrUnexpectedOSV, d.SHA256)
-				}
-				d.SHA256 = strings.ToLower(d.SHA256)
-			}
-			if d.TLSH != "" {
-				if !tlshRE.MatchString(d.TLSH) {
-					return fmt.Errorf("%w invalid tlsh digest '%s'", ErrUnexpectedOSV, d.TLSH)
-				}
-				d.TLSH = strings.ToLower(d.TLSH)
-			}
-			if d.SSDEEP != "" && !ssdeepRE.MatchString(d.SSDEEP) {
-				return fmt.Errorf("%w invalid ssdeep digest '%s'", ErrUnexpectedOSV, d.SSDEEP)
-			}
+		if err := validateFile(idx, &r.Files[idx]); err != nil {
+			return err
 		}
 	}
 
 	*i = Indicators(r)
 	return nil
+}
+
+// validateFile checks one FileIndicator (source, path lengths, note length, and
+// the "at least one path or digest" rule) and normalizes its hex digests. Split
+// out of UnmarshalJSON to keep that method's complexity low.
+func validateFile(idx int, f *FileIndicator) error {
+	if f.Source != "" && !validFileSources[f.Source] {
+		return fmt.Errorf("%w invalid file source '%s'", ErrUnexpectedOSV, f.Source)
+	}
+	for _, p := range f.Paths {
+		if len(p) > maxPathLength {
+			return fmt.Errorf("%w file path too long (%d > %d)", ErrUnexpectedOSV, len(p), maxPathLength)
+		}
+	}
+	if len(f.Note) > maxNoteLength {
+		return fmt.Errorf("%w file note too long (%d > %d)", ErrUnexpectedOSV, len(f.Note), maxNoteLength)
+	}
+	d := f.Digests
+	hasDigest := d != nil && (d.MD5 != "" || d.SHA1 != "" || d.SHA256 != "" || d.TLSH != "" || d.SSDEEP != "")
+	if len(f.Paths) == 0 && !hasDigest {
+		return fmt.Errorf("%w file[%d] must have at least one path or one digest", ErrUnexpectedOSV, idx)
+	}
+	return validateDigests(d)
+}
+
+// validateDigests validates each present digest and normalizes the hex ones to
+// lowercase in place. ssdeep is case-sensitive (base64-ish) and left as-is.
+func validateDigests(d *FileDigests) error {
+	if d == nil {
+		return nil
+	}
+	var err error
+	if d.MD5, err = normHex("md5", d.MD5, md5RE); err != nil {
+		return err
+	}
+	if d.SHA1, err = normHex("sha1", d.SHA1, sha1RE); err != nil {
+		return err
+	}
+	if d.SHA256, err = normHex("sha256", d.SHA256, sha256RE); err != nil {
+		return err
+	}
+	if d.TLSH, err = normHex("tlsh", d.TLSH, tlshRE); err != nil {
+		return err
+	}
+	if d.SSDEEP != "" && !ssdeepRE.MatchString(d.SSDEEP) {
+		return fmt.Errorf("%w invalid ssdeep digest '%s'", ErrUnexpectedOSV, d.SSDEEP)
+	}
+	return nil
+}
+
+// normHex validates a hex digest (case-insensitive) and returns it lowercased.
+func normHex(name, val string, re *regexp.Regexp) (string, error) {
+	if val == "" {
+		return "", nil
+	}
+	if !re.MatchString(val) {
+		return "", fmt.Errorf("%w invalid %s digest '%s'", ErrUnexpectedOSV, name, val)
+	}
+	return strings.ToLower(val), nil
 }
 
 // isDomainValid checks if d is a valid domain name. This is a naive check and
