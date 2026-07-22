@@ -258,7 +258,7 @@ func (r *Report) IsRecursive() bool {
 	if r.HasDetailsHeader() {
 		return true
 	}
-	if strings.Contains(r.Details, "Credit: [OpenSSF](https://github.com/ossf/malicious-packages)") {
+	if strings.Contains(r.raw.Details, "Credit: [OpenSSF](https://github.com/ossf/malicious-packages)") {
 		return true
 	}
 	return false
