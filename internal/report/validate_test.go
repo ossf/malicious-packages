@@ -166,7 +166,7 @@ func TestValidateVuln_Fail_PackageNameSpecialChars(t *testing.T) {
 			{
 				Package: osvschema.Package{
 					Ecosystem: string(osvschema.EcosystemNPM),
-					Name: "exam\rple",
+					Name:      "exam\rple",
 				},
 				Versions: []string{"0"},
 			},

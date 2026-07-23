@@ -194,7 +194,7 @@ PathLoop:
 			continue
 		}
 		limit := min(len(earliestParts), len(parts))
-		for i := 0; i < limit ; i++ {
+		for i := 0; i < limit; i++ {
 			if parts[i] < earliestParts[i] {
 				earliest = p
 				earliestParts = parts
