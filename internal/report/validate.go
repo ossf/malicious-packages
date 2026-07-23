@@ -133,6 +133,10 @@ func validatePackage(pkg osvschema.Package) (osvschema.Ecosystem, error) {
 	if name == "" {
 		return "", fmt.Errorf("%w: package name is missing", ErrInvalidOSV)
 	}
+	// Package name must not contain special characters.
+	if strings.ContainsFunc(name, func(r rune) bool { return r < 0x20 || r == 0x7F }) {
+		return "", fmt.Errorf("%w: package name contains special characters", ErrInvalidOSV)
+	}
 
 	// If a PURL is set, ensure that it matches the package.
 	if pkg.Purl != "" {

@@ -160,6 +160,25 @@ func TestValidateVuln_Fail_NoPackageName(t *testing.T) {
 	}
 }
 
+func TestValidateVuln_Fail_PackageNameSpecialChars(t *testing.T) {
+	vuln := &osvschema.Vulnerability{
+		Affected: []osvschema.Affected{
+			{
+				Package: osvschema.Package{
+					Ecosystem: string(osvschema.EcosystemNPM),
+					Name: "exam\rple",
+				},
+				Versions: []string{"0"},
+			},
+		},
+	}
+	err := report.ValidateVuln(vuln)
+
+	if err == nil {
+		t.Error("ValidateVuln() == nil; want err")
+	}
+}
+
 func TestValidateVuln_Fail_NoEcosystem(t *testing.T) {
 	vuln := &osvschema.Vulnerability{
 		Affected: []osvschema.Affected{
