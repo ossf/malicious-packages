@@ -34,6 +34,18 @@ elaborated in the next section. All strings contain UTF-8 text.
 			"domains": [ string ],
 			"urls": [ string ],
 			"ips": [ string ],
+			"files": [ {
+				"paths": [ string ],
+				"note": string,
+				"source": string,
+				"digests": {
+					"md5": string,
+					"sha1": string,
+					"sha256": string,
+					"tlsh": string,
+					"ssdeep": string
+				}
+			} ],
 		},
 		"malicious-packages-origins" : [ {
 			"source": string,
@@ -76,6 +88,60 @@ a scheme/authority should be present.
 
 If the URL contains only a host (e.g. `example.com`), then add the host to
 either `domains` or `ips` field instead.
+
+### iocs.files[] field
+
+The `files` field is a JSON array of objects, each describing a single file
+associated with the malicious package.
+
+Each entry carries a `source` so that package artifacts (the published
+tarball/wheel, which may only ever be processed as a stream) are kept separate
+from other files associated with the malware — a second stage dropped at run
+time, or a payload that only ever lived in memory.
+
+Each object may contain the following fields. An entry must have at least one
+`paths` entry or one digest under `digests`.
+
+#### iocs.files[].paths field
+
+The `paths` field is an optional JSON array of strings giving the file names at
+which the file was observed, relative or absolute — the same content can appear
+in several places. Each path is limited to 1024 characters. It may be omitted
+when the file never has a stable path (e.g. an in-memory payload identified only
+by its digest).
+
+#### iocs.files[].note field
+
+The `note` field is an optional free-text string describing the file. It is
+limited to 512 characters.
+
+#### iocs.files[].source field
+
+The `source` field is an optional string recording where the file came from. It
+must be one of:
+
+- `package-archive` — the file is part of the published package artifact.
+- `dropped` — the file was written to disk at run time (e.g. a second stage
+  retrieved from a C2, or content decoded from data embedded in the archive).
+- `in-memory` — the file only ever existed in memory and never hit disk.
+
+#### iocs.files[].digests field
+
+The `digests` field is an optional JSON object mapping a hash algorithm name to
+the file's digest under that algorithm. Recognised algorithms are `md5`, `sha1`,
+`sha256`, `tlsh` and `ssdeep`. **`sha256` is preferred and recommended at a
+minimum.**
+
+- `md5`, `sha1`, `sha256` — hex-encoded digests (32, 40 and 64 hex characters
+  respectively).
+- `tlsh` — a hex-encoded [TLSH](https://tlsh.org/) fuzzy hash (70 hex
+  characters, optionally prefixed with the `T1` version marker), useful for
+  clustering variants of the same payload.
+- `ssdeep` — an [ssdeep](https://ssdeep-project.github.io/ssdeep/) context
+  triggered piecewise hash, of the form `blocksize:hash1:hash2`.
+
+Hex digests (`md5`, `sha1`, `sha256`, `tlsh`) may be supplied in any case and
+are normalized to lowercase; `ssdeep` is case-sensitive and left as-is.
 
 ## malicious-packages-origins fields
 
