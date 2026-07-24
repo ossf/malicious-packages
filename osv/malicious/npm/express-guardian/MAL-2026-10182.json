@@ -1,0 +1,105 @@
+{
+  "modified": "2026-07-10T22:52:14Z",
+  "published": "2026-07-10T22:42:45Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10182",
+  "summary": "Malicious code in express-guardian (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2c911dfdf99f0c6e13cb9e55883a5c2e17cca0b78d3149e38c0cafb6320ea742)\nThe package advertises itself as Express security middleware (XSS/SQLi protection, input sanitization) but the middleware returned to Express is a no-op that only calls next(). The real behavior is triggered when the exported expressSecurity() is invoked (e.g. via the README-recommended `app.use(expressSecurity())`): index.js spawns a detached `node lib/caller.js` child process (stdio ignored, detached=true so it survives the parent). caller.js fetches a hardcoded plain-HTTP endpoint at http://server-genimi-check.vercel.app/defy/v3 and, on a 404 response, passes the response body's `token` field to `new (Function.constructor)(\"require\", res.token)` and invokes it with the real `require` bound — executing attacker-supplied JavaScript in the installer's Node process with full module access. A secondary payload URL is base64-hidden in lib/const.js (DEV_API_KEY decodes to https://jsonkeeper.com/b/4NAKK, a public paste service used as a mutable config/C2 channel). The security-middleware name, README, and no-op middleware shim are cover for the remote code loader; the plain-HTTP transport and paste-hosted secondary channel let the operator swap the executed payload at any time without republishing.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "express-guardian"
+      },
+      "versions": [
+        "1.4.1",
+        "1.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/caller.js",
+              "sha256": "0939feeda737b0951f6e37d690d65ecfdc5482ae1e1486734aaf59fb2497fcef",
+              "tlsh": "af11256528fa7125067594ee8b0b98323522f5233615d4c1b28ccb821fe79ddcab77cd"
+            },
+            {
+              "path": "index.js",
+              "sha256": "d2111c9e5b260a52308693e5d3c8903064204655b68d017749ffa2b8bd7e8902",
+              "tlsh": "34213f8175f11198065cd9c8a569e53638e3c4377207b9b0e9ec87862bcf20c4272ad7"
+            },
+            {
+              "path": "lib/const.js",
+              "sha256": "d10853dde92fdc48d8cb5505d89e0030fd35e1416a16a820fe5ec4aceef01c4f",
+              "tlsh": "b9c08c8351f0684b04301bb3a50ca991f2a1d26f0884160231f564844b396a92848fb7"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "express-guardian-1.4.1.tgz",
+              "hashes": {
+                "sha1": "615b2b97da6f81928eefc291fdfa040c557c15f3",
+                "sha512_sri": "sha512-stRiKsasGBjQLKXqNO2iv+p44u/OIy4IXEWDKx5lgn4u0kTVbgYVeucecHoWWcos19k6VwNIdBbb4375wPfvuA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/express-guardian/v/1.4.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/express-guardian/v/1.4.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-009723",
+        "import_time": "2026-07-10T22:50:18.600658286Z",
+        "modified_time": "2026-07-10T22:42:45Z",
+        "sha256": "2c911dfdf99f0c6e13cb9e55883a5c2e17cca0b78d3149e38c0cafb6320ea742",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-009724",
+        "import_time": "2026-07-10T22:50:18.704665508Z",
+        "modified_time": "2026-07-10T22:42:53Z",
+        "sha256": "a6fbd1787c7c3cefe11d36ee93ac2ff8f29ee74fbd1d9bdd0505e071f43c1142",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.3"
+        ]
+      }
+    ]
+  }
+}

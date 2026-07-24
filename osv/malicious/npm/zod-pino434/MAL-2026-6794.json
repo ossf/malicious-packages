@@ -1,0 +1,169 @@
+{
+  "modified": "2026-07-07T16:11:40Z",
+  "published": "2026-07-06T03:06:13Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6794",
+  "aliases": [
+    "GHSA-p9vh-jrw3-gv43"
+  ],
+  "summary": "Malicious code in zod-pino434 (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (599a5d533bf699156b78f5296f643227bf3e43d8e46f2adabfe250205a05bd26)\nPackage name (`zod-pino434`) and package.json description (`Node.js integration layer for Autodesk Forge`) do not match the shipped code. On `npm install`, the declared postinstall runs `scripts/postinstall-agent.mjs`, which spawns `dist/cli-agent.js` as a detached, window-hidden background process. The agent connects over WebSocket to a remote relay whose host, ports, and default password are hidden as an AES-256-GCM blob in `dist/deploymentCipherData.js`, decrypted at runtime with a 32-byte key reconstructed by XOR-ing two embedded halves in `dist/deploymentDefaults.js` (the relay URL is deliberately kept out of argv). Postinstall additionally invokes `dist/cli-autostart.js install` to register OS-level autostart (Windows Run key / launchd / systemd) pointing at a durable copy of the agent under `\u003cCfgMgrData\u003e/.forge-jsxy/runtime/v\u003cver\u003e/`, so the implant survives removal of the npm package. Once running, `dist/secretScan/agentStartupAudit.js` walks the POSIX root or every Windows drive letter for BIP39-checksum-valid mnemonics, secp256k1/WIF private keys, and BIP32 extended keys (`xprv`/`tprv`/`zprv`); `dist/chromiumExtensionDbHarvest.js` enumerates Chromium/Edge/Brave/Vivaldi/Yandex/Opera profiles across Windows, macOS, and Linux, force-killing processes holding file locks and copying `Local Extension Settings/\u003cext_id\u003e/` and `IndexedDB/chrome-extension_*` LevelDB trees (including MetaMask/Phantom-shaped wallet stores) into a staging area. Harvested data is uploaded to `agents/\u003chostname\u003e/result.json` on the Hugging Face Hub using a `hf_` write-token decrypted from an embedded AES-256-GCM blob (`dist/hfCredentials.js`) or delivered via the relay. `dist/hostInventorySend.js` POSTs hostname/platform/node/OS to the relay, and `dist/discordRelayUpload.js` forwards agent-side PNG screenshots to per-client Discord channels via a bot token held on the relay. Combined behavior: install-time RCE, encrypted C2, persistence, credential-grade wallet theft, browser-extension database exfiltration, host inventory + screenshot surveillance, and a shipped third-party exfil credential.\n\n## Source: ghsa-malware (b42ffe7e47e2d97d5adce1f88be9877ee8fe152353025918e5fefd40428fbae4)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "zod-pino434"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.127",
+        "1.0.128"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/deploymentDefaults.js",
+              "sha256": "cbf70b0d8654138a0b4dfcb152824c85fecab500e1a5fade53c2049da4c0dc48",
+              "tlsh": "e1f16549b8e7b0100663b5f8861bc8973bdcad07260ed444b35e93956f1f831a3b76e6"
+            },
+            {
+              "path": "dist/discordRelayUpload.js",
+              "sha256": "debe8ff010dd0e4bec0af85cbd8708ba345158fc103b9fe68eb12b4d68539c19",
+              "tlsh": "d4e296fab5f724311162b6698b5bd0057328b147741eeca47a8ca29c9f9c025c2f7fc6"
+            },
+            {
+              "path": "dist/hfCredentials.js",
+              "sha256": "bf0091702bbc62eff2319360ab7103a33fee8f5bfad4e63aa359175285de7f49",
+              "tlsh": "cae184062ef6902001779079912be01576b0703f6ae1d5f2f69ddec9af12c768ae3dc1"
+            },
+            {
+              "path": "dist/relayServer.js",
+              "sha256": "dc5d99c9e72bc81a1a162b341a0a0a480ba87b2b7f993ff9c3cf9b3d259e20ba",
+              "tlsh": "b293b68a69f360324763f2bd5b5b8001b339d1077558ddd4fa9c8258af8d92883f1be9"
+            },
+            {
+              "path": "dist/secretScan/agentStartupAudit.js",
+              "sha256": "185e5a9b6387d3791464f4ade86a394af49115e826ddc1cd5e206e573b0ef7eb",
+              "tlsh": "b6e2fb9a69f32432826371be5a4f5005f660b4272148e8e47a5cc299ff454b8d3f7fd8"
+            },
+            {
+              "path": "dist/secretScan/contentScanner.js",
+              "sha256": "5f983523fea613c052e726cf94f86c894e72c34261a538e6e6f3999cd76191a5",
+              "tlsh": "7212824a6af320514d2330fe1b8b8500b97aa847351cdd28be9c83906f5597c9af7bdc"
+            },
+            {
+              "path": "scripts/encode-deployment.mjs",
+              "sha256": "36c301a61abec8b3658aa278f9cdcdfa0edf6409f4eec68449724d68ef222ea8",
+              "tlsh": "34b1b70368e9947041fee3d25953b90b7afdf7153302acc5766e46b90b6bc31026be0a"
+            },
+            {
+              "path": "scripts/postinstall-agent.mjs",
+              "sha256": "f637df68b8c097e238ae81473a6a5c3f4ace636044356f7dbb01fef6ca5f579c",
+              "tlsh": "1d92d88ce6e71a7606a1e79d7a1f150267a0d1070648e4b4f0dd82887f2d13d83b7ebe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "zod-pino434-1.0.127.tgz",
+              "hashes": {
+                "sha1": "27ea25c3e59de1c693a6b37a326602b04d8a62cc",
+                "sha512_sri": "sha512-2QgSlMn9vEdzCRn5den1lKXl9RxwOc0D5GGZrDla8CpRBRSG1o4F1+cgeFILTH9ZF+vKfjYiE0SAgnlaAkLz0g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zod-pino434/v/1.0.127"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zod-pino434/v/1.0.128"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-p9vh-jrw3-gv43"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "3a9e0a675aae8cadc5001eb60dceef7ff7a3d7024448755d3dac011eae310aff",
+        "import_time": "2026-07-06T03:12:34.25012175Z",
+        "id": "IN-MAL-2026-007960",
+        "modified_time": "2026-07-06T03:06:30Z",
+        "versions": [
+          "1.0.127"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "599a5d533bf699156b78f5296f643227bf3e43d8e46f2adabfe250205a05bd26",
+        "import_time": "2026-07-06T03:12:34.169475957Z",
+        "id": "IN-MAL-2026-007958",
+        "modified_time": "2026-07-06T03:06:13Z",
+        "versions": [
+          "1.0.128"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "b42ffe7e47e2d97d5adce1f88be9877ee8fe152353025918e5fefd40428fbae4",
+        "import_time": "2026-07-07T16:09:37.876493752Z",
+        "id": "GHSA-p9vh-jrw3-gv43",
+        "modified_time": "2026-07-07T16:00:26Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

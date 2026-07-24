@@ -1,0 +1,97 @@
+{
+  "modified": "2026-07-17T07:00:23Z",
+  "published": "2026-07-10T18:43:14Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10165",
+  "summary": "Malicious code in @injectivelabs/sdk-ts (npm)",
+  "details": "@injectivelabs/sdk-ts@1.20.21 (published 2026-07-08 ~20:59 UTC) contains a wallet-credential stealer disguised as \"key derivation telemetry\". A file packages/sdk-ts/src/utils/key-derivation-telemetry.ts plus a hook added to packages/sdk-ts/src/core/accounts/PrivateKey.ts capture wallet secrets during key derivation:\n\n- PrivateKey.fromMnemonic(words) forwards the full BIP-39 mnemonic to trackKeyDerivation('fm', words).\n- PrivateKey.fromHex(privateKey) forwards a string-form hex private key to trackKeyDerivation('fh', privateKey) (a Uint8Array input sends the literal 'bytes' instead).\n\nCaptured values are queued, base64-encoded, and POSTed on a ~2s batch via fetch() (with a Node https fallback) to an endpoint built at runtime from a String.fromCharCode array, disguised as Content-Type: application/grpc-web+proto with the secret carried in the X-Request-Id header and keepalive:true. Classification: information stealer (mnemonic / private-key exfiltration). Trigger: runtime, on any call to PrivateKey.fromMnemonic() or PrivateKey.fromHex(string) — there is NO install script.\n\nMalicious CODE is present only in @injectivelabs/sdk-ts. The other @injectivelabs/* packages published at 1.20.21 (utils, networks, ts-types, exceptions, and the wallet-* family) were version-bump-only and were deprecated by the maintainer as compromised; they depend on @injectivelabs/sdk-ts@1.20.21 and therefore deliver the payload transitively. Every affected package now carries the npm deprecation 'SECURITY: version 1.20.21 is compromised. Do not install.'\n\nIntroduced in git commits 01219285b16c / fd105db9073a / 5486f13e799d (direct, unsigned pushes to the master branch under a maintainer account). The release was built and published through the repository's GitHub Actions OIDC trusted-publishing workflow (.github/workflows/publish.yaml, event=push, run 28975012939), so 1.20.21 carries a VALID SLSA provenance attestation despite being malicious — provenance attests the build, not the intent. Reverted in commit 7c4b1a092 ('revert: exfiltration telemetry') and fixed in 1.20.23 (1.20.22 was never published). Root cause (how the maintainer account's write access was obtained) is undisclosed by the vendor.\n\nExfiltration endpoint: the char-code array decodes to https://testnet.archival.chain.grpc-web.injective.network/ , which resolves to an Injective testnet archival node (15.235.87.88, OVH; chain-id injective-888, moniker injective-testnet-archival) — i.e. Injective's OWN infrastructure, NOT attacker-operated infra. Whether the exfiltrated secrets were collectable by the attacker (e.g. via that node's request logs) is unconfirmed. Affected users must assume any mnemonic or private key used with 1.20.21 is compromised and rotate it from a clean machine.\n\nNote: the community report at https://github.com/InjectiveLabs/injective-ts/issues/697 cites the endpoint as 'hexhole.injective.network'; that string does NOT appear in the shipped code and does not resolve. The code-derived endpoint above is authoritative. IoC: sdk-ts@1.20.21 tarball sha256 5348d2bb381c6abf2592e922920fca51cb9e0cc320c83d6270d83952e821e601.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dce156fa9e153261f384633eb80b2d493c99ba1666d1b4b874b361a1cc574030)\nThe wallet/accounts module (dist/esm/accounts-jQ1GSgaW.js) contains injected code that reconstructs a remote host from a char-code array via String.fromCharCode, decoding to testnet.archival.chain.grpc-web.injective.network, and builds the endpoint https://\u003chost\u003e/. When a wallet is created or used, the code reads the BIP-39 mnemonic (via @scure/bip39 generateMnemonic and ethers HDNodeWallet) and POSTs it base64-encoded, placed in an X-Request-Id header with an application/grpc-web+proto content-type, to that endpoint, with a Node http fallback. The char-code obfuscation of the host and the grpc-web framing disguise the exfiltration as normal Injective SDK traffic. Any mnemonic handled by this version is transmitted to the operator of that host, exposing the wallet's master key.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@injectivelabs/sdk-ts"
+      },
+      "versions": [
+        "1.20.21"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "testnet.archival.chain.grpc-web.injective.network"
+          ],
+          "package_integrity": [
+            {
+              "filename": "sdk-ts-1.20.21.tgz",
+              "hashes": {
+                "sha1": "e3f9da575934fe216a3109cfe2fb699a1dc398d3",
+                "sha512_sri": "sha512-TMEWc0Hw2zA38HnCsLiZPWiwz4mRcDg94B5TDUAolQIXKsnY6xrE61iyffP0WuNZpQTrePCYZXuQFYaRQHFPPA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@injectivelabs/sdk-ts/v/1.20.21"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://github.com/InjectiveLabs/injective-ts/issues/697"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://github.com/InjectiveLabs/injective-ts/commit/5486f13e799d9c90095c5f581a04ad867d768f66"
+    },
+    {
+      "type": "FIX",
+      "url": "https://github.com/InjectiveLabs/injective-ts/commit/7c4b1a092"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "r-bedekar",
+      "type": "ANALYST"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://testnet.archival.chain.grpc-web.injective.network/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "dce156fa9e153261f384633eb80b2d493c99ba1666d1b4b874b361a1cc574030",
+        "import_time": "2026-07-10T19:02:48.697005127Z",
+        "id": "IN-MAL-2026-009706",
+        "modified_time": "2026-07-10T18:43:14Z",
+        "versions": [
+          "1.20.21"
+        ]
+      }
+    ]
+  }
+}

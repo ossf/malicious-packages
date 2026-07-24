@@ -163,6 +163,19 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 			return fmt.Errorf("failed parsing report: %w", err)
 		}
 
+		// TODO: strengthen this test using references as well.
+		if src.IsRecursive() {
+			switch s.Recursion {
+			case source.RecursionFail:
+				return fmt.Errorf("report %s is recursive (recursion=fail)", key)
+			case source.RecursionIgnore:
+				log.Printf("[%s] Skipping report %s: is recursive (recursion=ignore)", s.ID, key)
+				return nil
+			case source.RecursionAllow:
+				// Proceed with normal ingestion behavior.
+			}
+		}
+
 		shasum := fmt.Sprintf("%x", h.Sum(nil))
 		// Add the origin to the source report so we can de-dupe in the future and
 		// track where and when the report was ingested.

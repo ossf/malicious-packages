@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:26Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10227",
+  "aliases": [
+    "GHSA-f4fv-qwcg-667v"
+  ],
+  "summary": "Malicious code in box-react-uix (npm)",
+  "details": "The box-react-uix package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (a 'box' internal namespace) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511675212038149.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (861d3b0850fd047d978191773d5ba2e070a1fa598074b63774561e6fa30c0aa4)\npackage.json declares a preinstall script (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that fires automatically on npm install. examples/verify.js invokes the library's init() without providing a DSN, which causes src/index.js to fall back to a hardcoded DEFAULT_DSN pointing at an author-owned Sentry project (o4510485815754752.ingest.us.sentry.io/4511675212038149). The wrapper enables Sentry's sendDefaultPii: true, resolves the installer's public IP via Cloudflare's trace endpoint, attaches it as the Sentry user identity, and triggers a synthetic exception that is captured and transmitted to the author's Sentry ingest — so simply running `npm install box-react-uix` ships the installer's public IP and host/error context to a hardcoded author-controlled endpoint with no opt-in. Separately, the library's runtime init() defaults any consumer who forgets to pass a dsn to the same author-owned Sentry destination, silently relaying caller-side exceptions and PII to the author. The package name suggests a Box (box.com) React UI toolkit, but the tarball contains no UI code — only this Sentry phone-home wrapper — consistent with a lure/name-mismatch pattern.\n\n## Source: ghsa-malware (b9a3916ba54cb0ffe9c7f041e43f8e39c364bd812018ea035a5bf562e183084b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "box-react-uix"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "18.6.91"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "a4850b863d994b0c51ce1a8d2f6fe7e8ba24ad6aee0025007f23d37045418417",
+              "tlsh": "ebf044608d742f2318d4a3616da900866b608e4b41a87d093bcb423d4b883bf24ff19d"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "59f26ee3346c788b1af3f912a3d006bfa863edd1dd260e2f784d730e4b2f322e",
+              "tlsh": "c812959a34f6232301e250f0025f90d97365d67a3379a9e0715d8be92fd90b8d6b3ec9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "box-react-uix-18.6.91.tgz",
+              "hashes": {
+                "sha1": "964b3069c033f5d9f6f6e63ee9ebb2134793a937",
+                "sha512_sri": "sha512-nbMqcK2Eu3C0BjI8uSaFbMT8OHH4IqvWTDnc7e/ugM43Aqt3VSqXEdBulJhYe67w8NWOrOnqfG4GrqnLGffBVA=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://abbfc11111e117a3556e36aa8f778f4b@o4510485815754752.ingest.us.sentry.io/4511675212038149"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/box-react-uix"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/box-react-uix/v/18.6.91"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-f4fv-qwcg-667v"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "861d3b0850fd047d978191773d5ba2e070a1fa598074b63774561e6fa30c0aa4",
+        "import_time": "2026-07-13T09:10:56.577351573Z",
+        "id": "IN-MAL-2026-009870",
+        "modified_time": "2026-07-13T08:18:43Z",
+        "versions": [
+          "18.6.91"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "b9a3916ba54cb0ffe9c7f041e43f8e39c364bd812018ea035a5bf562e183084b",
+        "import_time": "2026-07-14T03:21:41.939003426Z",
+        "id": "GHSA-f4fv-qwcg-667v",
+        "modified_time": "2026-07-14T01:04:58Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
