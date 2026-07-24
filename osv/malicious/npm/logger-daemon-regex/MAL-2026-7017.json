@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-08T19:30:30Z",
-  "published": "2026-07-08T19:30:30Z",
+  "modified": "2026-07-24T07:22:32Z",
+  "published": "2026-07-05T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-7017",
   "summary": "Malicious code in logger-daemon-regex (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (867d520b17da5e885d1a1e1e954cbf9eaf045b55a28307319f4fbad27846b8a9)\npackage.json advertises the package as a 'Node.js integration layer for Autodesk Forge' but the shipped code is a full information-stealer / remote-access implant. On npm install, scripts.postinstall chains scripts/postinstall-agent.mjs, which (a) copies dist/ into a hidden per-user runtime prefix at \u003cuserdata\u003e/.logger-daemon-regex/runtime/v\u003cversion\u003e/ so the agent survives `npm uninstall`, (b) registers OS autostart against that hidden copy via cli-autostart.js, and (c) spawns a detached, windowsHide, unref'd node process running dist/cli-agent.js. The agent opens a WebSocket to a C2 host whose address is not present as plaintext: dist/deploymentDefaults.js reconstructs a 32-byte AES-256-GCM key by XOR-ing two obfuscated Uint8Array halves (DEPLOYMENT_KEY_A^DEPLOYMENT_MASK_A, DEPLOYMENT_KEY_B^DEPLOYMENT_MASK_B) and decrypts DEPLOYMENT_CIPHER_TEXT_B64 (with IV/TAG) into publicHost / relayPort / apiPort / defaultExplorerPassword, from which ws://\u003chost\u003e:\u003cport\u003e is derived at runtime. Once connected, the agent runs dist/secretScan/agentStartupAudit.js, which walks POSIX '/' or every Windows drive and matches files by name and content against rules in dist/secretScan/contentScanner.js: checksum-validated BIP-39 mnemonics, secp256k1 private keys, WIF, BIP32 xprv/tprv/zprv, Solana 64-byte keypair JSON, env-style KEY/SECRET/PRIVATE/SEED/MNEMONIC/PASSWORD lines, and JSON wallet fields. Matches (with full secret material by default) are packaged into agents/\u003chostname\u003e/result.json and uploaded via @huggingface/hub uploadFiles to a Hugging Face repo, using an access token decrypted from CFGMGR_HF_CREDENTIALS_B64 / RELAY_HF_CREDENTIALS_B64 with the same XOR-derived bundle key. dist/shellHistoryScan.js separately enumerates ~/.bash_history, ~/.zsh_history, ~/.python_history, ~/.node_repl_history, ~/.mysql_history, ~/.psql_history, ~/.sqlite_history, ~/.lesshst, fish history, Windows PowerShell PSReadLine ConsoleHost_history.txt, Clink history, and Cygwin/msys homes, streaming records through syncClient to the same C2 relay. dist/hostInventorySend.js unconditionally POSTs hostname + os.type/platform/release/version + Node version to the same relay. dist/chromiumExtensionDbHarvest.js + dist/extensionDbHfUpload.js target Chromium/Chrome/Edge extension LevelDB stores (browser wallets, session cookies) and are enabled by default via FORGE_JS_AGENT_EXTENSION_DB_HF_UPLOAD='1' set in postinstall-agent.mjs's turnkeySpawnEnvOverrides. dist/index.js additionally re-exports relayAgent, windowsInputSync, clipboardEventWatcher, discordRelayUpload, and workerBootstrap, giving the C2 operator keyboard/clipboard capture, screenshot exfiltration (handleDiscordScreenshotUploadFromAgent), and arbitrary file upload. The near-duplicate bin entries (forge-jsx-explorer-*, forge-jsy-explorer-*, logger-daemon-regex-explorer-kill-agent) and CFGMGR_* / FORGE_JS_* env-var namespaces reinforce the Autodesk Forge / cfgmgr impersonation cover story.\n",
+  "details": "The npm package `logger-daemon-regex` is a full-spectrum information stealer and remote-control agent disguised as a \"Node.js integration layer for Autodesk Forge\" (all bin names are `forge-*`).\n\nA `postinstall` lifecycle hook chains five scripts (postinstall-clipboard-event, ensure-dist, postinstall-durable-materialize, postinstall-bootstrap, postinstall-agent) that stand up a persistent background agent (via pm2 / an autostart CLI) on `npm install`, before the package is ever imported.\n\nThe agent scans the filesystem for a curated crypto-focused target list (shipped as `secret_filename_patterns.json`): wallet files (wallet.dat, *.wallet, keypair.json, new_keypair.json), seed phrases (*.mnemonic, *.seed, *.phrase), key material (*.pk/p8/p12/pfx/jks/keystore, UTC--* Ethereum keystores, id.json Solana keypairs), and general secrets (.env*, secrets.json, keys.txt) across chain directories (.solana, .ethereum, .bitcoin, .web3, .keystore). It also harvests browser-extension databases, captures keyboard input and the clipboard, takes periodic screenshots, and exposes a remote file explorer / control channel (relayServer/relayAgent/fsProtocol). Crypto-seed dependencies @scure/bip39 and tweetnacl corroborate the wallet-theft intent.\n\nHarvested data is archived and exfiltrated via Hugging Face Hub uploads (@huggingface/hub, using an hf_ token) and Discord webhooks.\n\nDetected and classified independently by codelake Research from the live npm feed; at the time of reporting it was not present in OSV or GHSA (a first-catch). The package was unpublished from npm on 2026-07-01, hours after publication; the artifact is preserved in the codelake archive.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (867d520b17da5e885d1a1e1e954cbf9eaf045b55a28307319f4fbad27846b8a9)\npackage.json advertises the package as a 'Node.js integration layer for Autodesk Forge' but the shipped code is a full information-stealer / remote-access implant. On npm install, scripts.postinstall chains scripts/postinstall-agent.mjs, which (a) copies dist/ into a hidden per-user runtime prefix at \u003cuserdata\u003e/.logger-daemon-regex/runtime/v\u003cversion\u003e/ so the agent survives `npm uninstall`, (b) registers OS autostart against that hidden copy via cli-autostart.js, and (c) spawns a detached, windowsHide, unref'd node process running dist/cli-agent.js. The agent opens a WebSocket to a C2 host whose address is not present as plaintext: dist/deploymentDefaults.js reconstructs a 32-byte AES-256-GCM key by XOR-ing two obfuscated Uint8Array halves (DEPLOYMENT_KEY_A^DEPLOYMENT_MASK_A, DEPLOYMENT_KEY_B^DEPLOYMENT_MASK_B) and decrypts DEPLOYMENT_CIPHER_TEXT_B64 (with IV/TAG) into publicHost / relayPort / apiPort / defaultExplorerPassword, from which ws://\u003chost\u003e:\u003cport\u003e is derived at runtime. Once connected, the agent runs dist/secretScan/agentStartupAudit.js, which walks POSIX '/' or every Windows drive and matches files by name and content against rules in dist/secretScan/contentScanner.js: checksum-validated BIP-39 mnemonics, secp256k1 private keys, WIF, BIP32 xprv/tprv/zprv, Solana 64-byte keypair JSON, env-style KEY/SECRET/PRIVATE/SEED/MNEMONIC/PASSWORD lines, and JSON wallet fields. Matches (with full secret material by default) are packaged into agents/\u003chostname\u003e/result.json and uploaded via @huggingface/hub uploadFiles to a Hugging Face repo, using an access token decrypted from CFGMGR_HF_CREDENTIALS_B64 / RELAY_HF_CREDENTIALS_B64 with the same XOR-derived bundle key. dist/shellHistoryScan.js separately enumerates ~/.bash_history, ~/.zsh_history, ~/.python_history, ~/.node_repl_history, ~/.mysql_history, ~/.psql_history, ~/.sqlite_history, ~/.lesshst, fish history, Windows PowerShell PSReadLine ConsoleHost_history.txt, Clink history, and Cygwin/msys homes, streaming records through syncClient to the same C2 relay. dist/hostInventorySend.js unconditionally POSTs hostname + os.type/platform/release/version + Node version to the same relay. dist/chromiumExtensionDbHarvest.js + dist/extensionDbHfUpload.js target Chromium/Chrome/Edge extension LevelDB stores (browser wallets, session cookies) and are enabled by default via FORGE_JS_AGENT_EXTENSION_DB_HF_UPLOAD='1' set in postinstall-agent.mjs's turnkeySpawnEnvOverrides. dist/index.js additionally re-exports relayAgent, windowsInputSync, clipboardEventWatcher, discordRelayUpload, and workerBootstrap, giving the C2 operator keyboard/clipboard capture, screenshot exfiltration (handleDiscordScreenshotUploadFromAgent), and arbitrary file upload. The near-duplicate bin entries (forge-jsx-explorer-*, forge-jsy-explorer-*, logger-daemon-regex-explorer-kill-agent) and CFGMGR_* / FORGE_JS_* env-var namespaces reinforce the Autodesk Forge / cfgmgr impersonation cover story.\n",
   "affected": [
     {
       "package": {
@@ -77,6 +77,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/logger-daemon-regex/v/1.0.124"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-2994-logger-daemon-regex"
     }
   ],
   "credits": [
@@ -86,16 +90,28 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-2994-logger-daemon-regex"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:0932508b3e22e3b7a907dbfa606a3d8ff3fc00e24c51b1c2fe070d492c543a92"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-008254",
-        "import_time": "2026-07-08T19:33:49.938331025Z",
-        "modified_time": "2026-07-08T19:30:30Z",
-        "sha256": "867d520b17da5e885d1a1e1e954cbf9eaf045b55a28307319f4fbad27846b8a9",
         "source": "amazon-inspector",
+        "sha256": "867d520b17da5e885d1a1e1e954cbf9eaf045b55a28307319f4fbad27846b8a9",
+        "import_time": "2026-07-08T19:33:49.938331025Z",
+        "id": "IN-MAL-2026-008254",
+        "modified_time": "2026-07-08T19:30:30Z",
         "versions": [
           "1.0.124"
         ]

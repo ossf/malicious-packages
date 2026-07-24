@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-16T18:55:46Z",
-  "published": "2026-07-16T18:34:08Z",
+  "modified": "2026-07-24T07:22:30Z",
+  "published": "2026-07-16T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10704",
   "summary": "Malicious code in @across-toolkit/typescript-config (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5580d26d1829c9faf6465962431399aee9804c8ed1264274b30b9ce42f274bd9)\nPackage impersonates the across-protocol organization (published as @across-toolkit/typescript-config@99.0.0, a high-version dependency-confusion shape) and ships two postinstall stealer scripts that run automatically on npm install. postinstall.js and eslint-config/postinstall.js read installer-owned secrets from ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.npmrc, ~/.gitconfig,.env files, /etc/environment, /proc/1/environ, and gcloud application default credentials, and query cloud instance metadata services at http://metadata.google.internal/computeMetadata/v1/ (with the Metadata-Flavor: Google header) and http://169.254.169.254/ for IAM security credentials and OAuth tokens. The collected files, IMDS responses, and a base64-encoded copy of process.env (including NPM_TOKEN) are POSTed via https.request to two hardcoded webhook.site collectors (paths /a585f4ec-20f7-4bd1-bac7-f3e53799dc5f and /12b523e2-ee58-4598-8fe1-bbf1f3999550). The declared package purpose is a shared tsconfig; the network exfiltration and credential harvesting have no relation to that purpose.\n",
+  "details": "The npm package `@across-toolkit/typescript-config` is a dependency-confusion credential stealer targeting developers of Across Protocol (across.to). It masquerades as an internal ESLint/TypeScript config for the `across.to` toolkit and publishes an implausibly high version (`99.0.0`) so that a misconfigured install resolves it from the public npm registry instead of a private package of the same name — the standard dependency-confusion technique.\n\nA `postinstall` lifecycle hook (`postinstall: node postinstall.js`) executes automatically on `npm install`, before the package is ever imported. Using `os.homedir()`, the payload reads the host's AWS credentials (`~/.aws/credentials`), SSH private key (`~/.ssh/id_rsa`) and npm token (`~/.npmrc`), collects `process.env`, and exfiltrates the data via an HTTP `POST` to a hardcoded `webhook.site` endpoint (`https://webhook.site/a585f4ec-20f7-4bd1-bac7-f3e53799dc5f`). The payload is present in both the root `postinstall.js` and a nested `eslint-config/postinstall.js`, and uses `child_process`. Any developer workstation or CI runner that installs the package hands the operator AWS credentials, an SSH private key and an npm publish token.\n\nDetected and classified independently by codelake Research from the live npm feed on 2026-07-16; at the time of reporting the package was not present in OSV or GHSA (verified live) — a first-catch.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5580d26d1829c9faf6465962431399aee9804c8ed1264274b30b9ce42f274bd9)\nPackage impersonates the across-protocol organization (published as @across-toolkit/typescript-config@99.0.0, a high-version dependency-confusion shape) and ships two postinstall stealer scripts that run automatically on npm install. postinstall.js and eslint-config/postinstall.js read installer-owned secrets from ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.npmrc, ~/.gitconfig,.env files, /etc/environment, /proc/1/environ, and gcloud application default credentials, and query cloud instance metadata services at http://metadata.google.internal/computeMetadata/v1/ (with the Metadata-Flavor: Google header) and http://169.254.169.254/ for IAM security credentials and OAuth tokens. The collected files, IMDS responses, and a base64-encoded copy of process.env (including NPM_TOKEN) are POSTed via https.request to two hardcoded webhook.site collectors (paths /a585f4ec-20f7-4bd1-bac7-f3e53799dc5f and /12b523e2-ee58-4598-8fe1-bbf1f3999550). The declared package purpose is a shared tsconfig; the network exfiltration and credential harvesting have no relation to that purpose.\n",
   "affected": [
     {
       "package": {
@@ -67,6 +67,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@across-toolkit/typescript-config/v/99.0.1"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3036-across-toolkit-typescript-config"
     }
   ],
   "credits": [
@@ -76,26 +80,41 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3036-across-toolkit-typescript-config"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:396023e88ed887f45495ab2fc1d6f2ce91186e4f888136d0f7000639ca758511"
+      ],
+      "urls": [
+        "https://webhook.site/a585f4ec-20f7-4bd1-bac7-f3e53799dc5f"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-010699",
-        "import_time": "2026-07-16T18:53:59.831945562Z",
-        "modified_time": "2026-07-16T18:34:08Z",
-        "sha256": "5580d26d1829c9faf6465962431399aee9804c8ed1264274b30b9ce42f274bd9",
         "source": "amazon-inspector",
+        "sha256": "5580d26d1829c9faf6465962431399aee9804c8ed1264274b30b9ce42f274bd9",
+        "import_time": "2026-07-16T18:53:59.831945562Z",
+        "id": "IN-MAL-2026-010699",
+        "modified_time": "2026-07-16T18:34:08Z",
         "versions": [
           "99.0.0"
         ]
       },
       {
-        "id": "IN-MAL-2026-010701",
-        "import_time": "2026-07-16T18:53:59.941024553Z",
-        "modified_time": "2026-07-16T18:34:25Z",
-        "sha256": "76463f7af786d538f929fe7f1644dc5ec072a7a9bdf4e0c4b7482fa510450c44",
         "source": "amazon-inspector",
+        "sha256": "76463f7af786d538f929fe7f1644dc5ec072a7a9bdf4e0c4b7482fa510450c44",
+        "import_time": "2026-07-16T18:53:59.941024553Z",
+        "id": "IN-MAL-2026-010701",
+        "modified_time": "2026-07-16T18:34:25Z",
         "versions": [
           "99.0.1"
         ]
