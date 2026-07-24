@@ -1,0 +1,91 @@
+{
+  "modified": "2026-07-11T00:00:00Z",
+  "published": "2026-07-11T00:00:00Z",
+  "schema_version": "1.7.4",
+  "details": "The package ships a postinstall hook (`node test.js`) that requires index.js and immediately calls two exported functions, from_str_1 and from_str_2, with no further action required from the installer.\n\nfrom_str_2 collects host identifiers (os.userInfo(), os.networkInterfaces(), os.hostname()) and installs persistent SSH access: it appends an attacker-controlled public key to ~/.ssh/authorized_keys, creating the directory with mode 0700 if missing, then runs `sudo chown -R \u003Cuser\u003E:\u003Cuser\u003E ~/.ssh`, `sudo ufw enable`, and `sudo ufw allow 22/tcp`. It also recurses through the filesystem for files matching patterns fetched live from the C2 (GET /api/scan-patterns, /api/block-patterns), skipping any directory named in a C2-supplied block list, and uploads matches as multipart form data to the C2 (POST /api/v1) together with a JSON block containing username, public IP, platform, and a creation timestamp.\n\nfrom_str_1 runs a narrower, hardcoded search under the current working directory for id.json (Solana keypairs), config.toml/Config.toml, and .env, uploading each match individually with a short delay between uploads.\n\nIdentifiers and file names are lightly obfuscated with Unicode escape sequences and reversed string literals (for example, \"nosj.di\".split(\"\").reverse().join(\"\") for id.json) rather than a string-array or bytecode packer.\n\nThe C2 (170.205.31.203:3001, hosted on Advin Services LLC / AS206216) also serves a Next.js application at /dashboard titled \"ENV Bot - HYPE\", self-described in its page metadata as an API wrapper around a wallet-management Telegram bot. A development-mode error response from the same host disclosed its filesystem path, C:\\1\\anti-server\\bot-wallet-management-v1\\, indicating a Windows-hosted operator panel sitting behind the exfiltration endpoint.\n\nThe exported function names, the exact sudo/ufw command sequence, the /api/scan-patterns, /api/block-patterns, and /api/v1 endpoint names, and the id.json/config.toml/.env target list all match the levex-refa/lint-builder payload documented in the February 2026 compromise of the dev-protocol GitHub organization. This package appears to be a redeployment of that same toolkit against new, previously unreported C2 infrastructure rather than a new campaign.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "polymarket-mcp-v2"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "2.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "name": "Embedded Malicious Code",
+            "description": "The product contains code that appears to be malicious in nature."
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "eb029c3c9941aa5b83066964faf967ab07b45548b52e9cdd1b8cf9eb06e887bc"
+            },
+            {
+              "path": "index.js",
+              "sha256": "938b7467256d1435ddb9060757537c6ff9536fc1139784a1b119942c01244524"
+            },
+            {
+              "path": "test.js",
+              "sha256": "ea505bd54c3ce4b4640b80220057fbb88d28a62cb5edbbf53cf3caf4dc123a8f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "polymarket-mcp-v2-2.1.6.tgz",
+              "hashes": {
+                "sha1": "cb215c192332b668d419e78ceab38b0312fc5ccc",
+                "sha256": "97690f6e2d4ce315f19595b04cae3afdac0bfe9d98b0d3caeb1fd99eab133cde"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/polymarket-mcp-v2"
+    },
+    {
+      "type": "ARTICLE",
+      "url": "https://www.stepsecurity.io/blog/malicious-polymarket-bot-hides-in-hijacked-dev-protocol-github-org-and-steals-wallet-keys"
+    }
+  ],
+  "credits": [
+    {
+      "name": "skb1209",
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "170.205.31.203"
+      ],
+      "urls": [
+        "http://170.205.31.203:3001/api/ssh-key",
+        "http://170.205.31.203:3001/api/scan-patterns",
+        "http://170.205.31.203:3001/api/block-patterns",
+        "http://170.205.31.203:3001/api/v1",
+        "http://170.205.31.203:3001/dashboard"
+      ]
+    }
+  }
+}
