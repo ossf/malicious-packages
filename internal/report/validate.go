@@ -103,6 +103,11 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 			repos := slices.Collect(maps.Keys(repoSet))
 			return fmt.Errorf("%w: git-based report has multiple repos: %s", ErrUnexpectedOSV, repos)
 		}
+
+		// Ensure ecosystem specific data is not present.
+		if es := v.Affected[i].EcosystemSpecific; len(es) > 0 {
+			return fmt.Errorf("%w: ecosystem_specific must not be set", ErrUnexpectedOSV)
+		}
 	}
 
 	return nil
