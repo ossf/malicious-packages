@@ -26,7 +26,8 @@ func TestValidateVuln_Valid(t *testing.T) {
 						},
 					},
 				},
-				Versions: []string{"0", "0.1"},
+				Versions:          []string{"0", "0.1"},
+				EcosystemSpecific: make(map[string]any),
 			},
 		},
 	}
@@ -502,5 +503,26 @@ func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
 				t.Error("ValidateVuln() == nil; want err")
 			}
 		})
+	}
+}
+
+func TestValidateVuln_Fail_EcosystemSpecific(t *testing.T) {
+	vuln := &osvschema.Vulnerability{
+		Affected: []osvschema.Affected{
+			{
+				Package: osvschema.Package{
+					Ecosystem: string(osvschema.EcosystemPyPI),
+					Name:      "example",
+				},
+				EcosystemSpecific: map[string]any{
+					"test": "not empty",
+				},
+			},
+		},
+	}
+	err := report.ValidateVuln(vuln)
+
+	if err == nil {
+		t.Error("ValidateVuln() == nil; want err")
 	}
 }
