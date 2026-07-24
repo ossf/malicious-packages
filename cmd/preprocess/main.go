@@ -25,6 +25,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/google/renameio"
@@ -73,6 +74,14 @@ func main() {
 	}
 }
 
+// multipleIDsAllowed is a hack allowlisting specific paths that are allowed to
+// have multiple reports. This is because this package had a report present
+// under two locations due to improper validation/filtering. Unfortunately this
+// caused two reports to be generated for the same package.
+var multipleIDsAllowed = map[string]bool{
+	"npm/analysis-chart": true,
+}
+
 func preprocessRepo(c *config.Config, abortUnmergable bool) error {
 	err := filepath.WalkDir(c.MaliciousPath, fs.WalkDirFunc(func(path string, info fs.DirEntry, err error) error {
 		if os.IsNotExist(err) {
@@ -102,6 +111,15 @@ func preprocessRepo(c *config.Config, abortUnmergable bool) error {
 				withIDs = append(withIDs, n)
 			} else {
 				noIDs = append(noIDs, n)
+			}
+		}
+		if n := len(withIDs); multipleIDsAllowed[p] && n > 1 {
+			// If multiple IDs for the given path are allowed, then choose the
+			// earliest report. There are likely some edge cases that need to be
+			// considered for withdrawn or unmergable.
+			earliest := earliestReport(c.IDPrefix, withIDs)
+			if earliest != "" {
+				withIDs = []string{earliest}
 			}
 		}
 		if n := len(withIDs); n > 1 {
@@ -140,6 +158,51 @@ func preprocessRepo(c *config.Config, abortUnmergable bool) error {
 func hasID(prefix, name string) bool {
 	base := filepath.Base(name)
 	return !strings.HasPrefix(base, fmt.Sprintf("%s-0000-", prefix))
+}
+
+// earliestReport will return the earliest report with an ID from the set of
+// paths with the given prefix.
+func earliestReport(prefix string, paths []string) string {
+	var earliest string
+	var earliestParts []int
+
+PathLoop:
+	for _, p := range paths {
+		if !hasID(prefix, p) {
+			// No ID so don't include this path.
+			continue
+		}
+		base := filepath.Base(p)
+		id := strings.TrimSuffix(base, filepath.Ext(base))
+		idNoPrefix := strings.TrimPrefix(id, fmt.Sprintf("%s-", prefix))
+		var parts []int
+		for _, part := range strings.Split(idNoPrefix, "-") {
+			i, err := strconv.Atoi(part)
+			if err != nil {
+				continue PathLoop
+			}
+			parts = append(parts, i)
+		}
+		if len(parts) == 0 {
+			// There were no valid parts, so skip this path.
+			continue
+		}
+		if len(earliestParts) == 0 {
+			// This is the first time round, so this is the earliest path.
+			earliest = p
+			earliestParts = parts
+			continue
+		}
+		limit := min(len(earliestParts), len(parts))
+		for i := 0; i < limit; i++ {
+			if parts[i] < earliestParts[i] {
+				earliest = p
+				earliestParts = parts
+				break
+			}
+		}
+	}
+	return earliest
 }
 
 func processReports(path, existing string, added []string) ([]string, error) {

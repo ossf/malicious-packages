@@ -1,0 +1,62 @@
+{
+  "modified": "2026-07-20T00:00:00Z",
+  "published": "2026-07-20T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10944",
+  "summary": "Malicious code in zer0onetencent (npm)",
+  "details": "The zer0onetencent package was published to the npm registry by user 't2423048543' (maintainer email t2423048543@gmail.com). It is described as 'A simple date formatting utility' but ships no such functionality; index.js only exports a hello() stub returning the package name, indicating a package created to deliver an install-time payload.\n\nThe package.json declares a postinstall hook (\"node postinstall.js\") that runs automatically at npm install time. The bundled postinstall.js embeds a shell command chain that performs cloud-metadata SSRF and credential/environment harvesting: it queries a public IP echo service (http://cip.cc), probes a Meituan/Sankuai internal SSRF test endpoint (https://mtsrc-test.sankuai.com/ssrf), requests AWS EC2 instance metadata credentials for the IAM role 'sandyclaw-canary-worker-role' (http://169.254.169.254/latest/meta-data/iam/security-credentials/sandyclaw-canary-worker-role), and reads Tencent Cloud metadata (http://metadata.tencentyun.com/latest/meta-data/ and http://169.254.0.23/latest/meta-data/). It then reads the installing process's environment via /proc/self/environ and exfiltrates the concatenated output, together with a directory listing of /data/, by HTTP POST to the attacker-controlled Burp Collaborator endpoint http://t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com (paths /metadata and /data).\n\nAs shipped, the malicious command chain is stored inside postinstall.js as a JSON document (a copy of a package manifest) rather than as executable JavaScript, so the 'node postinstall.js' hook raises a syntax error and the embedded payload does not execute as-published; the intent and payload are nonetheless unambiguously malicious. A sibling package (zer0onetencent2) by the same maintainer carries an identical payload differing only in the Collaborator subdomain.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "zer0onetencent"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "iocs": {
+          "domains": [
+            "t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com"
+          ],
+          "urls": [
+            "http://t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com/metadata",
+            "http://t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com/data"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/zer0onetencent"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": null
+  }
+}
