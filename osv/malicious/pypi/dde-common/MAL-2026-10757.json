@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-20T17:03:39Z",
+  "modified": "2026-07-28T14:22:05Z",
   "published": "2026-07-16T18:43:48Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10757",
   "summary": "Malicious code in dde-common (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a9c1ea29800a587d513d49d1ed9ddd14d9cf9d246e6622f57389e9c91606ad5)\nThe pypi package dde-common advertises itself as 'base types and interfaces' but exposes only a no-op DdeCommon stub. Its setup.py copies a telemetry.pth file into site-packages, which causes `import _telemetry_init` to run at the start of every Python interpreter on the host (not only when dde-common is imported). _telemetry_init spawns a background daemon thread that instantiates a Client and calls track('session_start'), transmitting host identifiers (hostname, OS, Python version, PID, cpu_count). The transport module _telemetry_transport.py ships with empty CDN/mirror/resolver lists and reconstructs its reporting endpoint at runtime by issuing raw UDP DNS queries to 8.8.8.8 and 1.1.1.1 for TXT records labeled `0.\u003cdomain\u003e...N.\u003cdomain\u003e`, concatenating the chunks and base64-decoding them to obtain the destination. No plaintext exfiltration URL exists in the source. The combination — interpreter-wide auto-run via.pth, no legitimate package functionality, host-metadata beaconing, and DNS-TXT-based covert endpoint rendezvous — is a persistent host-wide beacon and covert C2 rendezvous rather than opt-in telemetry.\n\n## Source: kam193 (c0eb18950d3479b8ce79d01c50f1eaf3e56373dd8b66feef0d4aa8d12f78f528)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f875cacd68379cbaaa066adac089dc3c403fd532a0e73ba932cf35e0562ff476)\nsetup.py installs a telemetry.pth file into site-packages containing `import _telemetry_init`, which causes Python's site.py to load the bootstrap module on every interpreter startup, independent of whether anything imports dde-common. _telemetry_init spawns a daemon thread that selects a platform-specific asset path (/pkg/package, /pkg/package-arm64, /pkg/loader_mac, /pkg/package.exe) and fetches an opaque native binary from a rotation of Cloudflare Workers hosts (package-proxy.cf5oobworker.workers.dev, package-proxy.cf8oobworker.workers.dev, package-proxy.cf12oobworker.workers.dev, package-proxy.cf17-ddb.workers.dev, package-proxy.cf25-6eb.workers.dev). On POSIX the file is chmod 0o755'd and executed; on Windows it is launched via ctypes.windll.kernel32 CreateProcess with STARTUPINFO/PROCESS_INFORMATION. A DNS-TXT covert channel provides a fallback distribution path: custom UDP queries to 8.8.8.8/1.1.1.1 retrieve numbered TXT chunks from tin/tina/ldr/win.dl.well1.site, which are concatenated and base64-decoded to reconstruct the payload, bypassing HTTP-based network controls. Package metadata frames the module as an 'Internal SDK' by 'Platform Engineering' and shipped code exposes a Sentry-lookalike analytics API surface (Client/Hub/Envelope/Breadcrumb/DSN) that is never exercised — the only reachable code path fetches and executes a native binary from anonymous infrastructure with no hash or signature verification.\n\n## Source: kam193 (c0eb18950d3479b8ce79d01c50f1eaf3e56373dd8b66feef0d4aa8d12f78f528)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
   "affected": [
     {
       "package": {
@@ -18,6 +18,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -84,6 +94,14 @@
     {
       "type": "EVIDENCE",
       "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dde-common/8.5.3/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dde-common/8.5.4/"
     }
   ],
   "credits": [
@@ -156,6 +174,26 @@
         "versions": [
           "0.0.1",
           "8.5.3",
+          "8.5.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4380f679523a900b31d18f3e5657de2754e92b5550b8f22770d29ec7d2a6c90c",
+        "import_time": "2026-07-28T14:20:01.865073466Z",
+        "id": "IN-MAL-2026-010968",
+        "modified_time": "2026-07-28T13:43:16Z",
+        "versions": [
+          "8.5.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f875cacd68379cbaaa066adac089dc3c403fd532a0e73ba932cf35e0562ff476",
+        "import_time": "2026-07-28T14:20:01.951369951Z",
+        "id": "IN-MAL-2026-010970",
+        "modified_time": "2026-07-28T13:43:32Z",
+        "versions": [
           "8.5.4"
         ]
       }

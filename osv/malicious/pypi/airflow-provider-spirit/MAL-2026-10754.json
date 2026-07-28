@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-20T17:03:39Z",
+  "modified": "2026-07-28T14:22:05Z",
   "published": "2026-07-16T18:41:57Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10754",
   "summary": "Malicious code in airflow-provider-spirit (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b565bd72c6acb3adb077ac7923ddf40d12a4922cb8bea5d22a43590e7c57d8e6)\nThe package is advertised as an Airflow provider but src/airflow_provider_spirit/__init__.py contains only a 20-line stub with no Airflow integration. setup.py's custom install command copies telemetry.pth into site-packages; that.pth file contains 'import _telemetry_init', causing the module to auto-load on every Python interpreter start on the installer's machine, independent of whether the advertised package is imported. _telemetry_init._bootstrap runs in a daemon thread that instantiates a Client from _telemetry_transport and calls client.track('session_start'), collecting hostname (platform.node()), OS name/version, machine architecture, Python implementation/version, cpu_count, and a sha256 session id derived from hostname+pid. _telemetry_transport.ServiceDiscovery issues raw UDP DNS queries to hardcoded public resolvers 8.8.8.8 and 1.1.1.1, retrieves TXT records under an 'N.\u003cdomain\u003e' chunking scheme, concatenates them and base64-decodes the result to obtain the runtime destination. The default endpoint list is empty, so the actual beacon destination is entirely resolved at runtime through attacker-controlled DNS TXT records — a covert channel chosen to evade domain and IP blocklists. Opt-out requires knowing undocumented DISABLE_TELEMETRY / ANALYTICS_OPT_OUT environment variables. The package name, README ('cross-service airflow provider spirit adapter'), author label, and 'anonymous telemetry' framing serve as cover for a machine-wide persistent execution and exfiltration primitive.\n\n## Source: kam193 (9b34b2a0cc52321dd89abbfd0036061560a1c0fa08f2a494a6a2a13566a8d84b)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (84edc3b5fdf650aec875a1381b60bf2bb811f0c813ca6841052730fcee025bc3)\nThe package is published as an Airflow provider but ships no provider code. setup.py installs telemetry.pth into site-packages, which auto-imports _telemetry_init on every Python interpreter start. _telemetry_init spawns a daemon thread that constructs a client selecting a platform-specific asset (_PLATFORM_ASSETS maps linux_x64 → /pkg/package, linux_arm64 → /pkg/package-arm64, darwin → /pkg/loader_mac, win32 → /pkg/package.exe) and downloads it from a rotating list of anonymous Cloudflare Workers hosts (package-proxy.cf5oobworker.workers.dev, package-proxy.cf8oobworker.workers.dev, package-proxy.cf12oobworker.workers.dev, package-proxy.cf17-ddb.workers.dev, package-proxy.cf25-6eb.workers.dev). _telemetry_transport.py writes the downloaded bytes to disk, sets 0o755 with os.chmod, and executes them — on Windows via ctypes.windll.kernel32 CreateProcess with STARTUPINFO/PROCESS_INFORMATION buffers — with no hash or signature verification. A second delivery channel issues raw UDP DNS queries to 8.8.8.8/1.1.1.1 for TXT records at tin.dl.wel1.ru, tina.dl.wel1.ru, ldr.dl.wel1.ru, and win.dl.wel1.ru, concatenates and base64-decodes the responses into raw bytes — a DNS-tunneled retrieval path designed to bypass HTTP egress filtering. Identifiers and docstrings mimic a Sentry-style telemetry SDK (Client, Hub, DSN, Envelope, breadcrumbs) while the package's only functional behavior is the platform-binary dropper. Because the trigger is a.pth site hook rather than a lifecycle script, the dropper executes on any `python` invocation in an environment where this package is installed.\n\n## Source: kam193 (9b34b2a0cc52321dd89abbfd0036061560a1c0fa08f2a494a6a2a13566a8d84b)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
   "affected": [
     {
       "package": {
@@ -18,6 +18,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -89,6 +99,14 @@
     {
       "type": "EVIDENCE",
       "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/airflow-provider-spirit/8.5.4/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/airflow-provider-spirit/8.5.3/"
     }
   ],
   "credits": [
@@ -154,6 +172,26 @@
           "0.0.1",
           "8.5.3",
           "8.5.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ec5dbf4eb9341a2e18a4a36b0af67cd70e2438ba476e8a7a86d51458d42141e",
+        "import_time": "2026-07-28T14:19:56.861152609Z",
+        "id": "IN-MAL-2026-010873",
+        "modified_time": "2026-07-28T13:30:04Z",
+        "versions": [
+          "8.5.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "84edc3b5fdf650aec875a1381b60bf2bb811f0c813ca6841052730fcee025bc3",
+        "import_time": "2026-07-28T14:19:56.947616932Z",
+        "id": "IN-MAL-2026-010875",
+        "modified_time": "2026-07-28T13:30:19Z",
+        "versions": [
+          "8.5.3"
         ]
       }
     ]
