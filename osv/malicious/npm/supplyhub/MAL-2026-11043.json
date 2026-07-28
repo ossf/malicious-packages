@@ -1,0 +1,45 @@
+{
+  "modified": "2026-07-20T00:00:00Z",
+  "published": "2026-07-20T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11043",
+  "summary": "Malicious code in supplyhub (npm)",
+  "details": "The npm package `supplyhub` is a credential / SSH-key stealer. Its `package.json` declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported.\n\n`postinstall.js` uses `fs.readFileSync` to read the user's SSH private key (`~/.ssh/id_rsa`) and the process environment (`/proc/self/environ` — where CI/cloud tokens and npm tokens live), and gathers account/host identity via `os.userInfo()`; it also references `/etc/passwd`. The collected data is exfiltrated by HTTP POST to a hard-coded webhook.site dead-drop: `https://webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3`.\n\nOnly version 1.0.2 is malicious: version 1.0.0 (held in the codelake corpus) is clean — the exfiltration code was introduced in the 1.0.2 release (a trust-then-poison pattern). Any workstation or CI runner that installs supplyhub@1.0.2 (directly or transitively) hands its SSH key and environment secrets to the operator. Detected and classified independently by codelake Research from the live npm feed on 2026-07-20; not present in OSV or GHSA at the time of reporting (a first-catch).",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "supplyhub"
+      },
+      "versions": [
+        "1.0.2"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3038-supplyhub"
+    }
+  ],
+  "credits": [
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3038-supplyhub"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"
+      ],
+      "urls": [
+        "https://webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3"
+      ]
+    },
+    "malicious-packages-origins": null
+  }
+}

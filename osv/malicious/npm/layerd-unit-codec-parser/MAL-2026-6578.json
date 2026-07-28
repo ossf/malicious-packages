@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-29T06:35:34Z",
+  "modified": "2026-07-09T22:58:20Z",
   "published": "2026-06-29T06:35:34Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6578",
   "summary": "Malicious code in layerd-unit-codec-parser (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e27d4511e4a3f335712736eebef6cf8e55e3f1bccbb13ded2fcef675622e58e1)\nPackage is published as `layerd-unit-codec-parser` but its README, install instructions, and example imports present it as `postcss-minify-selector-parser`, a name resembling the legitimate `postcss-selector-parser`. To complete the impersonation, `src/selector-parser.js` re-exports the real `postcss-selector-parser` and `src/index.js` spreads its API onto the package's own exports. Alongside this benign-looking surface, `src/config/defaults.js` ships a multi-KB AES-GCM ciphertext (`DEFAULT_FINAL_ENCODED_TEXT`) together with the passphrase (`DEFAULT_AES_PASSPHRASE='default-dev-passphrase'`) and salt (`DEFAULT_AES_SALT='encode-npm-c-salt'`) needed to decrypt it. The exported `run` / `runDefaultDecodedFunction` / `finalFinalDecodeAndRun` code path (reachable via `npm start`, `npm run decode`, `node cjs-runner.js`, or any consumer calling `.run()` on the main export) decrypts that blob and executes the resulting string with `new Function('require', runnable)(require)`. Shipping both the ciphertext and its decryption key makes the AES layer pure obfuscation over executable JavaScript that the package then evaluates — functionally equivalent to base64-decode-and-eval of an opaque payload, with full access to `require` in the installer's environment.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ca65bb450fc2f4d4596fbcc2ddd81af358c2d02f94d965b18e532d8afa62ef5f)\nThe package presents itself as a CSS selector parser (src/selector-parser.js re-exports postcss-selector-parser; keywords postcss/selector/parser/css), but its main module also exposes run / runDefaultDecodedFunction / finalFinalDecodeAndRun. src/config/defaults.js ships an ~10KB opaque AES-GCM ciphertext (DEFAULT_FINAL_ENCODED_TEXT) alongside a hardcoded passphrase (\"default-dev-passphrase\"); src/aes/aes-gcm.js uses base64 Buffer decoding and scrypt to derive the key, decrypts the blob, and src/pipeline/custom-codec-pipeline.js invokes the plaintext as code through new Function(\"require\", runnable)(require), granting the smuggled bytes full Node require/process capabilities. The package's own runtime/lib.min.js calls require(\"../src\").run(), and package.json scripts (start, decode, test:cjs) plus a root cjs-runner.js funnel into the same decrypt-and-execute path. None of this is documented in the README, which describes only selector parsing and encode/decode helpers. A consumer who installs the package and runs the advertised npm start / decode scripts, or who imports and calls run(), executes the hidden payload. The combination of an opaque encrypted executable shipped in the tarball, a hardcoded key that makes the ciphertext functionally equivalent to shipping the code while evading source review, and an undocumented entry point that invokes it with full Node capabilities is a backdoor pattern. The postcss-selector-parser API mimicry increases the chance of the hidden run() path being reached.\n",
   "affected": [
     {
       "package": {
@@ -22,10 +22,16 @@
         }
       ],
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "2.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -67,6 +73,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/layerd-unit-codec-parser/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/layerd-unit-codec-parser/v/2.0.0"
     }
   ],
   "credits": [
@@ -81,23 +91,33 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007767",
+        "source": "amazon-inspector",
+        "sha256": "e27d4511e4a3f335712736eebef6cf8e55e3f1bccbb13ded2fcef675622e58e1",
         "import_time": "2026-06-29T07:09:11.126829777Z",
+        "id": "IN-MAL-2026-007767",
         "modified_time": "2026-06-29T06:35:34Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
         ],
-        "sha256": "e27d4511e4a3f335712736eebef6cf8e55e3f1bccbb13ded2fcef675622e58e1",
-        "source": "amazon-inspector",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ca65bb450fc2f4d4596fbcc2ddd81af358c2d02f94d965b18e532d8afa62ef5f",
+        "import_time": "2026-07-09T22:56:34.860271339Z",
+        "id": "IN-MAL-2026-009565",
+        "modified_time": "2026-07-09T22:14:18Z",
+        "versions": [
+          "2.0.0"
         ]
       }
     ]

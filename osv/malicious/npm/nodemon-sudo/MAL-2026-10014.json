@@ -1,13 +1,13 @@
 {
-  "modified": "2026-07-09T12:35:14Z",
-  "published": "2026-07-09T12:35:13Z",
+  "modified": "2026-07-13T06:50:49Z",
+  "published": "2026-07-09T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10014",
   "aliases": [
     "GHSA-8228-4gjp-c339"
   ],
   "summary": "Malicious code in nodemon-sudo (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (e6b941e7418bdecb5f25e70716d050d989137d1cc995e31de120799bb96aae0c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "The npm package `nodemon-sudo` is a typosquat of the popular `nodemon` package: its `package.json` description (\"Simple monitor script for use during development of a Node.js app.\"), `main` entry (`./lib/nodemon`), and forged `author` field (`Remy Sharp`, the real maintainer of `nodemon`) are copied from the legitimate project to appear trustworthy. It was published by npm user `conodeeth` (`coxhazelqja151@outlook.com`) as a single release, version 3.1.16, with no prior or subsequent versions.\n\nIts `package.json` declares `tslint-conf@^7.2.1` as a direct runtime dependency — a separately-tracked malicious package (see MAL-2026-7022) that itself masquerades as the `pino` logger and, when its default-exported middleware factory is invoked, spawns a detached background worker (`lib/caller.js`) that fetches attacker-controlled code from a Pinata IPFS gateway and executes it via `new Function.constructor('require', s)`, granting full filesystem and environment access.\n\nStatic review of `nodemon-sudo`'s own source (all 27 JavaScript files in the published tarball, `lib/`, `bin/`, and root) found no `require('tslint-conf')` or other reference to it anywhere in the package's own code — `nodemon-sudo` itself does not declare an install hook and does not directly invoke the malicious dependency's trigger. Its role in the attack is to typosquat a high-download-count package name and force the known-malicious `tslint-conf` onto the dependency tree of anyone who installs it (a dependency-confusion / malicious-dependency-bundling distribution vector), positioning it for exploitation by any other code path in the victim's project that later requires and calls it.\n\nPer SafeDep's analysis, `nodemon-sudo` is linked to the `tslint-conf` supply-chain campaign (also distributed via the related, separately-tracked packages `nodemon-node` — MAL-2026-6957 — and `ts-await` — MAL-2026-6958), attributed with suspected North Korea-linked tradecraft (lookalike package names, jsonkeeper.com dead drops, JSON-field code execution via the `Function` constructor, and no reliance on install hooks). Full analysis: https://safedep.io/malicious-nodemon-sudo-tslint-conf-npm-backdoor/\n\nAnalysis performed via static review only (npm registry metadata and package source retrieved as text via the npm registry and unpkg CDN) — the package was not installed or executed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ffc26c0e85db45d7e314fbce4140e9abda3f2eb0912cf1bd9259572a7b7d8f33)\nPackage `nodemon-sudo` copies upstream `nodemon`'s identity — `package.json` reuses Remy Sharp as author, `https://nodemon.io` as homepage, and `github.com/remy/nodemon.git` as repository, and ships an essentially unmodified copy of nodemon's source. The `bin` entry is named `nodemon`, so a global install shadows the real `nodemon` CLI in the installer's PATH. The manifest additionally declares `tslint-conf` in `dependencies`, which is not part of upstream nodemon's dependency set and has no role in nodemon's runtime; installing `nodemon-sudo` therefore pulls this unrelated third-party package into the installer's node_modules. The package itself was not observed exfiltrating data, executing remote code at install time, or shipping a backdoor — the concern is name-confusion (a developer following a tutorial that suggests `sudo` may install this instead of `nodemon`), CLI hijack via the shared `nodemon` bin name, and the injection of an off-purpose dependency into downstream dependency graphs.\n\n## Source: ghsa-malware (e6b941e7418bdecb5f25e70716d050d989137d1cc995e31de120799bb96aae0c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -24,14 +24,41 @@
           ]
         }
       ],
+      "versions": [
+        "3.1.16"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-829",
+            "description": "The product imports, requires, or includes executable functionality from a source that is outside of the intended control sphere.",
+            "name": "Inclusion of Functionality from Untrusted Control Sphere"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "fdd44e7397f4e433a866bc8d62b1241e523263982d0eda0e713e361b1640b35c",
+              "tlsh": "fd41f029eca9cda30ec815a5686a01426135d90f4d84fc0cb39a636c4f5e57f70f8a2d"
+            }
+          ]
+        }
       }
     }
   ],
@@ -39,26 +66,64 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-8228-4gjp-c339"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nodemon-sudo/v/3.1.16"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-nodemon-sudo-tslint-conf-npm-backdoor/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nodemon-sudo"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "GHSA-8228-4gjp-c339",
+        "source": "ghsa-malware",
+        "sha256": "e6b941e7418bdecb5f25e70716d050d989137d1cc995e31de120799bb96aae0c",
         "import_time": "2026-07-09T13:22:08.522500022Z",
+        "id": "GHSA-8228-4gjp-c339",
         "modified_time": "2026-07-09T12:35:14Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
-        ],
-        "sha256": "e6b941e7418bdecb5f25e70716d050d989137d1cc995e31de120799bb96aae0c",
-        "source": "ghsa-malware"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ffc26c0e85db45d7e314fbce4140e9abda3f2eb0912cf1bd9259572a7b7d8f33",
+        "import_time": "2026-07-09T16:20:47.395191953Z",
+        "id": "IN-MAL-2026-009166",
+        "modified_time": "2026-07-09T15:38:00Z",
+        "versions": [
+          "3.1.16"
+        ]
       }
     ]
   }

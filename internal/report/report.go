@@ -252,6 +252,18 @@ func (r *Report) Published() time.Time {
 	return r.raw.Published
 }
 
+// IsRecursive returns whether or not the report may be recursive. This function
+// only makes sense to use during ingestion.
+func (r *Report) IsRecursive() bool {
+	if r.HasDetailsHeader() {
+		return true
+	}
+	if strings.Contains(r.raw.Details, "Credit: [OpenSSF](https://github.com/ossf/malicious-packages)") {
+		return true
+	}
+	return false
+}
+
 // urlEcosystems contains a set of OSV ecosystems that allow a registry URL
 // to be specified after the ecosystem name, separated by a colon.
 var urlEcosystems = []osvschema.Ecosystem{

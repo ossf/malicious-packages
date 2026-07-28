@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:31Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10236",
+  "aliases": [
+    "GHSA-w846-5p2c-7hwq"
+  ],
+  "summary": "Malicious code in tme-xca (npm)",
+  "details": "The tme-xca package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (a 'tme' (Travel Mall / TME-style) internal namespace) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511630928838656.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6012c6bcd17a7184340cb8ed6dc94d58d97b92826c0f510d81ddebd4160d86f0)\nOn `npm install`, the package's preinstall hook executes `examples/verify.js`, which initializes Sentry against a hardcoded author-controlled DSN (project `o4510485815754752.ingest.us.sentry.io/4511630928838656`), fetches the installer's public IP from Cloudflare's trace endpoint, attaches it as the Sentry user identity, deliberately throws to generate an event, and flushes upstream. Every install of this version transmits the installer's public egress IP and host-side error context to a fixed remote destination the installer did not choose. Separately, `src/index.js` hardcodes the same DSN as `DEFAULT_DSN` and enables `sendDefaultPii: true`; consumers who call the advertised `init`/`check`/`reportError` API without supplying their own DSN or setting `SENTRY_DSN` silently route their captured exceptions and PII into the author's Sentry account. The relay is not the documented purpose of an error-reporting helper, and the destination is hardcoded to the author rather than configured by the installer.\n\n## Source: ghsa-malware (4cffe7c45caa14f5fde24d0d15f3a70cd54521b6a1c520727784cb898bf8e2e1)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "tme-xca"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "3.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "d72a047e0dd93ee53cf52dbdbfe0ed5bc17a93172dfd9af009739def7b3c2856",
+              "tlsh": "99f04610cd742f2315d4b7b26d69008aa7608e5742a83d197bcb062d4b8c3ab25ff2ad"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "b7eceecdd6db9c8348c529ef467d051010f41fc59768863f236032306f040077",
+              "tlsh": "8c12969a35f6232301e250f0025f90d97365c67a3339e9e071598be92fd90b8d6b3ed9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tme-xca-3.0.0.tgz",
+              "hashes": {
+                "sha1": "05ea632081133ca64538f118a8f3595bd9b4d190",
+                "sha512_sri": "sha512-qPTDTFQxc6vilkYHyiXbLSoABEKddhJVqSYD7U83EbYb3qK2fySlLI/yP8Si9KbsTYgrsuKD8cvbfQx2rnNeIQ=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://fa678d7e7f5b484dffe4d063d75fae55@o4510485815754752.ingest.us.sentry.io/4511630928838656"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/tme-xca"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tme-xca/v/3.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-w846-5p2c-7hwq"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "6012c6bcd17a7184340cb8ed6dc94d58d97b92826c0f510d81ddebd4160d86f0",
+        "import_time": "2026-07-13T09:10:57.192111976Z",
+        "id": "IN-MAL-2026-009877",
+        "modified_time": "2026-07-13T08:24:01Z",
+        "versions": [
+          "3.0.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "4cffe7c45caa14f5fde24d0d15f3a70cd54521b6a1c520727784cb898bf8e2e1",
+        "import_time": "2026-07-14T03:21:41.983516852Z",
+        "id": "GHSA-w846-5p2c-7hwq",
+        "modified_time": "2026-07-14T01:04:58Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

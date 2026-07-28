@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-08T23:29:54Z",
+  "modified": "2026-07-09T16:23:06Z",
   "published": "2026-06-16T09:48:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-5876",
   "summary": "Malicious code in temp-development-package-test (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (126aa8a85eddebf7fb68ce845c1fe85e9991a6584da5fe768aa4ffb1bd089592)\nsetup.py defines install_sitecustomize(), which copies src/temp_development_package_test/setup/sitecustomize.py into the active interpreter's site-packages as sitecustomize.py. Python auto-imports sitecustomize at every interpreter start, making this a classic persistence / auto-execute primitive that would run arbitrary code in every Python invocation in that environment. In this released tarball the source payload file is absent, so the install raises FileNotFoundError and no file is dropped — meaning this version causes no installer harm. However, the package name (\"temp-development-package-test\") plus the staged copy mechanism plus an unused `import base64` in setup.py indicates the author is iterating on a supply-chain primitive. A future release that includes the payload file would silently install a global Python interpreter hook on every `pip install`. Recommend human review of this maintainer/account and rejection of any subsequent version that ships the sitecustomize.py file.\n\n## Source: kam193 (5cdc1d94dd0cfb62a4a0267ae52bf1a72dfa31a6854196b4bb220759b7c6e878)\nStarting with version 0.4, package installs a sitecustomize.py that executes during Python engine initialization. The embeded code uses mshta to download malicious code, as in other packages from the campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-easyaillm\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - malware\n\n\n - tool:mshta\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (14f3eeecfabfcb249c5f6ec2a20824355ac313ab18c677334076ca9501607ec8)\nAt install time, setup.py invokes install_sitecustomize(), which copies src/temp_development_package_test/setup/sitecustomize.py into Python's purelib site-packages directory as sitecustomize.py (setup.py:34 destination = site_packages / \"sitecustomize.py\"; setup.py:36 shutil.copy2(source, destination)). Python auto-imports sitecustomize on every interpreter startup, so this places an interpreter-wide hook outside the package's own namespace that fires for every subsequent Python process on the host — a classic persistence mechanism. The hook payload file is not actually shipped in this 0.2 sdist, so the install would currently raise FileNotFoundError, but the install-time mechanism and intent to write a global hook are unambiguous. The package metadata corroborates a throwaway / probe release: name, author, and summary are all the literal placeholder 'temp_development_package_test'; setup.py imports base64 but never uses it; cli.py imports from an unrelated, undeclared module 'pg_agent.orchestration.coordinator'. The combination — placeholder identity plus install-time write of a global interpreter hook — is not a legitimate package shape.\n\n## Source: kam193 (5cdc1d94dd0cfb62a4a0267ae52bf1a72dfa31a6854196b4bb220759b7c6e878)\nStarting with version 0.4, package installs a sitecustomize.py that executes during Python engine initialization. The embeded code uses mshta to download malicious code, as in other packages from the campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-06-easyaillm\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - malware\n\n\n - tool:mshta\n",
   "affected": [
     {
       "package": {
@@ -19,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -80,6 +85,10 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/temp-development-package-test/0.3/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/temp-development-package-test/0.2/"
     }
   ],
   "credits": [
@@ -180,6 +189,16 @@
         "modified_time": "2026-07-08T23:03:11Z",
         "versions": [
           "0.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "14f3eeecfabfcb249c5f6ec2a20824355ac313ab18c677334076ca9501607ec8",
+        "import_time": "2026-07-09T16:20:47.772482618Z",
+        "id": "IN-MAL-2026-009170",
+        "modified_time": "2026-07-09T15:38:38Z",
+        "versions": [
+          "0.2"
         ]
       }
     ]

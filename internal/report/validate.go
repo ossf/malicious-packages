@@ -103,6 +103,11 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 			repos := slices.Collect(maps.Keys(repoSet))
 			return fmt.Errorf("%w: git-based report has multiple repos: %s", ErrUnexpectedOSV, repos)
 		}
+
+		// Ensure ecosystem specific data is not present.
+		if es := v.Affected[i].EcosystemSpecific; len(es) > 0 {
+			return fmt.Errorf("%w: ecosystem_specific must not be set", ErrUnexpectedOSV)
+		}
 	}
 
 	return nil
@@ -132,6 +137,10 @@ func validatePackage(pkg osvschema.Package) (osvschema.Ecosystem, error) {
 	name := pkg.Name
 	if name == "" {
 		return "", fmt.Errorf("%w: package name is missing", ErrInvalidOSV)
+	}
+	// Package name must not contain special characters.
+	if strings.ContainsFunc(name, func(r rune) bool { return r < 0x20 || r == 0x7F }) {
+		return "", fmt.Errorf("%w: package name contains special characters", ErrInvalidOSV)
 	}
 
 	// If a PURL is set, ensure that it matches the package.

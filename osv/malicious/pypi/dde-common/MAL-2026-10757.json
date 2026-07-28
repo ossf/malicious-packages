@@ -1,0 +1,164 @@
+{
+  "modified": "2026-07-20T17:03:39Z",
+  "published": "2026-07-16T18:43:48Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10757",
+  "summary": "Malicious code in dde-common (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a9c1ea29800a587d513d49d1ed9ddd14d9cf9d246e6622f57389e9c91606ad5)\nThe pypi package dde-common advertises itself as 'base types and interfaces' but exposes only a no-op DdeCommon stub. Its setup.py copies a telemetry.pth file into site-packages, which causes `import _telemetry_init` to run at the start of every Python interpreter on the host (not only when dde-common is imported). _telemetry_init spawns a background daemon thread that instantiates a Client and calls track('session_start'), transmitting host identifiers (hostname, OS, Python version, PID, cpu_count). The transport module _telemetry_transport.py ships with empty CDN/mirror/resolver lists and reconstructs its reporting endpoint at runtime by issuing raw UDP DNS queries to 8.8.8.8 and 1.1.1.1 for TXT records labeled `0.\u003cdomain\u003e...N.\u003cdomain\u003e`, concatenating the chunks and base64-decoding them to obtain the destination. No plaintext exfiltration URL exists in the source. The combination — interpreter-wide auto-run via.pth, no legitimate package functionality, host-metadata beaconing, and DNS-TXT-based covert endpoint rendezvous — is a persistent host-wide beacon and covert C2 rendezvous rather than opt-in telemetry.\n\n## Source: kam193 (c0eb18950d3479b8ce79d01c50f1eaf3e56373dd8b66feef0d4aa8d12f78f528)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "dde-common"
+      },
+      "versions": [
+        "0.0.1",
+        "8.5.3",
+        "8.5.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_telemetry_init.py",
+              "sha256": "34a3a05b9ae6c9efd62a5b84aba9517741ce3cffaba4296bc02c45fdfe8ac854",
+              "tlsh": "aed11c27ed0f2c328172d75e9899d0f0f72643035ab192577cac831d2f7851782ae5ae"
+            },
+            {
+              "path": "_telemetry_transport.py",
+              "sha256": "3b2e157d9383b96d3591c354bd80acb2ac525529f18fb1522fe49f22520ea650",
+              "tlsh": "04b33cb6ed1bac228177c91e9c86e047f72a4753222c614779bc826c2f74715c2e4eed"
+            },
+            {
+              "path": "src/dde_common/__init__.py",
+              "sha256": "fbe0208e6454b37990122c5e72a5290abbf1bc99b2ed22cd037e3583dbbbf8d2",
+              "tlsh": "fde06da85d4fe82241b5cc5e8d91b443eb5e4a47552e1093717cb11a1f34e14d1d89f9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dde_common-0.0.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "f0a28bb8bbc2f273ad822c8d907b83ca1e605879506d67c3df21ec8d6a9ef16d",
+                "md5": "15c39fb5942de814f4ee0b3df71f769e",
+                "sha256": "ae14999a0b7c27b34784611fd0e21b40e2065848fc2ac36c845c29d1c453b010"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dde-common/0.0.1/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/dde-common"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/06f1c2f0c66cf13ab6702414e8dce7c4115939f3e9cf95e9a8baade58961c016/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/230f81f18608800912def92e18999874e004cd9fb4a554f759f77e4dd2030081/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/c98444d6aebfd87f2f4412e1d7aafe8fe3fe080139ca1111049ea83fe828cd1d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/1360bb7437f5e7790747bc4e31eedcd19f88f23b20362a42368f4179b8b9e27d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "package-proxy.cf8oobworker.workers.dev",
+        "package-proxy.cf5oobworker.workers.dev",
+        "package-proxy.cf25-6eb.workers.dev",
+        "package-proxy.cf17-ddb.workers.dev",
+        "win.dl.well1.site",
+        "tina.dl.well1.site",
+        "tin.dl.well1.site",
+        "ldr.dl.well1.site"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "8a9c1ea29800a587d513d49d1ed9ddd14d9cf9d246e6622f57389e9c91606ad5",
+        "import_time": "2026-07-16T18:54:03.332745318Z",
+        "id": "IN-MAL-2026-010763",
+        "modified_time": "2026-07-16T18:43:48Z",
+        "versions": [
+          "0.0.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "cbe186f2410a3e7faa1960757b2d48d3a714b1b308e893fc2d3ea1d97214d28b",
+        "import_time": "2026-07-20T16:06:06.875605183Z",
+        "id": "pypi/2026-07-andreiiiiiii_i/dde-common",
+        "modified_time": "2026-07-20T14:11:29.524568Z",
+        "versions": [
+          "0.0.1",
+          "8.5.3",
+          "8.5.4"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "c0eb18950d3479b8ce79d01c50f1eaf3e56373dd8b66feef0d4aa8d12f78f528",
+        "import_time": "2026-07-20T17:01:49.032636368Z",
+        "id": "pypi/2026-07-andreiiiiiii_i/dde-common",
+        "modified_time": "2026-07-20T14:11:29.524568Z",
+        "versions": [
+          "0.0.1",
+          "8.5.3",
+          "8.5.4"
+        ]
+      }
+    ]
+  }
+}

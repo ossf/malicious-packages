@@ -1,0 +1,80 @@
+{
+  "modified": "2026-07-14T03:34:01Z",
+  "published": "2026-07-14T03:34:01Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10523",
+  "summary": "Malicious code in @tabrex/bs58 (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4f8a6402182b6dec89b04f15d70fcdd2b78d678947d49c62a3f09b11a70bf306)\n@tabrex/bs58 ships the verbatim README, API surface, and repository URL of the legitimate cryptocoinjs/bs58 package (package.json declares repository https://github.com/cryptocoinjs/bs58 and the README contains 'npm i --save bs58' instructions for that real package), but the bundled entrypoints src/cjs/index.cjs and src/esm/index.js have a heavily obfuscated payload appended after the base58 implementation. The payload uses an Obfuscator.io-style rotated string array decoded via RC4 (function a5() with a base64 alphabet decoder feeding a4()), control-flow flattening with a `while(!![])` switch dispatcher, and a self-defending anti-debug check. At require()/import time the payload re-spawns the host Node process detached with a sentinel env var (`spawn(process.argv[0],..., {detached:true, stdio:'ignore', windowsHide:true, env:w, cwd:y})`), downloads an encrypted binary over HTTPS to a destination hidden inside the obfuscated string array, verifies its SHA256 against a sidecar.metadata.json, AES-256-GCM-decrypts it with a key derived from XORing four base64 fragments, then chmods and executes the decrypted binary. Any project that installs and loads @tabrex/bs58 (directly or transitively) executes attacker-controlled code on the developer/build machine on first require. Combination of typosquat lure of a top-tier crypto package, README/repo impersonation, heavy obfuscation, and remote-fetch-decrypt-exec at module-load time is unambiguous supply-chain attack.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@tabrex/bs58"
+      },
+      "versions": [
+        "6.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/cjs/index.cjs",
+              "sha256": "412bc12056660fd8b556edee1762c3f87ee267bbf22b5c14761e97b2cc19aaae",
+              "tlsh": "11a319867eda707f535261f3112b6182a56d9ca9734c8504f066ccecbfa423ce3666bc"
+            },
+            {
+              "path": "package.json",
+              "sha256": "997fce253b4355bfa6557fab5599cc698e8d4985f8c018853b35d820944dce59",
+              "tlsh": "b921cd11c8a84e7306c591559ab95657e5351e8f4908fc4e73aa022c4f8c1bf11fd6fd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bs58-6.0.3.tgz",
+              "hashes": {
+                "sha1": "0d2cfc267b0ea62eca1907a69c0a387f84cbe3a0",
+                "sha512_sri": "sha512-BRyCUWoMyTrL7pmJ82sPHucz/+S5ac4IFjr1Dup0E7Cufa+6tKbfauKQX8oe1zdkZddr6K9VTAAH4CW8vzEiGQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tabrex/bs58/v/6.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010367",
+        "import_time": "2026-07-14T04:31:59.171991837Z",
+        "modified_time": "2026-07-14T03:34:01Z",
+        "sha256": "4f8a6402182b6dec89b04f15d70fcdd2b78d678947d49c62a3f09b11a70bf306",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.3"
+        ]
+      }
+    ]
+  }
+}

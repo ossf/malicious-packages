@@ -1,5 +1,5 @@
 {
-  "modified": "2026-07-08T08:21:07Z",
+  "modified": "2026-07-09T17:21:21Z",
   "published": "2026-07-08T08:21:06Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6962",
@@ -7,7 +7,7 @@
     "GHSA-24x9-3433-gqp9"
   ],
   "summary": "Malicious code in gas-log (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (30475d80d69fa45b40a86bc3d91a9ed3c29f15d9c6d500760fc91e1ea303e8d5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (36241e999d92bad738082bf420fc144391735f9f3707bc4baa0153b4cb0eec8a)\ngas-log impersonates the legitimate eth-gas-reporter package: it reuses that project's README, keywords, badges, and CHANGELOG, and the README even instructs users to install the target name. The exported Mocha reporter in index.js contains two near-identical implementations. The real reporter (Gas) is defined but not exported; the exported function (log) sets `var opt = 1` and unconditionally enters an else branch that calls `utils.connectNet(...)`, making the always-false `if (!opt)` guard a dead-code gate that hides the payload as an unreachable variant of the legitimate code. utils.connectNet spawns a detached, unref'd `node lib/syncResolve.js` child so the loader outlives the parent Mocha process. lib/syncResolve.js issues `axios.get(DEV_URI, { headers: { 'x-secret-key': '_' } })`, extracts `.data.Cookie` from the response, and passes it to `new Function.constructor('require', result)` with `require` bound in, then invokes it — an eval of attacker-controlled response bytes with full Node module access, retried 5 times. DEV_URI is empty in this shipped version so the fetch will fail today, but the mechanism is complete and armed: any future publish, DNS resolution, or same-origin redirect activates full RCE on any developer who runs mocha with this reporter. The typosquat framing, the dead-code gate, and the fetch → eval → detached-child chain together are unambiguous supply-chain attack intent.\n\n## Source: ghsa-malware (30475d80d69fa45b40a86bc3d91a9ed3c29f15d9c6d500760fc91e1ea303e8d5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -24,14 +24,42 @@
           ]
         }
       ],
+      "versions": [
+        "1.1.0",
+        "1.1.1"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "db6f048ab50bdad5c12883185a63f731a1ff1f9d98055ea63e34e9d28137415f",
+              "tlsh": "b3f1fe322eb7153745e3faac9bcba061d12696372201cfad7a8c93104f5447894efbe4"
+            },
+            {
+              "path": "lib/syncResolve.js",
+              "sha256": "f62fa7096429b3861bce560ee1a6dbc9bae51be08971ecb8879c4eede1f05501",
+              "tlsh": "25017b9d3469e0280ab012e59b171032e6015f263007a0e4729d97521f7ac595542eec"
+            }
+          ]
+        }
       }
     }
   ],
@@ -39,26 +67,63 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-24x9-3433-gqp9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gas-log/v/1.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gas-log/v/1.1.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "GHSA-24x9-3433-gqp9",
+        "source": "ghsa-malware",
+        "sha256": "30475d80d69fa45b40a86bc3d91a9ed3c29f15d9c6d500760fc91e1ea303e8d5",
         "import_time": "2026-07-08T09:08:02.555158649Z",
+        "id": "GHSA-24x9-3433-gqp9",
         "modified_time": "2026-07-08T08:21:07Z",
         "ranges": [
           {
+            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ],
-            "type": "SEMVER"
+            ]
           }
-        ],
-        "sha256": "30475d80d69fa45b40a86bc3d91a9ed3c29f15d9c6d500760fc91e1ea303e8d5",
-        "source": "ghsa-malware"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "36241e999d92bad738082bf420fc144391735f9f3707bc4baa0153b4cb0eec8a",
+        "import_time": "2026-07-09T17:19:26.25341243Z",
+        "id": "IN-MAL-2026-009339",
+        "modified_time": "2026-07-09T16:58:05Z",
+        "versions": [
+          "1.1.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ebc70f94af0dacb27216c099e647a547f3a94926b6793ab6b344540cfde4da0",
+        "import_time": "2026-07-09T17:19:25.93585822Z",
+        "id": "IN-MAL-2026-009337",
+        "modified_time": "2026-07-09T16:57:48Z",
+        "versions": [
+          "1.1.1"
+        ]
       }
     ]
   }
