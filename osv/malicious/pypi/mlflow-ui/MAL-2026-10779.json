@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-18T11:47:23Z",
+  "modified": "2026-07-28T14:22:05Z",
   "published": "2026-07-18T11:43:51Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10779",
   "summary": "Malicious code in mlflow-ui (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (efedaf471fdd5b95baee95d9bd0d330c8ce0f5da06b5cdf89458fd4ea7a38015)\nDuring installation, the package first collects local information, environment variables, and probes connections to typically expected services like databanks. Results are exfiltrated and then, the next stage code is downloaded and executed. It then continues exfiltrating data by looking for credentials to databases, exfiltrating SQLite databases and bruteforcing\u0026exfiltrating other databases reachable from the running environment.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-mlflow-ui\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - dependency-confusion\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-credentials\n\n\n - network-scan\n\n\n - exfiltration-cloud-tokens\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b7192c53fc1e0b62e2c373a8a6beabfeb3777cae3aacfe23ca374eab1c2839a7)\nThe package impersonates the MLflow project (author 'MLflow Community' \u003ccommunity@mlflow.org\u003e, homepage https://github.com/mlflow/mlflow) but provides no MLflow UI functionality. Both setup.py (install time) and mlflow_ui/__init__.py (import time) execute payload_core.py, which collects hostname, platform, the full process environment (dict(os.environ)), /etc/hosts, /etc/resolv.conf, /proc/self/cgroup, /proc/1/cmdline, directory listings of /, /app, /opt, /srv, /home, /tmp, and the output of `id`, `ps aux`, and `ip addr`, along with internal-network probe results. The data is base64-encoded and POSTed to https://webhook.site/9510ba0a-29f7-4ce6-afe7-632c92cf0f41/piprecon over TLS with verification disabled (ssl._create_unverified_context()). The same module fetches a second-stage Python payload from https://webhook.site/a9f5802b-c77e-4226-99dd-bc89d7dc8cca/s2.py and passes the bytes to compile()+exec() with subprocess and os bound in globals, yielding arbitrary remote code execution on the installer's host at both install and import time. Bulk environment scraping captures AWS_*, GH_TOKEN, npm/PyPI tokens, database URLs, and any other CI/build secrets present.\n\n## Source: kam193 (efedaf471fdd5b95baee95d9bd0d330c8ce0f5da06b5cdf89458fd4ea7a38015)\nDuring installation, the package first collects local information, environment variables, and probes connections to typically expected services like databanks. Results are exfiltrated and then, the next stage code is downloaded and executed. It then continues exfiltrating data by looking for credentials to databases, exfiltrating SQLite databases and bruteforcing\u0026exfiltrating other databases reachable from the running environment.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-mlflow-ui\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - dependency-confusion\n\n\n - Downloads and executes a remote malicious script.\n\n\n - exfiltration-credentials\n\n\n - network-scan\n\n\n - exfiltration-cloud-tokens\n",
   "affected": [
     {
       "package": {
@@ -15,16 +15,69 @@
         "2.7.1",
         "2.7.2",
         "2.7.3"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "payload_core.py",
+              "sha256": "6a4ef2b8c1b2c95ad736ac5dddc639f1be9566980abf488ce3d2f330e8ed4e0a",
+              "tlsh": "846110a0ee548571e393a05f5226d441739f3e0bba06ac39f5fc87941fc9178d2f22a5"
+            },
+            {
+              "path": "setup.py",
+              "sha256": "4bb149ab9bfecfa7ea8b62bd4b5a506d29acc3e250079d39defa02912aea4d24",
+              "tlsh": "671121440ce468b02597c15c5d2a809ad355b623bd01b4cabbdc03286fcceaf86bf21d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mlflow_ui-2.7.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "05281b53b0b52c73c3f5609bdd7c2a734e1e967d50f603871b133533f419afaf",
+                "md5": "acf59daaea5c3277bdce888f323661a6",
+                "sha256": "22b9d2a5a2e70bca2eefafb30faab89a1208249fb7e06404fefd4f0ceb877720"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/mlflow-ui"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/mlflow-ui/2.7.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/mlflow-ui/2.7.1/"
     }
   ],
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "type": "REPORTER",
@@ -48,15 +101,35 @@
     },
     "malicious-packages-origins": [
       {
-        "id": "pypi/2026-07-mlflow-ui/mlflow-ui",
-        "import_time": "2026-07-18T12:22:37.533770594Z",
-        "modified_time": "2026-07-18T11:47:23.422223Z",
-        "sha256": "efedaf471fdd5b95baee95d9bd0d330c8ce0f5da06b5cdf89458fd4ea7a38015",
         "source": "kam193",
+        "sha256": "efedaf471fdd5b95baee95d9bd0d330c8ce0f5da06b5cdf89458fd4ea7a38015",
+        "import_time": "2026-07-18T12:22:37.533770594Z",
+        "id": "pypi/2026-07-mlflow-ui/mlflow-ui",
+        "modified_time": "2026-07-18T11:47:23.422223Z",
         "versions": [
           "2.7.1",
           "2.7.2",
           "2.7.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "77ab1bbfc9287ae255dbdbd3284995c4955261b11b78b6d25fb6521b69ec7469",
+        "import_time": "2026-07-28T14:19:57.707243113Z",
+        "id": "IN-MAL-2026-010890",
+        "modified_time": "2026-07-28T13:32:21Z",
+        "versions": [
+          "2.7.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b7192c53fc1e0b62e2c373a8a6beabfeb3777cae3aacfe23ca374eab1c2839a7",
+        "import_time": "2026-07-28T14:19:57.677292797Z",
+        "id": "IN-MAL-2026-010889",
+        "modified_time": "2026-07-28T13:32:14Z",
+        "versions": [
+          "2.7.1"
         ]
       }
     ]
