@@ -119,7 +119,7 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		}
 
 		// Ensure ecosystem specific data is not present.
-		if es := v.Affected[i].EcosystemSpecific; len(es) > 0 {
+		if es := v.Affected[i].EcosystemSpecific; len(es.GetFields()) > 0 {
 			return fmt.Errorf("%w: ecosystem_specific must not be set", ErrUnexpectedOSV)
 		}
 	}
