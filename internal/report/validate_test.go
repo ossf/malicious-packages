@@ -5,11 +5,13 @@ import (
 
 	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/ossf/malicious-packages/internal/report"
 )
 
 func TestValidateVuln_Valid(t *testing.T) {
+	emptyStruct, _ := structpb.NewStruct(make(map[string]any))
 	vuln := &osvschema.Vulnerability{
 		Affected: []*osvschema.Affected{
 			{
@@ -28,7 +30,7 @@ func TestValidateVuln_Valid(t *testing.T) {
 					},
 				},
 				Versions:          []string{"0", "0.1"},
-				EcosystemSpecific: make(map[string]any),
+				EcosystemSpecific: emptyStruct,
 			},
 		},
 	}
@@ -516,16 +518,18 @@ func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
 }
 
 func TestValidateVuln_Fail_EcosystemSpecific(t *testing.T) {
+	ecosystemSpecific, _ := structpb.NewStruct(
+		map[string]any{
+			"test": "not empty",
+		})
 	vuln := &osvschema.Vulnerability{
-		Affected: []osvschema.Affected{
+		Affected: []*osvschema.Affected{
 			{
-				Package: osvschema.Package{
-					Ecosystem: string(osvschema.EcosystemPyPI),
+				Package: &osvschema.Package{
+					Ecosystem: string(osvconstants.EcosystemPyPI),
 					Name:      "example",
 				},
-				EcosystemSpecific: map[string]any{
-					"test": "not empty",
-				},
+				EcosystemSpecific: ecosystemSpecific,
 			},
 		},
 	}
