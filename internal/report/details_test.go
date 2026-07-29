@@ -27,9 +27,9 @@ func reportWithDetail(details string) *Report {
 		SchemaVersion: "1.5.0",
 		Summary:       "test report",
 		Details:       details,
-		Affected: []osvschema.Affected{
+		Affected: []*osvschema.Affected{
 			{
-				Package: osvschema.Package{
+				Package: &osvschema.Package{
 					Ecosystem: "npm",
 					Name:      "example",
 				},

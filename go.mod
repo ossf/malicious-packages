@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.105.0
 	github.com/go-git/go-git/v5 v5.19.1
 	github.com/google/renameio v1.0.1
-	github.com/ossf/osv-schema/bindings/go v0.0.0-20250807060700-6989eadb93f1
+	github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47
 	github.com/package-url/packageurl-go v0.1.6
 	gocloud.dev v0.46.0
 	gopkg.in/yaml.v3 v3.0.1
