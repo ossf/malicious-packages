@@ -77,7 +77,8 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		for i := range v.Affected {
 			pkg := v.Affected[i].Package
 			if pkg == nil {
-				continue
+				// Ensure empty package names are checked.
+				pkg = &osvschema.Package{}
 			}
 			name := canonicalizeName(pkg.Name, osvconstants.Ecosystem(pkg.Ecosystem))
 			key := fmt.Sprintf("%s!!%s", pkg.Ecosystem, name)

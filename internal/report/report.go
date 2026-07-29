@@ -433,6 +433,7 @@ func stripUnexpectedValues(st *structpb.Struct) *structpb.Struct {
 	}
 	res, err := structpb.NewStruct(cleaned)
 	if err != nil {
+		// This should never occur, as cleaned is derived from a structpb.Struct.
 		panic(err)
 	}
 	return res

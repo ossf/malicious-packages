@@ -10,6 +10,7 @@ require (
 	github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47
 	github.com/package-url/packageurl-go v0.1.6
 	gocloud.dev v0.46.0
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -95,7 +96,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260615183401-62b3387ff324 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260615183401-62b3387ff324 // indirect
 	google.golang.org/grpc v1.81.1 // indirect
-	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 )
 
