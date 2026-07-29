@@ -1,0 +1,122 @@
+{
+  "modified": "2026-07-28T14:22:05Z",
+  "published": "2026-07-24T14:10:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11049",
+  "summary": "Malicious code in mrmustard (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (535679eb30bfd0600dc07e44d2e649c88ecb6274364e2ba0b1ef2ccc05976727)\nOn plain `import mrmustard`, the top-level __init__.py spawns a background thread that reads ~/.ssh/ private keys, ~/.aws/credentials, ~/.aws/config, ~/.kube/config, environment variables, `pip freeze` output, and host/GPU/SLURM identifiers. The collected data is XOR-encoded with the key 'tf_compat_v2', base64-wrapped, and POSTed via urllib to an endpoint reconstructed at runtime from an obfuscated base64+XOR literal, using a spoofed browser User-Agent. Before firing, the code returns early when CI, GITHUB_ACTIONS, GITLAB_CI, JENKINS_URL, TRAVIS, CIRCLECI, BUILDKITE, or CODEBUILD_BUILD_ID is set, when /.dockerenv or /run/.containerenv exists, or when /proc/1/cgroup mentions docker/kubepods/lxc — so the payload only executes on developer/production hosts. Three persistence mechanisms are installed under the cover story of a 'tensorflow hardware compatibility check': a compiled dropper is written to ~/.cache/.tf_cache/hw_probe.pyc, a crontab entry runs it every 15 minutes, an 'mmcompat.pth' file is dropped into site-packages so it executes on every Python startup, and a launcher line is appended to ~/.bashrc, ~/.zshrc, and the fish shell config. These mechanisms continue to run the exfiltration payload after the package is uninstalled. The legitimate MrMustard (Xanadu) package does not exhibit this behavior; this version is a compromised or impersonating release.\n\n## Source: kam193 (c98fd85267fd094cfb6b9a6e6e4d63bb5935298ad328ad5e4dedf3972e43d8f9)\nVersions 0.7.4 were compromised.\n\n\nCompromised release has embedded code that during import exfiltrates sensitive data (selected environmental variables, credentials to AWS, SSH keys etc.) and ensures persistence via multiple ways: a cron entry, a malicious PTH file, and a shell configuration file. Persistence is diguished as \"tensorflow hardware compatibility check\" using file placed under `~/.cache/.tf_cache/hw_probe.pyc`. The malicious version was uploaded after exfiltrating the PyPI token from the CI environment, likely after compromising the maintainer's Github account.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-compr-hw-probe\n\n\nReasons (based on the campaign):\n\n\n - exfiltration-env-variables\n\n\n - exfiltration-ssh-keys\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - exfiltration-credentials\n\n\n - persistence\n\n\n - compromised-package\n\n\n - abuses-pth\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "mrmustard"
+      },
+      "versions": [
+        "0.7.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "mrmustard/__init__.py",
+              "sha256": "188ed439bdcfb214cb0cb773c3c4fb172a8e9946659a9c2fd75effab21f08058",
+              "tlsh": "8e52b653ec599c73d283c75a9c9381e0336f6c276a079979b9cc43885fc983a81b53e8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mrmustard-0.7.4-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "d719207580db8bb053b052973153dd3c695b385e8fee5a3993a4177657f453d2",
+                "md5": "18c96d4f9006ebae6d7483576e6a6065",
+                "sha256": "81f0d1291a975d012d1b892cf9967557fdbb1ad4e1ac0545702ad235ace1cac5"
+              }
+            },
+            {
+              "filename": "mrmustard-0.7.4.tar.gz",
+              "hashes": {
+                "blake2b_256": "a0c221d4464e1662647242ac16433ecc27aa5e86cae1355bd33d30bc17ad05c4",
+                "md5": "b959b2d8141168b6b048c7ea1e3ff42c",
+                "sha256": "0404f8590fdaef95280c1d908068f31bf2321fe887faabf0c2329ba67c7203cb"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://github.com/XanaduAI/MrMustard/issues/656"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/XanaduAI/MrMustard/commit/80aba721b2a902bc6efb04e3c77c3bdd28d1e716"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/campaign/2026-07-compr-hw-probe"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/mrmustard/0.7.4/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "metrics.femboy.energy"
+      ],
+      "urls": [
+        "https://metrics.femboy.energy/v1/collect"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "kam193",
+        "sha256": "c98fd85267fd094cfb6b9a6e6e4d63bb5935298ad328ad5e4dedf3972e43d8f9",
+        "import_time": "2026-07-24T15:11:56.153298394Z",
+        "id": "pypi/2026-07-compr-hw-probe/mrmustard",
+        "modified_time": "2026-07-24T14:10:00Z",
+        "versions": [
+          "0.7.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "535679eb30bfd0600dc07e44d2e649c88ecb6274364e2ba0b1ef2ccc05976727",
+        "import_time": "2026-07-28T14:19:56.642036006Z",
+        "id": "IN-MAL-2026-010869",
+        "modified_time": "2026-07-28T13:29:32Z",
+        "versions": [
+          "0.7.4"
+        ]
+      }
+    ]
+  }
+}
