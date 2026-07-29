@@ -548,4 +548,3 @@ func TestReport_MarshalJSON_Origins(t *testing.T) {
 		t.Errorf("origin versions = %v; want [1.0.0]", origins[0].Versions)
 	}
 }
-

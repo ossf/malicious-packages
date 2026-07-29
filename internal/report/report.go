@@ -135,6 +135,9 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 			return nil, fmt.Errorf("failed to unmarshal origins: %w", err)
 		}
 		dbMap[originRefKey] = origins
+	} else {
+		// There are no origins, so remove them from dbMap.
+		delete(dbMap, originRefKey)
 	}
 
 	dbStruct, err := structpb.NewStruct(dbMap)
