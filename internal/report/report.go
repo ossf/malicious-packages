@@ -15,6 +15,7 @@
 package report
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -146,10 +147,7 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 	}
 	r.raw.DatabaseSpecific = dbStruct
 
-	opts := protojson.MarshalOptions{
-		Indent: "  ",
-	}
-	return opts.Marshal(r.raw)
+	return protojson.Marshal(r.raw)
 }
 
 func (r *Report) Split() ([]*Report, error) {
@@ -220,7 +218,11 @@ func (r *Report) WriteJSON(w io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("failed to encode JSON: %w", err)
 	}
-	_, err = w.Write(b)
+	var normalized bytes.Buffer
+	if err := json.Indent(&normalized, b, "", "  "); err != nil {
+		return fmt.Errorf("failed to normalize JSON indent: %w", err)
+	}
+	_, err = normalized.WriteTo(w)
 	return err
 }
 
