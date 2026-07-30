@@ -164,7 +164,7 @@ func ingestReports(ctx context.Context, s *source.Source, prefix string, c *conf
 		}
 
 		// TODO: strengthen this test using references as well.
-		if src.HasDetailsHeader() {
+		if src.IsRecursive() {
 			switch s.Recursion {
 			case source.RecursionFail:
 				return fmt.Errorf("report %s is recursive (recursion=fail)", key)
