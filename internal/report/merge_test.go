@@ -21,9 +21,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -174,11 +176,11 @@ func TestMerge_Ranges(t *testing.T) {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 
-	if got := r.Vuln().Affected[0].Ranges; !slices.EqualFunc(got, want, func(a, b *osvschema.Range) bool {
-		return proto.Equal(a, b)
-	}) {
-		t.Fatalf("Ranges = %v; want %v", got, want)
+	got := r.Vuln().Affected[0].Ranges
+	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
+		t.Fatalf("Unexpected Ranges after merge (-got, +want):\n%v", diff)
 	}
+
 }
 
 func TestMerge_Versions(t *testing.T) {
@@ -309,11 +311,11 @@ func TestMerge_References(t *testing.T) {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 
-	if got := r.Vuln().References; !slices.EqualFunc(got, want, func(a, b *osvschema.Reference) bool {
-		return proto.Equal(a, b)
-	}) {
-		t.Fatalf("References = %v; want %v", got, want)
+	got := r.Vuln().References
+	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
+		t.Fatalf("Unexpected References after merge (-got, +want):\n%v", diff)
 	}
+
 }
 
 func TestMerge_Credits(t *testing.T) {
@@ -343,10 +345,9 @@ func TestMerge_Credits(t *testing.T) {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 
-	if got := r.Vuln().Credits; !slices.EqualFunc(got, want, func(a, b *osvschema.Credit) bool {
-		return proto.Equal(a, b)
-	}) {
-		t.Fatalf("Credits = %v; want %v", got, want)
+	got := r.Vuln().Credits
+	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
+		t.Fatalf("Unexpected Credits after merge (-got, +want):\n%v", diff)
 	}
 }
 
@@ -388,10 +389,9 @@ func TestMerge_CreditsContactMerge(t *testing.T) {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 
-	if got := r.Vuln().Credits; !slices.EqualFunc(got, want, func(a, b *osvschema.Credit) bool {
-		return proto.Equal(a, b)
-	}) {
-		t.Fatalf("Credits = %v; want %v", got, want)
+	got := r.Vuln().Credits
+	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
+		t.Fatalf("Unexpected Credits after merge (-got, +want):\n%v", diff)
 	}
 }
 
