@@ -1,0 +1,62 @@
+{
+  "modified": "2026-07-20T00:00:00Z",
+  "published": "2026-07-20T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10934",
+  "summary": "Malicious code in twilio-internal (npm)",
+  "details": "The twilio-internal package is one of four byte-identical dependency-confusion squats of Twilio's npm namespace published by user 'yuva2210' (maintainer email charankumarj2004@gmail.com), all at the sentinel version 99.99.99 chosen to outrank any internal/private version and win resolution against a private registry. The npm description is empty and the package provides no legitimate functionality; the name mimics a plausible internal Twilio package so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a postinstall hook (\"node index.js\") that executes automatically on a bare npm install with no consent gate. The bundled index.js payload (1,185 bytes, sha256 prefix c324d579006df4c5, identical across all four packages) performs environment reconnaissance: it collects the npm package name and version, os.hostname(), the OS username (os.userInfo().username), the home directory path (os.homedir()), the current working directory, os.platform(), os.arch(), NODE_ENV, and the CI flag. It serializes this to JSON and exfiltrates it via HTTPS POST to a hardcoded anonymous dead-drop at https://webhook.site/42ce0f0e-a0a0-41b5-b157-1c0f918e064f (the same collector UUID across all four packages). On request error the payload falls back to a redundant out-of-band callback to 2b22ede784d5.oast.fun over HTTP, ensuring the beacon lands even where HTTPS egress to webhook.site is blocked; errors on that path are swallowed.\n\nThe collected cwd/homedir/username/CI/NODE_ENV set is reconnaissance targeting internal build environments and their filesystem layout. All four packages (twilio-serverless, twilio-assets, twilio-deploy, twilio-internal) were published by the same maintainer with an identical payload and the same collector endpoint.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "twilio-internal"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "iocs": {
+          "domains": [
+            "webhook.site",
+            "2b22ede784d5.oast.fun"
+          ],
+          "urls": [
+            "https://webhook.site/42ce0f0e-a0a0-41b5-b157-1c0f918e064f"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/twilio-internal"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": null
+  }
+}

@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-10T06:45:28Z",
-  "published": "2026-07-10T06:45:28Z",
+  "modified": "2026-07-28T08:07:37Z",
+  "published": "2026-07-05T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10115",
   "summary": "Malicious code in fmt-date-lite (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1c8dad7bd90f4cb0dbb1d4ce933bc39f04aefe4940a53605e5c3f30c48a313e4)\nOn `npm install`, the package's postinstall lifecycle script runs the `id` command and transmits the resulting user/group identity to a hardcoded bare-IP endpoint at http://155.190.124.243:6788/ over plain HTTP. Three fallback delivery mechanisms are used (node http.get, curl, wget) to maximize the chance of successful exfiltration across environments. This behavior has no legitimate connection to the package's advertised purpose (a date-formatting utility), and the benign-sounding name and `date-fns-lite` authorship function as cover for the install-time beacon — consistent with a lure/typosquat targeting the date-fns ecosystem. The `id` output reveals the installer's username, UID, GID, and group memberships, providing reconnaissance for follow-on attacks and confirming the callback for the operator.\n",
+  "details": "The npm package `fmt-date-lite` is a supply-chain dropper disguised as a benign date-formatting utility (its `description` reads \"Lightweight date formatting utility with locale support\"). It ships six files, no source repository and no dependencies, with its real behaviour in an install script.\n\nA `postinstall` lifecycle hook (`postinstall: node postinstall.js`) executes automatically on `npm install`, before the package is ever imported. The install script fetches a second-stage payload from the hardcoded external endpoint `155.190.124.243:6788` and executes it via a Node child process (child_process / execSync) — the classic download-and-execute pattern. Any developer workstation or CI runner that installs the package (directly or transitively) hands arbitrary code execution to the operator of that endpoint.\n\nfmt-date-lite is part of a coordinated campaign of near-identical \"date/time formatting utility\" droppers: sibling packages reuse the same shell and point at raw-IP infrastructure in the same 115-155.190.124.0/8 neighbourhood — e.g. datefmt-helper (C2 115.190.124.243) and date-fns-lite (C2 115.190.124.243, catalogued as OSV MAL-2026-6722).\n\nDetected and classified independently by codelake Research from the live npm feed; at the time of reporting fmt-date-lite was not present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1c8dad7bd90f4cb0dbb1d4ce933bc39f04aefe4940a53605e5c3f30c48a313e4)\nOn `npm install`, the package's postinstall lifecycle script runs the `id` command and transmits the resulting user/group identity to a hardcoded bare-IP endpoint at http://155.190.124.243:6788/ over plain HTTP. Three fallback delivery mechanisms are used (node http.get, curl, wget) to maximize the chance of successful exfiltration across environments. This behavior has no legitimate connection to the package's advertised purpose (a date-formatting utility), and the benign-sounding name and `date-fns-lite` authorship function as cover for the install-time beacon — consistent with a lure/typosquat targeting the date-fns ecosystem. The `id` output reveals the installer's username, UID, GID, and group memberships, providing reconnaissance for follow-on attacks and confirming the callback for the operator.\n",
   "affected": [
     {
       "package": {
@@ -52,6 +52,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/fmt-date-lite/v/1.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-2991-fmt-date-lite"
     }
   ],
   "credits": [
@@ -61,16 +65,31 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-2991-fmt-date-lite"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:987872707c668af0739f7d0193c1db906eb87e0749a5801a8a166a0aa2735136"
+      ],
+      "ips": [
+        "155.190.124.243"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-009605",
-        "import_time": "2026-07-10T07:46:07.966802991Z",
-        "modified_time": "2026-07-10T06:45:28Z",
-        "sha256": "1c8dad7bd90f4cb0dbb1d4ce933bc39f04aefe4940a53605e5c3f30c48a313e4",
         "source": "amazon-inspector",
+        "sha256": "1c8dad7bd90f4cb0dbb1d4ce933bc39f04aefe4940a53605e5c3f30c48a313e4",
+        "import_time": "2026-07-10T07:46:07.966802991Z",
+        "id": "IN-MAL-2026-009605",
+        "modified_time": "2026-07-10T06:45:28Z",
         "versions": [
           "1.0.0"
         ]

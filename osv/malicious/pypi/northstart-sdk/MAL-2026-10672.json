@@ -1,0 +1,180 @@
+{
+  "modified": "2026-07-15T11:35:32Z",
+  "published": "2026-07-15T10:15:13Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10672",
+  "summary": "Malicious code in northstart-sdk (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (aa58bcfb4f89faf624c1f99bb552e597cc2e061330a2e98e72e6f401bb70b4f9)\nThe pypi package northstart-sdk 0.2.1 executes attacker-controlled code as a side effect of `import northstart_sdk`. The top-level `__init__.py` assigns `AUTO_DEMO_RESULTS = _run_bundled_encrypted_demos()`, which fetches 8 bytes from a hardcoded Yuque CDN PNG (https://cdn.nlark.com/yuque/0/2026/png/12727464/...png), uses them as PBKDF2-HMAC-SHA256 key material (with a static PNG-signature fallback so the shipped ciphertext is decryptable offline), decrypts JSON blobs under `src/northstart_sdk/_encrypted_demos/`, and passes the decrypted bytes to `compile()` and `exec()` via `_execute_source`. The bespoke crypto + remote-key-fetch construction serves only to keep the exec'd payload out of source review. The plaintext progenitor of that payload is shipped in the same tree at `encry/whats.ak`: length-prefixed framed socket I/O (`s.sendall(struct.pack('\u003eI', len(enc)))`, matching `s.recv` framing), XOR/AES-GCM/ChaCha20/Fernet routines, RSA-OAEP key exchange, and an auth-message builder that transmits user/password/id fields to a remote peer, with function names obfuscated and misleading `# API endpoint handler` / `# Health check endpoint` comments. Importing the package launches a remote-controlled agent that opens an encrypted framed connection to an operator-controlled socket.\n\n## Source: kam193 (3d6810f5c57750ef71c1a2ee0bc6516a3ba537caf263d8002cdd016623052d5a)\nThe package contains encrypted and obfuscated code that starts a custom reverse shell/command execution during module import.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-northstart-sdk\n\n\nReasons (based on the campaign):\n\n\n - targetted-attack\n\n\n - The package contains code to create a reverse shell, allowing an attacker to execute any commands on the victim's machine.\n\n\n - obfuscation\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "northstart-sdk"
+      },
+      "versions": [
+        "0.1.0",
+        "0.2.0",
+        "0.2.1",
+        "0.2.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/northstart_sdk/encrypted_demo.py",
+              "sha256": "f710dfa9e0058194776ab1156769cd47244e903f34f88288d7106d0521398fcb",
+              "tlsh": "28f16497dd224c92d743c0ea5c31e5426371aa0742001374bbdceb597fdfa7ac2729aa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "northstart_sdk-0.2.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "82933c32a22eca131c1fb4771fea8b5f2ff928a44677a7c3803b74c640092b53",
+                "md5": "826450e77256257b2a29fd3bf4ca1e49",
+                "sha256": "60f31106feb0e8366cf945345a4c37d6bbf6c7e7ad2c2b75ecdf1dbbbc29cc51"
+              }
+            },
+            {
+              "filename": "northstart_sdk-0.2.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "fc8c1a69b0c1371eddf4d62fbe79bb03dc5dfc3fee0bc704af01d6310fa90e26",
+                "md5": "1f9e9796505cbd3d8016b71865353d5f",
+                "sha256": "238e37d3026af47e71ff9b731cce1b4ce74e16ce7566a939ccec526137fd8222"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/northstart-sdk"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/northstart-sdk/0.2.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/northstart-sdk/0.2.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/northstart-sdk/0.2.1/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "120.26.37.185"
+      ],
+      "urls": [
+        "https://cdn.nlark.com/yuque/0/2026/png/12727464/1778740736364-99396a4c-917b-45a7-badd-0370f3adb537.png",
+        "https://cdn.nlark.com/yuque/0/2026/png/12727464/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "kam193",
+        "sha256": "3d6810f5c57750ef71c1a2ee0bc6516a3ba537caf263d8002cdd016623052d5a",
+        "import_time": "2026-07-15T10:37:00.135512944Z",
+        "id": "pypi/2026-07-northstart-sdk/northstart-sdk",
+        "modified_time": "2026-07-15T10:15:13.435134Z",
+        "versions": [
+          "0.1.0",
+          "0.2.0",
+          "0.2.1",
+          "0.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "17f68f661bf453ef576588ba4df616591d1006309a8690a3cd3c47150b5bfe6a",
+        "import_time": "2026-07-15T11:33:39.95529114Z",
+        "id": "IN-MAL-2026-010672",
+        "modified_time": "2026-07-15T10:43:53Z",
+        "versions": [
+          "0.2.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "4f1d190be28e928760964e5bb40bba73dcbf5fca4a61ed9907ed7f7757fb1c56",
+        "import_time": "2026-07-15T11:33:40.018306032Z",
+        "id": "IN-MAL-2026-010673",
+        "modified_time": "2026-07-15T10:48:39Z",
+        "versions": [
+          "0.2.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "aa58bcfb4f89faf624c1f99bb552e597cc2e061330a2e98e72e6f401bb70b4f9",
+        "import_time": "2026-07-15T11:33:40.089700113Z",
+        "id": "IN-MAL-2026-010674",
+        "modified_time": "2026-07-15T10:48:47Z",
+        "versions": [
+          "0.2.1"
+        ]
+      },
+      {
+        "source": "kam193",
+        "sha256": "b49df58ce8826ab92fdcbc7127dd1d173c132b94d3a49dc4bfe3cb2b5a9b2e01",
+        "import_time": "2026-07-15T11:33:42.235207778Z",
+        "id": "pypi/2026-07-northstart-sdk/northstart-sdk",
+        "modified_time": "2026-07-15T10:15:13.435134Z",
+        "versions": [
+          "0.1.0",
+          "0.2.0",
+          "0.2.1",
+          "0.2.2"
+        ]
+      }
+    ]
+  }
+}

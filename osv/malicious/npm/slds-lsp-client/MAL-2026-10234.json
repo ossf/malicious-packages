@@ -1,0 +1,148 @@
+{
+  "modified": "2026-07-14T03:23:30Z",
+  "published": "2026-07-13T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10234",
+  "aliases": [
+    "GHSA-63pr-5274-mfh7"
+  ],
+  "summary": "Malicious code in slds-lsp-client (npm)",
+  "details": "The slds-lsp-client package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (a Salesforce SLDS / Lightning Design System language-server (LSP) tooling namespace) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511716882972672.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d1a204f1615398c380936de4d1e2603cab90300e0e7bc20770ffd0bbe693ce80)\nPackage name presents as a Salesforce Lightning Design System / Language Server Protocol client, but the shipped code is a thin Sentry wrapper with no SLDS or LSP functionality. package.json declares a preinstall script that runs `npm install @sentry/node \u0026\u0026 node examples/verify.js`, which resolves the installer's public IP via a Cloudflare trace endpoint, attaches it as the Sentry user identity (sendDefaultPii:true), and triggers a forced exception so the event — carrying the installer's IP and host/error metadata — is uploaded on `npm install` with no consent. The Sentry DSN is hardcoded to an author-controlled project at o4510485815754752.ingest.us.sentry.io/4511716882972672 (DEFAULT_DSN in src/index.js). The exported init() also falls back to the same hardcoded DSN when a caller does not supply one, so consumers of the library additionally route their application error telemetry and default PII to the same author endpoint. The name/description mismatch combined with an install-time beacon fits an opportunistic install-time data-collection package targeting typos or misfires.\n\n## Source: ghsa-malware (2265e2b46fde3cf1883c191549a7bd9e5d2afe8072876c632b60edc4bc9e0cd6)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "slds-lsp-client"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "2026.7.11"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "7059b3470273439e07fdc11dd6e901edaedc9af78ed603ef9bb82cce511d39d8",
+              "tlsh": "d9f07810cd342f2314d8b3755d69408a6730ce5b02a83d0876cb026e4f4c32b15ff1ad"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "a645a667c9d4c2eed098cf51cfa953246d08e487c17d26490ddfc9697c4a1ea6",
+              "tlsh": "8512a79a74f6232311e651f0025f90d97365c67a3339e9e070498be91fc90b8d6b3ec9"
+            },
+            {
+              "path": "README.md",
+              "sha256": "9fec5ff4b7fb6c590adc66e76041958b08ea1b82d70426df4a08042853d4c050",
+              "tlsh": "80a011a8a230a33230ab030e822bc802082088b883032cc80aca80fe0883082022a02e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "slds-lsp-client-2026.7.11.tgz",
+              "hashes": {
+                "sha1": "67d635b9587abbe641846b87e6c8066c02889296",
+                "sha512_sri": "sha512-E5IDc+8cT4S3gX96BKVUhoxByMg0M2N3E+QdcU36AqopU1P3Nfr0uzlRQp7vPGqrdqGhgwwFzHI8CwjYfugxXQ=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://d4616e08f531447bd415e91fd21940a6@o4510485815754752.ingest.us.sentry.io/4511716882972672"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/slds-lsp-client"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/slds-lsp-client/v/2026.7.11"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-63pr-5274-mfh7"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "d1a204f1615398c380936de4d1e2603cab90300e0e7bc20770ffd0bbe693ce80",
+        "import_time": "2026-07-13T10:37:36.99007241Z",
+        "id": "IN-MAL-2026-010198",
+        "modified_time": "2026-07-13T09:21:08Z",
+        "versions": [
+          "2026.7.11"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "2265e2b46fde3cf1883c191549a7bd9e5d2afe8072876c632b60edc4bc9e0cd6",
+        "import_time": "2026-07-14T03:21:41.911934776Z",
+        "id": "GHSA-63pr-5274-mfh7",
+        "modified_time": "2026-07-14T01:04:59Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

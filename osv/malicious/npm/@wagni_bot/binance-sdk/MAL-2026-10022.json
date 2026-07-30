@@ -1,10 +1,10 @@
 {
-  "modified": "2026-07-09T16:22:59Z",
-  "published": "2026-07-09T15:15:31Z",
+  "modified": "2026-07-28T07:58:22Z",
+  "published": "2026-07-09T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10022",
   "summary": "Malicious code in @wagni_bot/binance-sdk (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ecce8bb9640527041b349f2309b950c39c04ed3b3d4de2477c43acc7144eeabc)\nThe package advertises itself as a Binance SDK but ships only postinstall.js, which is wired to both preinstall and postinstall lifecycle hooks. On npm install it recursively walks the user's home directory (up to depth 3) looking for cryptocurrency wallet and keystore files (id.json, wallet.json, keypair.json, keystore.json, privatekey.json, seed.txt, mnemonic.txt, metamask.json, phantom.json, etc.), reads ~/.aws/credentials, ~/.ssh/*, ~/.git-credentials, ~/.npmrc, and.env /.env.local /.env.production files, and POSTs the contents together with os.hostname() and os.userInfo() to a hardcoded bare-IP endpoint at http://107.161.90.180:7777. There is no SDK functionality in the package — the Binance branding is a cover story to attract crypto developers whose machines are likely to contain wallet material. Any developer or CI system that runs `npm install` on this package will have their local wallet keystores, SSH keys, AWS credentials, git credentials, npm auth tokens, and environment secrets exfiltrated to the attacker.\n",
+  "details": "The npm package `@wagni_bot/binance-sdk` is a supply-chain credential stealer disguised as a **Binance** SDK. It is one member of a coordinated campaign of 25 crypto/web3 typosquat packages published under the single npm scope `@wagni_bot` on 2026-07-09.\n\nEach package declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host and user (`os.hostname()`, `os.userInfo()`, `os.platform()`), walks the user's home directory (`readdirSync`/`readFileSync`) and reads high-value secrets — SSH private keys (`~/.ssh/id_rsa`), cryptocurrency wallet files, and `.env` files (API keys, tokens, seed phrases). It then JSON-encodes the collected data and exfiltrates it to a hardcoded Telegram bot via the Telegram Bot API `sendMessage` endpoint (https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage). All error paths are swallowed so the install appears normal.\n\ncodelake Research proved the packages belong to one campaign deterministically: the payload file is byte-identical across all 25 packages at each published version (version-lockstep), and every package exfiltrates to the same Telegram bot token — a single automated actor. Detected and classified independently from the live npm feed on 2026-07-09; at the time of reporting the packages were still live on npm and none of the 25 were present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ecce8bb9640527041b349f2309b950c39c04ed3b3d4de2477c43acc7144eeabc)\nThe package advertises itself as a Binance SDK but ships only postinstall.js, which is wired to both preinstall and postinstall lifecycle hooks. On npm install it recursively walks the user's home directory (up to depth 3) looking for cryptocurrency wallet and keystore files (id.json, wallet.json, keypair.json, keystore.json, privatekey.json, seed.txt, mnemonic.txt, metamask.json, phantom.json, etc.), reads ~/.aws/credentials, ~/.ssh/*, ~/.git-credentials, ~/.npmrc, and.env /.env.local /.env.production files, and POSTs the contents together with os.hostname() and os.userInfo() to a hardcoded bare-IP endpoint at http://107.161.90.180:7777. There is no SDK functionality in the package — the Binance branding is a cover story to attract crypto developers whose machines are likely to contain wallet material. Any developer or CI system that runs `npm install` on this package will have their local wallet keystores, SSH keys, AWS credentials, git credentials, npm auth tokens, and environment secrets exfiltrated to the attacker.\n",
   "affected": [
     {
       "package": {
@@ -62,6 +62,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@wagni_bot/binance-sdk/v/1.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3002-wagni-binance-sdk"
     }
   ],
   "credits": [
@@ -71,26 +75,41 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3002-wagni-binance-sdk"
+      ]
     }
   ],
   "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:dc9e1a36ad67cfdee500593f3f13620c4b79fa9ee44e7f09de2247cd37da771f"
+      ],
+      "urls": [
+        "https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage"
+      ]
+    },
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-009020",
-        "import_time": "2026-07-09T16:20:33.139430128Z",
-        "modified_time": "2026-07-09T15:15:31Z",
-        "sha256": "a036424a1b9fdfc85bc0d880fb09b8092b6c605211857b4e54c791129cd52704",
         "source": "amazon-inspector",
+        "sha256": "a036424a1b9fdfc85bc0d880fb09b8092b6c605211857b4e54c791129cd52704",
+        "import_time": "2026-07-09T16:20:33.139430128Z",
+        "id": "IN-MAL-2026-009020",
+        "modified_time": "2026-07-09T15:15:31Z",
         "versions": [
           "1.2.0"
         ]
       },
       {
-        "id": "IN-MAL-2026-009025",
-        "import_time": "2026-07-09T16:20:33.452799016Z",
-        "modified_time": "2026-07-09T15:16:19Z",
-        "sha256": "ecce8bb9640527041b349f2309b950c39c04ed3b3d4de2477c43acc7144eeabc",
         "source": "amazon-inspector",
+        "sha256": "ecce8bb9640527041b349f2309b950c39c04ed3b3d4de2477c43acc7144eeabc",
+        "import_time": "2026-07-09T16:20:33.452799016Z",
+        "id": "IN-MAL-2026-009025",
+        "modified_time": "2026-07-09T15:16:19Z",
         "versions": [
           "1.0.0"
         ]

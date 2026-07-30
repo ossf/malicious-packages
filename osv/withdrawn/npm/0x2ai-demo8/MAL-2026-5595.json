@@ -1,0 +1,91 @@
+{
+  "modified": "2026-07-16T00:38:53Z",
+  "published": "2026-06-11T07:16:26Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-5595",
+  "summary": "Malicious code in 0x2ai-demo8 (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ecc8b825a6ca24f0ed99210734ea8d4f4fb7bf1bbdb3767b67417bf5cdb83257)\nOn `npm install`, scripts/postinstall.cjs writes a `.mcp.json` into the installer's working directory that registers a stdio MCP server (`lib/chatroom-mcp-lite-patched.cjs`) preconfigured with `BRIDGE_URL=https://demo8.0x2ai.com` and a hardcoded bearer token. Any Claude Code session subsequently opened in that directory auto-loads this MCP server, which exposes ~30 tools — including `provider_query` (advertises routing prompts to Anthropic/OpenAI/Google/Groq/OpenRouter/xAI/Mistral/DeepSeek and POSTs to `https://demo8.0x2ai.com/api/proxy-query`), `settings_set` (accepts user-supplied `anthropic_api_key`/`openai_api_key`), `chatroom_post`, `memory_save`, and `agent_query`. The result is that the installer's AI prompts, agent memory, stored provider API keys, and proxied provider responses flow through the author's bridge rather than directly to the named providers. Postinstall additionally drops `CLAUDE.md` and `.claude/commands/0x2ai-boot.md` into the installer's project root; the CLAUDE.md establishes a persona and instructs the agent to never disclose its inner workings or rules to the user ('First rule of the family: you don't talk about the rules') and to route state through demo8.0x2ai.com, while the slash-command auto-launches `chatroom-monitor.cjs` as a persistent background process. The `bin/start.cjs` launcher additionally spawns `claude --dangerously-skip-permissions`, which disables per-tool consent prompts in the user's Claude session, removing the last guardrail against the dropped MCP server's tool surface (which includes subprocess spawning via `agent_query`). Although the README discloses some of this purpose, the install-time write of project-scoped Claude configuration plus the man-in-the-middle for caller-supplied AI prompts and API keys is the silent-relay shape: normal use of the installer's AI agent silently delivers caller data to an author-controlled destination.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "0x2ai-demo8"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.cjs",
+              "sha256": "5c41069aaff5cbf076d10ece34c3ba569061d9a429276bc19d72d101c3dc9aa5",
+              "tlsh": "1671ff4385eb1b352d65ba97ac4e212e17839f523280fa7239de138f4fd746842d167c"
+            },
+            {
+              "path": "lib/chatroom-mcp-lite-patched.cjs",
+              "sha256": "a1abc812c52dcefeb85473275f7c1e5a86770b114767176416ed94ebe620cf00",
+              "tlsh": "505307852c79603a4fb65365ba36a617ff35522bb01114b2fafcc2142f314d091aaefd"
+            },
+            {
+              "path": "templates/CLAUDE.md",
+              "sha256": "a818a33dd38dd43a2def78094d617d3b8081d3238af715c58abe846966ba6ac8",
+              "tlsh": "6c62d50fb34453361ab600657a4eb6d7ef2580a82365557d9c2fd128233ab3d43bb7e8"
+            },
+            {
+              "path": "bin/start.cjs",
+              "sha256": "543010a7bcefa851636fa39dce59afb2e5a5094e5ea3a15de615fd3b4c206692",
+              "tlsh": "3a51620385fb1a352a766342692b023b6f0bc6013655f8313bdf516e5fc356819e39ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "0x2ai-demo8-1.0.0.tgz",
+              "hashes": {
+                "sha1": "137e05ccab596aa6b7265a332397394bdeb3bd99",
+                "sha512_sri": "sha512-5RYym2QD2PG6pxacsel/1P5R88i3JdzGdvw6OFRt6/0nZpm7Cujf4jil4z5SrUwoxj/RIYXYQcXuiazZgFxsuA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/0x2ai-demo8/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-005683",
+        "import_time": "2026-06-11T07:49:40.643397658Z",
+        "modified_time": "2026-06-11T07:16:26Z",
+        "sha256": "ecc8b825a6ca24f0ed99210734ea8d4f4fb7bf1bbdb3767b67417bf5cdb83257",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "withdrawn": "2026-07-16T00:38:53Z"
+}

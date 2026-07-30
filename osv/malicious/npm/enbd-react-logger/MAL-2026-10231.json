@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:27Z",
+  "published": "2026-07-06T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10231",
+  "aliases": [
+    "GHSA-96hr-p56w-4x2m"
+  ],
+  "summary": "Malicious code in enbd-react-logger (npm)",
+  "details": "The enbd-react-logger package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (an 'enbd' internal namespace (Emirates NBD-style naming)) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511675212038149.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9cdc21d084552fb54dabc91eaa7e69a235ded689a1b73f363cf723b3a9b77644)\nOn npm install, the package's preinstall script runs examples/verify.js, which imports src/index.js and invokes init() with a hardcoded author-owned Sentry DSN (o4510485815754752.ingest.us.sentry.io/4511675212038149), then calls setUserFromPublicIp() to fetch the installer's public egress IP via cloudflare's trace endpoint, and then deliberately triggers a null-deref exception that is captureException'd with sendDefaultPii:true. The result: installer's public IP, hostname/environment context, and PII-enabled error metadata are unconditionally transmitted to the author's Sentry project at install time, with no user consent, no opt-out, and no documentation. In addition, src/index.js hardcodes the same DSN as DEFAULT_DSN and defaults sendDefaultPii:true, so any downstream code calling init() without supplying its own DSN silently routes all captured exceptions and user identities to the same author-controlled Sentry account. The package name 'enbd-react-logger' matches the naming convention of Emirates NBD ('ENBD') internal tooling; combined with a stub README, generic author metadata, and install-time phone-home, this fits the shape of a dependency-confusion attack targeting an internal package name so that a misconfigured internal build resolves the public artifact and beacons the CI/build host's egress IP to attacker infrastructure.\n\n## Source: ghsa-malware (637a055e8882f765df21ce70631b5df679a7ed8a7fc8ab58b285622956bd2d61)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "enbd-react-logger"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "4.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "144fc7b4ec5bd6c2909d682aad1b236497e57022c46087678bc00d22d0f5b694",
+              "tlsh": "c9f044508d342f2318c8a7656c6a0186a3288e8b02ac3d183acb122d4b4836b24ff1ad"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "729b14a4e9e71279193d0fc9acfc8828fb520059377cbde0d8dfff23aa73968f",
+              "tlsh": "4912949a34f6232301e650f0025f90d97365c67a3339a9e071498be92fc90b8d6b3ed9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "enbd-react-logger-4.0.0.tgz",
+              "hashes": {
+                "sha1": "86e271766799ba83796970f98dd5e96308a05437",
+                "sha512_sri": "sha512-i88E5zvpUvt01XIoQXNSKy1YeCMgen1BSzs8J2RsHkjf3hLItefjGQHeKa2hdIObTMF8VrQBzmMjCOocrxp+gg=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://abbfc11111e117a3556e36aa8f778f4b@o4510485815754752.ingest.us.sentry.io/4511675212038149"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/enbd-react-logger"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/enbd-react-logger/v/4.0.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-96hr-p56w-4x2m"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "9cdc21d084552fb54dabc91eaa7e69a235ded689a1b73f363cf723b3a9b77644",
+        "import_time": "2026-07-13T09:10:56.814074247Z",
+        "id": "IN-MAL-2026-009873",
+        "modified_time": "2026-07-13T08:19:12Z",
+        "versions": [
+          "4.0.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "637a055e8882f765df21ce70631b5df679a7ed8a7fc8ab58b285622956bd2d61",
+        "import_time": "2026-07-14T03:21:41.929428478Z",
+        "id": "GHSA-96hr-p56w-4x2m",
+        "modified_time": "2026-07-14T01:04:58Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
