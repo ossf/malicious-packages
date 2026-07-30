@@ -36,6 +36,14 @@ type Filter struct {
 	Pattern string
 }
 
+type RecursionBehaviour string
+
+const (
+	RecursionAllow  RecursionBehaviour = "allow"
+	RecursionFail   RecursionBehaviour = "fail"
+	RecursionIgnore RecursionBehaviour = "ignore"
+)
+
 type Source struct {
 	ID                    string                  `yaml:"id"`
 	Storage               sourceio.StorageWrapper `yaml:"storage"`
@@ -44,6 +52,7 @@ type Source struct {
 	AllowMultipleAffected bool                    `yaml:"allow-multiple-affected"`
 	DisabledForReason     string                  `yaml:"disabled-for-reason"`
 	Filters               []Filter                `yaml:"filters"`
+	Recursion             RecursionBehaviour      `yaml:"recursion"`
 
 	// Internal cache populated during parsing.
 	filters reportfilter.Filters
@@ -86,6 +95,14 @@ func (s *Source) UnmarshalYAML(value *yaml.Node) error {
 		return err
 	}
 	raw.filters = fs
+	if raw.Recursion == "" {
+		raw.Recursion = RecursionFail
+	}
+	switch raw.Recursion {
+	case RecursionAllow, RecursionFail, RecursionIgnore:
+	default:
+		return fmt.Errorf("%w: invalid recursion behaviour %q", ErrInvalidSource, raw.Recursion)
+	}
 	*s = Source(*raw)
 	return nil
 }

@@ -20,23 +20,60 @@ import (
 	"time"
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/ossf/malicious-packages/internal/source"
 )
 
+// RangeSlice is convenience type for correctly marshaling instances of the
+// osvschema.Range proto embedded in the Origin struct that is not a proto.
+// Use a type over the slice is much easier than having a type for Range.
+type RangeSlice []*osvschema.Range
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (s *RangeSlice) UnmarshalJSON(b []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	var ranges []*osvschema.Range
+	for i, r := range raw {
+		var newRange osvschema.Range
+		if err := protojson.Unmarshal(r, &newRange); err != nil {
+			return fmt.Errorf("failed unmarshaling range %d: %w", i, err)
+		}
+		ranges = append(ranges, &newRange)
+	}
+	*s = ranges
+	return nil
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (s RangeSlice) MarshalJSON() ([]byte, error) {
+	var raw []json.RawMessage
+	for i, r := range s {
+		b, err := protojson.Marshal(r)
+		if err != nil {
+			return nil, fmt.Errorf("failed marshaling range %d: %w", i, err)
+		}
+		raw = append(raw, b)
+	}
+	return json.Marshal(raw)
+}
+
 const originRefKey = "malicious-packages-origins"
 
 type OriginRef struct {
-	Source       string            `json:"source"`
-	SHASum       string            `json:"sha256"`
-	ImportTime   time.Time         `json:"import_time"`
-	ID           string            `json:"id,omitempty"`
-	ModifiedTime time.Time         `json:"modified_time"`
-	Ranges       []osvschema.Range `json:"ranges,omitempty"`
-	Versions     []string          `json:"versions,omitempty"`
+	Source       string     `json:"source"`
+	SHASum       string     `json:"sha256"`
+	ImportTime   time.Time  `json:"import_time"`
+	ID           string     `json:"id,omitempty"`
+	ModifiedTime time.Time  `json:"modified_time"`
+	Ranges       RangeSlice `json:"ranges,omitempty"`
+	Versions     []string   `json:"versions,omitempty"`
 }
 
-// UnmarshalJSON implements the json.Unmashaler interface.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 //
 // The implementation ensures that the resulting parsed data is valid for the
 // purposes of tracking malicious packages.
@@ -77,14 +114,24 @@ func (r *Report) HasOrigin(sourceID, shasum string) bool {
 }
 
 func (r *Report) AddOrigin(sourceID, shasum string) *OriginRef {
+	var modified time.Time
+	if r.raw.Modified != nil && r.raw.Modified.IsValid() {
+		modified = r.raw.Modified.AsTime().UTC()
+	}
+	var ranges []*osvschema.Range
+	var versions []string
+	if len(r.raw.Affected) > 0 {
+		ranges = r.raw.Affected[0].Ranges
+		versions = r.raw.Affected[0].Versions
+	}
 	ref := &OriginRef{
 		Source:       sourceID,
 		SHASum:       shasum,
 		ImportTime:   time.Now().UTC(),
-		ModifiedTime: r.raw.Modified.UTC(),
-		ID:           r.raw.ID,
-		Ranges:       r.raw.Affected[0].Ranges,
-		Versions:     r.raw.Affected[0].Versions,
+		ModifiedTime: modified,
+		ID:           r.raw.Id,
+		Ranges:       ranges,
+		Versions:     versions,
 	}
 	r.origins = append(r.origins, ref)
 	return ref
