@@ -180,7 +180,6 @@ func TestMerge_Ranges(t *testing.T) {
 	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
 		t.Fatalf("Unexpected Ranges after merge (-got, +want):\n%v", diff)
 	}
-
 }
 
 func TestMerge_Versions(t *testing.T) {
@@ -315,7 +314,6 @@ func TestMerge_References(t *testing.T) {
 	if diff := cmp.Diff(got, want, protocmp.Transform()); diff != "" {
 		t.Fatalf("Unexpected References after merge (-got, +want):\n%v", diff)
 	}
-
 }
 
 func TestMerge_Credits(t *testing.T) {
