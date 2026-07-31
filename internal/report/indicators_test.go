@@ -139,13 +139,13 @@ func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
 		"files": [
 			{
 				"paths": ["package/postinstall.js"],
-				"source": "package-archive",
+				"source": "PACKAGE_ARCHIVE",
 				"digests": {"sha256": "BD13913906ED463642719633F36F04CF10AE6F9C9360FCDE842F8B6B1DAF0B02"}
 			},
 			{
 				"paths": ["/tmp/stage2.bin", "/var/tmp/stage2.bin"],
 				"note": "second stage dropped from a C2",
-				"source": "dropped",
+				"source": "DROPPED",
 				"digests": {
 					"md5": "d41d8cd98f00b204e9800998ecf8427e",
 					"sha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
@@ -155,7 +155,7 @@ func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
 				}
 			},
 			{
-				"source": "in-memory",
+				"source": "IN_MEMORY",
 				"note": "decoded payload that never hit disk",
 				"digests": {"sha256": "0000000000000000000000000000000000000000000000000000000000000000"}
 			}
@@ -165,13 +165,13 @@ func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
 		Files: []report.FileIndicator{
 			{
 				Paths:   []string{"package/postinstall.js"},
-				Source:  "package-archive",
+				Source:  "PACKAGE_ARCHIVE",
 				Digests: &report.FileDigests{SHA256: "bd13913906ed463642719633f36f04cf10ae6f9c9360fcde842f8b6b1daf0b02"},
 			},
 			{
 				Paths:  []string{"/tmp/stage2.bin", "/var/tmp/stage2.bin"},
 				Note:   "second stage dropped from a C2",
-				Source: "dropped",
+				Source: "DROPPED",
 				Digests: &report.FileDigests{
 					MD5:    "d41d8cd98f00b204e9800998ecf8427e",
 					SHA1:   "da39a3ee5e6b4b0d3255bfef95601890afd80709",
@@ -181,7 +181,7 @@ func TestIndicatorsUnmarshalJSON_Files(t *testing.T) {
 				},
 			},
 			{
-				Source:  "in-memory",
+				Source:  "IN_MEMORY",
 				Note:    "decoded payload that never hit disk",
 				Digests: &report.FileDigests{SHA256: "0000000000000000000000000000000000000000000000000000000000000000"},
 			},

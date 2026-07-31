@@ -94,10 +94,13 @@ either `domains` or `ips` field instead.
 The `files` field is a JSON array of objects, each describing a single file
 associated with the malicious package.
 
-Each entry carries a `source` so that package artifacts (the published
-tarball/wheel, which may only ever be processed as a stream) are kept separate
-from other files associated with the malware — a second stage dropped at run
-time, or a payload that only ever lived in memory.
+This set records individual files that help identify or attribute the malware,
+each tagged with a `source` describing where it came from: a file extracted from
+the published package artifact, a second stage dropped to disk at run time, or a
+payload that only ever lived in memory. The published package artifact itself
+(the tarball/wheel) does not belong here — it is already identified by the
+record's `affected.package`; this field is for the individual files of interest,
+not the archive as a whole.
 
 Each object may contain the following fields. An entry must have at least one
 `paths` entry or one digest under `digests`.
@@ -120,10 +123,10 @@ limited to 512 characters.
 The `source` field is an optional string recording where the file came from. It
 must be one of:
 
-- `package-archive` — the file is part of the published package artifact.
-- `dropped` — the file was written to disk at run time (e.g. a second stage
+- `PACKAGE_ARCHIVE` — the file is extracted from the published package artifact.
+- `DROPPED` — the file was written to disk at run time (e.g. a second stage
   retrieved from a C2, or content decoded from data embedded in the archive).
-- `in-memory` — the file only ever existed in memory and never hit disk.
+- `IN_MEMORY` — the file only ever existed in memory and never hit disk.
 
 #### iocs.files[].digests field
 

@@ -31,9 +31,9 @@ var (
 
 // validFileSources enumerates the allowed values for FileIndicator.Source.
 var validFileSources = map[string]bool{
-	"package-archive": true,
-	"dropped":         true,
-	"in-memory":       true,
+	"PACKAGE_ARCHIVE": true,
+	"DROPPED":         true,
+	"IN_MEMORY":       true,
 }
 
 type Indicators struct {
@@ -53,13 +53,13 @@ type Indicators struct {
 type FileIndicator struct {
 	// Paths lists the file names (relative or absolute) at which the file was
 	// observed — the same content can appear in several places. Optional for a
-	// file that never hit disk (Source "in-memory"), which is identified by its
+	// file that never hit disk (Source "IN_MEMORY"), which is identified by its
 	// digest alone.
 	Paths []string `json:"paths,omitempty"`
 	// Note is optional free text describing the file.
 	Note string `json:"note,omitempty"`
-	// Source records where the file came from: one of "package-archive",
-	// "dropped" or "in-memory". Optional.
+	// Source records where the file came from: one of "PACKAGE_ARCHIVE",
+	// "DROPPED" or "IN_MEMORY". Optional.
 	Source string `json:"source,omitempty"`
 	// Digests holds one or more content hashes of the file.
 	Digests *FileDigests `json:"digests,omitempty"`
@@ -146,40 +146,48 @@ func validateFile(idx int, f *FileIndicator) error {
 	return validateDigests(d)
 }
 
-// validateDigests validates each present digest and normalizes the hex ones to
-// lowercase in place. ssdeep is case-sensitive (base64-ish) and left as-is.
+// validateDigests validates each present digest, then normalizes the hex ones to
+// lowercase in place. Validation and normalization are kept as separate steps.
+// ssdeep is case-sensitive (base64-ish) and left as-is.
 func validateDigests(d *FileDigests) error {
 	if d == nil {
 		return nil
 	}
-	var err error
-	if d.MD5, err = normHex("md5", d.MD5, md5RE); err != nil {
+	// Validate (no mutation).
+	if err := validateHex("md5", d.MD5, md5RE); err != nil {
 		return err
 	}
-	if d.SHA1, err = normHex("sha1", d.SHA1, sha1RE); err != nil {
+	if err := validateHex("sha1", d.SHA1, sha1RE); err != nil {
 		return err
 	}
-	if d.SHA256, err = normHex("sha256", d.SHA256, sha256RE); err != nil {
+	if err := validateHex("sha256", d.SHA256, sha256RE); err != nil {
 		return err
 	}
-	if d.TLSH, err = normHex("tlsh", d.TLSH, tlshRE); err != nil {
+	if err := validateHex("tlsh", d.TLSH, tlshRE); err != nil {
 		return err
 	}
 	if d.SSDEEP != "" && !ssdeepRE.MatchString(d.SSDEEP) {
 		return fmt.Errorf("%w invalid ssdeep digest '%s'", ErrUnexpectedOSV, d.SSDEEP)
 	}
+	// Normalize the hex digests to lowercase (ssdeep is case-sensitive).
+	d.MD5 = strings.ToLower(d.MD5)
+	d.SHA1 = strings.ToLower(d.SHA1)
+	d.SHA256 = strings.ToLower(d.SHA256)
+	d.TLSH = strings.ToLower(d.TLSH)
 	return nil
 }
 
-// normHex validates a hex digest (case-insensitive) and returns it lowercased.
-func normHex(name, val string, re *regexp.Regexp) (string, error) {
+// validateHex checks that a hex digest matches its expected shape
+// (case-insensitive). An empty value is allowed. It does not mutate the value —
+// lowercasing is done separately by the caller.
+func validateHex(name, val string, re *regexp.Regexp) error {
 	if val == "" {
-		return "", nil
+		return nil
 	}
 	if !re.MatchString(val) {
-		return "", fmt.Errorf("%w invalid %s digest '%s'", ErrUnexpectedOSV, name, val)
+		return fmt.Errorf("%w invalid %s digest '%s'", ErrUnexpectedOSV, name, val)
 	}
-	return strings.ToLower(val), nil
+	return nil
 }
 
 // isDomainValid checks if d is a valid domain name. This is a naive check and
