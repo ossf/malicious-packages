@@ -15,10 +15,10 @@
 package reportfilter_test
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"google.golang.org/protobuf/proto"
 
 	"github.com/ossf/malicious-packages/internal/reportfilter"
 )
@@ -39,7 +39,7 @@ func TestNew_UnsupportedFieldError(t *testing.T) {
 
 func TestRemoveFilter(t *testing.T) {
 	vuln := &osvschema.Vulnerability{
-		ID: "MAL-0123-45678",
+		Id: "MAL-0123-45678",
 		Aliases: []string{
 			"A-1",
 			"A-2",
@@ -54,7 +54,7 @@ func TestRemoveFilter(t *testing.T) {
 		},
 	}
 	want := &osvschema.Vulnerability{
-		ID: "MAL-0123-45678",
+		Id: "MAL-0123-45678",
 		Aliases: []string{
 			"B-1",
 		},
@@ -75,7 +75,7 @@ func TestRemoveFilter(t *testing.T) {
 		must(reportfilter.New("related", "-2024-")),
 	}
 	filters.Apply(vuln)
-	if !reflect.DeepEqual(vuln, want) {
+	if !proto.Equal(vuln, want) {
 		t.Fatalf("Apply() failed: got = %v, want = %v", vuln, want)
 	}
 }

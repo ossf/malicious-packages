@@ -1,3 +1,17 @@
+// Copyright 2023 Malicious Packages Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package report
 
 import (
@@ -9,8 +23,10 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"github.com/package-url/packageurl-go"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/ossf/malicious-packages/internal/gitname"
 )
@@ -18,29 +34,24 @@ import (
 const (
 	// ecosystemGit is synthetic ecosystem used when a git-based report is being
 	// processed, since those reports do not have any package data.
-	ecosystemGit = osvschema.Ecosystem("Git")
-
-	// ecosystemVSCode is a temporary placeholder so we can support the VSCode
-	// ecosystem until we can upgrade our dependency on the osv-schema repo.
-	// TODO: remove when we have migrated to osv-schema/bindings/go/osvconstants.
-	ecosystemVSCode = osvschema.Ecosystem("VSCode")
+	ecosystemGit = osvconstants.Ecosystem("Git")
 )
 
-var supportedEcosystems = []osvschema.Ecosystem{
-	osvschema.EcosystemAlpine,
-	osvschema.EcosystemCratesIO,
-	osvschema.EcosystemDebian,
-	osvschema.EcosystemGo,
-	osvschema.EcosystemHex,
-	osvschema.EcosystemMaven,
-	osvschema.EcosystemNPM,
-	osvschema.EcosystemNuGet,
-	osvschema.EcosystemOSSFuzz,
-	osvschema.EcosystemPackagist,
-	osvschema.EcosystemPyPI,
-	osvschema.EcosystemRubyGems,
-	osvschema.EcosystemUbuntu,
-	ecosystemVSCode,
+var supportedEcosystems = []osvconstants.Ecosystem{
+	osvconstants.EcosystemAlpine,
+	osvconstants.EcosystemCratesIO,
+	osvconstants.EcosystemDebian,
+	osvconstants.EcosystemGo,
+	osvconstants.EcosystemHex,
+	osvconstants.EcosystemMaven,
+	osvconstants.EcosystemNPM,
+	osvconstants.EcosystemNuGet,
+	osvconstants.EcosystemOSSFuzz,
+	osvconstants.EcosystemPackagist,
+	osvconstants.EcosystemPyPI,
+	osvconstants.EcosystemRubyGems,
+	osvconstants.EcosystemUbuntu,
+	osvconstants.EcosystemVSCode,
 }
 
 // ValidateVuln ensures that v conforms to the the OSV Schema, and to the
@@ -66,7 +77,11 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		seen := make(map[string]bool)
 		for i := range v.Affected {
 			pkg := v.Affected[i].Package
-			name := canonicalizeName(pkg.Name, osvschema.Ecosystem(pkg.Ecosystem))
+			if pkg == nil {
+				// Ensure empty package names are checked.
+				pkg = &osvschema.Package{}
+			}
+			name := canonicalizeName(pkg.Name, osvconstants.Ecosystem(pkg.Ecosystem))
 			key := fmt.Sprintf("%s!!%s", pkg.Ecosystem, name)
 			if seen[key] {
 				return fmt.Errorf("%w: duplicate affected package %s in %s", ErrUnexpectedOSV, name, pkg.Ecosystem)
@@ -105,18 +120,31 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		}
 
 		// Ensure ecosystem specific data is not present.
-		if es := v.Affected[i].EcosystemSpecific; len(es) > 0 {
+		if es := v.Affected[i].EcosystemSpecific; len(es.GetFields()) > 0 {
 			return fmt.Errorf("%w: ecosystem_specific must not be set", ErrUnexpectedOSV)
 		}
+
+		// Ensure database specific data does not contain unexpected keys.
+		if err := validateDatabaseSpecific(v.Affected[i].DatabaseSpecific, true); err != nil {
+			return fmt.Errorf("%w: affected database_specific invalid: %w", ErrUnexpectedOSV, err)
+		}
+	}
+
+	// Ensure database specific data does not contain unexpected keys.
+	if err := validateDatabaseSpecific(v.DatabaseSpecific, false); err != nil {
+		return fmt.Errorf("%w: affected database_specific invalid: %w", ErrUnexpectedOSV, err)
 	}
 
 	return nil
 }
 
-func validatePackage(pkg osvschema.Package) (osvschema.Ecosystem, error) {
+func isPackageEmpty(pkg *osvschema.Package) bool {
+	return pkg == nil || (pkg.Name == "" && pkg.Ecosystem == "" && pkg.Purl == "")
+}
+
+func validatePackage(pkg *osvschema.Package) (osvconstants.Ecosystem, error) {
 	// If package is entirely empty, assume we are using a git-based ecosystem.
-	var zeroPkg osvschema.Package
-	if pkg == zeroPkg {
+	if isPackageEmpty(pkg) {
 		return ecosystemGit, nil
 	}
 
@@ -128,7 +156,7 @@ func validatePackage(pkg osvschema.Package) (osvschema.Ecosystem, error) {
 		return "", fmt.Errorf("%w: package ecosystem is missing", ErrInvalidOSV)
 	}
 	e, _, _ := strings.Cut(ecosystemFull, ":")
-	ecosystem := osvschema.Ecosystem(e)
+	ecosystem := osvconstants.Ecosystem(e)
 	if !slices.Contains(supportedEcosystems, ecosystem) {
 		return "", fmt.Errorf("%w: package ecosystem %q is invalid", ErrInvalidOSV, ecosystem)
 	}
@@ -155,44 +183,38 @@ func validatePackage(pkg osvschema.Package) (osvschema.Ecosystem, error) {
 
 // semverEcosystem is an allowlist indicating which ecosystems are allowed to
 // have a range type of "SEMVER".
-//
-// The source of this list is:
-// https://github.com/google/osv.dev/blob/master/osv/ecosystems/_ecosystems.py
-//
-// Unfortunately this information is not specified in the OSV schema, or
-// enforced by the OSV API presently.
-var semverEcosystem = map[osvschema.Ecosystem]struct{}{
-	osvschema.EcosystemBitnami:  {},
-	osvschema.EcosystemCratesIO: {},
-	osvschema.EcosystemGo:       {},
-	osvschema.EcosystemHex:      {},
-	osvschema.EcosystemNPM:      {},
-	osvschema.EcosystemSwiftURL: {},
+var semverEcosystem = map[osvconstants.Ecosystem]struct{}{
+	osvconstants.EcosystemBitnami:  {},
+	osvconstants.EcosystemCratesIO: {},
+	osvconstants.EcosystemGo:       {},
+	osvconstants.EcosystemHex:      {},
+	osvconstants.EcosystemNPM:      {},
+	osvconstants.EcosystemSwiftURL: {},
 }
 
 // validateRange ensures r conforms to the OSV Schema. This also ensures code
 // that processes ranges can assume the data is well structured.
 //
 // See https://ossf.github.io/osv-schema/#affectedranges-field for details.
-func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
+func validateRange(r *osvschema.Range, ecosystem osvconstants.Ecosystem) error {
 	// The range type is required.
-	if r.Type == "" {
+	if r == nil || r.Type == osvschema.Range_UNSPECIFIED {
 		return fmt.Errorf("%w: range must have a type specified", ErrInvalidOSV)
 	}
 	// The range type can be either ECOSYSTEM, SEMVER or GIT.
-	if !slices.Contains([]osvschema.RangeType{osvschema.RangeEcosystem, osvschema.RangeSemVer, osvschema.RangeGit}, r.Type) {
-		return fmt.Errorf("%w: range type %q is invalid", ErrInvalidOSV, r.Type)
+	if !slices.Contains([]osvschema.Range_Type{osvschema.Range_ECOSYSTEM, osvschema.Range_SEMVER, osvschema.Range_GIT}, r.Type) {
+		return fmt.Errorf("%w: range type %q is invalid", ErrInvalidOSV, r.Type.String())
 	}
 	// Ensure the ecosystem supports SEMVER if it is being used.
-	if _, semverOK := semverEcosystem[ecosystem]; r.Type == osvschema.RangeSemVer && !semverOK {
+	if _, semverOK := semverEcosystem[ecosystem]; r.Type == osvschema.Range_SEMVER && !semverOK {
 		return fmt.Errorf("%w: ecosystem %q does not support SEMVER ranges", ErrInvalidOSV, ecosystem)
 	}
 	// Ensure the type is GIT if ecosystem is empty.
-	if ecosystem == ecosystemGit && r.Type != osvschema.RangeGit {
+	if ecosystem == ecosystemGit && r.Type != osvschema.Range_GIT {
 		return fmt.Errorf("%w: GIT ranges must be used for git-based reports", ErrUnexpectedOSV)
 	}
 	// Validate the repo if the type is GIT.
-	if r.Type == osvschema.RangeGit {
+	if r.Type == osvschema.Range_GIT {
 		if r.Repo == "" {
 			return fmt.Errorf("%w: GIT ranges must have a repository set", ErrUnexpectedOSV)
 		}
@@ -238,7 +260,7 @@ func validateRange(r osvschema.Range, ecosystem osvschema.Ecosystem) error {
 			return fmt.Errorf("%w: more than one event type is specified", ErrInvalidOSV)
 		}
 		// Ensure the range contains a valid Git commit ID, if it is a Git range.
-		if r.Type == osvschema.RangeGit {
+		if r.Type == osvschema.Range_GIT {
 			if err := validateGitCommitID(val, allowZero); err != nil {
 				return err
 			}
@@ -273,7 +295,7 @@ func validateGitCommitID(candidate string, allowZero bool) error {
 }
 
 // validatePURL ensures that a PURL matches the supplied name and ecosystem.
-func validatePURL(ecosystem osvschema.Ecosystem, name, purl string) error {
+func validatePURL(ecosystem osvconstants.Ecosystem, name, purl string) error {
 	p, err := purlToPackage(purl)
 	if err != nil {
 		return fmt.Errorf("%w: failed parsing PURL %q: %w", ErrInvalidOSV, purl, err)
@@ -290,31 +312,50 @@ func validatePURL(ecosystem osvschema.Ecosystem, name, purl string) error {
 	return nil
 }
 
-// used like so: purlEcosystems[PkgURL.Type][PkgURL.Namespace]
-// "*" means it should match any namespace string.
-var purlEcosystems = map[string]map[string]osvschema.Ecosystem{
-	"apk":   {"alpine": osvschema.EcosystemAlpine},
-	"cargo": {"*": osvschema.EcosystemCratesIO},
-	"deb": {
-		"debian": osvschema.EcosystemDebian,
-		"ubuntu": osvschema.EcosystemUbuntu,
-	},
-	"hex":      {"*": osvschema.EcosystemHex},
-	"golang":   {"*": osvschema.EcosystemGo},
-	"maven":    {"*": osvschema.EcosystemMaven},
-	"nuget":    {"*": osvschema.EcosystemNuGet},
-	"npm":      {"*": osvschema.EcosystemNPM},
-	"composer": {"*": osvschema.EcosystemPackagist},
-	"generic":  {"*": osvschema.EcosystemOSSFuzz},
-	"pypi":     {"*": osvschema.EcosystemPyPI},
-	"gem":      {"*": osvschema.EcosystemRubyGems},
+// validateDatabaseSpecific protect the database_specific objects from being
+// populated with unexpected data. This is to limit new changes being introduced
+// without discusion.
+// TODO: extend this validation across the structures within these keys.
+func validateDatabaseSpecific(ds *structpb.Struct, isAffected bool) error {
+	var validKeys []string
+	if isAffected {
+		validKeys = []string{"cwes", "indicators", "iocs", "ghsa"}
+	} else {
+		validKeys = []string{originRefKey, "iocs"}
+	}
+	for k := range ds.GetFields() {
+		if !slices.Contains(validKeys, k) {
+			return fmt.Errorf("unexpected key %q", k)
+		}
+	}
+	return nil
 }
 
-func getPURLEcosystem(pkgURL packageurl.PackageURL) osvschema.Ecosystem {
+// used like so: purlEcosystems[PkgURL.Type][PkgURL.Namespace]
+// "*" means it should match any namespace string.
+var purlEcosystems = map[string]map[string]osvconstants.Ecosystem{
+	"apk":   {"alpine": osvconstants.EcosystemAlpine},
+	"cargo": {"*": osvconstants.EcosystemCratesIO},
+	"deb": {
+		"debian": osvconstants.EcosystemDebian,
+		"ubuntu": osvconstants.EcosystemUbuntu,
+	},
+	"hex":      {"*": osvconstants.EcosystemHex},
+	"golang":   {"*": osvconstants.EcosystemGo},
+	"maven":    {"*": osvconstants.EcosystemMaven},
+	"nuget":    {"*": osvconstants.EcosystemNuGet},
+	"npm":      {"*": osvconstants.EcosystemNPM},
+	"composer": {"*": osvconstants.EcosystemPackagist},
+	"generic":  {"*": osvconstants.EcosystemOSSFuzz},
+	"pypi":     {"*": osvconstants.EcosystemPyPI},
+	"gem":      {"*": osvconstants.EcosystemRubyGems},
+}
+
+func getPURLEcosystem(pkgURL packageurl.PackageURL) osvconstants.Ecosystem {
 	ecoMap, ok := purlEcosystems[pkgURL.Type]
 	if !ok {
 		// We couldn't find a mapping between the PURL and OSV ecosystems.
-		return osvschema.Ecosystem("")
+		return osvconstants.Ecosystem("")
 	}
 
 	// An exact namespace match was found. This takes priority so return it
@@ -331,13 +372,13 @@ func getPURLEcosystem(pkgURL packageurl.PackageURL) osvschema.Ecosystem {
 
 	// If we reached the end we don't have an OSV ecosystem for the given
 	// PURL namespace.
-	return osvschema.Ecosystem("")
+	return osvconstants.Ecosystem("")
 }
 
-func purlToPackage(purl string) (osvschema.Package, error) {
+func purlToPackage(purl string) (*osvschema.Package, error) {
 	parsedPURL, err := packageurl.FromString(purl)
 	if err != nil {
-		return osvschema.Package{}, err
+		return nil, err
 	}
 	ecosystem := getPURLEcosystem(parsedPURL)
 
@@ -345,10 +386,10 @@ func purlToPackage(purl string) (osvschema.Package, error) {
 	name := parsedPURL.Name
 	if parsedPURL.Namespace != "" {
 		switch ecosystem {
-		case osvschema.EcosystemMaven:
+		case osvconstants.EcosystemMaven:
 			// Maven uses : to separate namespace and package
 			name = parsedPURL.Namespace + ":" + parsedPURL.Name
-		case osvschema.EcosystemDebian, osvschema.EcosystemAlpine, osvschema.EcosystemUbuntu:
+		case osvconstants.EcosystemDebian, osvconstants.EcosystemAlpine, osvconstants.EcosystemUbuntu:
 			// Debian and Alpine repeats their namespace in PURL, so don't add it to the name
 			name = parsedPURL.Name
 		default:
@@ -356,7 +397,7 @@ func purlToPackage(purl string) (osvschema.Package, error) {
 		}
 	}
 
-	return osvschema.Package{
+	return &osvschema.Package{
 		Name:      name,
 		Ecosystem: string(ecosystem),
 	}, nil
