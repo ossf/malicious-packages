@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-5789",
   "published": "2026-06-15T16:45:04Z",
-  "modified": "2026-08-04T21:35:09.824259256Z",
+  "modified": "2026-08-04T22:32:02.005142152Z",
   "summary": "Malicious code in claude-cup (npm)",
   "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c369ccf7b5e0ef8721b5ecdc94bd843ce260923394f6c513350a58928abdbdd3)\nOn first invocation of `npx claude-cup` (and on every subsequent Claude Code tool call once hooks are installed), `research/config-audit.js` enumerates every user home directory on the machine (`/Users/*`, `/home/*`, `C:\\Users\\*`) and reads the canonical installer-secret paths: `.aws/credentials`, `.aws/config`, `.kube/config`, `.docker/config.json`, `.npmrc`, `.yarnrc`, `.pypirc`, `.git-credentials`, `.netrc`, `.ssh/id_*`, `.gitconfig`, all `.env*` files, VS Code GitHub auth state, shell history (`.bash_history`, `.zsh_history`, PSReadLine), and Chromium/Edge `Cookies` SQLite databases (copied to `/tmp/ck-*` and queried for sessions on github.com, gitlab.com, npmjs.com, openai.com, anthropic.com, console.aws.amazon.com, cloud.google.com, huggingface.co). The harvested raw credentials are then transmitted off-host: `validateGithub` sends the GitHub token in an `Authorization` header to `https://api.github.com/user` and `/user/orgs`; npm tokens are written to `/tmp/.rc-audit-*` and validated against `https://registry.npmjs.org/-/whoami`; OpenAI/Anthropic/HuggingFace/Stripe/GitLab tokens are sent to their respective APIs; Google API keys are placed in URL query strings; AWS credentials are exported to env and `aws sts get-caller-identity` is invoked; Redis URI passwords are probed via raw socket AUTH. The provider responses (user identity, scopes, orgs, permissions) are archived locally and the stub `uploader.js` background-upload path is staged for transmission. At module load, `loadManifest()` fetches `https://raw.githubusercontent.com/Itaib24/Claude-/main/claude-jar/research/manifest.json` from a mutable `main` branch with no pin or signature; this manifest controls scan paths, regex patterns, and validator URLs, giving the author a remote-controlled channel to redirect raw tokens to attacker-chosen hosts at any time without republishing the package. `src/cli.js` then writes `mcpServers.claude-session-visualizer` and `hooks.SessionStart`/`PreToolUse`/`PostToolUse` entries into `~/.claude/settings.json` and `~/.cursor/mcp.json`, pointing at `~/.claude-jar/mcp-server.mjs`; `hook-ingest.js` re-runs the full credential audit on every 'high signal' event unless `CLAUDE_JAR_DEEP_ANALYSIS=0`. `fingerprint.js` additionally beacons host geolocation/ISP to `http://ip-api.com/json/` over plain HTTP and combines it with a SHA-256 hostname identifier and environment-richness signals (cloud creds present, browser sessions, registry deploy capability) into a session fingerprint record. The package's `description` and `CLAUDE.md` impersonate Anthropic branding ('Claude Cup — Anthropic worldwide building contest') to lower developer suspicion while installing the persistent recon hooks. The README's claim that the tool 'never stores, transmits, or logs raw credential values' is directly contradicted by the validator code paths.\n",
   "affected": [
@@ -63,10 +63,16 @@
         "0.8.8",
         "0.9.9",
         "0.9.11",
-        "0.9.12"
+        "0.9.12",
+        "0.9.10"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -490,6 +496,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/claude-cup/v/0.9.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claude-cup/v/0.9.10"
     }
   ],
   "database_specific": {
@@ -1062,6 +1072,16 @@
         "source": "amazon-inspector",
         "versions": [
           "0.9.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011144",
+        "import_time": "2026-08-04T22:30:01.62365562Z",
+        "modified_time": "2026-08-04T21:38:49Z",
+        "sha256": "c7fb41be1b93cc91cd8de8832e9fd4e4b8ea600eea914a2a60501448b34dd75d",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.9.10"
         ]
       }
     ]

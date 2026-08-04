@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11505",
   "published": "2026-08-03T15:41:21Z",
-  "modified": "2026-08-04T21:35:09.004053969Z",
+  "modified": "2026-08-04T22:32:01.176748624Z",
   "aliases": [
     "GHSA-9pwq-f6rq-8q69"
   ],
   "summary": "Malicious code in accounts-loading-state (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ce1392cbe70efe490eb061f9fc80510bab239f513aca60cd3133185a1a8ba092)\nOn require() of the package, index.js loads setup.js which selects a per-platform asset path (/pkg/package, /pkg/package-arm64, /pkg/loader_mac, /pkg/package.exe) and invokes lib/telemetry.js via process.nextTick. telemetry.js fetches the binary bytes from a rotating pool of Cloudflare Worker subdomains under oob-worker.cf*.workers.dev (with a DNS failover under *.dl.well1.site), base64-decodes them, writes them to disk, fs.chmodSync's them to 0755, and executes them via child_process. Host names and dangerous API identifiers are assembled by string-fragment concatenation to defeat naive scanners: [\"oob-wor\",\"ker.cf\",\"99-9b3.wor\",\"kers\",\".dev\"].join(\"\"), require(\"child_\"+\"process\"), fs[\"chmod\"+\"Sync\"], os[\"host\"+\"name\"]. setup.js also builds an installFingerprint from os.hostname(), os.userInfo().username, process.cwd(), process.version and pid (SHA-256, first 16 hex chars) and sends it as installId to the same endpoints. The package advertises itself as an accounts-loading-state adapter and has no purpose that requires downloading and executing platform-specific binaries from anonymous Cloudflare Worker subdomains. Consequence of installing or importing this package: attacker-controlled native code executes on the host with the privileges of the Node.js process.\n\n## Source: ghsa-malware (c0ddeec4da1eabc1035eb7097d83c9aa42f6d37c44a73e3c7b04ddd61d7d6635)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3d430e8d55d80c0cf747e6c04058e0bc90274cc943a0e6e15651924c90be46d2)\nOn require() of accounts-loading-state, index.js loads setup.js which schedules bootstrap() via process.nextTick. bootstrap() detects OS and architecture, then invokes lib/telemetry.js run() against a list of string-split-obfuscated mirror hosts (approximately five `oob-worker.cfNN-XXX.workers.dev` Cloudflare Workers endpoints) with DNS fallbacks under `*.dl.well1.site`, requesting platform-specific paths `/pkg/package`, `/pkg/package.exe`, `/pkg/loader_mac`, and `/pkg/package-arm64`. lib/telemetry.js decodes base64 response chunks via `Buffer.from(chunks, \"base64\")`, writes the bytes to a staging path under `/var/tmp` or the Windows TEMP directory, and sets the file executable with `fs.chmodSync(..., 0o755)` before running it. Host strings and dangerous API names are reconstructed at runtime from split-string arrays (`[\"oob-wor\",\"ker.cf\",...].join(\"\")`, `require(\"child_\"+\"process\")`, `fs[\"chmod\"+\"Sync\"]`) to hide indicators from static analysis. Alongside the fetch, setup.js computes an installFingerprint() as sha256 over `os.hostname()`, `os.userInfo().username`, `process.cwd()`, `process.version`, and `process.pid`, and passes it as `installId` to the fetching runtime, providing per-victim tracking at the download endpoint. The package presents itself as an analytics/telemetry SDK; the download-and-execute pipeline is the actual behavior.\n\n## Source: ghsa-malware (c0ddeec4da1eabc1035eb7097d83c9aa42f6d37c44a73e3c7b04ddd61d7d6635)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,10 +29,16 @@
         "8.9.6",
         "34.7.7",
         "8.9.3",
-        "8.9.5"
+        "8.9.5",
+        "8.9.4"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -100,6 +106,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/accounts-loading-state/v/8.9.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/accounts-loading-state/v/8.9.4"
     }
   ],
   "database_specific": {
@@ -169,6 +179,16 @@
         "source": "amazon-inspector",
         "versions": [
           "8.9.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011120",
+        "import_time": "2026-08-04T22:30:00.242321522Z",
+        "modified_time": "2026-08-04T21:35:28Z",
+        "sha256": "3d430e8d55d80c0cf747e6c04058e0bc90274cc943a0e6e15651924c90be46d2",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.9.4"
         ]
       }
     ]

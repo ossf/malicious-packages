@@ -1,18 +1,18 @@
 {
-  "modified": "2026-07-16T23:35:29Z",
-  "published": "2026-07-15T04:02:35Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10638",
+  "published": "2026-07-15T04:02:35Z",
+  "modified": "2026-08-04T22:32:04.635596043Z",
   "aliases": [
     "GHSA-548c-qh8j-h895"
   ],
   "summary": "Malicious code in monogrok (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3369fb16804682addfec56904223d0255c2a0ca6d35481e744221e8252f2000d)\nPackage publishes as a generic 'M!T' library with an unrelated Apache-license README, but the tarball contains an offensive spam / phishing / mailbox-cracking toolkit: SMTP credential brute-force and AWS SES abuse (`func/smx/aws.js`, `func/smx/awssho.js`), IMAP/POP3/EWS/MS-OAuth mailbox checkers (`func/box/{imap,pop3,ewsv,msap,caut}.js`), phishing redirector chain (`func/rdt/*`), SOCKS/HTTP proxy rotation (`func/ipr/*`), and bulk-mailer 'zombie' senders (`func/snd/mlr/{prxml,zmbvf,zmrml}.js`). On load of the main entry `oibWljdTg.js`, `installLicenseGuard()` runs and — on integrity check — POSTs `os.hostname()`, `os.userInfo().username`, `process.cwd()`, PID, timestamp, and a bearer token read from `~/.monotomic.token` to a hardcoded author endpoint at `https://api.mntmc.rip/ibW9B3RlbmF/token/security/tamper`. `func/box/chrm.js` locates the installer's Chrome `User Data` directory (Windows `LOCALAPPDATA\\Google\\Chrome`, macOS `~/Library/Application Support/Google/Chrome`, Linux `~/.config/google-chrome`), launches puppeteer with `--user-data-dir=\u003cprofile\u003e` + `--profile-directory=Default`, navigates to Outlook/Gmail URLs, and returns live session cookies (including httpOnly/secure). All 300+ source files are obfuscated with javascript-obfuscator (RC4/base64 rotated string arrays, control-flow flattening) to conceal the above behavior. `dependencies['node-ews']` is set to `github:oonlyjs/node-ews` — an unpinned mutable-branch reference under the same author account, resolved at each install, allowing arbitrary transitive code injection outside npm's tarball. Installing this package places offensive mail-abuse infrastructure on the machine, exfiltrates host identifiers and a stored bearer token to an author-controlled host on load, harvests the installer's browser session cookies, and pulls a mutable third-party dependency at install time.\n\n## Source: ghsa-malware (d5c1f66e8c5e2e97b3fc1b3d8819b405e9187fc5fdd2cedc0882e018e2da56bd)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (394b4a723dd14d7d6859e0e994f51125dd2b88e3f08a9e429e413b55d50e8739)\nmonogrok 1.0.7 is a turnkey bulk phishing/spam toolkit. The package documents and implements: bulk SMTP credential rotation, SOCKS proxy rotation (functions/ipr/*), recipient-MX direct delivery that bypasses outbound mail relays (functions/snd/mailers/mxdml.js, mxsml.js), Microsoft EWS adapter (functions/snd/mailers/ewsml.js), Zimbra SOAP fallback, 75 link-obfuscation presets, 50 body/attachment encryption presets, attachment extension spoofing (e.g., deliver Attachment-1.html displayed as Invoice.pdf — documented in _init/.monotomic.help.txt as 'spoofs_attachment_extension_name'), AES-encrypted ZIP attachment building (functions/zip-archive.js), an email verifier/debouncer/sorter (functions/vrf/*, functions/deb/*), a redirect scanner (functions/rdt/*), and a credential 'judger' that probes IMAP/SMTP/EWS/Zimbra autodiscover (functions/jdg/*). Every reachable JS file in the tarball (~90 files across commands/, functions/, utils/, plus ultra.js, denv.js, helpers.js) is shipped as javascript-obfuscator output (rotating string array, hex-named identifiers, RC4/base64 decoder, self-defending wrappers); package.json confirms intent with a devDependency on javascript-obfuscator and an `obfuscate` script. The combination of MX-direct bypass + attachment-MIME spoofing + AES-encrypted attachments + SMTP/proxy rotation has no legitimate use case and is purpose-built for bulk phishing delivery while evading content scanners and sender reputation. ultra.js additionally calls `parseAsync(process.argv)` at the top level, so `require('monogrok')` immediately runs the CLI against the consumer's argv and mutates ~50 process.env keys via denv.js, plus triggers a license/sign-in flow that POSTs to the vendor backend at https://mntmc.rip. Installing or running this package puts the installer's domain, sending IPs, and organizational reputation at direct risk of blocklisting, abuse complaints, and legal exposure for participating in phishing campaigns.\n\n## Source: ghsa-malware (d5c1f66e8c5e2e97b3fc1b3d8819b405e9187fc5fdd2cedc0882e018e2da56bd)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "monogrok"
+        "name": "monogrok",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -26,10 +26,22 @@
       ],
       "versions": [
         "1.0.30",
-        "1.0.33"
+        "1.0.33",
+        "1.0.7",
+        "1.0.8"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -85,56 +97,84 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-548c-qh8j-h895"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/monogrok/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/monogrok/v/1.0.8"
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "3369fb16804682addfec56904223d0255c2a0ca6d35481e744221e8252f2000d",
-        "import_time": "2026-07-15T04:32:07.293518896Z",
         "id": "IN-MAL-2026-010615",
+        "import_time": "2026-07-15T04:32:07.293518896Z",
         "modified_time": "2026-07-15T04:02:35Z",
+        "sha256": "3369fb16804682addfec56904223d0255c2a0ca6d35481e744221e8252f2000d",
+        "source": "amazon-inspector",
         "versions": [
           "1.0.30"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "4bc02d4244e0bcb27af796ba375fd40ca962b33a5c29130cf991becad6c14321",
-        "import_time": "2026-07-15T04:32:07.409885544Z",
         "id": "IN-MAL-2026-010616",
+        "import_time": "2026-07-15T04:32:07.409885544Z",
         "modified_time": "2026-07-15T04:02:45Z",
+        "sha256": "4bc02d4244e0bcb27af796ba375fd40ca962b33a5c29130cf991becad6c14321",
+        "source": "amazon-inspector",
         "versions": [
           "1.0.33"
         ]
       },
       {
-        "source": "ghsa-malware",
-        "sha256": "d5c1f66e8c5e2e97b3fc1b3d8819b405e9187fc5fdd2cedc0882e018e2da56bd",
-        "import_time": "2026-07-16T23:33:43.713348124Z",
         "id": "GHSA-548c-qh8j-h895",
+        "import_time": "2026-07-16T23:33:43.713348124Z",
         "modified_time": "2026-07-16T23:08:40Z",
         "ranges": [
           {
-            "type": "SEMVER",
             "events": [
               {
                 "introduced": "0"
               }
-            ]
+            ],
+            "type": "SEMVER"
           }
+        ],
+        "sha256": "d5c1f66e8c5e2e97b3fc1b3d8819b405e9187fc5fdd2cedc0882e018e2da56bd",
+        "source": "ghsa-malware"
+      },
+      {
+        "id": "IN-MAL-2026-011267",
+        "import_time": "2026-08-04T22:30:08.159422399Z",
+        "modified_time": "2026-08-04T21:56:35Z",
+        "sha256": "394b4a723dd14d7d6859e0e994f51125dd2b88e3f08a9e429e413b55d50e8739",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011264",
+        "import_time": "2026-08-04T22:30:08.061316418Z",
+        "modified_time": "2026-08-04T21:56:10Z",
+        "sha256": "358dbc36129cd051fbae0d6cd4ffe9a68bd059f75f558e8053226e34edb0d1a5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.8"
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
