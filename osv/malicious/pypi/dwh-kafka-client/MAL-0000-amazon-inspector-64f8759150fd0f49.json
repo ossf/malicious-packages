@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:41:53Z",
+  "modified": "2026-08-04T21:41:53Z",
+  "summary": "dwh-kafka-client ships persistent.pth beacon with DNS-TXT-obfuscated C2 discovery",
+  "details": "The pypi package `dwh-kafka-client` 0.0.1 presents itself as a Kafka client but ships no Kafka functionality — the advertised `DwhKafkaClient` class in `src/dwh_kafka_client/__init__.py` is a placeholder with only `_opts`/`init`/`configure` stubs. The real payload is a persistence + phone-home mechanism: `setup.py` overrides the install command (`_Install.run`) to explicitly `shutil.copy2` a `telemetry.pth` file into `self.install_lib` or `site.getsitepackages()[0]`, guaranteeing placement into site-packages. The `.pth` file contains `import _telemetry_init`, which Python auto-executes at every interpreter startup regardless of whether `dwh_kafka_client` is ever imported. `_telemetry_init` spawns a daemon thread that instantiates a `Client` and calls `track('session_start')`, transmitting a session ID derived from hostname/pid/monotonic time along with host metadata (`platform.node()`, OS, `os.cpu_count()`, Python version) to a runtime-discovered destination. The destination is not present in the source: `_telemetry_transport.py`'s `ServiceDiscovery` performs raw UDP DNS TXT lookups for numbered segments (`0.<domain>`, `N.<domain>`), concatenates them, and base64-decodes the result to reconstruct the endpoint at runtime, with hardcoded fallback to public resolvers 8.8.8.8 and 1.1.1.1 to bypass corporate DNS filtering. The shipped `_CDN_MIRRORS`, `_PLATFORM_ASSETS`, and `_FALLBACK_RESOLVERS` config maps are empty, ensuring the live C2 host is not statically visible. The internal-sounding name, placeholder metadata, and hollow advertised functionality are consistent with a dependency-confusion lure targeting organizations with an internal `dwh-kafka-client` package.",
+  "affected": [
+    {
+      "package": {
+        "name": "dwh-kafka-client",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_telemetry_transport.py",
+              "sha256": "3b2e157d9383b96d3591c354bd80acb2ac525529f18fb1522fe49f22520ea650",
+              "tlsh": "04b33cb6ed1bac228177c91e9c86e047f72a4753222c614779bc826c2f74715c2e4eed"
+            },
+            {
+              "path": "setup.py",
+              "sha256": "2948aa8597b3432570c12bba17a4c0a7721b98033f3fd9e03c8a002b06dcb9e1",
+              "tlsh": "8021877b4ca9283065f5c6249963c8caf9651317b920d48b7afc43082f782d1c74f157"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dwh_kafka_client-0.0.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "651a80f75cfdc5f2c92fc1ec5da3cf12dacda0690a26442fc6042a22d9620a5a",
+                "md5": "fb4abc1701751c33ad9b8181dfee91ab",
+                "sha256": "41783d8ea6e8b80c1dedb32138f61408916318acf05eea664db3036beb5f76ab"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dwh-kafka-client/0.0.1/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011164",
+        "import_time": "2026-08-04T22:30:02.653135063Z",
+        "modified_time": "2026-08-04T21:41:53Z",
+        "sha256": "64f8759150fd0f4909a75613b1311c70c44b514bee2142ed4c67e0ef580afdbe",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

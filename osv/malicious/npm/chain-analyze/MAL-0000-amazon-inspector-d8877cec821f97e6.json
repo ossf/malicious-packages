@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:43:31Z",
+  "modified": "2026-08-04T21:43:31Z",
+  "summary": "chain-analyze bundles decrypt-then-exec loader pulling payload from unpinned `chain-manager` dep",
+  "details": "The package publishes as `chain-analyze` under an author string impersonating Theta Labs and advertises a Theta blockchain SDK, but `package.json`'s declared `main` (`dist/chain-analyze.cjs.js`) is absent from the tarball. The shipped bundles under a mismatched name — `dist/sigchain-js.cjs.js`, `dist/sigchain-js.esm.js`, `dist/sigchain-js.umd.js` — contain top-level code that imports `desKey` (and a variant `rsaToken` via `readRSAFromPackage()`) from the unpinned dependency `chain-manager` pinned to `latest`, DES-decrypts the ciphertext with a hardcoded `PASSWORD`, spawns a child `node` process, and pipes the decrypted string to its stdin. This is a load-time arbitrary-code loader whose payload the publisher rotates by pushing new versions of the sibling `chain-manager` package; every `require`/`import` of these bundles executes attacker-controlled JavaScript on the installer's host. Wallet, private-key, and signing code paths advertised by the SDK sit alongside the loader, so consumers building against the Theta-branded API surface trigger the RCE primitive on module load.",
+  "affected": [
+    {
+      "package": {
+        "name": "chain-analyze",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/sigchain-js.esm.js",
+              "sha256": "b0231ad2160493faf832717a4d37f0be09412ca037505774786df468ae9d4fc6",
+              "tlsh": "5a63949d26e7a060815b70b56fdb94407129e00b68ccd82cbdac53958fd946c9bf2ff8"
+            },
+            {
+              "path": "dist/sigchain-js.cjs.js",
+              "sha256": "7776d30e6fe4073e6bbf09c93e7ae92f1b2109dd8543683fb3aeb5ccb6d76679",
+              "tlsh": "cf63939d26e7a060815b70b56fdb94407129e00b68ccd82cbdac53958fd946c9bf2ff8"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ad166b2a7031e8e06d2db0fdb803459490a690872e979025fbf8e6298a4e1cbe",
+              "tlsh": "7131c0a0cd65cda3d5c816ea1869424662258447c946fcac3392074d4f8f26fa1f6bae"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-analyze/v/1.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011176",
+        "import_time": "2026-08-04T22:30:03.392389446Z",
+        "modified_time": "2026-08-04T21:43:31Z",
+        "sha256": "d8877cec821f97e66f17477777865ad7bcd8dc42b4ec63b8ee030cee92143523",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T22:04:30Z",
+  "modified": "2026-08-04T22:04:30Z",
+  "summary": "uac-package postinstall rewrites installer's source tree to relay end-user form input and click data to a hardcoded author endpoint",
+  "details": "On `npm install`, uac-package's postinstall hook runs an `integrate(INIT_CWD)` routine that mutates the installer's own repository: it rewrites `package.json` scripts (wrapping `dev`/`preview`/`start` to load uac-package), edits `vite.config.*` / `nuxt.config.*` to register the plugin, and prepends `import 'uac-package/track'` to `src/main.{js,ts,jsx,tsx}`. Once these edits are in place, every subsequent build of the host application loads the bundled tracker, which posts click events, form input values (up to 200 characters; password fields masked), device fingerprint, route information, and heartbeats to the hardcoded endpoint `https://uac-backend.clay.in`. The installer never opts into source-tree mutation beyond running `npm install`, and the downstream end users of the consuming application have no opportunity to consent at all — yet their typed form values are silently relayed to an author-controlled host. Because the relay destination is hardcoded to author infrastructure (not installer-configured) and is wired in by silently editing files outside `node_modules/`, this is the silent-relay attack shape rather than legitimate opt-in analytics. Uninstalling the package additionally leaves stale imports and config edits in the installer's repository.",
+  "affected": [
+    {
+      "package": {
+        "name": "uac-package",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/apiConfig.js",
+              "sha256": "2971e02d09265974db5cac389e7bdc70ed9b09dd0b1072a31ebe091fbdec2874",
+              "tlsh": "30f005c2fdd1714a02066681b17b5a75edfb52200d18d8c6e3e5805928f4833093bd5d"
+            },
+            {
+              "path": "lib/integrate.js",
+              "sha256": "6d56a8e0102f5f814d00fb3934fcf99c892d0d268417792fa3d85a18528e4808",
+              "tlsh": "2ec11149688be61687f2ab79d983840dfb3b91736204515575dca1dc3ff022181e3eee"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uac-package/v/1.1.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011320",
+        "import_time": "2026-08-04T22:30:10.80954699Z",
+        "modified_time": "2026-08-04T22:04:30Z",
+        "sha256": "20b7b59475bf88559895faa827ec35c86b621cf554f899292774f3dc124aa294",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

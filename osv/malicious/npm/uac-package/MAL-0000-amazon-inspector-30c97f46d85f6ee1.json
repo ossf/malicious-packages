@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:54:51Z",
+  "modified": "2026-08-04T21:54:51Z",
+  "summary": "Postinstall rewrites the consumer's project to inject a browser tracker that exfiltrates end-user identity and input to a hardcoded backend",
+  "details": "On `npm install`, scripts/postinstall.js (via lib/integrate.js) auto-modifies the installer's project without consent: it rewrites `package.json` scripts (dev/preview/start), patches `vite.config.*` / `nuxt.config.*`, and prepends `import 'uac-package/track'` to entry files such as `src/main.{js,ts,tsx,jsx}` and `src/index.{js,ts}`. The injected module (lib/track.mjs) runs in the developer's shipped app, POSTing click events, debounced typed input values, route heartbeats, device info, and resolved user identity to a hardcoded endpoint at `https://uac-backend.clay.in/api/{domains,activities,presence/heartbeat}` (DEFAULT_UAC_API_URL in lib/apiConfig.mjs). lib/autoIdentity.mjs scans localStorage/sessionStorage for auth-SDK keys (`access_token`, `id_token`, `refresh_token`, `jwt`, `okta-token-storage`, `firebase:authUser`, `@auth0spajs`, `msal.account.keys`, `CognitoIdentityServiceProvider`, `supabase.auth.token`, `clerk-db`, `KEYCLOAK_SESSION`), decodes JWT payloads, and monkey-patches `window.fetch` and `XMLHttpRequest` to read auth-API response bodies, extracting name/email/userId and forwarding them to the same backend. None of this is disclosed in the README. The developer is unwittingly converted into a distribution vector that exfiltrates their end-users' identity and input to an author-controlled host.",
+  "affected": [
+    {
+      "package": {
+        "name": "uac-package",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.3.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/integrate.js",
+              "sha256": "6d56a8e0102f5f814d00fb3934fcf99c892d0d268417792fa3d85a18528e4808",
+              "tlsh": "2ec11149688be61687f2ab79d983840dfb3b91736204515575dca1dc3ff022181e3eee"
+            },
+            {
+              "path": "lib/track.mjs",
+              "sha256": "8d5e8a957da5b9a978368ca59fea1a898824eeee9377ea323298a79442581132",
+              "tlsh": "d732859d3df230790577602d244ff10a3b79c453294dcd92b6ac46706fa962a8af2ecd"
+            },
+            {
+              "path": "lib/autoIdentity.mjs",
+              "sha256": "441bedb8edf1aa3b3d875feef5d1af368dcc9523a11a0f372dd71140b71849ca",
+              "tlsh": "c142936e38f32030052750b9abdf7502b226a0133c4ee8d436ac87553fed52a96f26dd"
+            },
+            {
+              "path": "bin/dev.js",
+              "sha256": "bc14c77c1675f86232344f2b8cd0c88b02e21d7f540acbe6e55ec761d6c29391",
+              "tlsh": "c731425854fe22e91af513746713401aeaaf4013910287f8f9ecc6802fb15395107dec"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uac-package/v/1.3.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011255",
+        "import_time": "2026-08-04T22:30:07.491610498Z",
+        "modified_time": "2026-08-04T21:54:51Z",
+        "sha256": "30c97f46d85f6ee15b18ea66e1d4236303e34208c9761eee938bcf3a3a951ffb",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

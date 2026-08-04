@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:42:09Z",
+  "modified": "2026-08-04T21:42:09Z",
+  "summary": "ml-core-airflow-auth installs persistent.pth site-hook that exfiltrates host metadata to a DNS-TXT-resolved endpoint",
+  "details": "The package advertises itself as an 'auth token handler' but its public API (src/ml_core_airflow_auth/__init__.py) exposes only a trivial in-memory TokenStore stub unrelated to the ~3300 LOC of hidden telemetry code shipped alongside. The setup.py custom install command copies telemetry.pth into site-packages; that.pth file contains `import _telemetry_init`, causing every subsequent Python interpreter start on the host to auto-load _telemetry_init._bootstrap, which spawns a daemon thread that constructs an analytics Client (Envelope, HttpTransport, ServiceDiscovery, DataScrubber, SessionTracker) and calls client.track('session_start') with the machine's hostname, OS, Python version, and cpu_count. The reporting endpoint is not a static URL; _telemetry_transport.py's ServiceDiscovery opens a raw UDP DNS socket with hardcoded fallback resolvers 8.8.8.8 and 1.1.1.1, queries TXT records under `0.<domain>`... `N.<domain>`, and reconstructs the destination via `base64.b64decode(''.join(segments))`, letting the operator change the exfiltration destination post-install without republishing. The name, generic 'Platform Engineering' author, and mismatch between the declared purpose and the hidden persistent telemetry framework are consistent with dependency-confusion targeting corporate ML/Airflow environments.",
+  "affected": [
+    {
+      "package": {
+        "name": "ml-core-airflow-auth",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "b5f6817bd7c411b21c5b005a80c88429abb348854c582e5f369286844181bd26",
+              "tlsh": "ae21876b8c6a282059f5c5248d63c89af9615357b920d4cb7afc43043f742e1c74b15b"
+            },
+            {
+              "path": "_telemetry_transport.py",
+              "sha256": "3b2e157d9383b96d3591c354bd80acb2ac525529f18fb1522fe49f22520ea650",
+              "tlsh": "04b33cb6ed1bac228177c91e9c86e047f72a4753222c614779bc826c2f74715c2e4eed"
+            },
+            {
+              "path": "PKG-INFO",
+              "sha256": "57df06e44a2762f05e29fd8105372be946a028bc103228bbf894baa7aad0964e",
+              "tlsh": "b611ed6425879c7876e349061d12a2ebc531c35819c92088f8d207de95d4998d67e23d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ml_core_airflow_auth-0.0.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "84950c928e13857239a69985675db92389cf0edd2e0066f8ddfa690c00f8cb1b",
+                "md5": "ca3aeeb457809bbdd7896fb784cbd014",
+                "sha256": "10ee81367cc698ecc80d9b33119b233e063a39729cfa0e2e9122c48e69a0b0cb"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ml-core-airflow-auth/0.0.1/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011166",
+        "import_time": "2026-08-04T22:30:02.791393761Z",
+        "modified_time": "2026-08-04T21:42:09Z",
+        "sha256": "0a543a55b463967fa7f6b3c1462ecb38735072a4f4f47bf5f9b732e089a64b8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

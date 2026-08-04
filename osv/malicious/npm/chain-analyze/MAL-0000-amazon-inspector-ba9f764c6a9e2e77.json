@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:37:15Z",
+  "modified": "2026-08-04T21:37:15Z",
+  "summary": "Import-time RCE: DES-decrypted payload from unpinned `chain-manager` piped into `node`",
+  "details": "The shipped `dist/chain-analyze.cjs.js` and `dist/chain-analyze.esm.js` bundles contain a loader that, on require/import, reads a token field from `node_modules/chain-manager/package.json`, DES-decrypts it using a `desKey` imported from the `chain-manager` package, then calls `child_process.spawn('node', [],...)` and writes the decrypted string into that process's stdin, executing arbitrary JavaScript in the installer's process at module load. `package.json` declares `\"chain-manager\": \"latest\"`, so the key and the encrypted payload are supplied by a mutable, attacker-controlled transitive dependency and can change at any time. The same loader block also appears in `dist/chain-analyze.umd.js` (around line 37830) but is absent from the corresponding source file `src/providers/PartnerVaultHttpProvider.js`, indicating the loader was injected only into the published dist artifacts. The UMD bundle additionally contains multiple hardcoded `POST`/`fetch(` call sites consistent with outbound network staging.",
+  "affected": [
+    {
+      "package": {
+        "name": "chain-analyze",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/chain-analyze.cjs.js",
+              "sha256": "7776d30e6fe4073e6bbf09c93e7ae92f1b2109dd8543683fb3aeb5ccb6d76679",
+              "tlsh": "cf63939d26e7a060815b70b56fdb94407129e00b68ccd82cbdac53958fd946c9bf2ff8"
+            },
+            {
+              "path": "dist/chain-analyze.esm.js",
+              "sha256": "b0231ad2160493faf832717a4d37f0be09412ca037505774786df468ae9d4fc6",
+              "tlsh": "5a63949d26e7a060815b70b56fdb94407129e00b68ccd82cbdac53958fd946c9bf2ff8"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ba75ff7dd127e6d461ccec83075edd16ebc029b2d88b07671a4f955bdb72f075",
+              "tlsh": "4531c0a0cd65cda3d5c816ea1869424662258447c946fcac3392074d4f8f27fa1f6bae"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chain-analyze/v/1.0.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011133",
+        "import_time": "2026-08-04T22:30:00.927916364Z",
+        "modified_time": "2026-08-04T21:37:15Z",
+        "sha256": "ba9f764c6a9e2e776e0415994fe89aed2856912d37347c3454e6720a6b234695",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
