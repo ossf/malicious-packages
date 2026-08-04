@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:11:07Z",
+  "modified": "2026-08-04T21:11:07Z",
+  "summary": "nano-perf 2.2.0 installs a persistent C2 backdoor via postinstall",
+  "details": "On `npm install`, package.json's postinstall hook (`node postinstall.js`) spawns daemon.js as a detached, unref'd background process (`cp.spawn(process.execPath,[daemonPath],{detached:true,stdio:'ignore'}); child.unref();`) that survives the install and beacons indefinitely. daemon.js generates a persistent node identifier in /tmp/.np-cache, then on a ~5 minute interval POSTs host fingerprint data (cpuCount, totalmem, platform, nodeId) to a Supabase REST endpoint and polls a sibling table for pending tasks keyed by node_id, executing returned commands via `executeAndReport` and PATCHing results back. The destination hostname (ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_heartbeats /.../stealth_tasks) and the Supabase service_role JWT are obfuscated as base64 chunk arrays concatenated at runtime (daemon.js:24). The attacker-controlled tables are literally named `stealth_heartbeats` and `stealth_tasks`. Every machine that runs `npm install nano-perf` becomes a managed bot executing attacker-supplied commands.",
+  "affected": [
+    {
+      "package": {
+        "name": "nano-perf",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "daemon.js",
+              "sha256": "061ff018f72c4ccc01f928614733f250ff988deff034a16f4df13f9cfc6a7b5e",
+              "tlsh": "dbb131dd9eb75194adb3322e83bf95155173d0036c0aed61b98c37201f98a2c04a9ef8"
+            },
+            {
+              "path": "postinstall.js",
+              "sha256": "c47515e0219a4d112c26c608f212c899614135f2793a2ecc88203da60409fdc3",
+              "tlsh": "ca4152daafb3a29cbea3726a823f990441a6c1133815e861f4cc79511f8971d04badf4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "nano-perf-2.2.0.tgz",
+              "hashes": {
+                "sha1": "0c76e77ca88e04ca1d28155423f1229c79f4264c",
+                "sha512_sri": "sha512-v4hDYYfeu0Kij797nz3s5EFr0olR4znk/XFvdZH94WZM/Qn3vkMv1XZ3WWQZYOSIQCG9iyaOCzveuI90M7zJOA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/2.2.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010975",
+        "import_time": "2026-08-04T21:33:11.920196753Z",
+        "modified_time": "2026-08-04T21:11:07Z",
+        "sha256": "452f28d1cf87f232f40920b040da4821c6f618ef293a91162b8c8696c45764fe",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.2.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

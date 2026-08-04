@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-04T21:17:32Z",
+  "modified": "2026-08-04T21:17:32Z",
+  "summary": "beaver-ui-date-range-picker ships postinstall dropper fetching and executing remote binary from obfuscated Cloudflare Worker hosts",
+  "details": "beaver-ui-date-range-picker@12.5.3 declares a postinstall hook (`node setup.js`) and additionally triggers the same script from index.js via `try { require('./setup'); } catch (_) {}`, so the dropper fires both at `npm install` and when a consumer requires the package (bypassing `--ignore-scripts`). setup.js reconstructs a set of Cloudflare Worker hostnames at runtime by joining fragmented string arrays (e.g. oob-worker.cf99-9b3.workers.dev through oob-worker.cf103-070.workers.dev), selects a platform-specific payload path, downloads a binary via https.get, writes it to /tmp or %TEMP% under decoy names such as `.cache_<hex>` or `dotnet_diag_<hex>.exe`, chmods 0755 on POSIX, and launches it detached with `.unref()`. A DNS-TXT covert channel resolves numbered subdomains under `*.dl.well1.site` and reassembles a base64-encoded payload as an out-of-band fallback delivery path. On Windows the script invokes `execSync('powershell...')`. The cover story presents the behavior as `analytics_state`/telemetry, but the package's advertised purpose (a UI date-range picker) has no legitimate need to fetch and execute a native binary from obfuscated non-publisher hosts. Hostname obfuscation, unpinned mutable URLs, absent hash/signature verification, decoy filenames, detached background execution, and a DNS-TXT fallback channel are the fingerprint of a supply-chain dropper.",
+  "affected": [
+    {
+      "package": {
+        "name": "beaver-ui-date-range-picker",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "12.5.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.js",
+              "sha256": "8f0408a8a36dac6c84b61ce497abe4e97fbec7aa75120b387894e005dff29ac7",
+              "tlsh": "17b1a4550afa71384392a1e8d92b5816b09fe5533284e990f34cb6985f97268c3b39fc"
+            },
+            {
+              "path": "index.js",
+              "sha256": "b6e2f8205e26d7b7fe2e58628f61e268251edaefd9487cac87da67c3a14d8cb4",
+              "tlsh": "78f04c4515dbe823837462fade630041fa2185718e870098bb8450ef2f60c1447e8ef9"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/beaver-ui-date-range-picker/v/12.5.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010998",
+        "import_time": "2026-08-04T21:33:12.949191383Z",
+        "modified_time": "2026-08-04T21:17:32Z",
+        "sha256": "744905f86e776fde6075a23e40274b0d4798bbb835114506926e0799430c24ba",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.5.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
