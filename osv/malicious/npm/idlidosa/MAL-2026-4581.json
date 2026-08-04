@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-20T07:38:38Z",
+  "modified": "2026-06-12T19:46:14Z",
   "published": "2026-05-20T07:38:38Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4581",
   "summary": "Malicious code in idlidosa (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (93244f4468caec1832fe03d87c7403d7ab1dac835f12605a35667acfd3b87c39)\nThe package ships shared/keys.json containing 9 AES-256-GCM-encrypted Groq API keys. The decryption key is a fixed byte sequence ('pageai-pool-v2') hardcoded in dist/cli/index.js (and dist/shared/index.cjs / dist/shared/index.js), which means every installer obtains usable Groq API credentials owned by a third party. The README explicitly advertises this as a feature ('on first install you don't even need to paste your own key') and explicitly states the encryption exists to defeat automated key scanners — this is live-credential redistribution to anyone who installs the package, exposing the key-owner's Groq account to abuse and billing fraud by every installer. Additional concerns observed in the package, while not the primary block basis: when the operator runs `npx idlidosa start`, the CLI installs a Windows scheduled task named 'MicrosoftEdgeWebView2Update' that fires every minute, copies and rewrites version metadata on a bundled Electron binary to impersonate Microsoft Edge WebView2 ('CompanyName=Microsoft Corporation'), sets a guard process title to 'Windows Audio Device Graph Isolation', and ships PowerShell DLL-injection tooling (inject_dll.ps1, find_testpad.ps1, unprotect.dll) that scans for windows whose titles contain 'testpad', 'exam', or 'assessment' to clear WDA_EXCLUDEFROMCAPTURE on proctoring software. These behaviors fire only after explicit user invocation of the CLI and do not target the installer's secrets, but they corroborate the package's adversarial posture.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c6cba2c58d95d705af7dc5bb1c630129127835fb1ef15d4ccf43ec2818bf632)\nThe package is purpose-built tooling to defeat exam-proctoring / lockdown software, with multiple installer-machine integrity harms triggered when the user runs the documented `idlidosa start` command:\n\n1. Binary masquerade as Microsoft software: `dist/cli/index.js` (~line 290) copies the bundled `electron.exe` to `msedgewebview2.exe` and uses bundled `rcedit` to overwrite its Windows version resources to claim `CompanyName=Microsoft Corporation` and `ProductName=Microsoft Edge WebView2 Runtime`. The guard process additionally sets `process.title = \"Windows Audio Device Graph Isolation\"`. An administrator auditing the host sees what appears to be a Microsoft component but is an unsigned Electron app under this package's control.\n\n2. Persistence as fake Edge updater: `installResurrector` (~line 330) registers a Windows Scheduled Task named `MicrosoftEdgeWebView2Update` that runs every 1 minute via `schtasks /create... /sc MINUTE /mo 1 /f`, re-spawning a launcher written to `%APPDATA%/Idlidosa/resurrect.js`. The task name impersonates a legitimate Microsoft Edge update job.\n\n3. Anti-detection watchdog: `cli/guard.cjs` carries self-incriminating comments stating the 1500ms restart delay is `fast enough to beat TestPad's 30s scan` and that it runs as `node.exe (which lockdown software rarely kills)`.\n\n4. Process-wide TLS validation disabled: `dist/shared/index.js` (~line 187) sets `process.env.NODE_TLS_REJECT_UNAUTHORIZED = \"0\"` at module load, disabling TLS certificate validation for every HTTPS call made by the host Node process for the lifetime of that process — not just calls made by this package. Subsequent traffic (including screenshots of the user's screen and bundled API keys) is sent over un-validated TLS and is exposed to MITM on the installer's network.\n\n5. Bundled decryptable Groq API key pool: `shared/keys.json` ships nine AES-256-GCM-encrypted Groq API keys whose decryption key is `sha256(\"pageai-pool-v2\")` (literal byte array in `shared/crypto.ts`), so any installer can decrypt them. These are the author's own keys (author self-harm), but they are used as the default channel for sending the user's screen captures over the TLS-disabled connection.\n\nThe combination of Microsoft-impersonation on disk, Microsoft-impersonation as a scheduled task, watchdog comments documenting evasion intent, and global TLS weakening constitutes deliberate harm to the integrity of any host this is installed and run on.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,34 @@
         "name": "idlidosa"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.1",
+        "1.0.7",
+        "1.0.4",
+        "1.0.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +86,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/idlidosa/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/idlidosa/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/idlidosa/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/idlidosa/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/idlidosa/v/1.0.2"
     }
   ],
   "credits": [
@@ -69,20 +109,61 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003495",
-        "import_time": "2026-05-26T05:50:44.033497656Z",
-        "modified_time": "2026-05-20T07:38:38Z",
-        "sha256": "93244f4468caec1832fe03d87c7403d7ab1dac835f12605a35667acfd3b87c39",
         "source": "amazon-inspector",
+        "sha256": "93244f4468caec1832fe03d87c7403d7ab1dac835f12605a35667acfd3b87c39",
+        "import_time": "2026-05-26T05:50:44.033497656Z",
+        "id": "IN-MAL-2026-003495",
+        "modified_time": "2026-05-20T07:38:38Z",
         "versions": [
           "1.0.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1a75611f2e499729979c4f3e6a846e27ca06346f89dc51131d467a6511d4ffa6",
+        "import_time": "2026-06-12T19:43:35.770287506Z",
+        "id": "IN-MAL-2026-005810",
+        "modified_time": "2026-06-12T19:02:25Z",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "359ad22216d5124d653c6e6d7c72c1d004966ae82d6a4675e30cfd638ce351e9",
+        "import_time": "2026-06-12T19:43:36.056812262Z",
+        "id": "IN-MAL-2026-005813",
+        "modified_time": "2026-06-12T19:02:30Z",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5c6cba2c58d95d705af7dc5bb1c630129127835fb1ef15d4ccf43ec2818bf632",
+        "import_time": "2026-06-12T19:43:35.968583861Z",
+        "id": "IN-MAL-2026-005812",
+        "modified_time": "2026-06-12T19:02:28Z",
+        "versions": [
+          "1.0.4"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f88aa47e4a8bb442e853910f1f832ffc260bb47680cc63a321e2c3d5f7e41b0e",
+        "import_time": "2026-06-12T19:43:35.881018295Z",
+        "id": "IN-MAL-2026-005811",
+        "modified_time": "2026-06-12T19:02:26Z",
+        "versions": [
+          "1.0.2"
         ]
       }
     ]

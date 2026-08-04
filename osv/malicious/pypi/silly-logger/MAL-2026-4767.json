@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-19T21:50:33Z",
+  "modified": "2026-06-12T19:46:18Z",
   "published": "2026-05-19T21:50:33Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4767",
   "summary": "Malicious code in silly-logger (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2eecfbfdbeccf66833713755c8dffe5f7732119e5d82022a847c508dfef619b0)\nThe package advertises itself as a general-purpose logger, but every call to its debug/info/warn/error/critical methods unconditionally POSTs the caller-supplied message and source name to a hardcoded URL (https://lain-log-server.up.railway.app/log) on the author's Railway-hosted dashboard. silly_logger/__init__.py line 5 defines URL = \"https://lain-log-server.up.railway.app/log\" and line 42 fires it via threading.Thread(target=requests.post,...). There is no constructor parameter, environment variable, or config switch to disable, redirect, or self-host the destination. README usage examples encourage logging sensitive runtime events such as authentication and billing activity, all of which silently flow to the third-party endpoint. Any application that adopts this as its logging library will leak operational and potentially sensitive data to infrastructure controlled by the package author.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a57b518b6dcdb16913e105cd371fe81d367a85f81599d4468819bbe77ccb68b8)\nThe package's advertised logging API (debug/info/warn/error/critical) unconditionally POSTs every log payload — message, level, category, and source — to a hardcoded endpoint at https://lain-log-server.up.railway.app/log (silly_logger/__init__.py line 6, line 56). On request failure it falls back to a hardcoded Discord webhook owned by the author (silly_logger/__init__.py line 7, line 84). The destination is not configurable and cannot be disabled by the caller; the README references a 'live dashboard' but does not disclose the fixed destination or the Discord fallback. Additionally, log.discord(webhook, content) (lines 155-160) accepts a caller-supplied webhook but, on any exception delivering to it, transparently re-posts the same content to the author's fallback webhook — silently redirecting caller-chosen destinations to the author. Any application using this library as a logger will leak its log stream (which routinely contains error context, identifiers, and other sensitive runtime data) to author-controlled infrastructure.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,22 @@
         "name": "silly-logger"
       },
       "versions": [
-        "0.1.1"
+        "0.1.1",
+        "0.1.6",
+        "0.1.7"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -56,6 +68,14 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/silly-logger/0.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/silly-logger/0.1.6/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/silly-logger/0.1.7/"
     }
   ],
   "credits": [
@@ -63,20 +83,41 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003287",
-        "import_time": "2026-05-26T05:50:21.304351298Z",
-        "modified_time": "2026-05-19T21:50:33Z",
-        "sha256": "2eecfbfdbeccf66833713755c8dffe5f7732119e5d82022a847c508dfef619b0",
         "source": "amazon-inspector",
+        "sha256": "2eecfbfdbeccf66833713755c8dffe5f7732119e5d82022a847c508dfef619b0",
+        "import_time": "2026-05-26T05:50:21.304351298Z",
+        "id": "IN-MAL-2026-003287",
+        "modified_time": "2026-05-19T21:50:33Z",
         "versions": [
           "0.1.1"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "5e7d6ea056642efb38d092a29ee1a6dd2d70b579752c9d5d85ca6de27aaa4259",
+        "import_time": "2026-06-12T19:43:34.798159789Z",
+        "id": "IN-MAL-2026-005800",
+        "modified_time": "2026-06-12T19:02:09Z",
+        "versions": [
+          "0.1.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a57b518b6dcdb16913e105cd371fe81d367a85f81599d4468819bbe77ccb68b8",
+        "import_time": "2026-06-12T19:43:34.890085372Z",
+        "id": "IN-MAL-2026-005801",
+        "modified_time": "2026-06-12T19:02:11Z",
+        "versions": [
+          "0.1.7"
         ]
       }
     ]

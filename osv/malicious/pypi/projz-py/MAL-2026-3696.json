@@ -1,0 +1,152 @@
+{
+  "modified": "2026-06-15T02:46:48Z",
+  "published": "2026-05-12T07:43:32Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-3696",
+  "summary": "Malicious code in projz-py (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (196ea7ee7277857a29c8478e6908961bde9f28aa136c3e6ae68412ba4b67bff0)\nThe package routes authentication-related calls through a hardcoded third-party HTTP endpoint and then unpickles the server's raw response, which is a textbook unauthenticated remote code execution primitive against the installer's Python process. Specifically, projz/api/control/rpc.py sets RPC_SERVER = 'http://deepthreads.ru' (plain HTTP) and implements _rpc as: pickle.dumps(args) → session.post(...) → pickle.loads(response.read()). This path is reached from projz/api/request_manager.py (build_headers calls provider.generate_request_signature) and from projz/client.py during registration (RPC.generate_smid), meaning normal documented use of the library drives pickle.loads on attacker-influenceable bytes. Anyone who controls that domain — or any network position on a plain-HTTP path — can execute arbitrary code in the process that imported projz. Compounding the risk, projz/api/secret/__init__.py opens a sibling secret.pyc, skips the 16-byte header, marshal.loads the code object and exec()s it at import time into a synthetic `secret_functions` module; headers_provider.py imports this at the top of the import graph, so the hidden bytecode runs on `import projz`. The.pyc is not present in the sdist, defeating source review of the code that actually builds request signatures and device IDs. The Termux-gated `pkg install sox -y` in setup.py is a minor additional concern (install-time mutation of system package state conditional on an environment marker) but is not the basis for this verdict.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "ProjZ.py"
+      },
+      "versions": [
+        "2.3.5",
+        "2.3.9",
+        "1.8.2",
+        "1.7.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "domains": [
+            "deepthreads.ru"
+          ],
+          "evidence_files": [
+            {
+              "path": "projz/api/control/rpc.py",
+              "sha256": "9c49d55ec6660feb22e28cbdeb18bfb47e16cba9d9ad4e1f0eefeba937172ff1",
+              "tlsh": "3a4154994c3bd532e372727eac22cd35f33e05036f1288b6f4ac62642f7451c9ea4565"
+            },
+            {
+              "path": "projz/api/secret/__init__.py",
+              "sha256": "feea34456d3e76ccd434c1cb537435f54941cd86157cb20dcfe85d8b5a1d8e2a",
+              "tlsh": "3dd0c2463831b55350fbc4efa50f04360d629d172f69050178482be5aea5c19e883ace"
+            },
+            {
+              "path": "setup.py",
+              "sha256": "24c51705d8e6f2c5ab562ee5ae51a606bd3e726b96cbbcb8bf87b24456fbd697",
+              "tlsh": "e1316416cf4a9c2168f4405d98559825f72eab170e30716b75bc819c3fb5068c7627fd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ProjZ.py-2.3.5.tar.gz",
+              "hashes": {
+                "blake2b_256": "69f17939cc2fcee5a5db2830721da921072a25924d93a703b7abac070b74ea87",
+                "md5": "8546dcd7ee7b35963766ca8842615bd9",
+                "sha256": "caf149b46f0249cbe4fc4a248f7d5cf3ff75cd05d7baa5c895b96141288ec558"
+              }
+            }
+          ],
+          "urls": [
+            "http://deepthreads.ru/rpc"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ProjZ.py/2.3.5/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ProjZ.py/2.3.9/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ProjZ.py/1.8.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ProjZ.py/1.7.1/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "actran@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "196ea7ee7277857a29c8478e6908961bde9f28aa136c3e6ae68412ba4b67bff0",
+        "import_time": "2026-05-13T20:10:55.972562908Z",
+        "id": "IN-MAL-2026-002327",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "2.3.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "c6b4243d00f36ad5ef1dfd6108ad281f84cf758795a7b58b339dab487de0e661",
+        "import_time": "2026-05-13T20:10:56.039768492Z",
+        "id": "IN-MAL-2026-002328",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "2.3.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "e3af2879058f056f670c860cfea1c319c21b56c32cc327a0fff72c2ad7fba7da",
+        "import_time": "2026-05-13T20:10:56.23098878Z",
+        "id": "IN-MAL-2026-002341",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "1.8.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "97f64abaec3c77f1cd6e406dc96a033001e271d486dfc97514e88350e9ed695f",
+        "import_time": "2026-05-13T20:10:55.868601913Z",
+        "id": "IN-MAL-2026-002326",
+        "modified_time": "2026-05-12T19:03:07Z",
+        "versions": [
+          "1.7.1"
+        ]
+      }
+    ]
+  }
+}

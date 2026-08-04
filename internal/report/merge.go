@@ -22,7 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var ErrMergeFailure = errors.New("merge failure")
@@ -33,7 +36,7 @@ func (r *Report) Merge(other *Report) error {
 	// that "r" has not been altered in any way.
 
 	// Merging must be done before ID assignment.
-	if other.raw.ID != "" {
+	if other.raw.Id != "" {
 		return fmt.Errorf("%w: attempting to merge report after ID assigned", ErrMergeFailure)
 	}
 	// Ensure the other report is normalized as well. Do this before comparing
@@ -86,7 +89,7 @@ func (r *Report) Merge(other *Report) error {
 
 	// Combine complex types
 	r.raw.Credits = combineCredits(r.raw.Credits, other.raw.Credits)
-	r.raw.References = mergeSlices(r.raw.References, other.raw.References)
+	r.raw.References = mergeReferences(r.raw.References, other.raw.References)
 	r.raw.Aliases = mergeSlices(r.raw.Aliases, other.raw.Aliases)
 	r.raw.Related = mergeSlices(r.raw.Related, other.raw.Related)
 	r.raw.Severity = nil
@@ -101,12 +104,14 @@ func (r *Report) Merge(other *Report) error {
 	r.SetDetails(userDetails, sourceDetails, otherSourceDetails)
 
 	// Update modified to reflect the merge time.
-	r.raw.Modified = time.Now().UTC()
+	r.raw.Modified = timestamppb.New(time.Now().UTC())
 
 	// Use the earliest published time, otherwise use now (from modified) if unset.
-	if r.raw.Published.IsZero() && other.raw.Published.IsZero() {
+	pubReport := r.Published()
+	pubOther := other.Published()
+	if pubReport.IsZero() && pubOther.IsZero() {
 		r.raw.Published = r.raw.Modified
-	} else if r.raw.Published.IsZero() || (!other.raw.Published.IsZero() && other.raw.Published.Before(r.raw.Published)) {
+	} else if pubReport.IsZero() || (!pubOther.IsZero() && pubOther.Before(pubReport)) {
 		r.raw.Published = other.raw.Published
 	}
 
@@ -118,8 +123,8 @@ func (r *Report) Merge(other *Report) error {
 }
 
 func equalName(a, b, ecosystem string) bool {
-	switch osvschema.Ecosystem(ecosystem) {
-	case osvschema.EcosystemNuGet:
+	switch osvconstants.Ecosystem(ecosystem) {
+	case osvconstants.EcosystemNuGet:
 		// NuGet names are case insensitive.
 		return strings.EqualFold(a, b)
 	default:
@@ -127,15 +132,18 @@ func equalName(a, b, ecosystem string) bool {
 	}
 }
 
-func combineCredits(creditSets ...[]osvschema.Credit) []osvschema.Credit {
+func combineCredits(creditSets ...[]*osvschema.Credit) []*osvschema.Credit {
 	credits := make(map[struct {
-		t osvschema.CreditType
+		t osvschema.Credit_Type
 		n string
-	}]osvschema.Credit)
+	}]*osvschema.Credit)
 	for _, cs := range creditSets {
 		for _, c := range cs {
+			if c == nil {
+				continue
+			}
 			k := struct {
-				t osvschema.CreditType
+				t osvschema.Credit_Type
 				n string
 			}{t: c.Type, n: c.Name}
 			if existing, ok := credits[k]; ok {
@@ -145,12 +153,12 @@ func combineCredits(creditSets ...[]osvschema.Credit) []osvschema.Credit {
 			credits[k] = c
 		}
 	}
-	var creditList []osvschema.Credit
+	var creditList []*osvschema.Credit
 	for _, c := range credits {
 		creditList = append(creditList, c)
 	}
 	// Sort to make the credit ordering stable.
-	slices.SortFunc(creditList, func(a, b osvschema.Credit) int {
+	slices.SortFunc(creditList, func(a, b *osvschema.Credit) int {
 		if a.Name < b.Name {
 			return -1
 		} else if a.Name == b.Name {
@@ -165,8 +173,36 @@ func combineCredits(creditSets ...[]osvschema.Credit) []osvschema.Credit {
 	return creditList
 }
 
-func rangeEventParse(r osvschema.Range) (introduced, lastAffected, fixed string, limit []string) {
+func mergeReferences(refSets ...[]*osvschema.Reference) []*osvschema.Reference {
+	seen := make(map[struct {
+		t osvschema.Reference_Type
+		u string
+	}]bool)
+	var res []*osvschema.Reference
+	for _, rs := range refSets {
+		for _, ref := range rs {
+			if ref == nil {
+				continue
+			}
+			k := struct {
+				t osvschema.Reference_Type
+				u string
+			}{t: ref.Type, u: ref.Url}
+			if seen[k] {
+				continue
+			}
+			seen[k] = true
+			res = append(res, ref)
+		}
+	}
+	return res
+}
+
+func rangeEventParse(r *osvschema.Range) (introduced, lastAffected, fixed string, limit []string) {
 	for _, e := range r.Events {
+		if e == nil {
+			continue
+		}
 		switch {
 		case e.Introduced != "":
 			introduced = e.Introduced
@@ -185,7 +221,10 @@ func rangeEventParse(r osvschema.Range) (introduced, lastAffected, fixed string,
 	return introduced, lastAffected, fixed, limit
 }
 
-func rangeEqual(r1, r2 osvschema.Range) bool {
+func rangeEqual(r1, r2 *osvschema.Range) bool {
+	if r1 == nil || r2 == nil {
+		return r1 == r2
+	}
 	if !(r1.Type == r2.Type && r1.Repo == r2.Repo) {
 		// Basic details are not the same.
 		return false
@@ -196,19 +235,20 @@ func rangeEqual(r1, r2 osvschema.Range) bool {
 		// Events are not the same.
 		return false
 	}
-	// Either we don't have any database specific entries, or they are entirely equal.
-	return (len(r1.DatabaseSpecific) == 0 && len(r2.DatabaseSpecific) == 0) || reflect.DeepEqual(r1, r2)
+	m1 := r1.DatabaseSpecific.AsMap() // If DatabaseSpecific is nil AsMap returns an empty map.
+	m2 := r2.DatabaseSpecific.AsMap()
+	return (len(m1) == 0 && len(m2) == 0) || reflect.DeepEqual(m1, m2)
 }
 
 // combineRanges combines and reduces one or more range slices.
 //
 // The function assumes the input ranges are valid OSV ranges. If two or more
 // ranges are identical, only one will be included.
-func combineRanges(rangeSets ...[]osvschema.Range) []osvschema.Range {
-	var rangeList []osvschema.Range
+func combineRanges(rangeSets ...[]*osvschema.Range) []*osvschema.Range {
+	var rangeList []*osvschema.Range
 	for _, rs := range rangeSets {
 		for _, r := range rs {
-			if !slices.ContainsFunc(rangeList, func(existing osvschema.Range) bool {
+			if !slices.ContainsFunc(rangeList, func(existing *osvschema.Range) bool {
 				return rangeEqual(r, existing)
 			}) {
 				rangeList = append(rangeList, r)
@@ -240,7 +280,28 @@ func mergeSlices[K comparable](ss ...[]K) []K {
 // - values must not be scalars. they must be arrays or objects.
 // - values that are arrays are concatenated together, duplicates will be preserved.
 // - values that are objects are merged, keys should be unique, but if they are the same the first key seen will retain its value.
-func combineDatabaseSpecific(objs ...map[string]any) map[string]any {
+func combineDatabaseSpecific(objs ...*structpb.Struct) *structpb.Struct {
+	if len(objs) == 0 {
+		return nil
+	}
+	var maps []map[string]any
+	for _, o := range objs {
+		if o != nil {
+			maps = append(maps, o.AsMap())
+		}
+	}
+	resMap := combineDatabaseSpecificMaps(maps...)
+	if len(resMap) == 0 {
+		return nil
+	}
+	st, err := structpb.NewStruct(resMap)
+	if err != nil {
+		return nil
+	}
+	return st
+}
+
+func combineDatabaseSpecificMaps(objs ...map[string]any) map[string]any {
 	if len(objs) == 0 {
 		return nil
 	}

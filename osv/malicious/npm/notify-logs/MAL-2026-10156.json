@@ -1,0 +1,85 @@
+{
+  "modified": "2026-07-10T16:47:28Z",
+  "published": "2026-07-10T16:47:28Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10156",
+  "summary": "Malicious code in notify-logs (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (fec337f1c1858ad605f875ea51feb09f84fbd2eb702c7bc0462dbb427b3eff05)\nnotify-logs@1.3.5 presents itself as the `pino` logger (export name `pino`, README and type definitions mimic pino, npm version badge points at the legitimate pino package) but its runtime behavior is a remote-code dropper. index.js exports middleware that, on first invocation, uses child_process.spawn to launch a detached `node` process running lib/caller.js with stdio ignored. lib/caller.js performs an HTTP GET against https://jsonkeeper.com/b/EXSIF (a mutable anonymous JSON-paste host), reads `.data.cookie` from the response, and passes that string to `new Function.constructor(\"require\", s)` then invokes it with the real `require` — compiling and executing attacker-controlled JavaScript inside the consumer's Node process with full module access. lib/const.js additionally stores a base64-encoded fallback endpoint (`aHR0cHM6Ly9qc29ua2VlcGVyLmNvbS9iL1pLNDVK` → https://jsonkeeper.com/b/ZK45J) along with base64-encoded header name/value, hiding the secondary C2 from plain-string scanners. The combination of logger impersonation, opaque remote payload from an anonymous mutable host, detached/silent execution, and obfuscated fallback endpoint is unambiguous supply-chain abuse: any application that loads and invokes this middleware grants the publisher arbitrary code execution.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "notify-logs"
+      },
+      "versions": [
+        "1.3.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/caller.js",
+              "sha256": "c94c68398967a72596733d62b40d3b2df9490056a3b25bfd96333d0a88d84624",
+              "tlsh": "e701cb8f30fd101c019122e66b1fe4327010e85b390ae4d4374c87521ffa5aeaa53ede"
+            },
+            {
+              "path": "index.js",
+              "sha256": "32e82853dd646aac388b78f868241267a5e6483d847df3d4c843f8100590d469",
+              "tlsh": "30213f8175f111480658d9c8b569e5363ce3c4377207b9b0e9ecb7862bcf20c0272ad7"
+            },
+            {
+              "path": "lib/const.js",
+              "sha256": "9879ffb0bf61edef7e9b90ddc5fac9770c514c0cdecd9a07b15e8a677e6f8f74",
+              "tlsh": "8ac08c8351e4a89704301773610ca995f2a1d26f0c840b0331f594844a396a93840fbb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "notify-logs-1.3.5.tgz",
+              "hashes": {
+                "sha1": "be86c204cd40494444ecf9c904d915978d36e298",
+                "sha512_sri": "sha512-X/cik86jXLyTZab7ByPXsbsu6QD3xxK/Oqc7CwWqP5EcAAMHLzPu5+hgUNxliQb+h1yujtDV96Xow8lHVCVcPQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/notify-logs/v/1.3.5"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-009655",
+        "import_time": "2026-07-10T17:10:14.804063932Z",
+        "modified_time": "2026-07-10T16:47:28Z",
+        "sha256": "fec337f1c1858ad605f875ea51feb09f84fbd2eb702c7bc0462dbb427b3eff05",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.5"
+        ]
+      }
+    ]
+  }
+}

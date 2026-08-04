@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-26T01:10:20Z",
+  "published": "2026-06-26T01:10:20Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6494",
+  "summary": "Malicious code in @help-forms/application-aff (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ab5ab5493acb5b3ffcab7f80dbdf34e1485bbe5d5d03978949199cdabf6f676a)\n@help-forms/application-aff@3.4.3 ships a heavily obfuscated postinstall script (scripts/postinstall.js, obfuscator.io fingerprints: rotated string array, base64+decodeURIComponent decoder, hex-named identifiers, self-defending wrapper) that runs automatically on `npm install`. The script ascends from process.cwd() to locate a project root (package.json/.git/node_modules markers), DJB-hashes that path as a per-project cache key under os.tmpdir(), supports a `RECON_ONLY` env-var mode, and uses a 7-day cache marker so the dropper only fires once per project. It then detects os.platform(), constructs a URL of the form `\u003chost\u003e/\u003cplatform\u003e/\u003cpath\u003e` from strings hidden in the rotated array, HTTP-fetches a platform-specific binary, writes it under os.tmpdir(), and spawns it with `{detached:true, stdio:'ignore'}` followed by `.unref()`. There is no hash or signature verification, no pinned URL, and no documentation of the fetched binary's purpose. The package itself is a decoy: package.json advertises an `Internal HTTP client` for the `Help-Forms Platform Engineering` team and points at non-resolving `*.help-forms.io` domains, but the tarball only contains README.md, package.json, scripts/, and dist/. dist/index.js does `require('../src/index.js')` while no `src/` directory ships, so any consumer of the advertised `createClient`/`get`/`post` API will hit a require error — but only after the postinstall dropper has already executed. The combination of obfuscation, install-time outbound fetch from a hidden URL, opaque platform-specific binary execution as a detached background process, project-fingerprinting recon, and decoy library shape is the canonical supply-chain dropper pattern.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@help-forms/application-aff"
+      },
+      "versions": [
+        "3.4.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "e8e5ca58e8b55552c9fd4f9b49022911dc3129515f5f72321a85ebd783b436df",
+              "tlsh": "a3529644bbc468402716efb7bb2bd1e4f01a0c65b950488ae7047fb9fca5225d6e6f31"
+            },
+            {
+              "path": "package.json",
+              "sha256": "3bbd22f8c9f3b2f00aece116c415d330ca80666a61c4500398b8c649fc66e747",
+              "tlsh": "1c117b75d5258e3353d426da9de15141b8725c1f0846bc2c27c3402c4b5e17b12be3be"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "application-aff-3.4.3.tgz",
+              "hashes": {
+                "sha1": "b51558fa7be9321d856a8fa0e44ab0ef1c541291",
+                "sha512_sri": "sha512-laBIkA8JzrfC1GvmTzfzGxUeIA0i8c6HJSwtSjAftoTFOC5qAoleqnd/dDoqohq0VPz/RsiPbySfPmIDZO92qA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@help-forms/application-aff/v/3.4.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007576",
+        "import_time": "2026-06-26T01:51:19.048160635Z",
+        "modified_time": "2026-06-26T01:10:20Z",
+        "sha256": "ab5ab5493acb5b3ffcab7f80dbdf34e1485bbe5d5d03978949199cdabf6f676a",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.4.3"
+        ]
+      }
+    ]
+  }
+}

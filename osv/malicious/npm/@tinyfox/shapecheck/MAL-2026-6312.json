@@ -1,0 +1,185 @@
+{
+  "modified": "2026-06-23T19:34:37Z",
+  "published": "2026-06-22T12:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6312",
+  "summary": "Malicious code in @tinyfox/shapecheck (npm)",
+  "details": "@tinyfox/shapecheck (malicious version 0.8.7, published by tinyfox-yjwiqz@wshu.net) is a trojanized npm package belonging to the wshu.net credential-stealer campaign. The campaign published trojanized look-alike utility packages across 12+ scopes whose publisher accounts all follow the pattern \u003cscope\u003e-\u003c6 random chars\u003e@wshu.net, with every scope created on June 4, 2026 in a ~40-minute burst. This package masquerades as a runtime type/shape validator and ships real, working utility code so it passes a glance, while bundling a much larger malicious payload at dist/bootstrap.cjs. package.json declares a postinstall hook (\"node dist/bootstrap.cjs\") that runs the payload automatically on npm install. The payload is heavily obfuscated with javascript-obfuscator (hex-named identifiers, a while (!![]) array-rotation IIFE, base64+RC4 string decoding, control-flow flattening, and runtime-decrypted module resolution to stay out of the static module graph). At runtime it is a Chromium browser credential stealer: it reads Chromium Cookies and Login Data and decrypts saved passwords protected by AES-256-GCM (the v10/v11 app-bound key schemes), then exfiltrates them over HTTPS using a spoofed Mozilla/5.0 user agent. Malicious payload dist/bootstrap.cjs SHA-256: 0d27ca72b6f02faf4db95effb18347a7e2fa2def2034707bf9e56fa217879a3b.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ccad6ae47c18b5b41d16625a00ce1b493fc44d7e22658d549ff709d6df297b70)\nPackage `@tinyfox/shapecheck` re-publishes the source of the legitimate `rulr` validation library (repository field still points at `git+https://github.com/ryasmi/rulr.git`) under a different name, and adds an obfuscated `dist/bootstrap.cjs` (~282 KB, obfuscator.io-style string-array + RC4-style decoder) that the library's main entry `dist/rulr.cjs` requires on every load. The exported `object()` API immediately calls `__tb.runPrepare()`, so simply `require('@tinyfox/shapecheck')` and using its documented validation API fires the malicious bootstrap. The bootstrap dynamically imports `https`, `child_process`, `crypto`, `fs`, `os`, `path`, `net`; HTTPS-downloads files together with `\u003cfile\u003e.meta` hash metadata; AES-256-GCM-decrypts in-package ciphertext with hardcoded base64 key/iv/aad; stages the result in `os.tmpdir()/installer-\u003ceuid\u003e`; and executes the decrypted bytes via `process.execPath` or `sh -c`, with redirect handling, 25-minute timeout, retry/backoff, and PID-collision detection. It also implements an argv-hijacking re-spawn: it reads `process.argv.slice(2)`, sets a sentinel env var to prevent recursion, and `child_process.spawn(process.execPath, argv, { env, stdio: 'inherit', detached: true }).unref()`s the operator's original Node invocation under bootstrap control — wrapping any script the developer runs as a child of the malware. The bootstrap is also directly executable: `if (require.main === module) onInstall()` triggers the same payload when a developer runs `node node_modules/@tinyfox/shapecheck/dist/bootstrap.cjs`. There are no `preinstall`/`install`/`postinstall`/`prepare` lifecycle hooks, so harm fires on `require`/`import` of the package or on direct invocation, not on `npm install` itself.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@tinyfox/shapecheck"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "0.8.5",
+        "0.8.6",
+        "0.8.7",
+        "0.8.8",
+        "0.7.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/bootstrap.cjs",
+              "sha256": "1b80c5775508dcb5c44ef64f199dfe6823ef26e0b98d73b5ef074aedbe7e056c",
+              "tlsh": "ffe0dfce38fe68706b18432a66469c8779a028591301a02043c1cbe9274842a57a2caf"
+            },
+            {
+              "path": "package.json",
+              "sha256": "f295268d6a5b025838170034813270e4123f24129e3600552815a2bd998ff7c1",
+              "tlsh": "9b215769c8744d631dcc29e56caa0547b660080baa64bd0933c6416c6f4d27f62ff2bd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "shapecheck-0.8.5.tgz",
+              "hashes": {
+                "sha1": "f331efc313573a063568f3f895dd792c046038cd",
+                "sha512_sri": "sha512-pSQRP0N3yn0F7ubM8GrNZ3p7uAHNRX0Gnmut+aQ/XSjpmsaBn4Jc9Nx5kMOBodqEwvblWefOXblI9EVReplIFg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck/v/0.8.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck/v/0.8.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck/v/0.8.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck/v/0.8.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck/v/0.7.4"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/wshu-net-npm-credential-stealer-campaign/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@tinyfox/shapecheck"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "72ee3049c29e3c457454a0dd3b3e188ff8e3aa4e5e2bfa43b31b1251c9b32f21",
+        "import_time": "2026-06-23T16:54:17.383392376Z",
+        "id": "IN-MAL-2026-007318",
+        "modified_time": "2026-06-23T16:23:01Z",
+        "versions": [
+          "0.8.5"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "84cc10505ea4a998b453bc9ddb1aa166170515fb5fca398191d687896fd8abc7",
+        "import_time": "2026-06-23T16:54:16.894542986Z",
+        "id": "IN-MAL-2026-007311",
+        "modified_time": "2026-06-23T16:22:54Z",
+        "versions": [
+          "0.8.6"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a833d66c025b4cad42e5b7a2411fbdffb09c41c82d82bc90bae077cdb36e6767",
+        "import_time": "2026-06-23T16:54:16.50770449Z",
+        "id": "IN-MAL-2026-007306",
+        "modified_time": "2026-06-23T16:22:49Z",
+        "versions": [
+          "0.8.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ccad6ae47c18b5b41d16625a00ce1b493fc44d7e22658d549ff709d6df297b70",
+        "import_time": "2026-06-23T16:54:16.842055705Z",
+        "id": "IN-MAL-2026-007310",
+        "modified_time": "2026-06-23T16:22:54Z",
+        "versions": [
+          "0.8.8"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "db836dd464bb496bf919568c0a9a01d02bea880b6993e0145b53fd889574454e",
+        "import_time": "2026-06-23T16:54:16.947057056Z",
+        "id": "IN-MAL-2026-007312",
+        "modified_time": "2026-06-23T16:22:55Z",
+        "versions": [
+          "0.7.4"
+        ]
+      }
+    ]
+  }
+}

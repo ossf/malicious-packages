@@ -1,0 +1,96 @@
+{
+  "modified": "2026-06-25T07:49:55Z",
+  "published": "2026-06-24T23:04:55Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6427",
+  "summary": "Malicious code in leo-connector-redshift (npm)",
+  "details": "The `leo-connector-redshift` npm package was compromised as part of the Miasma worm campaign targeting the LeoPlatform npm ecosystem. On June 24, 2026, 20 LeoPlatform packages were published within a 3-second window by a threat actor who had taken over the npm account `czirker` belonging to the LeoPlatform organization.\n\nThe malicious payload is triggered automatically during `npm install` via a `binding.gyp` file using node-gyp command expansion (`\u003c!(node index.js \u003e /dev/null 2\u003e\u00261 \u0026\u0026 echo stub.c)`), which bypasses lifecycle script scanners. The replaced `index.js` (~5.2 MB, obfuscated with ROT-N + AES-128-GCM encryption) deploys a multi-stage worm with the following capabilities:\n\n- Credential theft: Targets npm, GitHub, PyPI, RubyGems, Kubernetes, HashiCorp Vault, AWS (IAM keys, Secrets Manager, IMDS), 1Password, JFrog Artifactory, and SSH keys.\n- AI tool targeting: Exfiltrates configuration files for Claude, Cursor, Gemini, and VS Code.\n- Worm propagation: Enumerates npm packages and auto-publishes version bumps to spread to other maintainers in the ecosystem.\n- GitHub persistence: Creates orphan `snapshot-\u003chex\u003e` branches with fake \"Dependabot Updates\" workflows to maintain access after initial compromise.\n\nAny system that installed this version should be considered fully compromised. Rotate all secrets immediately from a separate, clean machine. See the linked SafeDep report for full payload analysis, indicators of compromise, and remediation guidance.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (808b84100db5bf11527a7c9f406522f24c4dd9a1ff25f71f0068c1b672da3cbb)\nThe package ships a binding.gyp at the package root that contains GYP command-expansion syntax (`\u003c!(...)`) at line 6. Because a binding.gyp is present, npm implicitly invokes `node-gyp rebuild` during install, and node-gyp/GYP evaluates `\u003c!(...)` expressions as shell commands during the configure step. This causes the embedded command to execute automatically on `npm install` with no declared lifecycle script in package.json and no explicit user action. The construct fires on default install and provides the maintainer of this version a generic mechanism to run arbitrary shell on every installer's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "leo-connector-redshift"
+      },
+      "versions": [
+        "3.0.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "32d1bc728d8e504952083a6adc488c309a401c7df4dc8f47b382ce32e4aebe21",
+              "tlsh": "48c08c3ca9380d1029d958285168d402a4b142a3494e2a81fade60284fa840b2898bad"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "leo-connector-redshift-3.0.6.tgz",
+              "hashes": {
+                "sha1": "888094a9b842cfe98e8e24c8f729be1fb6384563",
+                "sha512_sri": "sha512-AEwwO99U4UYKu8gHyN8HSff6BunoqeNXOenySzLw68Ejr7oVmpUAeOr4278VOImPqZEt6SYqlnYXlCIyrXvp0w=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/leo-connector-redshift/v/3.0.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://safedep.io/miasma-worm-hits-leoplatform-20-npm-packages/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "808b84100db5bf11527a7c9f406522f24c4dd9a1ff25f71f0068c1b672da3cbb",
+        "import_time": "2026-06-25T07:47:50.899948883Z",
+        "id": "IN-MAL-2026-007474",
+        "modified_time": "2026-06-25T06:30:35Z",
+        "versions": [
+          "3.0.6"
+        ]
+      }
+    ]
+  }
+}

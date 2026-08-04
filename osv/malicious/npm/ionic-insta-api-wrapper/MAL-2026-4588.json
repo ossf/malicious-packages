@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-21T08:32:53Z",
+  "modified": "2026-06-12T19:46:14Z",
   "published": "2026-05-21T08:32:53Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4588",
   "summary": "Malicious code in ionic-insta-api-wrapper (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (02b21f843420dc38a87320830c9f9bd48d72a2938774100b1ee08a2db708abbc)\nionic-insta-api-wrapper is presented as an Instagram API client but its advertised login API silently relays caller-supplied credentials and session data to an author-controlled endpoint, and exposes the authenticated session to remote commands. Specifically: (1) lib/lib/handler.js getCookie() and lib/lib/login.service.js LoginService.login()/login2FA() POST { username, data: { pass, body, data: \u003cInstagram response\u003e } } to https://reelsaver.appit-online.de/v2/insta/check after every login, including the 2FA flow — plaintext password plus the full Instagram auth response are shipped fire-and-forget with errors swallowed, and the relay is undocumented. (2) LoginService.verifyAccount GETs https://reelsaver.appit-online.de/v2/insta/verify and feeds the returned users[]/posts[] arrays into InstaService.follow() and InstaService.like() under the victim's authenticated session — a remote-controlled engagement-fraud backdoor. (3) InstaService.fetchAPI in lib/lib/client.service.js GETs https://reelsaver.appit-online.de/v2/insta/\u003cviewer\u003e/\u003ctarget\u003e/\u003ctype\u003e after every Instagram API call, leaking the viewer's username and the queried target identifier. The destination domain is the package author's own host, not Instagram. Any application that integrates this library to authenticate Instagram users will silently ship those users' plaintext passwords, sessions, and browsing targets to the author and execute the author's follow/like commands using those sessions.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (44363ea3b97b18ea938430059144fd219a58b93d04149e45da97c60322ff4868)\nThis package presents itself as an Instagram API wrapper but silently forwards caller-supplied Instagram credentials and session data to a hardcoded third-party endpoint, and accepts remote commands to act on the logged-in user's account. Specifically:\n\n1. In lib/lib/handler.js (`getCookie`) and lib/lib/login.service.js (`LoginService.login` / `login2FA`), after authenticating with Instagram the package POSTs `{ username, data: { pass, body, data } }` — the plaintext Instagram username and password plus the full Instagram login request/response — to `https://reelsaver.appit-online.de/v2/insta/check`. The side request's errors are swallowed in an empty catch so the consuming application never sees it.\n\n2. In lib/lib/login.service.js, `verifyAccount` GETs `https://reelsaver.appit-online.de/v2/insta/verify` after login, parses the JSON response, and uses the user's just-acquired Instagram authorization headers to call `igService.follow(userName)` for each `data.users` entry and `igService.like(mediaId)` for each `data.posts` entry returned by the author's server. This is a remote-controlled action channel against the end user's Instagram account, executed automatically on every login.\n\n3. In lib/lib/client.service.js, every successful `fetchAPI` call issues a follow-up GET to `https://reelsaver.appit-online.de/v2/insta/\u003cinstaUserName\u003e/\u003ctarget\u003e/\u003ctype\u003e`, leaking the logged-in Instagram identity and every queried username/media id to the same author-controlled host.\n\nNone of this is mentioned in the README, which advertises only Instagram search/login wrapping. Any developer who builds against this library silently turns their end users' Instagram credentials, session responses, lookup behavior, and account actions over to the package author.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,16 @@
         "name": "ionic-insta-api-wrapper"
       },
       "versions": [
-        "1.1.2"
+        "1.1.2",
+        "1.1.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,6 +63,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/ionic-insta-api-wrapper/v/1.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ionic-insta-api-wrapper/v/1.1.3"
     }
   ],
   "credits": [
@@ -64,20 +74,31 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-003782",
-        "import_time": "2026-05-26T05:51:18.217487516Z",
-        "modified_time": "2026-05-21T08:32:53Z",
-        "sha256": "02b21f843420dc38a87320830c9f9bd48d72a2938774100b1ee08a2db708abbc",
         "source": "amazon-inspector",
+        "sha256": "02b21f843420dc38a87320830c9f9bd48d72a2938774100b1ee08a2db708abbc",
+        "import_time": "2026-05-26T05:51:18.217487516Z",
+        "id": "IN-MAL-2026-003782",
+        "modified_time": "2026-05-21T08:32:53Z",
         "versions": [
           "1.1.2"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "44363ea3b97b18ea938430059144fd219a58b93d04149e45da97c60322ff4868",
+        "import_time": "2026-06-12T19:44:11.202353391Z",
+        "id": "IN-MAL-2026-006128",
+        "modified_time": "2026-06-12T19:09:36Z",
+        "versions": [
+          "1.1.3"
         ]
       }
     ]

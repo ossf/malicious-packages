@@ -15,6 +15,7 @@
 package report
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -27,7 +28,11 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/ossf/malicious-packages/internal/gitname"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
@@ -78,7 +83,8 @@ type Report struct {
 // The implementation also extracts the database specific data tracking the
 // origins the report.
 func (r *Report) UnmarshalJSON(b []byte) error {
-	if err := json.Unmarshal(b, &(r.raw)); err != nil {
+	r.raw = &osvschema.Vulnerability{}
+	if err := protojson.Unmarshal(b, r.raw); err != nil {
 		return err
 	}
 	var db dbSpecificVuln
@@ -94,6 +100,8 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
+	// Populates the report-level Name and Ecosystem from the report - handling
+	// git-based reports and canonicalizing the name.
 	r.Name, r.Ecosystem = r.fetchNameAndEcosystem(r.raw)
 
 	// Ensure the details can be parsed.
@@ -106,12 +114,40 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 
 func (r *Report) MarshalJSON() ([]byte, error) {
 	r.raw.SchemaVersion = osvSchemaVersion // Bump the schema version
-	if r.raw.DatabaseSpecific == nil {
-		r.raw.DatabaseSpecific = make(map[string]interface{})
-	}
-	r.raw.DatabaseSpecific[originRefKey] = r.origins
 
-	return json.Marshal(r.raw)
+	var dbMap map[string]any
+	if r.raw.DatabaseSpecific != nil {
+		dbMap = r.raw.DatabaseSpecific.AsMap()
+	} else {
+		dbMap = make(map[string]any)
+	}
+
+	if len(r.origins) > 0 {
+		// This is a hack to transform the origins structure into a shape that can
+		// be populated into the structpb.Struct. Serializing to JSON ensures that
+		// all the fields have the correct keys and the values are properly
+		// serialized when they are passed to structpb.NewStruct().
+		b, err := json.Marshal(r.origins)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal origins: %w", err)
+		}
+		var origins []any
+		if err := json.Unmarshal(b, &origins); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal origins: %w", err)
+		}
+		dbMap[originRefKey] = origins
+	} else {
+		// There are no origins, so remove them from dbMap.
+		delete(dbMap, originRefKey)
+	}
+
+	dbStruct, err := structpb.NewStruct(dbMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create database_specific struct: %w", err)
+	}
+	r.raw.DatabaseSpecific = dbStruct
+
+	return protojson.Marshal(r.raw)
 }
 
 func (r *Report) Split() ([]*Report, error) {
@@ -127,8 +163,8 @@ func (r *Report) Split() ([]*Report, error) {
 
 	var reports []*Report
 	for i := range r.raw.Affected {
-		newReport := *r.raw
-		newReport.Affected = []osvschema.Affected{r.raw.Affected[i]}
+		newReport := proto.Clone(r.raw).(*osvschema.Vulnerability)
+		newReport.Affected = []*osvschema.Affected{r.raw.Affected[i]}
 
 		var origins []*OriginRef
 		for _, o := range r.origins {
@@ -145,7 +181,7 @@ func (r *Report) Split() ([]*Report, error) {
 		}
 
 		rep := &Report{
-			raw:                   &newReport,
+			raw:                   newReport,
 			origins:               origins,
 			allowMultipleAffected: false,
 		}
@@ -162,9 +198,12 @@ type Reader struct {
 }
 
 func (r *Reader) ReadJSON(rdr io.Reader) (*Report, error) {
+	b, err := io.ReadAll(rdr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read JSON: %w", err)
+	}
 	report := &Report{allowMultipleAffected: r.AllowMultipleAffected}
-	dec := json.NewDecoder(rdr)
-	if err := dec.Decode(report); err != nil {
+	if err := report.UnmarshalJSON(b); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON: %w", err)
 	}
 	return report, nil
@@ -175,12 +214,16 @@ func ReadJSON(r io.Reader) (*Report, error) {
 }
 
 func (r *Report) WriteJSON(w io.Writer) error {
-	encoder := json.NewEncoder(w)
-	encoder.SetIndent("", "  ")
-	if err := encoder.Encode(r); err != nil {
+	b, err := r.MarshalJSON()
+	if err != nil {
 		return fmt.Errorf("failed to encode JSON: %w", err)
 	}
-	return nil
+	var normalized bytes.Buffer
+	if err := json.Indent(&normalized, b, "", "  "); err != nil {
+		return fmt.Errorf("failed to normalize JSON indent: %w", err)
+	}
+	_, err = normalized.WriteTo(w)
+	return err
 }
 
 // Path returns a directory name for where the report will be placed.
@@ -195,12 +238,12 @@ func (r *Report) Path() string {
 //
 // If no ID has been assigned the value will be the empty string.
 func (r *Report) ID() string {
-	return r.raw.ID
+	return r.raw.Id
 }
 
 // StripID removes the ID for the report.
 func (r *Report) StripID() {
-	r.raw.ID = ""
+	r.raw.Id = ""
 }
 
 // ApplyFilter applies the filter to the report.
@@ -212,15 +255,15 @@ func (r *Report) ApplyFilter(f reportfilter.Filter) {
 //
 // If no ID has been assigned, this function is a no-op.
 func (r *Report) AliasID() {
-	if r.raw.ID == "" {
+	if r.raw.Id == "" {
 		// No ID.
 		return
 	}
-	if slices.Contains(r.raw.Aliases, r.raw.ID) {
+	if slices.Contains(r.raw.Aliases, r.raw.Id) {
 		// ID is already present in aliases. Don't add it again.
 		return
 	}
-	r.raw.Aliases = append(r.raw.Aliases, r.raw.ID)
+	r.raw.Aliases = append(r.raw.Aliases, r.raw.Id)
 }
 
 // FilterSelf will remove any refences to this report based on its ID from
@@ -228,21 +271,21 @@ func (r *Report) AliasID() {
 //
 // If no ID has been assigned, this function is a no-op.
 func (r *Report) FilterSelf() {
-	if r.raw.ID == "" {
+	if r.raw.Id == "" {
 		// No ID.
 		return
 	}
 	r.raw.Aliases = slices.DeleteFunc(r.raw.Aliases, func(s string) bool {
-		return r.raw.ID == s
+		return r.raw.Id == s
 	})
-	r.raw.References = slices.DeleteFunc(r.raw.References, func(ref osvschema.Reference) bool {
-		return strings.HasSuffix(ref.URL, fmt.Sprintf("/%s.json", r.raw.ID))
+	r.raw.References = slices.DeleteFunc(r.raw.References, func(ref *osvschema.Reference) bool {
+		return ref != nil && strings.HasSuffix(ref.Url, fmt.Sprintf("/%s.json", r.raw.Id))
 	})
 }
 
 // IsWithdrawn returns whether or not the report has been withdrawn.
 func (r *Report) IsWithdrawn() bool {
-	return !r.raw.Withdrawn.IsZero()
+	return r.raw.Withdrawn != nil && r.raw.Withdrawn.IsValid() && !r.raw.Withdrawn.AsTime().IsZero()
 }
 
 // Withdraw marks the report as withdrawn at the given time.
@@ -265,19 +308,34 @@ func (r *Report) UpdateModified() {
 
 // Published returns the published time for the report.
 func (r *Report) Published() time.Time {
-	return r.raw.Published
+	if r.raw.Published != nil && r.raw.Published.IsValid() {
+		return r.raw.Published.AsTime()
+	}
+	return time.Time{}
+}
+
+// IsRecursive returns whether or not the report may be recursive. This function
+// only makes sense to use during ingestion.
+func (r *Report) IsRecursive() bool {
+	if r.HasDetailsHeader() {
+		return true
+	}
+	if strings.Contains(r.raw.Details, "Credit: [OpenSSF](https://github.com/ossf/malicious-packages)") {
+		return true
+	}
+	return false
 }
 
 // urlEcosystems contains a set of OSV ecosystems that allow a registry URL
 // to be specified after the ecosystem name, separated by a colon.
-var urlEcosystems = []osvschema.Ecosystem{
-	osvschema.EcosystemMaven,
-	ecosystemVSCode,
+var urlEcosystems = []osvconstants.Ecosystem{
+	osvconstants.EcosystemMaven,
+	osvconstants.EcosystemVSCode,
 }
 
 func cleanEcosystem(in string) string {
 	e, extra, found := strings.Cut(in, ":")
-	if found && slices.Contains(urlEcosystems, osvschema.Ecosystem(e)) {
+	if found && slices.Contains(urlEcosystems, osvconstants.Ecosystem(e)) {
 		// Remove the scheme to make the URL look more pretty in the filesystem.
 		extra, _ = strings.CutPrefix(extra, "https://")
 		in = e + ":" + extra
@@ -291,23 +349,20 @@ func (r *Report) fetchNameAndEcosystem(v *osvschema.Vulnerability) (string, stri
 	pkg := v.Affected[0].Package
 
 	// If package is entirely empty, assume we are using a git-based ecosystem.
-	var zeroPkg osvschema.Package
-	if pkg == zeroPkg {
+	if isPackageEmpty(pkg) {
 		name := r.raw.Affected[0].Ranges[0].Repo
 		// Run the name through the canonicalization so it is always consistent.
 		return gitname.CanonForStorage(name), string(ecosystemGit)
 	}
 
-	return pkg.Name, pkg.Ecosystem
+	return canonicalizeName(pkg.Name, osvconstants.Ecosystem(pkg.Ecosystem)), pkg.Ecosystem
 }
 
 func (r *Report) Normalize() error {
-	if r.raw.ID != "" {
+	if r.raw.Id != "" {
 		// Only normalize reports which currently don't have an ID assigned.
 		return nil
 	}
-
-	r.Name = canonicalizeName(r.Name, osvschema.Ecosystem(r.Ecosystem))
 
 	r.raw.Summary = fmt.Sprintf(summaryFormat, r.Name, r.Ecosystem)
 	r.raw.Affected[0].DatabaseSpecific = stripUnexpectedValues(r.raw.Affected[0].DatabaseSpecific)
@@ -331,7 +386,7 @@ func (r *Report) Normalize() error {
 	// If any ranges have the type GIT, then canonicalize the repository.
 	ranges := r.raw.Affected[0].Ranges
 	for i := range ranges {
-		if ranges[i].Type == osvschema.RangeGit {
+		if ranges[i].Type == osvschema.Range_GIT {
 			repo, err := gitname.Parse(ranges[i].Repo)
 			if err != nil {
 				return fmt.Errorf("%w: git repository invalid: %w", ErrNormalizing, err)
@@ -348,14 +403,14 @@ func (r *Report) Normalize() error {
 // If package names for an ecosystem may contain mixed case, but are compared
 // as case insensitive, then equalName should be changed to preserve the case
 // of the first package seen.
-func canonicalizeName(name string, ecosystem osvschema.Ecosystem) string {
+func canonicalizeName(name string, ecosystem osvconstants.Ecosystem) string {
 	switch ecosystem {
-	case osvschema.EcosystemCratesIO:
+	case osvconstants.EcosystemCratesIO:
 		// The canonical form for crates.io names is lowercase with dashes
 		// replaced by underscores.
 		// See: https://github.com/rust-lang/crates.io/blob/master/migrations/20150319224700_dumped_migration_93/up.sql
 		return strings.ReplaceAll(strings.ToLower(name), "-", "_")
-	case osvschema.EcosystemPyPI:
+	case osvconstants.EcosystemPyPI:
 		// Replace runs of [-_.] with a single "-", then lowercase everything.
 		// See: https://github.com/pypa/pip/blob/24.0/src/pip/_vendor/packaging/utils.py
 		// See: https://www.python.org/dev/peps/pep-0503/
@@ -380,7 +435,11 @@ func canonicalizeName(name string, ecosystem osvschema.Ecosystem) string {
 	}
 }
 
-func stripUnexpectedValues(obj map[string]any) map[string]any {
+func stripUnexpectedValues(st *structpb.Struct) *structpb.Struct {
+	if st == nil {
+		return nil
+	}
+	obj := st.AsMap()
 	cleaned := make(map[string]any)
 	for k, v := range obj {
 		switch v.(type) {
@@ -392,7 +451,12 @@ func stripUnexpectedValues(obj map[string]any) map[string]any {
 		}
 		cleaned[k] = v
 	}
-	return cleaned
+	res, err := structpb.NewStruct(cleaned)
+	if err != nil {
+		// This should never occur, as cleaned is derived from a structpb.Struct.
+		panic(err)
+	}
+	return res
 }
 
 func FromFile(filename string) (*Report, error) {

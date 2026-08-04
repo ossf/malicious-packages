@@ -1,0 +1,80 @@
+{
+  "modified": "2026-06-19T05:09:45Z",
+  "published": "2026-06-19T05:09:45Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-6193",
+  "summary": "Malicious code in ordered-btree (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3a7b579313f4d78d1b99c88ed3fc22c295458981099a80f09f8408ca2bbb2ac4)\nPackage impersonates the legitimate sorted-btree library (matching name, README, and attributed author) and ships a hidden remote-code-execution payload in its primary API. b+tree.js modifies BTree.prototype.set so that when a caller invokes tree.set(100,...), it spawns `node extended/diffLoad.min.js` as a detached process. diffLoad.min.js is a heavily obfuscated loader that connects to Ethereum Sepolia (via hardcoded Infura/Alchemy RPCs), reads encrypted payload chunks from contract 0xE390863Dac96a71187C71227C2b099B50cF602D31 (TData1/TData2 events), decrypts them with x25519 ECDH + AES-GCM, writes the decrypted bytes to extended/merged, chmods to 755, and executes that file as a detached child process — using a public blockchain as rotatable, blocklist-evading C2. The loader also harvests host telemetry (platform, release, arch, hostname, cpus, totalmem, freemem, uptime) and exfiltrates it to a hardcoded attacker Telegram bot (bot id 8961878831 at api.telegram.org/bot\u003credacted\u003e/sendMessage) and to slack.com/api/chat.postMessage with hardcoded credentials, including a message derived from the LICENSE file. After execution, it removes its own files (diffLoad.min.js, extended/bulkLoad.min.d.js, extended/diffLoad.d.min.js) and rewrites b+tree.js to splice out the 16-line trigger block starting at line 249, then signals the parent process (SIGTERM/taskkill) — anti-forensic clean-up so the installed package looks benign after the payload has run. Any application that drop-in-replaces sorted-btree with ordered-btree and exercises set with key 100 (e.g., tests, fixtures, or production data containing that key) will fetch and execute attacker-controlled code on the installer's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "ordered-btree"
+      },
+      "versions": [
+        "3.2.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "b+tree.js",
+              "sha256": "9ad95e0059739d8475931cd7a78c8661dcaa68c24515247226e01e67bb18f678",
+              "tlsh": "f2737557bac62365a53222b54b1e9145fb39403b921182e4b85cb6b03fb592443fffec"
+            },
+            {
+              "path": "extended/diffLoad.min.js",
+              "sha256": "262cb8a7bdbd4082f43fe6fecf5a8b1d45050c6c5e4c11cd46e9915f3d7490e2",
+              "tlsh": "2e4219cc2fa8373403da75be954d1d0758de9d05ab1ee180f996ca8e358e3845222f7a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ordered-btree-3.2.2.tgz",
+              "hashes": {
+                "sha1": "e530846ac3fbc51a44d499f3520d95486cd556b9",
+                "sha512_sri": "sha512-c1oSNuCBdojN1pFRKuL9xMoNxAho7MZUX09RQayK6ENQbo5uUnEV+MUpQ3QdELa5Xy1QvKRAlT3gw3/Hu6plCw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ordered-btree/v/3.2.2"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-007055",
+        "import_time": "2026-06-19T05:16:50.193118571Z",
+        "modified_time": "2026-06-19T05:09:45Z",
+        "sha256": "3a7b579313f4d78d1b99c88ed3fc22c295458981099a80f09f8408ca2bbb2ac4",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.2.2"
+        ]
+      }
+    ]
+  }
+}

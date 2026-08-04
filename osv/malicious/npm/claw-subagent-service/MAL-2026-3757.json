@@ -1,10 +1,10 @@
 {
-  "modified": "2026-05-26T07:50:24Z",
+  "modified": "2026-06-12T19:46:13Z",
   "published": "2026-05-14T19:25:16Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-3757",
   "summary": "Malicious code in claw-subagent-service (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (36657c2be433b784c573082d364304325acccf033f70df17dbfe104b0173ccbe)\nclaw-subagent-service installs itself as a privileged auto-starting system service (Windows service via post-install.js `svc.install()`, with documented `--install` flows for systemd/launchd) that runs a long-lived daemon on the installer's host. The daemon performs three concurrent installer-harm behaviors:\n\n1. Remote command channel (backdoor): the daemon connects to a vendor-controlled RongCloud IM tenant (appKey `bmdehs6pbyyks`, token from `https://newsradar.dreamdt.cn/im`) and processes inbound IM messages as commands. `rongyun-message-handler.js` handlers `handleCommand` / `handleDeviceControl` / `handleChatMessage` accept start/stop/restart/status, device disable/enable/delete, and free-form chat messages. Chat messages are POSTed by `service/modules/opencode-service.js` to the local opencode AI gateway at `http://127.0.0.1:4096/session/\u003cid\u003e/message` with a system prompt explicitly instructing shell execution (`nohup openclaw gateway...`, `pkill -f \"openclaw gateway\"`, `openclaw doctor --fix`). Any party who controls the vendor's RongCloud account — the vendor itself, a future compromise of that account, or anyone obtaining the vendor's IM publishing key — has an arbitrary-shell oracle on every installer that left the service running.\n\n2. Continuous data exfiltration: `service/modules/heartbeat-dashboard.js` sends a heartbeat with the host's MAC address, node name, and openclaw status to the vendor IM channel every 20 seconds, and every 30 seconds uploads six dashboard chunks containing sessions (with tokens/cost), cron jobs, approvals, projects, tasks, session contexts (model/provider/tokens), and per-session usage events read from `~/.openclaw/agents/*/sessions/*.jsonl`. No installer prompt or opt-out.\n\n3. Privileged self-update: `service/updater.js` polls `npm view claw-subagent-service version` every 6 hours and runs `npm install -g claw-subagent-service@\u003cversion\u003e` as the service account (Windows SYSTEM / systemd root), then restarts the worker. Every installer is permanently subject to whatever the vendor (or a future compromise of the npm publishing key) publishes next, executed with full privilege and no review.\n\nDocumentation of the architecture in the README does not change the threat model: the package gives a remote third party persistent privileged remote-command, exfiltration, and code-replacement access on the installer's machine.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307)\nOn `npm install -g`, the package's `scripts/post-install.js` registers a privileged Windows service `claw-subagent-service` pointing at `service/daemon.js`, configured with `sc.exe failure... actions= restart/0/restart/0/restart/0` and `start= auto`, then immediately starts it — running as LocalSystem on Windows with no opt-in prompt. Once running, three behaviors stack into a remote-control surface against the installer:\n\n1. Self-replacing update channel (`service/updater.js`): a 6-hour interval calls `npm view claw-subagent-service version --json` and, when a newer version is published, runs `npm install -g claw-subagent-service@\u003clatest\u003e` and restarts the worker. Any future tarball published under this name is fetched and executed under LocalSystem (Windows) / user (macOS) without consent and without honoring the operator's pinning. Linux is gated, Windows + macOS are not.\n\n2. Vendor-controlled IM command channel (`service/worker.js`, `service/modules/rongyun-message-handler.js`, `service/modules/script-executor.js`, `service/rongcloud/openclaw-client.js`): the worker fetches a token from `https://newsradar.dreamdt.cn/im/api/claw/token/\u003cnodeId\u003e` and joins a RongCloud IM session (appKey `bmdehs6pbyyks`). `RongyunMessageHandler` dispatches inbound `COMMAND` / `DEVICE_CONTROL` / `CHAT_MESSAGE` messages to handlers that `spawn` `start.sh`/`stop.sh`/`restart.sh`/`status.sh`, run `openclaw doctor --fix`, and feed attacker-supplied prompts into the local AI agent (which can in turn invoke arbitrary tools). Whoever controls the vendor IM backend (or its appKey) has persistent privileged shell-class access to every installer machine.\n\n3. Continuous data exfiltration (`service/modules/heartbeat-dashboard.js`, `service/modules/dashboard-collector.js`): every 30 seconds the worker reads `~/.openclaw/agents/*/sessions/*.jsonl`, `~/.openclaw/projects/projects.json`, `~/.openclaw/tasks/tasks.json`, and the host MAC address, and ships them as 6 RongCloud IM messages to the vendor backend. Includes session contents, model-provider metadata, token-usage events, and a stable host identifier.\n\nThe README documents the product's purpose, but the combination — postinstall privileged-service persistence + 6-hour silent self-replacement + always-on remote-command IM channel + continuous session/host-id upload — is a vendor-operated remote-administration agent installed on the operator's machine via `npm install`. A compromise of the publisher account or the vendor IM backend yields immediate, unattended code execution on every installer host.\n",
   "affected": [
     {
       "package": {
@@ -35,10 +35,70 @@
         "0.0.114",
         "0.0.151",
         "0.0.149",
-        "0.0.146"
+        "0.0.146",
+        "0.0.162",
+        "0.0.170",
+        "0.0.177",
+        "0.0.156",
+        "0.0.161",
+        "0.0.168",
+        "0.0.164",
+        "0.0.160",
+        "0.0.153",
+        "0.0.179"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -297,6 +357,46 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.146"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.162"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.170"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.177"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.156"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.161"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.168"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.164"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.160"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.153"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.179"
     }
   ],
   "credits": [
@@ -304,7 +404,8 @@
       "name": "Amazon Inspector",
       "type": "FINDER",
       "contact": [
-        "actran@amazon.com"
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
       ]
     }
   ],
@@ -548,6 +649,106 @@
         "modified_time": "2026-05-26T07:00:29Z",
         "versions": [
           "0.0.146"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "1b5d67d286b4968f1935e1913720aeaf077c304ca5bf53990bca73d9955470b2",
+        "import_time": "2026-06-12T19:43:53.124093144Z",
+        "id": "IN-MAL-2026-005970",
+        "modified_time": "2026-06-12T19:06:13Z",
+        "versions": [
+          "0.0.162"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "43f662536173d8d4a65688a34f43734279360c61699e5099c37620047cc64791",
+        "import_time": "2026-06-12T19:43:53.441444411Z",
+        "id": "IN-MAL-2026-005973",
+        "modified_time": "2026-06-12T19:06:18Z",
+        "versions": [
+          "0.0.170"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "a0d6d3f523d5fcd475516e80698e8113ba35d9706c447f741a11b9cae791f61a",
+        "import_time": "2026-06-12T19:43:53.542411804Z",
+        "id": "IN-MAL-2026-005974",
+        "modified_time": "2026-06-12T19:06:20Z",
+        "versions": [
+          "0.0.177"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "afc179e3310ae1344b516d263a0371eeb7e8b7f2f15018ac9e481d858f5cfc39",
+        "import_time": "2026-06-12T19:43:52.855728045Z",
+        "id": "IN-MAL-2026-005967",
+        "modified_time": "2026-06-12T19:06:08Z",
+        "versions": [
+          "0.0.156"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307",
+        "import_time": "2026-06-12T19:43:53.037606017Z",
+        "id": "IN-MAL-2026-005969",
+        "modified_time": "2026-06-12T19:06:11Z",
+        "versions": [
+          "0.0.161"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "46a143c6c479913ab343d4f646e622dfbe5ea1d43fadfa91cad8f88217381ee0",
+        "import_time": "2026-06-12T19:43:53.319482167Z",
+        "id": "IN-MAL-2026-005972",
+        "modified_time": "2026-06-12T19:06:16Z",
+        "versions": [
+          "0.0.168"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "9390e597984a79eeec19a8c027110199a5b92686bd7e5988a1f3d79cdd8238f3",
+        "import_time": "2026-06-12T19:43:53.227301659Z",
+        "id": "IN-MAL-2026-005971",
+        "modified_time": "2026-06-12T19:06:15Z",
+        "versions": [
+          "0.0.164"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ae6ed7b124a98c15ad1c2c6dfd047b981035359f23bcdbf75a1e66acb6c3a6f2",
+        "import_time": "2026-06-12T19:43:52.959133463Z",
+        "id": "IN-MAL-2026-005968",
+        "modified_time": "2026-06-12T19:06:10Z",
+        "versions": [
+          "0.0.160"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "b7ec2ce3375130ea9655acabe575991547ce220543c7898a1109dcc2faa8b100",
+        "import_time": "2026-06-12T19:43:52.763338839Z",
+        "id": "IN-MAL-2026-005966",
+        "modified_time": "2026-06-12T19:06:06Z",
+        "versions": [
+          "0.0.153"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "fe00a0a1a9427eb816467287a34d06fc287f769b2169ce4a8158138d4fb7c807",
+        "import_time": "2026-06-12T19:43:53.652190195Z",
+        "id": "IN-MAL-2026-005975",
+        "modified_time": "2026-06-12T19:06:21Z",
+        "versions": [
+          "0.0.179"
         ]
       }
     ]

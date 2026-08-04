@@ -1,0 +1,121 @@
+{
+  "modified": "2026-07-14T11:16:06Z",
+  "published": "2026-07-09T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10074",
+  "summary": "Malicious code in testis-pack (npm)",
+  "details": "The npm package `testis-pack` presents itself as a small binary packing/checksum utility (`pack`/`unpack`/`checksum`/`inspect`) but embeds an obfuscated dropper. It declares a `preinstall: node index.js` hook. The strings for the C2 host, path and dropped-binary name are not present in plaintext — they are reconstructed at runtime via `String.fromCharCode()` calls over hardcoded integer arrays, decoding to the host `sloth-antagonist.vercel.app`, path `/service/assets/fetchBinary` (Windows) or `/service/assets/fetchLinuxBinary` (Linux), and destination filenames `WinService.exe` (Windows) / `WinMetrics` (Linux) written into `%LOCALAPPDATA%\\Programs\\WinMetrics` or `$HOME/.local/share/WinMetrics` respectively — names chosen to masquerade as a legitimate Windows telemetry/service binary. When triggered, the code downloads the file from `https://sloth-antagonist.vercel.app/service/assets/fetch(Linux)Binary`, `chmod`s it executable on Linux, then spawns it detached and unref'd (`stdio: 'ignore'`, `windowsHide: true` on Windows) so it runs silently in the background, disconnected from the parent process. The routine is skipped on macOS.\n\nNote on the trigger: unlike many install-hook droppers, the fetch-and-execute routine (`_fetch()`) is not invoked at the top level of `index.js` — there is no unconditional call anywhere in the module. It is instead called as the first statement inside the exported `pack()` function, so the bare `node index.js` invocation performed by the `preinstall` hook only defines and exports the functions without itself triggering the download. The dropper fires as a side effect the first time any downstream code calls the package's own `pack()` API — which is the package's entire ostensible purpose, making activation highly likely for any real consumer while still evading naive \"executes immediately on install\" detections. The package was published by npm user `ioa2102` (`anamora.les.24948@gmail.com`), which also published the near-identical `testudo-pack` (same payload, `postinstall` hook instead of `preinstall`).\n\nAnalysis performed via static review only (npm registry metadata and package source retrieved as text via the npm registry and unpkg CDN) — the package was not installed or executed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (96f8bc8284635b679a5ca943750a4d3386f73539e05352fd4cd6b0da5d01496f)\npackage.json declares a preinstall hook (`node index.js`) that runs automatically on `npm install`. index.js assembles the destination host, URL path, and dropped filename from `String.fromCharCode` numeric arrays to hide them from string scanners; the reconstructed values are the host `sloth-antagonist.vercel.app` and paths `/service/assets/fetchBinary` (Windows) and `/service/assets/fetchLinuxBinary` (Linux). The script downloads the unpinned, unverified binary via `https.get(...).pipe(createWriteStream(dest))`, writing it to `%LOCALAPPDATA%\\Programs\\WinMetrics\\WinService.exe` on Windows or `~/.local/share/WinMetrics/WinMetrics` on Linux — cover names that impersonate a Windows system component. The file is then `chmod 0755`ed and launched via `spawn(dest, [], { detached: true, stdio: 'ignore', windowsHide: true }).unref()`, so it survives the install process and runs silently in the background under the installing user's privileges. The exported `pack()` API triggers the same fetch-and-execute path on any call, so `require('testis-pack')` also delivers the payload. The dropped bytes are attacker-controlled and mutable at the host, giving the publisher open-ended remote code execution on every installer's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "testis-pack"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "705a3639e1d0db15545b0ca0da8178d281ef5a460cdcc17a5b02445db0f28e69",
+              "tlsh": "2da1764376e1703c0b27e4ed56a6d80ba15e9902325ce4e0fe9d4d049fc26a4edf5acc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "testis-pack-1.0.0.tgz",
+              "hashes": {
+                "sha1": "92e244ceabb8a498b667b04be54232194b6f749c",
+                "sha512_sri": "sha512-pnLQ8dFqbxdHwf71GlYplJY3pldmDgaevMj6Dlo2J/a8NybGIBqKBcZxOPw3TVR4yIXnG99X+oVoQsJCFzfDYA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/testis-pack/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/testis-pack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://firewall.lpm.dev/npm/testis-pack/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    },
+    {
+      "name": "LPM Firewall",
+      "type": "FINDER",
+      "contact": [
+        "https://firewall.lpm.dev"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "sloth-antagonist.vercel.app"
+      ],
+      "urls": [
+        "https://sloth-antagonist.vercel.app/service/assets/fetchBinary",
+        "https://sloth-antagonist.vercel.app/service/assets/fetchLinuxBinary"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "96f8bc8284635b679a5ca943750a4d3386f73539e05352fd4cd6b0da5d01496f",
+        "import_time": "2026-07-09T16:20:48.080676763Z",
+        "id": "IN-MAL-2026-009173",
+        "modified_time": "2026-07-09T15:39:01Z",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
