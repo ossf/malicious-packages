@@ -1,0 +1,72 @@
+{
+  "modified": "2026-08-04T14:20:35Z",
+  "schema_version": "1.7.4",
+  "details": "Enrichment of MAL-2026-3179, which currently carries no database_specific.iocs and an attribution that the public registry record does not support.\n\nATTRIBUTION CORRECTION. MAL-2026-3179 describes this as a \"supply chain compromise of legitimate SAP packages published by threat actor \\\"cloudmtabot@gmail.com\\\" impersonating SAP toolchain maintainers\". Every surviving release of mbt before and after the incident \u2014 1.2.39 through 1.2.47, and the 1.2.49 remediation published the same day \u2014 carries _npmUser.email cloudmtabot@gmail.com. That account is therefore the package's long-standing legitimate publisher, not an outside party imitating one. The evidence is consistent with a compromised legitimate release channel, which is how the accompanying advisory GHSA-pvw4-cvr4-97p8 characterises the event (\"compromised versions ... were published\"), and it is the same shape seen in later npm worm activity: the attacker publishes through credentials or a CI identity that already belong to the project. Naming the account as a threat actor attributes intent to what the record otherwise indicates is a victim, and in the three @cap-js reports it also attributes the publish to an identity absent from those packages entirely.\n\nINDICATORS (absent from MAL-2026-3179). The malicious version added two files not present in 1.2.47 and not present in 1.2.49: an install-time loader setup.mjs (4549 bytes, sha256 4066781fa830224c8bbcc3aa005a396657f9c8f9016f9a64ad44a9d7f5f45e34) invoked by a \"preinstall\": \"node setup.mjs\" hook, and a bundled payload execution.js (11678349 bytes, sha256 80a3d2877813968ef847ae73b5eeeb70b9435254e74d7f07d8cf4057f0a710ac). Both digests were taken from jsDelivr's per-file manifest for the exact version, which persists after the version is unpublished and is linked below as a durable public source; the npm tarball itself now 404s.\n\nFINGERPRINT REFINEMENT. MAL-2026-3179 states that all four compromised packages \"share the same fingerprint\". Only the loader is shared: setup.mjs is byte-identical (sha256 4066781fa830224c8bbcc3aa005a396657f9c8f9016f9a64ad44a9d7f5f45e34) across mbt@1.2.48, @cap-js/sqlite@2.2.2, @cap-js/db-service@2.10.1 and @cap-js/postgres@2.2.2. execution.js is NOT identical \u2014 it resolves to three distinct digests: 80a3d287... (mbt, 11678349 B), 6f933d00... (@cap-js/sqlite, 11729871 B), and eb6eb415... (@cap-js/db-service and @cap-js/postgres, 11723748 B, which were published in the same second and share a payload). Hash-based hunting keyed to a single execution.js digest will therefore miss three of the four packages; the loader digest is the reliable pivot.\n\nRELATED ACTIVITY. A larger npm worm campaign on 2026-08-04, publicly named \"ChainDrop\", used the identical \"preinstall\": \"node setup.mjs\" hook and the same two-file shape (a small obfuscated loader plus a large bundled payload), and likewise shipped the loader in tarballs whose package.json files allowlist does not list it \u2014 consistent with the tarball being assembled directly rather than by npm pack. Loader and payload digests, sizes and filenames all differ between the two events, so this is offered as a TTP correspondence and not as an identification of the same tooling.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "mbt"
+      },
+      "versions": [
+        "1.2.48"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mbt"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://data.jsdelivr.com/v1/package/npm/mbt@1.2.48/flat"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-pvw4-cvr4-97p8"
+    }
+  ],
+  "credits": [
+    {
+      "name": "r-bedekar",
+      "type": "ANALYST",
+      "contact": [
+        "https://github.com/r-bedekar"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "paths": [
+            "package/setup.mjs"
+          ],
+          "note": "install-time loader added by the compromise; byte-identical across all four affected packages",
+          "digests": {
+            "sha256": "4066781fa830224c8bbcc3aa005a396657f9c8f9016f9a64ad44a9d7f5f45e34"
+          }
+        },
+        {
+          "paths": [
+            "package/execution.js"
+          ],
+          "note": "bundled payload added by the compromise; digest differs per package",
+          "digests": {
+            "sha256": "80a3d2877813968ef847ae73b5eeeb70b9435254e74d7f07d8cf4057f0a710ac"
+          }
+        }
+      ]
+    }
+  }
+}
