@@ -546,7 +546,7 @@ func TestReport_MarshalJSON_Origins(t *testing.T) {
 	}
 	if !reflect.DeepEqual(origins[0].Versions, []string{"1.0.0"}) {
 		t.Errorf("origin versions = %v; want [1.0.0]", origins[0].Versions)
-  }
+	}
 }
 
 func TestWithdrawal(t *testing.T) {
