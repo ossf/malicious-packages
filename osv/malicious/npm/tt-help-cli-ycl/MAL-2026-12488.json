@@ -1,23 +1,35 @@
 {
-  "modified": "2026-08-05T13:10:44Z",
-  "published": "2026-08-05T12:17:18Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-12488",
+  "published": "2026-08-05T12:17:18Z",
+  "modified": "2026-08-05T16:16:05.490034006Z",
   "summary": "Malicious code in tt-help-cli-ycl (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5246f6fbb6e6d46a9a9cab000fb5e2c2f2816831f9df67f64803054c92423963)\nThe package's `watchdog` subcommand runs a long-lived agent that POSTs a heartbeat to a configurable remote server (default advertised as http://117.71.53.99:17301) and executes commands returned by that server. `_buildHeartbeatBody` collects hostname, non-loopback LAN IP, OS platform/release/arch, CPU count, memory, uptime, load average, node version, the running child-process table, and the contents of `~/.tt-help.json` (server, proxy, browser path, userId), then sends them to `${serverUrl}/api/watchdog/heartbeat`. The response `commands` array is passed unchanged to `spawn('sh', ['-c', cmd])` (or `cmd /c` on Windows) through ProcessManager.startCommand, giving the remote server arbitrary shell execution on the host running the agent. Independently, `startUpgradeChecker` polls the npm registry every 10 minutes and, on any version bump, runs `npm install -g tt-help-cli-ycl@latest` via `child_process.exec`, so any future publish to the `latest` dist-tag is installed unattended on every running agent. The default C2 host is a bare IPv4 address on a non-standard port with no TLS.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e6144be61d70f258741e5d4cc1476021f93e3ce82ffa00a3f86189537a1438a6)\nThe package's `tt-help watchdog` subcommand starts a long-running agent that POSTs heartbeats to a remote server (default hardcoded to http://117.71.53.99:17301, referenced in src/lib/constants.js and the README/run-explore examples) and executes commands returned in the response. In WatchdogAgent, syncCommands maps entries from the server's `commands` array into child_process.spawn(command, { shell: true }) via ProcessManager.startCommand, with auto-restart — the remote operator selects arbitrary shell commands to run on the installer's host. Each heartbeat body assembled by _buildHeartbeatBody carries hostname, non-internal IPv4 address, OS platform/release/arch, CPU count, memory, node version, uptime, load average, and the contents of ~/.tt-help.json (server, proxy, browser, userId, tuning fields), POSTed as JSON to ${serverUrl}/api/watchdog/heartbeat at the configured interval (default 15s). In addition, _startUpgradeChecker polls the npm registry every 10 minutes and, when a new version of tt-help-cli-ycl is published, invokes `npm install -g tt-help-cli-ycl@latest` via child_process.exec and re-spawns, so the publisher can push arbitrary new code to every running agent host without user confirmation. The combination of remote-command execution, ongoing host inventory + stored-config exfiltration to a bare-IP destination, and unattended auto-upgrade constitutes a full command-and-control backdoor rather than a legitimate remote-management tool.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "tt-help-cli-ycl"
+        "name": "tt-help-cli-ycl",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.4.61",
         "1.4.59",
-        "1.4.60"
+        "1.4.60",
+        "1.4.63",
+        "1.4.64"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,15 +94,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/tt-help-cli-ycl/v/1.4.60"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tt-help-cli-ycl/v/1.4.63"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tt-help-cli-ycl/v/1.4.64"
     }
   ],
   "database_specific": {
@@ -124,7 +135,36 @@
         "versions": [
           "1.4.60"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-015793",
+        "import_time": "2026-08-05T16:13:45.719027921Z",
+        "modified_time": "2026-08-05T15:41:09Z",
+        "sha256": "2b08749c0630d26064b36e3071e5baea85518db047bbbba08354d016de4dc317",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.63"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-015790",
+        "import_time": "2026-08-05T16:13:45.498283711Z",
+        "modified_time": "2026-08-05T15:40:37Z",
+        "sha256": "e6144be61d70f258741e5d4cc1476021f93e3ce82ffa00a3f86189537a1438a6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.64"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
