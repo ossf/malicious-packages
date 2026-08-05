@@ -1,21 +1,27 @@
 {
-  "modified": "2026-07-28T13:33:43Z",
-  "published": "2026-07-28T13:33:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-11143",
+  "published": "2026-07-28T13:33:43Z",
+  "modified": "2026-08-05T13:10:42.709176676Z",
   "summary": "Malicious code in parallely (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8c7ec817d7407cffaa25209d066c7782cd74a1f91ea850887f7d2d85766b5f67)\nparallely impersonates the `concurrently` package: package.json copies concurrently's author (Kimmo Brunfeldt), repository (open-cli-tools/concurrently), README, and ships bin entries named `concurrently` and `conc`. dist/lib/spawn.js injects a dropper into `resolveShell()` that fires whenever the library's `concurrently()` API is invoked or its `concurrently`/`conc` bin is run. The dropper re-spawns itself detached with an env guard to run once, performs anti-analysis checks (Linux /proc TracerPid, Node --inspect/--debug flags, inspector.url()), reconstructs an AES-256-GCM key by XOR-combining four base64 blobs, decrypts a hidden download URL via createDecipheriv(\"aes-256-gcm\",...).setAuthTag(...), fetches a platform-specific payload, writes it to os.tmpdir()/ins-\u003ceuid\u003e/{linux|mac|win.js}, and executes it detached with stdio ignored and windowsHide set. The destination host is not present as a plain string, defeating static extraction.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2a862cdceb2998828aba8de0d4a672b86a2c22dff073356e5acd89e894aced56)\nThe npm package name `parallely` typosquats `concurrently`: package.json advertises the concurrently repository, author, and funding while shipping different code. On library load, an IIFE inside `resolveShell` in dist/lib/spawn.js reconstructs a hidden download URL at runtime by AES-256-GCM decrypting a hardcoded ciphertext (key XOR'd from four base64 constants; IV and auth tag hardcoded), then downloads a platform-specific payload (linux/mac binary or win.js) into os.tmpdir()/ins-<euid>/, sha256-verifies it against a fetched `.meta`, chmods it executable, strips the macOS quarantine attribute via `xattr -c`, and spawns it detached and unref'd. The same block installs anti-analysis guards: it silences uncaughtException/warning handlers, reads /proc/self/status to check `TracerPid`, calls inspector.url(), and scans env/argv for `--inspect`/`--debug`, short-circuiting if any debugger signal is present. A self-relaunch guarded by environment-variable tags is used to survive being imported versus exec'd. The C2 host is not present in plaintext; it is reconstructed only at runtime specifically to defeat static inspection.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "parallely"
+        "name": "parallely",
+        "ecosystem": "npm"
       },
       "versions": [
-        "10.0.3"
+        "10.0.3",
+        "10.0.4"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/parallely/v/10.0.3"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/parallely/v/10.0.4"
     }
   ],
   "database_specific": {
@@ -74,7 +75,26 @@
         "versions": [
           "10.0.3"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-014754",
+        "import_time": "2026-08-05T13:08:43.872527191Z",
+        "modified_time": "2026-08-05T12:46:19Z",
+        "sha256": "2a862cdceb2998828aba8de0d4a672b86a2c22dff073356e5acd89e894aced56",
+        "source": "amazon-inspector",
+        "versions": [
+          "10.0.4"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

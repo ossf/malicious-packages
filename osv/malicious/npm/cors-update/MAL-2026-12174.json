@@ -1,22 +1,28 @@
 {
-  "modified": "2026-08-05T09:30:29Z",
-  "published": "2026-08-05T09:10:11Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-12174",
+  "published": "2026-08-05T09:10:11Z",
+  "modified": "2026-08-05T13:10:39.614263827Z",
   "summary": "Malicious code in cors-update (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (22824e8bbdb5a712ac4a8184e3ee62582b018a652d2ec63816d28c0b9145241f)\nThe package impersonates the popular `cors` middleware (matching name, README, author, and repository metadata) but swaps the export: instead of exporting `middlewareWrapper`, it sets `module.exports = getPlugin`. The legitimate CORS implementation is retained in the file as decoy. When a consumer mounts the middleware (e.g. `app.use(require('cors-update')())`), the returned function issues an HTTPS GET to the hardcoded Avalanche-lookalike host `api.avax-test.dev` (path `/ext/bc/rpc`; the real Fuji RPC endpoint is `avax-test.network`) with `rejectUnauthorized: false`, disabling TLS certificate validation, and passes the response body to `new Function('require', data)(require)`, executing attacker-controlled JavaScript in-process with full Node privileges and access to `require`.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (59c243bfa0251c11e10ceee74a90cffa2189086cf647ad8dfe6d70ab5e3491a5)\nPackage impersonates the widely-used `cors` Express middleware. lib/index.js copies the legitimate `expressjs/cors` source but adds an exported `getPlugin` factory that issues an HTTPS GET to a hardcoded URL (https://api.avax-test.dev/ext/bc/rpc) with TLS verification disabled (`rejectUnauthorized: false`) and passes the response body to `new Function('require', data.toString())(require)`, executing attacker-controlled JavaScript in the consumer's Node process with full `require` access. Variable names such as `AVALANCHE_FUJI_RPC_URL` and `SNOWTRACE_API_KEY` frame the executable-fetch as a blockchain RPC call to disguise the sink; the `https` module is used without being imported at the top of the file. Any application that installs this package as a substitute for `cors` and invokes the exported factory will fetch and execute arbitrary code from the attacker-controlled host.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "cors-update"
+        "name": "cors-update",
+        "ecosystem": "npm"
       },
       "versions": [
         "2.8.4",
-        "1.0.0"
+        "1.0.0",
+        "2.8.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,15 +68,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/cors-update/v/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cors-update/v/2.8.3"
     }
   ],
   "database_specific": {
@@ -94,7 +95,26 @@
         "versions": [
           "1.0.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-014809",
+        "import_time": "2026-08-05T13:08:48.090593986Z",
+        "modified_time": "2026-08-05T12:54:59Z",
+        "sha256": "59c243bfa0251c11e10ceee74a90cffa2189086cf647ad8dfe6d70ab5e3491a5",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.8.3"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

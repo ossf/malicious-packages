@@ -1,0 +1,75 @@
+{
+  "modified": "2026-08-05T12:24:34Z",
+  "published": "2026-08-05T12:24:34Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-12328",
+  "summary": "Malicious code in @rentwise/common (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7e2ac6bf5ebc05e3dcf6a84122d0b10d5d5f36c5b4cec9f8d0b305d1b8125f47)\nbuild/index.js appends an eval(atob(...)) blob to the legitimate common-library exports, so the payload runs whenever any consumer require()s @rentwise/common. The decoded payload queries public Ethereum JSON-RPC nodes and eth.blockscout.com/api to fetch the latest transaction sent by the hardcoded wallet 0xa322E5f3D311D3080e6f0121063e9aDC2490Ef1a, reconstructs an IPv4 address from the transaction's tx.to field (bytes 0-3 as octets), then HTTP GETs http://\u003cip\u003e:443/0x/cls and http://\u003cip\u003e:443/0x/ls. The response body is XOR-decoded using the x-payload-b64 header, eval()'d in-process, and additionally spawned as a detached `node -e \u003cpayload\u003e` child process with stdio:ignore and windowsHide. All strings (module names http/https/zlib/child_process, URLs, RPC method names) are \\uXXXX-escaped inside the base64 blob to defeat static string matching. The blockchain-anchored C2 (EtherHiding pattern) lets the operator rotate infrastructure by broadcasting a new on-chain transaction. This grants arbitrary remote code execution on any host that installs and loads the package.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@rentwise/common"
+      },
+      "versions": [
+        "1.0.36"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "build/index.js",
+              "sha256": "d8e3c71b5c7be2b4e4769d5f2c60ec84aba5c2f5cc872f32cde8f6d30108c525",
+              "tlsh": "b0623eaa16957aabdb4e3273ff97930d233154b236ac1b00310fda74b389c91656d90f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "common-1.0.36.tgz",
+              "hashes": {
+                "sha1": "659dde89aa5250691ea232db1a13009dda515259",
+                "sha512_sri": "sha512-jwo8fE4lFaWbZ33uI5zDEo9JSuJ6AxjB6hvHLNwQNBEDoQXjjgJZyOtG6sPdbD8b4FX1hcNMQPV4/HHWhrwRfg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@rentwise/common/v/1.0.36"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014643",
+        "import_time": "2026-08-05T13:08:33.140934063Z",
+        "modified_time": "2026-08-05T12:24:34Z",
+        "sha256": "7e2ac6bf5ebc05e3dcf6a84122d0b10d5d5f36c5b4cec9f8d0b305d1b8125f47",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.36"
+        ]
+      }
+    ]
+  }
+}
