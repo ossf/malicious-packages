@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T15:41:09Z",
+  "modified": "2026-08-05T15:41:09Z",
+  "summary": "tt-help-cli-ycl watchdog subcommand grants remote shell RCE and exfiltrates host inventory to bare-IP C2",
+  "details": "When the `tt-help watchdog` command is invoked, the package polls `${serverUrl}/api/watchdog/heartbeat` and executes every entry of the response's `commands[]` array via `child_process.spawn(cmd, { shell: true })` with auto-restart through ProcessManager, yielding full shell command execution on the host under whoever controls the configured server. The heartbeat body POSTed on each poll includes hostname, non-loopback IPv4, platform/release/arch, CPU/memory, node version, uptime, load averages, the parsed contents of `~/.tt-help.json` (server, proxy, browser path, userId, limits), and a live enumeration of running child processes (pids, memory, uptime). Help text and defaults point the watchdog `--server` and the webserver `--notify` captcha endpoint at the bare-IP plain-HTTP host `http://117.71.53.99:17301`, and `src/watch/tag-service.js` hardcodes `LLM_URL` to `http://82.156.52.214:18000/v1/chat/completions` — both author-controlled infrastructure. While the watchdog runs, `startUpgradeChecker` polls the npm registry every 10 minutes and, on any version bump, runs `exec('npm install -g tt-help-cli-ycl@latest')`, auto-adopting future publishes of the package globally without user consent, so any subsequent release inherits the same RCE channel.",
+  "affected": [
+    {
+      "package": {
+        "name": "tt-help-cli-ycl",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.4.63"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/watchdog/process-manager.js",
+              "sha256": "7a4762e97d703e1e23bf8a757a846fc52364c9d7198432c9d9e4763bc4a09b5e",
+              "tlsh": "e022c51918fd01577ab300591bdb61163aa5a50fba09ee487dfd9b681fc843405f2fe8"
+            },
+            {
+              "path": "src/watchdog/upgrader.js",
+              "sha256": "33fab057b3a6c40a1029282d285543009874bb0dd68ec87a0f2e5bddf74c5447",
+              "tlsh": "515130c929f7613182b2b22da61f9015377681432b4eee11ba9d47106f4a824a5b3fcc"
+            },
+            {
+              "path": "src/watchdog/agent.js",
+              "sha256": "827b95a667158573376a44554fe8971deb96146d4774c68674af904490318ec3",
+              "tlsh": "70d193098aff00666876115a6f2700032971a20f1d87ed0cbfad47cd8fd9a3c85a5fb5"
+            },
+            {
+              "path": "src/lib/constants.js",
+              "sha256": "ca35434d81ed477b3ce8a8a8661a0e9125c77016c5459800f5a3901b1aa36414",
+              "tlsh": "aeb286996e9d59b282d5171931ef441f7721af831908b941bbefa04d0f5c82f2339d8e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tt-help-cli-ycl-1.4.63.tgz",
+              "hashes": {
+                "sha1": "0a955ded45127aeb425d46c0da57801b632ae020",
+                "sha512_sri": "sha512-a9dxb00SACoGOmH5b2t9XPQ3Q83tt0NDiEU0sq4Z4+wZ7jZH0vEpYQKfCyJqFQQL3fTdYeY4ymA+2PM5vdti9g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tt-help-cli-ycl/v/1.4.63"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015793",
+        "import_time": "2026-08-05T16:13:45.719027921Z",
+        "modified_time": "2026-08-05T15:41:09Z",
+        "sha256": "2b08749c0630d26064b36e3071e5baea85518db047bbbba08354d016de4dc317",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.63"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

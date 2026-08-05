@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T15:26:39Z",
+  "modified": "2026-08-05T15:26:39Z",
+  "summary": "Import-time dropper fetches and executes remote binary from obfuscated Cloudflare Worker hosts",
+  "details": "dolyame-boxy-block@35.5.2 ships a `_runtime.js` module that is unconditionally required from `index.js` at load time. On import, `_runtime.js` reconstructs attacker-controlled hostnames from split string arrays (e.g. `[\"oob-wor\",\"ker.cf99-9b3.workers.dev\"].join(\"\")` producing `oob-worker.cf99-9b3.workers.dev`, and similar for `oob-worker.cf100-416.workers.dev`, `oob-worker.cf101-adf.workers.dev`, `oob-worker.cf103-070.workers.dev`), performs an `https.get` to a platform-specific endpoint, writes the returned bytes to `/var/tmp` or `%TEMP%` under a decoy filename (`.cache_<rand>` on POSIX, `dotnet_diag_<rand>.exe` on Windows), `chmod 0755`s the file, and spawns it detached via `/bin/sh -c \"<path> &\"` or `cmd.exe` with `stdio:\"ignore\"` and `.unref()`. If the HTTPS mirrors fail, a DNS-TXT covert channel under `sdk.dl.wel1.ru` / `ext.dl.wel1.ru` / `pkg.dl.wel1.ru` / `net.dl.wel1.ru` retrieves a base64-encoded payload chunked across multiple TXT records (`c.<domain>`, `0.<domain>`, `1.<domain>`...), reassembles it, and executes it through the same write-and-spawn sink. The advertised purpose (\"boxy block\" UI library) does not match the shipped behavior; the hostnames are obfuscated to evade static string search; the fetched binary is unpinned, unhashed, and unsigned. Any consumer that `require()`s or `import`s the package triggers full-host remote code execution.",
+  "affected": [
+    {
+      "package": {
+        "name": "dolyame-boxy-block",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.5.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_runtime.js",
+              "sha256": "ec0ff5c1b6271212304b8dac62ffd1e0bf64c93b472838a1d1889f2ba22e0cb3",
+              "tlsh": "62b1a55a11a6b0184fb0e7f4c717482af65bfa6336808294f75ca5985f7352483b2efc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dolyame-boxy-block-35.5.2.tgz",
+              "hashes": {
+                "sha1": "ba695bef60d1b6bdc669ad2b5606be0a336853e0",
+                "sha512_sri": "sha512-j0ExXgS0MqK3o4RQII9aVIVReNPlHt/oIp39dFUo+O3LLc+RFTxeCDioYV01juSyasnat/sp7uhhW7rJh+finA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/dolyame-boxy-block/v/35.5.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015700",
+        "import_time": "2026-08-05T16:13:33.675756603Z",
+        "modified_time": "2026-08-05T15:26:39Z",
+        "sha256": "919c54c4e8e0b08b62f76b85369a9033929f8ea19dfc777b8ece48697229a5ce",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.5.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

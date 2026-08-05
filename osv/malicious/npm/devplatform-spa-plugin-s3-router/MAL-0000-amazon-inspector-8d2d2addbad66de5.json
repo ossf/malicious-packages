@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T15:30:54Z",
+  "modified": "2026-08-05T15:30:54Z",
+  "summary": "Import-time dropper fetches and executes remote binary from obfuscated Cloudflare Workers hosts",
+  "details": "On require() of devplatform-spa-plugin-s3-router, index.js loads _helpers.js which runs a bootstrap routine at module load. The code assembles Cloudflare Workers hostnames (oob-worker.cf10-0-416.workers.dev, oob-worker.cf99-9b3.workers.dev, oob-worker.cf101-adf.workers.dev) via string-splitting and.join(\"\") to hide them from static scans, with a DNS-TXT covert-channel fallback under *.dl.wel1.ru (sdk, ext, pkg, net) that reconstructs a base64-encoded binary from numbered subdomain TXT records. The retrieved binary is written to /tmp or the Windows temp directory under a disguised name mimicking Microsoft dotnet diagnostics (dotnet_diag_<hex>.exe or.cache_<hex>), chmod 0755'd, and spawned detached via /bin/sh -c or cmd /c start. A.analytics_state file rate-limits re-execution. A sibling lib/telemetry.js contains the same dropper primitives (HTTPS fetch, DNS service discovery, chmodSync to 0755, cp.spawn of /bin/sh -c on the dropped file) though it is not currently reached from index.js. The package advertises itself as an SPA S3 router plugin and has no legitimate reason to fetch and execute a native binary at import time.",
+  "affected": [
+    {
+      "package": {
+        "name": "devplatform-spa-plugin-s3-router",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_helpers.js",
+              "sha256": "b003c0bd1046d1ebc54b8cbed2dddde813b5ddd91c5e371202c03695dfdafd4f",
+              "tlsh": "ffa1a65e027670098bb0d7e087175416f6abf6633680c194fb6c69980f7216883b2efc"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "768b726dceff9e42fa36616a894eab49ad09feff31084b7ff97fc8ab0f8ee423",
+              "tlsh": "6e835056566a142186b2b368df234107ff3685272643429dbafc82dc1fbd72092a5ffc"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/devplatform-spa-plugin-s3-router/v/35.1.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015728",
+        "import_time": "2026-08-05T16:13:36.935136331Z",
+        "modified_time": "2026-08-05T15:30:54Z",
+        "sha256": "8d2d2addbad66de5b68e55eb91db20968268ed1f7a951835a35aef1159e4af41",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.1.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
