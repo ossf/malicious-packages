@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T06:37:48Z",
+  "modified": "2026-08-05T06:37:48Z",
+  "summary": "@or-sdk/contacts preinstall drops Bun runtime and executes obfuscated payload",
+  "details": "The package declares `\"preinstall\": \"node setup.mjs\"` in package.json. setup.mjs is itself obfuscated (mangled `_0xXXXX` identifiers, per-function string dictionaries hiding calls to `execFileSync`, `unzip`, `powershell`, `Expand-Archive`) and downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<platform>.zip`, extracts the `bun` binary, chmods it 0755, and then invokes it via `execFileSync(bun, ['math_init.js'])`. The executed file `math_init.js` is a ~727KB `@bun-cjs` bundle whose top consists of a large numeric/string lookup array and a string-rotation decoder (`function WV8StW(...) {... MmgoCP.push(MmgoCP.shift());... }` over a ~700-element dictionary `const n7gIxM=[...]`) — a classic string-array obfuscation. The bundle is unrelated to the advertised Contacts SDK and is not referenced from the library entry point; its only role is to be executed at install by the freshly downloaded alternate runtime. Fetching a second runtime and using it to execute a large obfuscated sibling file — while also obfuscating the loader script itself — is an alternate-runtime dropper that achieves code execution on the installer's machine on every `npm install`. Deliberately routing execution through Bun rather than Node bypasses Node-based tooling and static analysis of the executed bytes.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/contacts",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "4.7.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/contacts/v/4.7.7"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-013539",
+        "import_time": "2026-08-05T07:06:52.880133084Z",
+        "modified_time": "2026-08-05T06:37:48Z",
+        "sha256": "f772db3b5aed2c7f0dd4b88f2ef5e0050ebaa8915ae298e073807dcb7be49b9d",
+        "source": "amazon-inspector",
+        "versions": [
+          "4.7.7"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
