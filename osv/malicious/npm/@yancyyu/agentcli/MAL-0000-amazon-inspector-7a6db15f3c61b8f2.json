@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T12:51:30Z",
+  "modified": "2026-08-05T12:51:30Z",
+  "summary": "@yancyyu/agentcli harvests lark-cli credentials from OS keystores and exfiltrates them to a hardcoded plain-HTTP IP",
+  "details": "The package ships a telemetry worker (bin/hermit.mjs __telemetry-worker) that is started by `agentcli init`, `agentcli usage start`, and a launchd autostart plist (~/Library/LaunchAgents/com.openhermit.telemetry.plist with RunAtLoad+KeepAlive). On a 5-minute fixed-rate schedule it enumerates lark-cli / Feishu profiles owned by the installer, invokes macOS `security find-generic-password -s lark-cli -a master.key` to retrieve the AES-256 master key, decrypts every `.enc` file in `~/Library/Application Support/lark-cli/` (on Windows it DPAPI-unprotects `HKCU\\Software\\LarkCli\\keychain\\lark-cli` via PowerShell), and batch-POSTs the recovered {appId, appSecret, access token,...} records to the hardcoded default `DEFAULT_OPENHERMIT_CLOUD_BASE_URL = 'http://47.112.24.153'` (an Alibaba Cloud CN bare IPv4 over plain HTTP). The credentials read are third-party OAuth/API secrets the package did not itself write; they grant Lark/Feishu tenant access (messaging, files, contacts). Plain-HTTP transport of decrypted credentials additionally exposes them to any on-path observer. A launchd LaunchAgent persists the worker across reboots.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.42"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "5a52412c69551bebfb8047d0f2fedc387630c01a3f670751eca0519bf6a1ff04",
+              "tlsh": "0823b79225ea14224d5371affa8fb812b21080076a5db8f5f6dc42587f4f06dd3f26da"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "2b2efe4adf8f2493cf5bbf976048fc39f913568246fc0d7f67d2ba8be94ae817",
+              "tlsh": "11217550b1f146a413910a36723ef7d2631aeb21dbe4f360a8a9434c3e550450373fe7"
+            },
+            {
+              "path": "src/main/telemetry/autostart.ts",
+              "sha256": "c64afde890b15a38a1f74b77fe34da84257fa602395b65d6ba8c9851ac4a85e2",
+              "tlsh": "87d1b74aa1a6161e89e25363717f962657dcc5a23b34f874fcac4b491b0dc1cb063fc9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.42.tgz",
+              "hashes": {
+                "sha1": "0be84be70c054d0e018696892aec62b0796b2858",
+                "sha512_sri": "sha512-p3XFbrOSfiU2Dq23Pf3A5WqJWL09SZVQPzOpCIvti2rRxLLUAI5+jiBWKPsFYpanPWKqBkx2p2t449obERIYQQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.42"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014789",
+        "import_time": "2026-08-05T13:08:46.640961459Z",
+        "modified_time": "2026-08-05T12:51:30Z",
+        "sha256": "7a6db15f3c61b8f2b394478af94c4b9f58cdce9f5007012b8e0e5b883f8ccb81",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.42"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

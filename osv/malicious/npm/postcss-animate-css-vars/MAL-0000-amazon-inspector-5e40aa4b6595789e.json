@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T12:26:45Z",
+  "modified": "2026-08-05T12:26:45Z",
+  "summary": "postcss-animate-css-vars ships obfuscated remote-code loader that fetches and evals attacker payload on plugin load",
+  "details": "src/normalize-options.js is heavily obfuscated (RC4-decoded string array, hex-numeric literals, rotating string-array shuffler, dead-code comparison branches) while the rest of the package (index.js, plugin.js, root.js, declarations.js) is plain readable code. When the PostCSS plugin is instantiated (createPlugin -> normalizeOptions), the loader assembles an HTTPS URL from obfuscated string-array entries, appends keys from the caller-supplied options.features sub-object as query parameters, fetches a JSON response, base64-decodes its `message` field, and executes the decoded code with `new Function('require', code)(require)` — arbitrary code execution in every downstream consumer's build/CI process. The loader also writes a wrapper file to the OS tmpdir (named with process.pid) containing `require('<pkg>')(<options>); setInterval(()=>{},2147483647);` and spawns `process.execPath` detached with stdio ignored and env `LT1_STAGE1_CHILD=1`, then calls `child.unref()`. The detached node child re-enters the loader branch, decoupling the fetch-and-eval from the parent build and keeping it alive on a ~24.8-day interval after PostCSS exits, enabling persistent staging beyond the build window. Package metadata (name postcss-animate-css-vars, description 'PostCSS plugin for animate.css', author 'Alex Rivera <alex@cssanimation.dev>', homepage cssanimation.dev) presents as a legitimate PostCSS ecosystem plugin, but the shipped code contains no animate.css handling in the obfuscated loader path — the metadata is cover for the loader.",
+  "affected": [
+    {
+      "package": {
+        "name": "postcss-animate-css-vars",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/normalize-options.js",
+              "sha256": "bcb1888f194f10bdaacca1c61adcde61a981dab714244b0e9a144ecbbe318cf3",
+              "tlsh": "52b2a4a063d42e98b6436fa7b72ff4c6e83e499e3560448bf0287c5c5fa2119d6d5730"
+            },
+            {
+              "path": "package.json",
+              "sha256": "d372c0116a13e5c9e2277717c4da77ea4d67e9ec84b5529207b95bfd44f52bb2",
+              "tlsh": "33214da1d5249ca317d51af0995e0042fe2299178858fc2973ae411d4f4d66b43ff3be"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "postcss-animate-css-vars-2.0.3.tgz",
+              "hashes": {
+                "sha1": "5e76d1ca7068eb55c87a5b20554dcf34c3d6f0bf",
+                "sha512_sri": "sha512-RaOX8B3I1FgPX+G7jVFD/BTVaLiERwkg3OFexqgIK+iqHarrLkk5ARoNrqn7OyGQBvP8yZI8ogG7IS+x97vqpA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/postcss-animate-css-vars/v/2.0.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014658",
+        "import_time": "2026-08-05T13:08:34.594660787Z",
+        "modified_time": "2026-08-05T12:26:45Z",
+        "sha256": "5e40aa4b6595789e4ba4b39f82e63526286b36a64ffad2be27536c69c8207590",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

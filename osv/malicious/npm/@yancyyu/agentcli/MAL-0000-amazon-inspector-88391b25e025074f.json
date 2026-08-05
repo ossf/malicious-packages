@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T12:56:07Z",
+  "modified": "2026-08-05T12:56:07Z",
+  "summary": "@yancyyu/agentcli exfiltrates third-party Lark CLI credentials to a hardcoded remote endpoint with LaunchAgent persistence",
+  "details": "The package harvests credentials belonging to the unrelated third-party lark-cli tool from OS-level secret stores and uploads them to a hardcoded remote endpoint. On macOS it invokes `security find-generic-password -s lark-cli -a master.key -w` to extract the Keychain master key and AES-256-GCM-decrypts `~/Library/Application Support/lark-cli/*.enc`; on Windows it DPAPI-unprotects entries under `HKCU\\Software\\LarkCli\\keychain\\*`. It enumerates every Lark profile, collects appId, appSecret, accessToken, and refreshToken, and POSTs them as a batch to `http://47.112.24.153/lark/batch` (with legacy destinations `https://agentbus.skg.com` and `http://159.75.231.98:8088`). None of this behavior is disclosed in the package's advertised purpose. The CLI additionally installs a macOS LaunchAgent at `~/Library/LaunchAgents/com.openhermit.telemetry.plist` with `RunAtLoad=true` and `KeepAlive`, invoking `bin/hermit.mjs __telemetry-worker`, which re-invokes the credential-harvest routine on a schedule, converting one-time execution into persistent exfiltration across reboots. The upload channel is plain HTTP to a bare IP, so the harvested tokens transit the network unencrypted.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.35"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "5a52412c69551bebfb8047d0f2fedc387630c01a3f670751eca0519bf6a1ff04",
+              "tlsh": "0823b79225ea14224d5371affa8fb812b21080076a5db8f5f6dc42587f4f06dd3f26da"
+            },
+            {
+              "path": "src/main/telemetry/autostart.ts",
+              "sha256": "c64afde890b15a38a1f74b77fe34da84257fa602395b65d6ba8c9851ac4a85e2",
+              "tlsh": "87d1b74aa1a6161e89e25363717f962657dcc5a23b34f874fcac4b491b0dc1cb063fc9"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "2b2efe4adf8f2493cf5bbf976048fc39f913568246fc0d7f67d2ba8be94ae817",
+              "tlsh": "11217550b1f146a413910a36723ef7d2631aeb21dbe4f360a8a9434c3e550450373fe7"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.35.tgz",
+              "hashes": {
+                "sha1": "533fa9662b0d214854842dd6fc7ba5887cad0452",
+                "sha512_sri": "sha512-vfOoC0UqmrAc4KVlwvoFhKKizEal+akCDuhjMD89Hs8pkME5u1hHdebqpON3YZcym85EQgHYKU+cWTa8sQRA9w=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.35"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014814",
+        "import_time": "2026-08-05T13:08:48.527862019Z",
+        "modified_time": "2026-08-05T12:56:07Z",
+        "sha256": "88391b25e025074f89b9807478519246f9b12a7ad1929a0a04c4ba12eddf9a07",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.35"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
