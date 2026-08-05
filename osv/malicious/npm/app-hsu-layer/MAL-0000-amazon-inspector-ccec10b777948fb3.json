@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T17:22:18Z",
+  "modified": "2026-08-05T17:22:18Z",
+  "summary": "app-hsu-layer postinstall implants SSH backdoor and exfiltrates local secrets to hardcoded IPs",
+  "details": "package.json declares `postinstall: node test.js`, which imports the main module and invokes functions cover-named `from_str_1` / `from_str_2` (commented as a Rust-style parser helper). At install time the code fetches an attacker SSH public key from http://170.205.31.203:3001/api/ssh-key, appends it to ~/.ssh/authorized_keys, and runs `sudo ufw allow 22/tcp` to keep port 22 reachable — granting persistent remote SSH login to the installer's host. It also walks process.cwd() for id.json, config.toml, env and.env and POSTs their contents (prefixed with $USER) to http://95.216.118.146:3001/api/v1 over plain HTTP; these files commonly hold Solana wallet keypairs, API keys and DB credentials. Separately, it downloads scan and block patterns from http://170.205.31.203:3001/api/scan-patterns and /api/block-patterns and uses them to drive a recursive harvest of the user's home directory on Unix or all logical drives on Windows (enumerated via wmic/PowerShell), multipart-uploading matched files together with username and platform metadata to http://170.205.31.203:3001/api/v1. The remote-fetched patterns let the operator retarget which files are stolen without republishing the package.",
+  "affected": [
+    {
+      "package": {
+        "name": "app-hsu-layer",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "6618df0d740c9248fb6be629ce4f136d8e5ff17870ad12835759075978074f2b",
+              "tlsh": "5a02934ca6fb2a2183b371ac468f1415b59ac0033949cd81b2cc97146f8f93d65f6ede"
+            },
+            {
+              "path": "package.json",
+              "sha256": "54a9440daf7087b54f5b19602d679c1915c2b3c0be6bfb6ae2baad2e1cec1ab1",
+              "tlsh": "f6f06d27ca589e6358f175a8287c0617f691932f4204880f75bd665c8fba537448af2e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "app-hsu-layer-2.1.6.tgz",
+              "hashes": {
+                "sha1": "41de391af45d77c8f3a11d6beb3499c70cbddaad",
+                "sha512_sri": "sha512-4WpI00siCaWFrv9cgxx2Xw+edkz3CY5Yni34xtABatfFVW45RQFRqCRqK3furNVcYLPNl3g5qWDTcHNc5pZ3MA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/app-hsu-layer/v/2.1.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015830",
+        "import_time": "2026-08-05T18:07:50.369761792Z",
+        "modified_time": "2026-08-05T17:22:18Z",
+        "sha256": "ccec10b777948fb3fcd849ce3741e0cd78bf46c23f037b8ab23ff6835acb6400",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
