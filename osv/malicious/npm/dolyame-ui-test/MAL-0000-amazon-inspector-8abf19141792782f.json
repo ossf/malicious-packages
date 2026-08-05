@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T15:08:52Z",
+  "modified": "2026-08-05T15:08:52Z",
+  "summary": "dolyame-ui-test ships a load-time binary dropper with DNS-TXT covert channel",
+  "details": "index.js unconditionally requires./_platform on module load. _platform.js reconstructs attacker-controlled hostnames via string-splitting (Array.join) to fetch a platform-specific native binary from one of four Cloudflare Workers hosts (oob-worker.cf103-070.workers.dev, oob-worker.cf101-adf.workers.dev, oob-worker.cf100-416.workers.dev, oob-worker.cf99-9b3.workers.dev). On HTTPS failure it falls back to a DNS-TXT covert channel under wel1.ru subdomains (sdk.dl.wel1.ru, ext.dl.wel1.ru, pkg.dl.wel1.ru, net.dl.wel1.ru), reading a chunk count from c.<domain> and reassembling base64-encoded payload chunks from N.<domain> TXT records. The fetched binary is written to /tmp or the Windows temp directory under decoy names (dotnet_diag_*.exe,.cache_*,.analytics_state), chmod 0755, and spawned detached/unref'd via /bin/sh -c or cmd.exe /c start /b. A second, currently-unreferenced dropper in lib/telemetry.js duplicates the same fetch->chmod->spawn pattern behind a 'telemetry SDK' cover story, using require(\"child_\"+\"process\") and fs[\"chmod\"+\"Sync\"] to further obfuscate dangerous APIs. A UI package has no legitimate reason for this behavior; the destination obfuscation, DNS-TXT fallback, decoy filenames, and parallel staged dropper module together fingerprint a supply-chain attack delivering full-host remote code execution to any installer that requires the package.",
+  "affected": [
+    {
+      "package": {
+        "name": "dolyame-ui-test",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.2.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_platform.js",
+              "sha256": "0f09d20c6d2461ae9c95dd671101be4c435e2ef69432de14bc0889b604e1af26",
+              "tlsh": "4fa1a75a05a670098bb0e7e4c7175816f65bf66337c0c294f79c69885f7312482b2efc"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "bffb30c669600dbcb3eb43e3ec6f81b76ddbda3866d2643674852c7e8a67c631",
+              "tlsh": "72835055566a602186b2b368df234107ff3685272643429dbafc82dc1fbd72092a5ffc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dolyame-ui-test-35.2.5.tgz",
+              "hashes": {
+                "sha1": "ad244c053c53f051a5c83011d5892eaa31423f1b",
+                "sha512_sri": "sha512-g3IPjHDSawwJ5/RAKWbomSP5qzuxKsvRYVEkJSOocA9LOoZSChT+jCzW078pZEydB2cW1IQuJnr8KMvR9zol4g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/dolyame-ui-test/v/35.2.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015584",
+        "import_time": "2026-08-05T15:19:59.184636747Z",
+        "modified_time": "2026-08-05T15:08:52Z",
+        "sha256": "8abf19141792782fd8e8520fc11368eabbc6114f8dd8c025136dd460ca3c3d1d",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.2.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

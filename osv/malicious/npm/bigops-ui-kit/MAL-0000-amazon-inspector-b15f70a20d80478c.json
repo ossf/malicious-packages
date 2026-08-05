@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T15:01:04Z",
+  "modified": "2026-08-05T15:01:04Z",
+  "summary": "bigops-ui-kit ships an import-time binary dropper that fetches and executes an OS-specific payload from obfuscated Cloudflare Workers hosts",
+  "details": "The package is advertised as a UI kit but ships no UI code. On require, index.js loads _compat.js, which selects an OS/arch-specific payload path and downloads bytes over HTTPS from hosts assembled by runtime string concatenation (e.g. `[\"oob-worker.cf10\",\"3-0\",\"70.worke\",\"rs.\",\"de\",\"v\"].join(\"\")` resolving to oob-worker.cf103-070.workers.dev, plus oob-worker.cf100-416.workers.dev and oob-worker.cf101-adf.workers.dev), with a DNS-TXT fallback to sdk.dl.wel1.ru. The retrieved bytes are written to a disguised path in /tmp or %TEMP% (e.g. `dotnet_diag_<hex>.exe`, `.cache_<hex>`), chmodded 0o755, and spawned detached via `cp.spawn(\"/bin/sh\", [\"-c\", fp + \" &\"], {detached:true}).unref()` on POSIX and `spawn(\"cmd\",...)` on Windows. Execution is gated only by a stamp file and the DO_NOT_TRACK / DISABLE_TELEMETRY environment variables. A sibling lib/telemetry.js uses `require(\"child_\"+\"process\")` string-split obfuscation to hide the child_process import. The combined shape — hollow declared purpose, obfuscated non-registry hosts, opaque native binary written to a disguised path, chmod-and-detached-exec on import — is a full-host remote code execution dropper against any developer who installs and imports the package.",
+  "affected": [
+    {
+      "package": {
+        "name": "bigops-ui-kit",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.9.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_compat.js",
+              "sha256": "974e4a30e87acb4cc629e7c7d85e1118f31dcc9a675eac3260010bd4137548b0",
+              "tlsh": "e9a1965a02aa70098bb0dbe48b175416f65be6733780c6d4fb5c65d41fb216482b2dfc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bigops-ui-kit-35.9.2.tgz",
+              "hashes": {
+                "sha1": "464b535f797eae8ce4b9de807149338127fa9f44",
+                "sha512_sri": "sha512-Yl8L9vfZAYMKeFuG/lGFtHRFwG3/i3gRuUxxZsF5FndISYHhBvt8G8G91JVbaK06JvNSrPIVWnvUqNFuT14JXw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bigops-ui-kit/v/35.9.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015535",
+        "import_time": "2026-08-05T15:19:56.60474662Z",
+        "modified_time": "2026-08-05T15:01:04Z",
+        "sha256": "b15f70a20d80478c350a3a0d94c3b66f8ba4804e4eb8e3f238393330d4569501",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.9.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

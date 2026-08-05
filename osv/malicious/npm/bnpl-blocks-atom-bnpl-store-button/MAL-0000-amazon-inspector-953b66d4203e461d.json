@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T14:53:06Z",
+  "modified": "2026-08-05T14:53:06Z",
+  "summary": "Load-time binary dropper fetches and executes remote payload from Cloudflare Workers hosts with DNS-TXT fallback",
+  "details": "The package's `main` (`index.js`) requires `./_loader` at module load, causing `_loader.js` to download a platform-specific native executable from hardcoded Cloudflare Workers hosts (oob-worker.cf102-baf.workers.dev, oob-worker.cf100-416.workers.dev, oob-worker.cf103-070.workers.dev) whose hostnames are reassembled at runtime via `Array.join` string splitting to evade static scanners. If HTTPS fetches fail, a secondary channel retrieves base64-encoded chunks from DNS TXT records under `*.dl.wel1.ru` and reassembles them into the binary payload. The downloaded bytes are written to /tmp or %TEMP% under disguised filenames (`.cache_<hex>`, `dotnet_diag_<hex>.exe`), chmod'd to 0755 on Unix, and spawned detached via `cp.spawn(\"/bin/sh\", [\"-c\", fp + \" &\"])` or `spawn(\"cmd\",...)` on Windows. No hash or signature verification is performed. Any `require()` or `import` of this package triggers full-host remote code execution. A second file, `lib/telemetry.js`, is not on the auto-executed graph in this version but contains structurally identical dropper primitives (base64 buffer to `/bin/sh -c filePath &`, chmod 0755, cp.spawn), mirroring the active loader.",
+  "affected": [
+    {
+      "package": {
+        "name": "bnpl-blocks-atom-bnpl-store-button",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.2.8"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_loader.js",
+              "sha256": "8118bd3530b712671826cb37eab8f725cdafcbede5e4151f8654a1883095338a",
+              "tlsh": "97a1b69a167670188bb0dbe4ca175415f65be66333808194fb9ca5d81fb712483b2efc"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "c4eba20b83e1d52a5213e70838cb906be75a4260989f65c595aae6c13935a45e",
+              "tlsh": "de835055566a242186b2b368df234107ff3685272643429dbafc82dc1fbd72092a5ffc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bnpl-blocks-atom-bnpl-store-button-35.2.8.tgz",
+              "hashes": {
+                "sha1": "2b4ee5af05df091514944643042c1ffa85852962",
+                "sha512_sri": "sha512-bPW30znzi7MPbkBKrXy3T6E4Ug6H5lcWcwxrbj93R2ZAXQHgVmEIkjSOml/SzFSHNQJsddNQU73hHu5dnhhpkQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bnpl-blocks-atom-bnpl-store-button/v/35.2.8"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-015481",
+        "import_time": "2026-08-05T15:19:53.727180131Z",
+        "modified_time": "2026-08-05T14:53:06Z",
+        "sha256": "953b66d4203e461d482f00a2011c4d79b4fd30ab0749ca3e9946837d20e48504",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.2.8"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
