@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11882",
   "published": "2026-08-04T15:27:50Z",
-  "modified": "2026-08-05T03:14:14.583727707Z",
+  "modified": "2026-08-05T04:40:32.393446713Z",
   "aliases": [
     "GHSA-mxvj-vqgw-8rfg"
   ],
   "summary": "Malicious code in @servicetitan/kendo-theme (npm)",
-  "details": "npm/@servicetitan/kendo-theme is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (475516d6c577e823ff94d50f507c6cc440b81077c4d9142eadc58d3bfa6c177a)\nThe package declares itself as a Kendo CSS theme (main is dist/index.css, source is SCSS) but ships a preinstall script `node setup.mjs` that downloads the Bun runtime from github.com/oven-sh/bun (v1.3.13) to a temp directory, chmod +x's it, and invokes it against the sibling file `math_init.js`. `math_init.js` is a 727 KB single-line JavaScript file using rotated string-array indirection (function `WV8StW` shifts a large numeric+string dispatch table `n7gIxM` and every literal is resolved through that table) with no relationship to a CSS theme package. Executing the payload via a freshly-downloaded alternate runtime bypasses Node-only lifecycle inspection. The package also uses the `@servicetitan` scope (an existing SaaS company) with empty description, no author, and no repository metadata, consistent with a dependency-confusion / scope-impersonation lure targeting that organization's internal builds. Installing this version runs attacker-controlled obfuscated code on the installer's host at `npm install` time.\n\n## Source: ghsa-malware (91bd4ad401bce68894dfce621d31e93548344399ff2c5e34324c75135de64e00)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/kendo-theme is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ca67459716cd836d1cef3cdcbbbe201ea414335430f04ae7a78a2e3deb2021e4)\nPackage presents itself as a Kendo UI CSS theme (main is dist/index.css and src contains only.scss sources), but package.json declares \"preinstall\": \"node setup.mjs\". setup.mjs is an obfuscator.io-style script (hex-named identifiers _0x488df8/_0x52943e, property-shuffled dispatch objects) that downloads the Bun runtime from github.com/oven-sh/bun/releases/... and then invokes execFileSync on the downloaded Bun binary against a bundled 727KB file math_init.js. math_init.js is a Bun-compiled bundle (// @bun @bun-cjs header) with a rotated string/opcode table (n7gIxM numeric array, WV8StW rotator, hc1jfK9 decoder) and hex-scrambled identifiers, so all strings and any network destinations are reconstructed at runtime. A CSS theme has no need for a second language runtime or a compiled executable payload; the shape is an alternate-runtime dropper that executes attacker-controlled obfuscated code on the installer's machine at npm install time, evading Node-only static inspection. The @servicetitan scope also suggests brand impersonation.\n\n## Source: ghsa-malware (91bd4ad401bce68894dfce621d31e93548344399ff2c5e34324c75135de64e00)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,21 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -109,6 +124,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/kendo-theme/v/0.0.27"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/kendo-theme/v/0.0.28"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/kendo-theme/v/0.0.31"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/kendo-theme/v/0.0.33"
     }
   ],
   "database_specific": {
@@ -176,6 +203,36 @@
         "source": "amazon-inspector",
         "versions": [
           "0.0.27"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012381",
+        "import_time": "2026-08-05T04:38:03.802857627Z",
+        "modified_time": "2026-08-05T03:51:31Z",
+        "sha256": "3a5330ce2d569263dd78b0509148a19ae946c22d737643acba806b0787f4bdaf",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.28"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012578",
+        "import_time": "2026-08-05T04:38:27.578972601Z",
+        "modified_time": "2026-08-05T04:19:59Z",
+        "sha256": "857b533ab5c9d4cabf8e8e22269294d1eb89f49aaa833a1ca75d307c9311af6a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.31"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012224",
+        "import_time": "2026-08-05T04:37:45.184967665Z",
+        "modified_time": "2026-08-05T03:29:14Z",
+        "sha256": "ca67459716cd836d1cef3cdcbbbe201ea414335430f04ae7a78a2e3deb2021e4",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.33"
         ]
       }
     ]

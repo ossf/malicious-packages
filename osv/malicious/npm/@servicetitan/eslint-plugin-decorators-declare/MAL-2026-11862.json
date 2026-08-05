@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11862",
   "published": "2026-08-04T15:28:12Z",
-  "modified": "2026-08-05T00:46:45.013539605Z",
+  "modified": "2026-08-05T04:40:32.337057480Z",
   "aliases": [
     "GHSA-x3q2-g9rx-x885"
   ],
   "summary": "Malicious code in @servicetitan/eslint-plugin-decorators-declare (npm)",
-  "details": "npm/@servicetitan/eslint-plugin-decorators-declare is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (edeff8bfdcadc1cabf5667229334e51b7028adc437dfd3f1b8da2baa170a0ec2)\nThis ESLint plugin package ships a preinstall hook (`node setup.mjs`) that downloads the Bun runtime from GitHub releases, extracts it to a temporary directory, marks it executable, and then uses that freshly-downloaded runtime to execute a sibling file `math_init.js`. `math_init.js` is a ~727KB heavily obfuscated JavaScript blob (header `// @bun @bun-cjs`, a rotating string-array constructed from a large numeric literal array, and a rotator function of the form `function WV8StW(a,b,c){for(c=0;c<b;c++)a.push(a.shift());return a}`) that has no connection to the package's declared purpose of providing an ESLint decorator rule. Invoking the payload through a downloaded alternate runtime rather than Node hides it from Node-resolved static analysis, and the `math_init.js` filename disguises the payload as unrelated math initialization. The combination of an install-time alternate-runtime execution vector, a large obfuscated payload unrelated to the package's advertised functionality, and delivery under an established ServiceTitan scope is consistent with a maintainer/namespace compromise dropping arbitrary attacker-controlled code onto any machine that runs `npm install`.\n\n## Source: ghsa-malware (4f945711ede2fea484854f33b8fbd4c8ec7df089fb17b050978ab579896e8d05)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/eslint-plugin-decorators-declare is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c806d9bd93a0bb933ef119ba3b7a48131c7d2418238e68e4255e21f2681cf2ce)\nThe package declares a preinstall hook `node setup.mjs` that downloads the Bun runtime from github.com/oven-sh/bun/releases/download/bun-v1.3.13/<platform>.zip, extracts the `bun`/`bun.exe` binary, chmods it executable, and invokes it against a sibling `math_init.js` file. `math_init.js` is a ~727 KB heavily obfuscated module using the standard shuffled-string-array pattern (`WV8StW` rotation routine, >500-entry constant table `n7gIxM`, hex-mangled identifiers) with a `// @bun @bun-cjs` header indicating it can only be executed by the Bun runtime — bypassing Node-based inspection. The `setup.mjs` dropper itself is obfuscated with hex-mangled import bindings (`_0x488df8`, `_0x52943e`) and scrambled lookup tables that hide plain strings such as `ldd`, `/etc/os-release`, `Alpine`, `powershell`, and `Expand-Archive`, indicating cross-platform installer-host reconnaissance and dispatch. The advertised functionality is a ~48-line ESLint rule at `dist/index.js`, which has no need for a second language runtime or a 727 KB payload. The combination of an alternate-runtime dropper delivered via preinstall, dual-layer obfuscation of both loader and payload, and a mismatch between the package's stated ESLint purpose and the downloaded execution surface is a supply-chain attack fingerprint.\n\n## Source: ghsa-malware (4f945711ede2fea484854f33b8fbd4c8ec7df089fb17b050978ab579896e8d05)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,31 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -86,6 +111,26 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.21"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.19"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.20"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.15"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-decorators-declare/v/12.8.18"
     }
   ],
   "database_specific": {
@@ -133,6 +178,56 @@
         "source": "amazon-inspector",
         "versions": [
           "12.8.21"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012114",
+        "import_time": "2026-08-05T04:37:31.988328841Z",
+        "modified_time": "2026-08-05T03:13:37Z",
+        "sha256": "7b216c04e4079232a5f50c5cd8e0c8ec589b9be1367d515de5d2f7fc31a78085",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.19"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012492",
+        "import_time": "2026-08-05T04:38:16.662161802Z",
+        "modified_time": "2026-08-05T04:07:20Z",
+        "sha256": "7ee0d42beb872a5a671ed8e834403f5d6648439b32aebc1c4818deee73a9f88c",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.20"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012195",
+        "import_time": "2026-08-05T04:37:41.626489231Z",
+        "modified_time": "2026-08-05T03:25:07Z",
+        "sha256": "a2b50749976b43d873c6797695a97214375d31d67c13cc5cd326dce088275cc1",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012123",
+        "import_time": "2026-08-05T04:37:33.084164932Z",
+        "modified_time": "2026-08-05T03:14:54Z",
+        "sha256": "c806d9bd93a0bb933ef119ba3b7a48131c7d2418238e68e4255e21f2681cf2ce",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.15"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012113",
+        "import_time": "2026-08-05T04:37:31.895351434Z",
+        "modified_time": "2026-08-05T03:13:29Z",
+        "sha256": "ddd8c4abb9ce771b38d7d90989e6e5b2921370627c433382c762d45740667a49",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.18"
         ]
       }
     ]

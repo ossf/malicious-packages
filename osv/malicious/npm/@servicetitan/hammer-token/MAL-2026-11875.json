@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11875",
   "published": "2026-08-04T13:21:40Z",
-  "modified": "2026-08-05T03:14:14.577229255Z",
+  "modified": "2026-08-05T04:40:32.374992048Z",
   "aliases": [
     "GHSA-qvhm-jx8x-jc57"
   ],
   "summary": "Malicious code in @servicetitan/hammer-token (npm)",
-  "details": "npm/@servicetitan/hammer-token is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (29ae7d8c87e1a73790a36c424b3186dbe3489f57ff771b072a6cc9fb5a1e6c44)\nThe package's `preinstall` script (`setup.mjs`, itself named with obfuscator.io-style identifiers) downloads the Bun runtime from the oven-sh/bun GitHub releases and uses `execFileSync(bun, ['math_init.js'],...)` to execute the sibling file `math_init.js` during `npm install`. `math_init.js` is a 727 KB Bun-CJS bundle (header `// @bun @bun-cjs`) with a rotating string-array (`WV8StW`), a scrambled base64-style alphabet, and a dispatcher (`hc1jfK9`) that resolves opaque values at runtime; no plaintext strings tie it to design-tokens/Style-Dictionary functionality. The bundle also imports `child_process`, `fs`, and `http`, reads `process.env`, and issues outbound `POST`/`fetch` traffic to hosts reconstructed at runtime. The delivery shape (alternate-runtime dropper compiled only for Bun so Node-based scanners cannot introspect it), the purpose mismatch (a design-tokens library has no reason to ship a Bun-compiled binary bundle and pull a fresh runtime to execute it), and the obfuscator.io-style renaming of the loader together establish an install-time arbitrary code execution surface against every consumer of this version. Installing this version resolves to attacker-controlled code being executed on the installer's machine before any application code runs.\n\n## Source: ghsa-malware (31992e8da4cff46fb38e4eee40d0b550fdaa30bd82fd1f8813ddeb3010bc5902)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/hammer-token is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (494cce0872c93b1f9c45922b3f1aeeab7b8ac340d651f3df8ed5a1a11bf8efd6)\n@servicetitan/hammer-token@3.1.3 ships a heavily obfuscated preinstall script (`setup.mjs`, `node setup.mjs` declared as the preinstall hook) that downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...zip` and then uses the downloaded Bun binary via `execFileSync` to run a sibling 727KB obfuscated file `math_init.js` at install time. `setup.mjs` uses `_0xNNNNNN` hex identifiers, string-lookup indirection objects (`YCZJE: function(a,b,c,d){return a(b,c,d);}`), and wrapper functions over `https.get` and `execFileSync` to hide the fetch and exec. `math_init.js` is a Bun-compiled bundle (header `// @bun @bun-cjs`) with a rotating string-array constant table (`WV8StW`), single-letter identifiers, and hex-encoded literals; it is not the advertised design-token functionality and can only be executed through the freshly downloaded alternate runtime. A separate module `src/utils/figma/get-token.js` also references `child_process`, `fs`, `http`, `process.env`, `process.platform`, and a `POST fetch(...)` alongside Figma endpoints, consistent with additional host/network-reaching code paths. A design-token package has no legitimate need to install a second language runtime and hand it opaque bytes at install time; the obfuscation, alternate-runtime fetch, and opaque bundle together form the alternate-runtime-dropper pattern executed automatically on `npm install`.\n\n## Source: ghsa-malware (31992e8da4cff46fb38e4eee40d0b550fdaa30bd82fd1f8813ddeb3010bc5902)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,31 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -100,6 +125,26 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-token/v/3.1.6"
     }
   ],
   "database_specific": {
@@ -157,6 +202,56 @@
         "source": "amazon-inspector",
         "versions": [
           "3.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012286",
+        "import_time": "2026-08-05T04:37:53.134743397Z",
+        "modified_time": "2026-08-05T03:37:46Z",
+        "sha256": "33b48f0aaeae92d3eebe67ce901b390b36f10eb0c730a11aa4b394cab0f624b6",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.1.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012318",
+        "import_time": "2026-08-05T04:37:56.738394337Z",
+        "modified_time": "2026-08-05T03:42:21Z",
+        "sha256": "494cce0872c93b1f9c45922b3f1aeeab7b8ac340d651f3df8ed5a1a11bf8efd6",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012418",
+        "import_time": "2026-08-05T04:38:08.080306886Z",
+        "modified_time": "2026-08-05T03:56:47Z",
+        "sha256": "7c7fe6f19f7e47282217a5a6bb874342d9afcdbe2e02f0c36f70e78b80070164",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.1.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012383",
+        "import_time": "2026-08-05T04:38:04.023210127Z",
+        "modified_time": "2026-08-05T03:51:48Z",
+        "sha256": "bc7e0c5d4c9a8de5e826aa3519f56dd0e455ccabbb5231969b0960ad1286a021",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012483",
+        "import_time": "2026-08-05T04:38:15.436367756Z",
+        "modified_time": "2026-08-05T04:06:01Z",
+        "sha256": "c2651d827e7921977129c81d98f6ff165366a34fd76f0ecb2f5959667b25b0bf",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.1.6"
         ]
       }
     ]

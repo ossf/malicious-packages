@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11937",
   "published": "2026-08-04T13:17:46Z",
-  "modified": "2026-08-05T03:14:14.638433331Z",
+  "modified": "2026-08-05T04:40:32.562802364Z",
   "aliases": [
     "GHSA-j5gf-8wxx-crfv"
   ],
   "summary": "Malicious code in @servicetitan/titan-chat-ui-common (npm)",
-  "details": "npm/@servicetitan/titan-chat-ui-common is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (bf1085385ad7a39fe8e839598406d7d64c0a90b3dd273852e091a3176688d00e)\nThe npm package `@servicetitan/titan-chat-ui-common@9.0.3` declares a `preinstall` script (`node setup.mjs`) that runs automatically on `npm install`. `setup.mjs` is written with hex-named identifiers (`_0x488df8`, `_0x52943e`,...) and lookup-object string hiding to obscure literals such as `\"ldd\"`, `\"/etc/os-release\"`, and `\"bun\"`. At install time it downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/<arch>.zip`, extracts it into a temporary directory, chmods the binary executable (mode 493 / 0755), and then invokes it via `execFileSync(bunPath, [math_init.js])`. The sibling file `math_init.js` is a single-line, approximately 727KB heavily obfuscated bundle exhibiting the obfuscator.io shape (rotated string array via push/shift, hex identifiers, no readable strings). Fetching an alternate JavaScript runtime specifically to execute an opaque, obfuscated bundle at install time is the alternate-runtime dropper pattern, and is unrelated to the package's advertised purpose as a chat UI common library. The pattern is designed to evade Node-based scanners since the executed code runs under Bun rather than Node.\n\n## Source: ghsa-malware (c9d8397be66009b373d58a4adacfd8e906ae0451652c5582effea4738d0c1d69)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/titan-chat-ui-common is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ad74029cad7641d09eeeb6e2c4f9a66945b1ba4dc19c3a56cc695d22e704fe02)\nThe package declares a preinstall hook (`node setup.mjs`) that downloads the Bun runtime from github.com/oven-sh/bun releases (v1.3.13), extracts it to a temporary directory, marks it executable, and then invokes it against a bundled sibling file `math_init.js`. `math_init.js` is a ~727KB file with obfuscator.io fingerprints — string-array rotation (a helper performing `.push(.shift())` on a mixed-type constant table) and a per-string decoder built from a shuffled alphabet — with no plausible relation to the package's advertised chat-UI purpose. The setup script itself uses obfuscated identifiers (`_0x488df8`, etc.) to hide the dropper flow. Running the payload under Bun rather than Node bypasses Node-based supply-chain scanners, and the entire chain fires automatically on `npm install` before consumers can inspect the code. The package is published under the `@servicetitan` scope and its `dist/` tree references servicetitan/titan-chatbot-client PRs, while the preinstall dropper and `math_init.js` appear grafted onto that otherwise-legitimate UI code — consistent with a scope-hijack or dependency-confusion upload rather than a first-party release.\n\n## Source: ghsa-malware (c9d8397be66009b373d58a4adacfd8e906ae0451652c5582effea4738d0c1d69)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -104,6 +114,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-common/v/9.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-common/v/9.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-common/v/9.0.6"
     }
   ],
   "database_specific": {
@@ -171,6 +189,26 @@
         "source": "amazon-inspector",
         "versions": [
           "9.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012632",
+        "import_time": "2026-08-05T04:38:33.860904386Z",
+        "modified_time": "2026-08-05T04:27:22Z",
+        "sha256": "ad74029cad7641d09eeeb6e2c4f9a66945b1ba4dc19c3a56cc695d22e704fe02",
+        "source": "amazon-inspector",
+        "versions": [
+          "9.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012486",
+        "import_time": "2026-08-05T04:38:15.885866756Z",
+        "modified_time": "2026-08-05T04:06:28Z",
+        "sha256": "e7fd1192635d254b2d15d7555e49317f4216a6f55e36aa03f0c7a2140eaae035",
+        "source": "amazon-inspector",
+        "versions": [
+          "9.0.6"
         ]
       }
     ]

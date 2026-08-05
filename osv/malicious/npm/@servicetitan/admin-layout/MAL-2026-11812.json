@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11812",
   "published": "2026-08-04T15:30:56Z",
-  "modified": "2026-08-05T03:14:14.515094290Z",
+  "modified": "2026-08-05T04:40:32.188289627Z",
   "aliases": [
     "GHSA-p7mv-cxfx-xvp9"
   ],
   "summary": "Malicious code in @servicetitan/admin-layout (npm)",
-  "details": "npm/@servicetitan/admin-layout is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3ebcc1c65fd87444a0b75a6cf1d82ded0044867497110d883634b1a4f14ab895)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun releases into a temporary directory, marks it executable, and then invokes it against a shipped 727KB obfuscated file math_init.js at the tarball root. math_init.js is a single-line '// @bun @bun-cjs' bundle with rotated string-array indirection (decoder hc1jfK9, table n7gIxM, rotator WV8StW) and no readable logic, and it has no relationship to the dist/ React admin-layout components the package otherwise exports. The install-time execution runs an opaque payload under a runtime fetched at install time, bypassing normal Node-based review, and is grafted onto an otherwise ordinary-looking component library — the shape of a hijacked or impersonated publish under the @servicetitan scope.\n\n## Source: ghsa-malware (672308937b089202278ea7f7135c429731492f5dbed5f696714d9436ccb90a4f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/admin-layout is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (50ed1c0bdab0005cadf36b63636c462aafb82a49a23e112cc21ea11ff87526fe)\nVersion 2.4.6 of this React admin-layout package declares a `preinstall` script (`node setup.mjs`) whose source is obfuscator.io-style. On `npm install` it detects platform/arch (including Alpine musl), downloads the Bun runtime zip from github.com/oven-sh/bun/releases (bun v1.3.13), extracts and chmods the binary, and then invokes that freshly-downloaded Bun binary to execute the bundled `math_init.js`. `math_init.js` is a ~727KB Bun-CJS file (`// @bun @bun-cjs` header) using a rotated string-array decoder with hex-mangled identifiers, so what actually runs on the installer's machine is not human-readable without decoding. The pattern — a UI library pulling a second, non-Node language runtime at install time solely to execute an obfuscated bundled blob under it — is the npm alternate-runtime-dropper shape and is structured to bypass Node-based install-time scanning. A React admin-layout has no legitimate need for a Bun runtime or for opaque install-time code execution.\n\n## Source: ghsa-malware (672308937b089202278ea7f7135c429731492f5dbed5f696714d9436ccb90a4f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,21 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +106,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/admin-layout/v/2.4.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/admin-layout/v/2.4.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/admin-layout/v/2.4.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/admin-layout/v/2.4.9"
     }
   ],
   "database_specific": {
@@ -137,6 +164,36 @@
         "source": "amazon-inspector",
         "versions": [
           "2.4.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012293",
+        "import_time": "2026-08-05T04:37:53.928062914Z",
+        "modified_time": "2026-08-05T03:38:43Z",
+        "sha256": "50ed1c0bdab0005cadf36b63636c462aafb82a49a23e112cc21ea11ff87526fe",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.4.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012570",
+        "import_time": "2026-08-05T04:38:26.60600953Z",
+        "modified_time": "2026-08-05T04:18:47Z",
+        "sha256": "9d28bec270113006a2fbb00c0890a249ae6b8fba96fa6358a3db56f8c4ecdaa3",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.4.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012466",
+        "import_time": "2026-08-05T04:38:13.605877733Z",
+        "modified_time": "2026-08-05T04:03:42Z",
+        "sha256": "b05cc478e9214fddd6f79e34be7ffbc57747dde450eee9b517c9fd6da81bf482",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.4.9"
         ]
       }
     ]

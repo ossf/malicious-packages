@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11930",
   "published": "2026-08-04T13:21:15Z",
-  "modified": "2026-08-05T03:14:14.630517099Z",
+  "modified": "2026-08-05T04:40:32.546342364Z",
   "aliases": [
     "GHSA-x9rp-2ppw-m5p8"
   ],
   "summary": "Malicious code in @servicetitan/tanstack-query-mobx (npm)",
-  "details": "npm/@servicetitan/tanstack-query-mobx is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6e6d778e3681d43ded32b0fbdfd62538ebddd0c37e7cd6b33431890d19ef0c96)\npackage.json declares `\"preinstall\": \"node setup.mjs\"`. setup.mjs downloads the Bun runtime (bun-v1.3.13) from GitHub releases into a temp directory, chmods it executable, then invokes it via execFileSync against the sibling file math_init.js. math_init.js is a 727,680-byte bundle marked `// @bun @bun-cjs`, obfuscated with a string-array rotator (`function WV8StW(...) {... MmgoCP.push(MmgoCP.shift())... }` over a large mixed-type table `n7gIxM`) and randomized hex identifiers, with no source maps. The Node preinstall step only fetches and launches the alternate runtime; the actual payload executes under Bun, bypassing Node-based scanners. The package is advertised as a TanStack-Query/MobX integration (homepage github.com/servicetitan/anvil-uikit-contrib), a purpose that does not require fetching a second JavaScript runtime or executing a 700KB opaque bundle at install time. The name occupies the @servicetitan npm scope, so any consumer that runs `npm install` on this package receives arbitrary code execution under Bun with no relationship to the advertised functionality.\n\n## Source: ghsa-malware (9269c60bc5b4bb46ce475a087b50ee7ec1c59440e1a7b62c1f4a616652b54935)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/tanstack-query-mobx is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (370ed915ef1d0a812446ca414acaea7d125b5f29aa71b4028ccf6cc139caff70)\npackage.json declares a preinstall hook `node setup.mjs` that downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...zip`, extracts it to a temp directory, chmods it executable, and invokes it against a sibling file `math_init.js` via `execFileSync`. `math_init.js` is a 727KB `// @bun @bun-cjs` single-file bundle whose contents are a shuffled string/opcode array with runtime-reconstructed identifiers (custom string-array rotator `WV8StW` + char-code decoder) — not human-readable, not referenced by the library's declared entry points in `dist/` or `src/`, and only decoded at runtime by the fetched Bun binary. The package presents itself as a TanStack Query wrapper for MobX; a library of that scope has no functional need to fetch a second language runtime at install time to execute an opaque local blob. Fetching an alternate runtime specifically to execute an obfuscated bundle that Node-based scanners cannot inspect is the alternate-runtime-dropper fingerprint. On `npm install`, arbitrary attacker-authored code executes on the installer's host under Bun with the installer's privileges.\n\n## Source: ghsa-malware (9269c60bc5b4bb46ce475a087b50ee7ec1c59440e1a7b62c1f4a616652b54935)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -127,6 +137,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/tanstack-query-mobx/v/6.2.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/tanstack-query-mobx/v/6.2.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/tanstack-query-mobx/v/6.2.2"
     }
   ],
   "database_specific": {
@@ -213,6 +231,26 @@
         "source": "amazon-inspector",
         "versions": [
           "6.2.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012285",
+        "import_time": "2026-08-05T04:37:52.823819498Z",
+        "modified_time": "2026-08-05T03:37:37Z",
+        "sha256": "89ce289f403cddbf508bda1af808851b47928b059a22ef51b1af624bf5c3d9d5",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.2.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012357",
+        "import_time": "2026-08-05T04:38:01.128176025Z",
+        "modified_time": "2026-08-05T03:48:11Z",
+        "sha256": "370ed915ef1d0a812446ca414acaea7d125b5f29aa71b4028ccf6cc139caff70",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.2.2"
         ]
       }
     ]

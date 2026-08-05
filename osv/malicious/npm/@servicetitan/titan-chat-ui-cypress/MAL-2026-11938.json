@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11938",
   "published": "2026-08-04T15:29:30Z",
-  "modified": "2026-08-05T03:14:14.639732288Z",
+  "modified": "2026-08-05T04:40:32.565201933Z",
   "aliases": [
     "GHSA-hc3x-j4q8-8qx7"
   ],
   "summary": "Malicious code in @servicetitan/titan-chat-ui-cypress (npm)",
-  "details": "npm/@servicetitan/titan-chat-ui-cypress is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (122a639eecf11bb1852a5e577e4b47b172bd13771cd345f198b10b3dffb8311a)\nThe preinstall lifecycle script (package.json scripts.preinstall runs setup.mjs) downloads the Bun runtime from github.com/oven-sh/bun/releases (bun-v1.3.13), extracts and chmod +x's the binary in a temp directory, then execFileSync's it against a sibling file math_init.js. math_init.js is a ~720KB single-line Bun-compiled bundle whose contents are obfuscated with a large string/number lookup table (n7gIxM) and a rotate-shift decoder function (WV8StW), with hex-name identifiers throughout — its actual behavior is not human-readable from source. The advertised functionality of the package is a one-line dist/index.js re-export of Cypress selectors; the substantive work performed on install is the alien-runtime execution of the obfuscated bundle, not the Cypress helper. Package name is under the @servicetitan npm scope with a thin \"Utils\" description, inconsistent with an internal ServiceTitan tool. Installing this package auto-executes attacker-controlled obfuscated code on the installer's machine via a freshly-downloaded second language runtime, evading Node-only static analysis.\n\n## Source: ghsa-malware (4850493957883c05f49c15a80a523e23d212f9184b3acd0bc4ca5aa125be1d3c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/titan-chat-ui-cypress is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5733b6fd6b25ece61ebe4f3c8daeef803cba1903a5bdfcec6f7733f0d5cbf90d)\nThe package's advertised purpose is a one-line re-export of Cypress chat-ui selectors (main resolves to `export * from './utils/chat-ui-selectors'`), but the tarball also ships a `preinstall` hook `node setup.mjs` that: (1) detects the installer's platform and architecture, (2) downloads a matching Bun runtime zip from `github.com/oven-sh/bun/releases/download/bun-v<ver>/<arch>.zip`, (3) extracts it to a temp directory and marks it executable, and (4) invokes the shipped sibling file `math_init.js` under that freshly downloaded Bun runtime via `execFileSync`. `math_init.js` is a 727KB `// @bun @bun-cjs` bundle whose strings and control flow are obscured by a rotated string-array (`WV8StW` rotator, `n7gIxM` numeric code table, `hc1jfK9` custom-alphabet decoder), so the payload's actual behavior is not inspectable statically. The Cypress-selectors library has no legitimate need for a second JavaScript runtime, and running the obfuscated payload under Bun specifically bypasses Node-based install-time inspection. The `@servicetitan` scope and the `titan-chat-ui-cypress` name present a ServiceTitan-internal Cypress helper cover story around this alternate-runtime dropper.\n\n## Source: ghsa-malware (4850493957883c05f49c15a80a523e23d212f9184b3acd0bc4ca5aa125be1d3c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,26 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +111,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-cypress/v/2.1.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-cypress/v/2.1.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-cypress/v/2.1.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-cypress/v/2.1.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chat-ui-cypress/v/2.1.6"
     }
   ],
   "database_specific": {
@@ -137,6 +173,46 @@
         "source": "amazon-inspector",
         "versions": [
           "2.1.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012442",
+        "import_time": "2026-08-05T04:38:10.94892771Z",
+        "modified_time": "2026-08-05T04:00:16Z",
+        "sha256": "0128e0aad1f71057a7c92706167dfd361d838c76fb081c1230c774c03ebee681",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012575",
+        "import_time": "2026-08-05T04:38:27.184389122Z",
+        "modified_time": "2026-08-05T04:19:32Z",
+        "sha256": "3dc7782e3d928cf3cb5467cae17a2b8362f71f11b201f795e2e9c52e9a42e092",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012205",
+        "import_time": "2026-08-05T04:37:42.890301906Z",
+        "modified_time": "2026-08-05T03:26:24Z",
+        "sha256": "5733b6fd6b25ece61ebe4f3c8daeef803cba1903a5bdfcec6f7733f0d5cbf90d",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012301",
+        "import_time": "2026-08-05T04:37:54.910069296Z",
+        "modified_time": "2026-08-05T03:39:50Z",
+        "sha256": "9ef582e2c3dad9dfc9506976f71aa9b17f0c9a3a5867e31620a885dcdfd09c47",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.6"
         ]
       }
     ]
