@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11956",
   "published": "2026-08-04T18:00:00Z",
-  "modified": "2026-08-05T00:12:10.137357987Z",
+  "modified": "2026-08-05T08:24:52.257388980Z",
   "aliases": [
     "GHSA-ppgw-mhjm-w25f"
   ],
   "summary": "Malicious code in @umacloud/cli-linux-musl-arm64 (npm)",
-  "details": "npm/@umacloud/cli-linux-musl-arm64 is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (9b4ec6593c9c430e6325ebaf25150785834ca7097617a987eb76f1e185b36978)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@umacloud/cli-linux-musl-arm64 is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (87cf1fcf4419fb622f81fd586d3c0f9f6b3ae7189fc7e8bebb6820e44463fdc0)\nPackage @umacloud/cli-linux-musl-arm64 advertises itself as a prebuilt binary artifact for Linux aarch64/musl, but its package.json declares a preinstall hook (`node setup.mjs`) that fetches the Bun runtime from github.com/oven-sh/bun/releases/download/bun-v1.3.13/ at install time, marks it executable, and then invokes the shipped 727 KB math_init.js under Bun via execFileSync. Both setup.mjs and math_init.js are heavily obfuscated in obfuscator.io style: setup.mjs uses hex identifier renaming (`_0x488df8`, `_0x52943e`) and per-call proxy wrappers around trivial operations, while math_init.js begins with a rotating string/constant array (`const n7gIxM=[...]` shuffled by `WV8StW`), hex-only identifiers, and `with` blocks that defeat static parsing. A package that presents itself only as a prebuilt native binary has no legitimate reason to pull a separate JavaScript runtime and use it to execute an opaque, obfuscated sibling bundle at `npm install` time; the auto-executed code path is arbitrary and hidden from Node-resolvable static review. The Bun runtime is fetched from Bun's own official GitHub release (pinned to v1.3.13), so the runtime itself is legitimate; the harmful surface is the obfuscated math_init.js that runs under it on every install.\n\n## Source: ghsa-malware (9b4ec6593c9c430e6325ebaf25150785834ca7097617a987eb76f1e185b36978)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -23,8 +23,36 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-linux-musl-arm64-1.0.74.tgz",
+              "hashes": {
+                "sha1": "e44117aa281063dd0b99eaf01856c8dd251eec5b",
+                "sha512_sri": "sha512-cw6dZ+s0YL+wtg60OlBRBs11H0XdHPr3L/8mzQdVX75BA/2edKKNmlyf99HN4C+mYOSzIO+LpX8Bp2HxKolCGQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -48,6 +76,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-ppgw-mhjm-w25f"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@umacloud/cli-linux-musl-arm64/v/1.0.74"
     }
   ],
   "database_specific": {
@@ -80,6 +112,16 @@
         "versions": [
           "1.0.74"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-014238",
+        "import_time": "2026-08-05T08:22:38.26881104Z",
+        "modified_time": "2026-08-05T08:21:19Z",
+        "sha256": "87cf1fcf4419fb622f81fd586d3c0f9f6b3ae7189fc7e8bebb6820e44463fdc0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.74"
+        ]
       }
     ]
   },
@@ -88,6 +130,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

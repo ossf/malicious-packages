@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11564",
   "published": "2026-08-04T13:24:31Z",
-  "modified": "2026-08-05T07:08:50.292426329Z",
+  "modified": "2026-08-05T08:24:50.920465646Z",
   "aliases": [
     "GHSA-4534-cw9p-7438"
   ],
   "summary": "Malicious code in @hubsync/web-sdk-react (npm)",
-  "details": "npm/@hubsync/web-sdk-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7461777433346343358bb3ae3141aa9bc767ea3239e7911d64f6f12b128b1805)\nThe package declares `preinstall: node setup.mjs`, which downloads a Bun runtime archive from github.com/oven-sh/bun releases, extracts it, marks the binary executable, and invokes the shipped 727KB `math_init.js` via `execFileSync(bunBinary, [math_init.js])` at npm install time. `math_init.js` is a heavily obfuscated single-line bundle (obfuscator.io-style string-array rotation via `WV8StW` over the `n7gIxM` table, hex-mangled identifiers, `// @bun @bun-cjs` header) with no accompanying source, sourcemap, or build config. The package.json `description` field is 'Verdocs Web SDK for React' and README.md is a verbatim copy of the Verdocs React SDK README (including install instructions pointing at `@verdocs/web-sdk-react`), while this package is published under the unrelated `@hubsync` scope. A React UI SDK has no legitimate need for a separate Bun runtime; routing execution through a freshly downloaded alternate runtime causes the payload to bypass Node-based install-time inspection. The delivery pattern (unverified runtime fetch + install-time execution of an opaque bundle + publisher/README impersonation of another vendor's SDK) is an alternate-runtime dropper.\n\n## Source: ghsa-malware (4e80920370a08f09fc8f7809e677f42fc2231a38845187c21373bc08c5a6f389)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@hubsync/web-sdk-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f43131430816fe2dae764cdd8165d167996ee6ce296a54389dfe1ec22810679a)\nPackage @hubsync/web-sdk-react@6.3.14 publishes itself as a Verdocs Web SDK for React (package.json description 'Verdocs Web SDK for React', dist references api.verdocs.com / beta.verdocs.com / developers.verdocs.com) under an unrelated @hubsync scope — a namespace impersonation of the Verdocs SDK. The tarball declares scripts.preinstall = 'node setup.mjs'. setup.mjs downloads the Bun runtime binary from GitHub releases (https://github.com/oven-sh/bun/releases/download/bun-v<version>/<archive>.zip) into a temp directory, extracts it, marks it executable, and invokes it via execFileSync against the sibling file math_init.js. math_init.js is a ~728 KB single-line JavaScript blob with hex-mangled identifiers (_0xXXXX), a rotating string-array decoder (WV8StW), and a '// @bun @bun-cjs' header indicating it is compiled to be executed by the Bun runtime. The payload runs automatically on `npm install` under an alien runtime that is not the standard Node interpreter, and its contents are obfuscated so the behavior cannot be inspected from the JavaScript source. The math_init.js filename is unrelated to the package's advertised React-SDK purpose. This is the alternate-runtime-dropper pattern: a second language runtime is fetched at install time specifically to execute an obfuscated bundled payload outside the reach of Node-based inspection.\n\n## Source: ghsa-malware (4e80920370a08f09fc8f7809e677f42fc2231a38845187c21373bc08c5a6f389)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -45,6 +45,96 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -183,6 +273,78 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.28"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.19"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.29"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.30"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.32"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.24"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.17"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.23"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.33"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.13"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.27"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.22"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.14"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.25"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@hubsync/web-sdk-react/v/6.3.31"
     }
   ],
   "database_specific": {
@@ -330,6 +492,186 @@
         "source": "amazon-inspector",
         "versions": [
           "6.3.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014211",
+        "import_time": "2026-08-05T08:22:36.624406098Z",
+        "modified_time": "2026-08-05T08:17:33Z",
+        "sha256": "73b446bf3682c270c8660b7bab72c654ef1719b2b7647eea5c5d6e856272a163",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.28"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013759",
+        "import_time": "2026-08-05T08:22:04.492822962Z",
+        "modified_time": "2026-08-05T07:10:49Z",
+        "sha256": "c3f80f293130b72411e460f54ab7043af870bde66689e3867eaa7835a1c81288",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.19"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013757",
+        "import_time": "2026-08-05T08:22:04.312340443Z",
+        "modified_time": "2026-08-05T07:10:28Z",
+        "sha256": "da6c6d99c345a3f5c96dd6671f16cac4a12027149b139b5b637af674a85567e0",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.29"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013761",
+        "import_time": "2026-08-05T08:22:04.593407527Z",
+        "modified_time": "2026-08-05T07:11:04Z",
+        "sha256": "3aa23ce72ac29acc96815226d8d7064369ce9182937ee3d7ef66ef18da14b65e",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.30"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014110",
+        "import_time": "2026-08-05T08:22:29.431621407Z",
+        "modified_time": "2026-08-05T08:02:39Z",
+        "sha256": "3b8a7a45aab414ce33fc8dab3d85fb03ca95023c31d8dea9baa733fba5112869",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.32"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014219",
+        "import_time": "2026-08-05T08:22:37.208892553Z",
+        "modified_time": "2026-08-05T08:18:39Z",
+        "sha256": "812f36cdb1e9d7e1e4c6bd0ad73e8612a6b4388f3b77c3871b270a3c045ec30a",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014213",
+        "import_time": "2026-08-05T08:22:36.786671043Z",
+        "modified_time": "2026-08-05T08:17:47Z",
+        "sha256": "cde205786d62c01dd163d73947423cd94bc7fdbaf41ee50055d11ff044b01744",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.24"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014216",
+        "import_time": "2026-08-05T08:22:37.026324413Z",
+        "modified_time": "2026-08-05T08:18:14Z",
+        "sha256": "d3b9c261065aa94b218fc2238f1780075e7098476ed36dcd7a3008bf499f7d05",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.17"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014217",
+        "import_time": "2026-08-05T08:22:37.113094146Z",
+        "modified_time": "2026-08-05T08:18:22Z",
+        "sha256": "e0abc8846ed5278ab10932e92670e70d8ba6f1719e04fb5d5702d8f0d6b21147",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014218",
+        "import_time": "2026-08-05T08:22:37.16329814Z",
+        "modified_time": "2026-08-05T08:18:32Z",
+        "sha256": "1646f7f31f7475fd65b692e37d0b4e3c5cca0a738a9e1e2fe6bcb8eae3a9ffbc",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.23"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014097",
+        "import_time": "2026-08-05T08:22:28.556018579Z",
+        "modified_time": "2026-08-05T08:00:42Z",
+        "sha256": "54d1687f523f3c061421bcc7fc31be0b85ce2bf550c1878099620d792e222899",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.33"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014220",
+        "import_time": "2026-08-05T08:22:37.257627602Z",
+        "modified_time": "2026-08-05T08:18:49Z",
+        "sha256": "68ac405308a487fe5a1a80f74141d0ddf531040ccb1ea4b46006b229ef97bff1",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.13"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013758",
+        "import_time": "2026-08-05T08:22:04.366238113Z",
+        "modified_time": "2026-08-05T07:10:41Z",
+        "sha256": "9b0c6b06de06cdfe20fdbbfba306a44981d613264ef31d057a67152ae58d618f",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.27"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013764",
+        "import_time": "2026-08-05T08:22:04.76749519Z",
+        "modified_time": "2026-08-05T07:11:31Z",
+        "sha256": "a26c76e30b85612b55f1ccac2390f07b9523a8d695de5fd4e11a777044adc7d8",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.22"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013763",
+        "import_time": "2026-08-05T08:22:04.703708222Z",
+        "modified_time": "2026-08-05T07:11:23Z",
+        "sha256": "f43131430816fe2dae764cdd8165d167996ee6ce296a54389dfe1ec22810679a",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.14"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013770",
+        "import_time": "2026-08-05T08:22:05.133542125Z",
+        "modified_time": "2026-08-05T07:12:22Z",
+        "sha256": "2b3ab990dc93b2c6ddb3674ff408df3fd6ad6c5e0f2463422647e539d756aaea",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014215",
+        "import_time": "2026-08-05T08:22:36.961457502Z",
+        "modified_time": "2026-08-05T08:18:03Z",
+        "sha256": "3614f5a68f71eef40864584910191efadfeb1270c68dfc5db5c286846b0f5447",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.25"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013756",
+        "import_time": "2026-08-05T08:22:04.227628671Z",
+        "modified_time": "2026-08-05T07:10:16Z",
+        "sha256": "61f3deb4da3ec1c0a87573baa0b7d6afebcca2881b0c6b66eacdbc36e83c825c",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.3.31"
         ]
       }
     ]

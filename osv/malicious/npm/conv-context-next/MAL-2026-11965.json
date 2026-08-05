@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11965",
   "published": "2026-08-04T15:19:03Z",
-  "modified": "2026-08-05T07:08:51.829357209Z",
+  "modified": "2026-08-05T08:24:53.006550070Z",
   "aliases": [
     "GHSA-53f6-5f64-9xxw"
   ],
   "summary": "Malicious code in conv-context-next (npm)",
-  "details": "npm/conv-context-next is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3815db5abfe3145a6a26cfc101ac8ba665c16bd4992f10a1204978d425ea387d)\npackage.json declares `preinstall: node setup.mjs`. setup.mjs is obfuscated (`_0xXXXX` identifiers) and, on install, selects a Bun binary for the current platform/arch, downloads it from https://github.com/oven-sh/bun/releases at a pinned version, unzips it, marks it executable, and invokes it against the sibling file `math_init.js` via `execFileSync(bunPath, [join(D, 'math_init.js')])`. `math_init.js` is a 727 KB Bun-compiled CJS bundle (header `// @bun @bun-cjs`) using a rotated string-array and character-decoder consistent with obfuscator.io output; it is not referenced by the library entrypoint `index.js` and its filename does not correspond to the package's advertised conversation-context purpose. Executing the payload under a freshly downloaded Bun runtime hides it from Node-based dependency scanners, since Node never loads the bundle. Package name `conv-context-next` differs from the name used throughout its own README (`conv-context`), the `author` field is empty, and the tarball otherwise mirrors a small lodash-based helper — consistent with a typosquat republish with a dropper appended.\n\n## Source: ghsa-malware (be2b4b82d19c70d850fde18ae26e0379c3c589ca53913ef23c8bb3a091d60bce)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/conv-context-next is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (19881e1f409a33e6dc4ff7a141eb586bc4f77745a00d700fd4ee437a0d6a8358)\nThe package declares itself a small \"conversation context manager\" and ships a plain, readable index.js consistent with that purpose. However, package.json defines a preinstall hook (`node setup.mjs`) whose actual behavior is to check for a local `bun` binary and, if absent, download Bun v1.3.13 from github.com/oven-sh/bun/releases, extract it to a temporary directory, chmod +x, and invoke it against the sibling file `math_init.js`. `math_init.js` is a 727KB single-line minified bundle marked `// @bun @bun-cjs`, obfuscated with rotated string-array indirection (a `WV8StW` shift-rotator and a large numeric/string dictionary `n7gIxM`) and mangled identifiers; it is not referenced by index.js and is reachable only via this preinstall drop-and-exec path. The loader setup.mjs is itself obfuscator.io-style mangled (`_0xNNNNNN` hex identifiers and per-function alias tables wrapping every fs/https/exec call) to hide the platform detection, URL construction, download, unzip, chmod, and execFileSync chain. Fetching a second language runtime at install time solely to execute a heavily obfuscated sibling payload unrelated to the package's advertised functionality is the alternate-runtime-dropper pattern, and the payload executes automatically on `npm install`, bypassing Node-based install-time scanners.\n\n## Source: ghsa-malware (be2b4b82d19c70d850fde18ae26e0379c3c589ca53913ef23c8bb3a091d60bce)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -28,6 +28,36 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -116,6 +146,30 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/conv-context-next/v/1.0.5"
     }
   ],
   "database_specific": {
@@ -196,6 +250,66 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013751",
+        "import_time": "2026-08-05T08:22:03.924911095Z",
+        "modified_time": "2026-08-05T07:09:26Z",
+        "sha256": "19881e1f409a33e6dc4ff7a141eb586bc4f77745a00d700fd4ee437a0d6a8358",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013954",
+        "import_time": "2026-08-05T08:22:18.540963724Z",
+        "modified_time": "2026-08-05T07:39:54Z",
+        "sha256": "3b0f8ce486a2ddc4a15f1d75a63b19c1c79d0cd3efc92b7e01cba072aefa371f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013869",
+        "import_time": "2026-08-05T08:22:12.072747753Z",
+        "modified_time": "2026-08-05T07:27:08Z",
+        "sha256": "5cef00e4891d506a247481a03965915fd00fd115749de684526f92713d2027ad",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013905",
+        "import_time": "2026-08-05T08:22:15.057078189Z",
+        "modified_time": "2026-08-05T07:32:17Z",
+        "sha256": "7c12306d0173cbc10cd2829baacff0c57096ec241e7d4ab4ca90a05cb4dd19a6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013906",
+        "import_time": "2026-08-05T08:22:15.131858851Z",
+        "modified_time": "2026-08-05T07:32:26Z",
+        "sha256": "9dfaa06f563d9aac4ffa3cd9aa12a646aa5d8b4289c7a5b2ede7d17e116874df",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013937",
+        "import_time": "2026-08-05T08:22:17.550998052Z",
+        "modified_time": "2026-08-05T07:37:12Z",
+        "sha256": "e5ae9806291d72cbc9b59afa3a19713d2742cee24188b77b73d6dc461f21b339",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
         ]
       }
     ]

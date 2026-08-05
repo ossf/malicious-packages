@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11559",
   "published": "2026-08-04T11:37:27Z",
-  "modified": "2026-08-05T00:12:09.399589250Z",
+  "modified": "2026-08-05T08:24:50.851533460Z",
   "aliases": [
     "GHSA-pvp8-4g69-xxqh"
   ],
   "summary": "Malicious code in @cacheable/net (npm)",
-  "details": "npm/@cacheable/net version 2.1.1 is a trojanized release published on 2026-08-04 during the compromise of the npm/GitHub maintainer account behind the keyv and cacheable package families (user \"Jaredwray\"). Attackers pushed the malicious payload to the source repository and cut releases through GitHub Actions, so the poisoned versions reached npm with a valid, signed provenance attestation (provenance attests build integrity, not source integrity). Delivery is through the npm install lifecycle: the trojanized package.json adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs before any project code on a bare `npm install`, while the normal compiled output is left intact so the package still works after install. setup.mjs downloads a standalone Bun runtime and uses it to run a second stage (shipped as Math_Symbol.js, a heavily obfuscated ~728 KB Bun bundle, referenced at runtime as math_init.js). The stealer harvests credentials from cloud instance metadata (AWS IMDS at 169.254.169.254, ECS at 169.254.170.2, GCP, Azure), AWS/GCP/Azure keys, HashiCorp Vault tokens, Kubernetes service-account tokens, GitHub Actions OIDC and org/repo secrets, and npm tokens, with a TruffleHog-style regex sweep for further secrets and private keys. Using the stolen npm identity (including npm OIDC trusted publishing) it enumerates and republishes further packages the token can reach — which, for a maintainer controlling both keyv and cacheable, gave the worm a large blast radius. Stolen findings are exfiltrated to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and to destinations resolved over DNS, and autostart hooks are planted in the repository's .claude/ and .vscode/ configuration to run the loader when a developer or AI coding agent opens a clone. Treat any environment that installed this version (with install scripts enabled) as fully compromised and rotate every reachable credential. Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (175343402987d5049cd4f1542e3974026bf373f35e2400936aad483a9f550efb)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@cacheable/net version 2.1.1 is a trojanized release published on 2026-08-04 during the compromise of the npm/GitHub maintainer account behind the keyv and cacheable package families (user \"Jaredwray\"). Attackers pushed the malicious payload to the source repository and cut releases through GitHub Actions, so the poisoned versions reached npm with a valid, signed provenance attestation (provenance attests build integrity, not source integrity). Delivery is through the npm install lifecycle: the trojanized package.json adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs before any project code on a bare `npm install`, while the normal compiled output is left intact so the package still works after install. setup.mjs downloads a standalone Bun runtime and uses it to run a second stage (shipped as Math_Symbol.js, a heavily obfuscated ~728 KB Bun bundle, referenced at runtime as math_init.js). The stealer harvests credentials from cloud instance metadata (AWS IMDS at 169.254.169.254, ECS at 169.254.170.2, GCP, Azure), AWS/GCP/Azure keys, HashiCorp Vault tokens, Kubernetes service-account tokens, GitHub Actions OIDC and org/repo secrets, and npm tokens, with a TruffleHog-style regex sweep for further secrets and private keys. Using the stolen npm identity (including npm OIDC trusted publishing) it enumerates and republishes further packages the token can reach — which, for a maintainer controlling both keyv and cacheable, gave the worm a large blast radius. Stolen findings are exfiltrated to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and to destinations resolved over DNS, and autostart hooks are planted in the repository's .claude/ and .vscode/ configuration to run the loader when a developer or AI coding agent opens a clone. Treat any environment that installed this version (with install scripts enabled) as fully compromised and rotate every reachable credential. Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e5375d94d2e9e9e6600cccc3cbf880828b03617040a2d925cafc96960fe68631)\npackage.json scripts.preinstall runs `node setup.mjs`, a heavily obfuscated ESM file (RC4-decoded string array, shuffled tokens, hex-obfuscated identifiers) that reconstructs a GitHub releases URL for the Bun runtime from concatenated string fragments, downloads the Bun binary, chmods it executable, and then invokes it via execFileSync against the sibling file Math_Symbol.js. Math_Symbol.js is a 727KB opaque bundle carrying a `// @bun @bun-cjs` header and its own shuffled string-array + RC4-style decoder (`WV8StW` array-shift, `hc1jfK9` decoder), whose behavior is not statically determinable and is not disclosed by the README. The package advertises HTTP caching, which does not require an alternate language runtime at install time. The combination of obfuscated preinstall, download of an alternate runtime, and use of that runtime to execute an opaque bundled payload matches the alternate-runtime-dropper shape: attacker-controlled code executes on the installer's machine during `npm install`, bypassing Node-based scanners.\n\n## Source: ghsa-malware (175343402987d5049cd4f1542e3974026bf373f35e2400936aad483a9f550efb)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -23,8 +23,36 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "54dc7ea54a1317cca0e890a2770630cf7fa6c97813e0cb9d2caa93012b350668",
+              "tlsh": "22d2e98e35aa70e2526331b37c7791a5f97facc077c84414f998ac5afd6c22cc18669c"
+            },
+            {
+              "path": "Math_Symbol.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "net-2.1.1.tgz",
+              "hashes": {
+                "sha1": "6fefa8b9b603723f2240726444b27dfbf0680774",
+                "sha512_sri": "sha512-BFYTZ9NcEAdZhUflHEDd4p2hq6JaihfOulFnyxfWemUttjz2gU4mlBenX9+iS4F2ad5yCx+75xJPV91ZAplwMQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -48,6 +76,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-pvp8-4g69-xxqh"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cacheable/net/v/2.1.1"
     }
   ],
   "database_specific": {
@@ -80,6 +112,16 @@
         "versions": [
           "2.1.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013767",
+        "import_time": "2026-08-05T08:22:04.938582742Z",
+        "modified_time": "2026-08-05T07:11:55Z",
+        "sha256": "e5375d94d2e9e9e6600cccc3cbf880828b03617040a2d925cafc96960fe68631",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.1"
+        ]
       }
     ]
   },
@@ -88,6 +130,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

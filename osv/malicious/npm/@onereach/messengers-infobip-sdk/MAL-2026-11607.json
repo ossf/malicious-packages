@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11607",
   "published": "2026-08-04T15:21:44Z",
-  "modified": "2026-08-05T07:08:50.451005392Z",
+  "modified": "2026-08-05T08:24:51.162262792Z",
   "aliases": [
     "GHSA-c6g6-wwq3-cgq3"
   ],
   "summary": "Malicious code in @onereach/messengers-infobip-sdk (npm)",
-  "details": "npm/@onereach/messengers-infobip-sdk is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1dcc12ecdaf1fcf2909bb52299b19f6691db9631da8d210b9aec5a86f4a2d256)\nThe package advertises itself as an Infobip SMS/MMS SDK but ships a ~727 KB obfuscated (obfuscator.io-style rotating string-array with a `WV8StW` rotator function) single-line JavaScript file `math_init.js` at the tarball root. `package.json` declares `files: [\"dist\"]`, so `math_init.js` is smuggled outside the declared publish surface and is not reachable through the library's `main` entrypoint. The npm `preinstall` hook runs `node setup.mjs`, which downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/...zip`, chmods it 0o755, and then invokes `execFileSync(bun, [join(D,'math_init.js')])` — using an alternate, freshly-downloaded runtime to execute the shipped obfuscated blob on every install. The `math_init` filename is unrelated to Infobip messaging, and neither the alternate runtime nor the payload is required to implement an SDK. Installing the package causes attacker-authored obfuscated code to execute automatically on the installer's machine outside Node-scoped tooling visibility.\n\n## Source: ghsa-malware (23cc17162a39d945f696b9441bee514e8e2e9b103f7e5070a573f41032942bf3)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/messengers-infobip-sdk is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2425da9c9d5e9597efa5312d2b98f15fedf6ec1615e46eb9d3acc56f22bca213)\nPackage @onereach/messengers-infobip-sdk@0.1.3 declares a preinstall hook (`node setup.mjs`) that, on `npm install`, checks whether `bun` is on PATH and if not downloads the Bun runtime archive from GitHub releases, extracts the `bun` binary to a temp directory, marks it executable, and then invokes it against a sibling file `math_init.js` inside the package. `math_init.js` is a ~727 KB single-line JavaScript file heavily obfuscated in obfuscator.io style (rotated numeric/string array `n7gIxM` with rotation function `WV8StW`, hex-mangled identifiers, custom decoder `hc1jfK9`), so its actual behavior, network destinations, and data reads are hidden behind string-array and custom-base64 encoding. The package is advertised as an Infobip SMS/MMS SDK and has no documented need for a second language runtime to execute a hidden sibling script at install time. The combination of an alternate-runtime dropper (Bun fetched only to run this file), a large obfuscated payload auto-executed by the lifecycle hook, and a purpose mismatch with the declared SDK role means installing this package hands install-time code execution on the developer or build host to whatever `math_init.js` decodes to.\n\n## Source: ghsa-malware (23cc17162a39d945f696b9441bee514e8e2e9b103f7e5070a573f41032942bf3)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@onereach/messengers-infobip-sdk/v/0.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/messengers-infobip-sdk/v/0.1.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/messengers-infobip-sdk/v/0.1.1"
     }
   ],
   "database_specific": {
@@ -125,6 +143,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013898",
+        "import_time": "2026-08-05T08:22:14.461672711Z",
+        "modified_time": "2026-08-05T07:31:18Z",
+        "sha256": "2425da9c9d5e9597efa5312d2b98f15fedf6ec1615e46eb9d3acc56f22bca213",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014199",
+        "import_time": "2026-08-05T08:22:35.864468849Z",
+        "modified_time": "2026-08-05T08:15:39Z",
+        "sha256": "61f1365a3cf31578cc8f577653d8977fd68dc11dc7eea54ebc1f4d5ac95eca7d",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
         ]
       }
     ]

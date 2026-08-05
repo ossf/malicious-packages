@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11588",
   "published": "2026-08-04T15:22:04Z",
-  "modified": "2026-08-05T07:08:50.437406585Z",
+  "modified": "2026-08-05T08:24:51.124291574Z",
   "aliases": [
     "GHSA-rc8m-6m89-26mw"
   ],
   "summary": "Malicious code in @onereach/bandwidth-steps-voice-bxml (npm)",
-  "details": "npm/@onereach/bandwidth-steps-voice-bxml is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7976d04c8eaeaaffa6ebd1f89b93d5dd12d9e3a4ae1a448355a8bcb2c447a9a1)\nThe package's preinstall lifecycle runs setup.mjs, an obfuscated script (hex-mangled identifiers, proxy-object dispatch tables) that detects the host platform (including ldd/musl/Alpine handling), downloads the Bun runtime archive from github.com/oven-sh/bun/releases/download/bun-v1.3.13/, extracts the bun binary to a tmpdir, chmods it 0o755, and execFileSync's it against a sibling file math_init.js. math_init.js is a ~727KB @bun-cjs blob using classic string-array rotation obfuscation (WV8StW rotator, opaque n7gIxM constant array, hex identifiers). The filename math_init has no relationship to the package's advertised purpose (Bandwidth Voice BXML step wrappers), and the payload is delivered outside Node's loader specifically so it runs under an alien runtime fetched at install. This is the alternate-runtime-dropper pattern: an installer running `npm install` automatically fetches a foreign runtime and executes an obfuscated bundle whose contents are not inspectable through normal Node tooling. Both the preinstall dropper and the payload it executes are obfuscated, and the payload's purpose does not correspond to any documented functionality of the package.\n\n## Source: ghsa-malware (2df41ca9759bcdb7d1970cd7d09324bdfe115cd115bd5987b11f45b5ef087e6c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/bandwidth-steps-voice-bxml is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (644260b4add05213e8d167640f6ba16216b663d414864d2d12925e01ecbcbd31)\nOn npm install, package.json's preinstall hook runs setup.mjs, which downloads the Bun runtime v1.3.13 from GitHub releases (oven-sh/bun), extracts the platform-appropriate `bun` binary to a temp directory, chmods it executable, and invokes it against a sibling file `math_init.js`. `math_init.js` is a 727KB Bun-only module (`// @bun @bun-cjs` header) built as a rotating string-array with hex-obfuscated identifiers — the string-array-rotator obfuscation shape — so its behavior is not visible without decoding. setup.mjs itself is additionally obfuscated with `_0x...` hex-suffixed identifiers and per-function string-lookup tables that hide simple flow (Alpine/musl detection, HTTPS download from GitHub, ZIP extract via `unzip`/PowerShell Expand-Archive, chmod, execFileSync). The advertised purpose is a wrapper around Bandwidth Voice BXML steps; nothing in that scope requires downloading an alternate language runtime at install time or running a multi-hundred-KB obfuscated payload. The chain — install-time fetch of an alternate runtime specifically to execute an obfuscated sibling module that Node-oriented scanners will not evaluate — is the alternate-runtime dropper pattern, and it runs automatically on default `npm install`.\n\n## Source: ghsa-malware (2df41ca9759bcdb7d1970cd7d09324bdfe115cd115bd5987b11f45b5ef087e6c)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@onereach/bandwidth-steps-voice-bxml/v/0.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/bandwidth-steps-voice-bxml/v/0.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/bandwidth-steps-voice-bxml/v/0.1.3"
     }
   ],
   "database_specific": {
@@ -125,6 +143,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014077",
+        "import_time": "2026-08-05T08:22:27.246438225Z",
+        "modified_time": "2026-08-05T07:57:53Z",
+        "sha256": "0290987f9eedddb0ab8aee7d4b95bacc0ce546e17f4e38bc6dba7f58eda57955",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013873",
+        "import_time": "2026-08-05T08:22:12.409756908Z",
+        "modified_time": "2026-08-05T07:27:44Z",
+        "sha256": "644260b4add05213e8d167640f6ba16216b663d414864d2d12925e01ecbcbd31",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
         ]
       }
     ]

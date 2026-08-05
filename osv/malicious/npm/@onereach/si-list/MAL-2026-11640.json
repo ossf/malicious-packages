@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11640",
   "published": "2026-08-04T15:24:38Z",
-  "modified": "2026-08-05T07:08:50.485854695Z",
+  "modified": "2026-08-05T08:24:51.227322846Z",
   "aliases": [
     "GHSA-7cw5-mh85-x5xx"
   ],
   "summary": "Malicious code in @onereach/si-list (npm)",
-  "details": "npm/@onereach/si-list is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c2d5b8e70467d6bfc6e0ae95fcb2ca972a38f7a3c7f1a160a5cbf6e7d69379ba)\nThe package's npm preinstall hook runs setup.mjs, which downloads the Bun runtime from GitHub releases into a temporary directory, marks it executable, and then uses that downloaded runtime to execute a sibling file math_init.js on the installer's machine. setup.mjs is minified with _0xXXXX-style identifier obfuscation. math_init.js is a 727KB file with string-array rotation obfuscation (function WV8StW shifting an array of opaque constants) and is not referenced from the package's declared main entry (lib/component.js) or any require/import path — it is invoked only by the preinstall dropper via the alien runtime. The package advertises itself as a Vue UI list input component and has no functional need for the Bun runtime or a math_init payload. Using a freshly-downloaded non-Node runtime to execute obfuscated code at install time evades Node-based scanning and runs on the installer's host as a side effect of npm install.\n\n## Source: ghsa-malware (15d7c06a4dd070e00a14fb04f9d9d6f3592221d5a89e22432c5adfd68dd8ae9f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/si-list is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (fbc729bc986ebd57c55fb82f5ae0c60bbfd0893c2d6e19eca46652a8d93fb310)\nThe package advertises itself as a Vue list-input component (UI code in lib/), but ships a preinstall hook that executes attacker-staged code at npm install time. package.json scripts.preinstall runs setup.mjs, itself obfuscated with obfuscator.io-style identifiers (_0x488df8, _0x52943e) and rotated string dictionaries. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun/releases into a temp directory, chmods it executable, and invokes it against math_init.js — a 727KB Bun-compiled bundle at the package root (header `// @bun @bun-cjs`) using string-array rotation obfuscation (WV8StW rotator plus a large numeric/string constant array). The payload has no relationship to the declared Vue component and is only reachable via the preinstall dropper. Using a freshly-downloaded alternate runtime to execute an obfuscated bundled payload at install time is the alternate-runtime-dropper pattern: the code that runs on the installer's host is opaque to Node-based tooling, is unrelated to the package's stated purpose, and is executed automatically on `npm install`.\n\n## Source: ghsa-malware (15d7c06a4dd070e00a14fb04f9d9d6f3592221d5a89e22432c5adfd68dd8ae9f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@onereach/si-list/v/0.7.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/si-list/v/0.7.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/si-list/v/0.7.4"
     }
   ],
   "database_specific": {
@@ -124,6 +142,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.7.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014032",
+        "import_time": "2026-08-05T08:22:24.127736515Z",
+        "modified_time": "2026-08-05T07:51:26Z",
+        "sha256": "4c3cbc1b0f3eb4f6c8ac1f4e4bf2ab777a7afb2f6aadd62bcb4bd59ce6588704",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.7.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014128",
+        "import_time": "2026-08-05T08:22:30.703316671Z",
+        "modified_time": "2026-08-05T08:05:21Z",
+        "sha256": "fbc729bc986ebd57c55fb82f5ae0c60bbfd0893c2d6e19eca46652a8d93fb310",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.7.4"
         ]
       }
     ]

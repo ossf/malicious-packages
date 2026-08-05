@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11626",
   "published": "2026-08-04T13:20:24Z",
-  "modified": "2026-08-05T07:08:50.468647062Z",
+  "modified": "2026-08-05T08:24:51.196914937Z",
   "aliases": [
     "GHSA-4qqw-xhvx-7cjg"
   ],
   "summary": "Malicious code in @onereach/rwc-client (npm)",
-  "details": "npm/@onereach/rwc-client is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (08f30eeb231b8834cbd4c4b6268a5bb06f073582a19eb608db5edb76ca7d99bc)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is itself obfuscated (_0xNNNN identifier scheme) and at install time downloads the Bun runtime from https://github.com/oven-sh/bun/releases/download/bun-v<version>/<arch>.zip into a temp directory, chmods it executable, and invokes it via execFileSync against the sibling file math_init.js. math_init.js is a ~727KB heavily obfuscated bundle (rotate-shift string array via function WV8StW, large numeric/character dictionary, hex-mangled identifiers, '// @bun @bun-cjs' header) whose behavior is not observable from the source. The package advertises itself as a browser web-chat SDK, a purpose that does not require fetching a second language runtime or executing an opaque compiled payload during npm install. Using Bun rather than Node to run the payload also bypasses Node-based supply-chain scanners and inspection tooling.\n\n## Source: ghsa-malware (18bd817a8cec5f9a527b680e9c40c0a969a091e0668ba36384e76f0cdcab6d7f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/rwc-client is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f31ae4088819651fe36b6333e50c1c84917c3c37406a933b25921b4681f1839e)\npackage.json declares scripts.preinstall=\"node setup.mjs\". setup.mjs is variable-name obfuscated (_0xXXXX identifiers) and, when Bun is not already on PATH, downloads the Bun runtime binary from the oven-sh/bun GitHub releases URL into a temp directory, chmods it executable, and invokes it via execFileSync against a bundled sibling file math_init.js. math_init.js is a 727KB Bun-compiled bundle (header `// @bun @bun-cjs`) using a string-array shuffle-decoder (function WV8StW with MmgoCP.push(MmgoCP.shift())) and hex/char-code constant tables to reconstruct all strings and destinations at runtime, so its network destinations and behavior are opaque without execution. package.json's `files` allowlist declares only dist/lib/richWebChat.umd.min.js, dist/lib/richWebChat.css, and dist/lib/rwc-client.d.ts; setup.mjs and math_init.js ship at the tarball root outside the declared allowlist and are what preinstall executes. The package is advertised as a browser chat widget (UMD bundle) with no native build requirement that would justify fetching an alternate language runtime and running an obfuscated payload under it at install time. This is the alternate-runtime-dropper pattern: an obfuscated Node lifecycle script pulls in a runtime and hands it a bundled file so the executed code evades Node-based supply-chain scanning.\n\n## Source: ghsa-malware (18bd817a8cec5f9a527b680e9c40c0a969a091e0668ba36384e76f0cdcab6d7f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@onereach/rwc-client/v/6.4.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/rwc-client/v/6.4.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/rwc-client/v/6.4.9"
     }
   ],
   "database_specific": {
@@ -125,6 +143,26 @@
         "source": "amazon-inspector",
         "versions": [
           "6.4.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014057",
+        "import_time": "2026-08-05T08:22:25.820117764Z",
+        "modified_time": "2026-08-05T07:54:56Z",
+        "sha256": "a421ed5cf103ed01a5efe230b7682a3af1340ccf44007d4932355d7a033a2579",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.4.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013831",
+        "import_time": "2026-08-05T08:22:09.159404523Z",
+        "modified_time": "2026-08-05T07:21:30Z",
+        "sha256": "f31ae4088819651fe36b6333e50c1c84917c3c37406a933b25921b4681f1839e",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.4.9"
         ]
       }
     ]

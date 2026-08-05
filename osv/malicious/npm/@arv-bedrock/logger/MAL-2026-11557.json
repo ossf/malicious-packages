@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11557",
   "published": "2026-08-04T15:18:33Z",
-  "modified": "2026-08-05T07:08:50.159700221Z",
+  "modified": "2026-08-05T08:24:50.841458415Z",
   "aliases": [
     "GHSA-675j-499m-c2jf"
   ],
   "summary": "Malicious code in @arv-bedrock/logger (npm)",
-  "details": "npm/@arv-bedrock/logger is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (15ecdffd464b61c7ff18c082544d84fa8283349915c49887896ad6cd48962bfa)\nThe package's preinstall hook runs setup.mjs, which downloads the Bun runtime from github.com/oven-sh/bun releases, extracts and chmods the bun binary, and uses it to execute a sibling file math_init.js at npm install time. math_init.js is a 727KB heavily-obfuscated @bun-cjs bundle (shuffled string-array rotator, mangled identifiers) and is not declared in package.json's files array (which lists only dist/**/*), yet ships in the tarball. Fetching an alternate runtime specifically to execute an opaque in-package payload bypasses Node-level review, and the behavior has no relationship to the advertised purpose of a NestJS request-tracing/Winston logging middleware. The payload's actions on the installer host cannot be inspected from Node-visible code, and it executes automatically on npm install.\n\n## Source: ghsa-malware (2020fe30275a220b4d3ef537fb60e7974dd120786f71a80387e3e3a69c5251f0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@arv-bedrock/logger is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a68b391045863c113ad3cb33736396a9d65e409744216dfb3b044cf1084c59a)\nThe package advertises itself as a NestJS/Winston logger but its preinstall hook (`node setup.mjs`) downloads the Bun runtime from GitHub oven-sh releases, extracts it, chmods it executable, and then invokes it to run `math_init.js` — a ~727 KB heavily obfuscated Bun-compiled bundle bearing the `// @bun @bun-cjs` header and using obfuscator.io-style string-array shuffling (`n7gIxM` constant array, `WV8StW` rotator, hex-mangled identifiers). The bundle is not imported by the shipped logger code in `dist/` and is executed only through the freshly downloaded alternate runtime, so its behavior is opaque to Node-based tooling. Fetching a second-language runtime solely to execute an obfuscated blob unrelated to the package's stated purpose on every install is the alternate-runtime-dropper pattern, and the execution fires automatically via the `preinstall` lifecycle on `npm install`.\n\n## Source: ghsa-malware (2020fe30275a220b4d3ef537fb60e7974dd120786f71a80387e3e3a69c5251f0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -20,6 +20,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -86,6 +91,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@arv-bedrock/logger/v/1.7.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@arv-bedrock/logger/v/1.7.2"
     }
   ],
   "database_specific": {
@@ -128,6 +137,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.7.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013762",
+        "import_time": "2026-08-05T08:22:04.659945137Z",
+        "modified_time": "2026-08-05T07:11:12Z",
+        "sha256": "8a68b391045863c113ad3cb33736396a9d65e409744216dfb3b044cf1084c59a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.7.2"
         ]
       }
     ]

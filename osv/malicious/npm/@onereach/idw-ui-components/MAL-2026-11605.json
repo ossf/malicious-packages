@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11605",
   "published": "2026-08-04T13:20:34Z",
-  "modified": "2026-08-05T07:08:50.447956947Z",
+  "modified": "2026-08-05T08:24:51.159227888Z",
   "aliases": [
     "GHSA-5hwg-34v3-gf8x"
   ],
   "summary": "Malicious code in @onereach/idw-ui-components (npm)",
-  "details": "npm/@onereach/idw-ui-components is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9be74c4436955074dbb166655f843c3e348d29d636cfd44328cb0284390fdf5a)\nThe package declares a `preinstall` script (`node setup.mjs`) that, when the Bun runtime is not already present, downloads a Bun release archive from GitHub, extracts it to a temporary directory, marks it executable, and uses it to run the bundled `math_init.js`. `math_init.js` is a ~727 KB single-line, heavily obfuscated file (obfuscator.io-style renamed identifiers such as `_0xNNNN`, a rotating string-array function `WV8StW`, char-code reassembly, and a large numeric dictionary `n7gIxM`); it is not referenced by `main` or `bin` and is only reachable through the preinstall Bun invocation. Pulling a second language runtime specifically to execute a hidden, obfuscated payload during `npm install` is inconsistent with the package's advertised purpose (a small UI-components helper) and evades inspection by Node-based tooling. The dropper fires automatically on default install via the npm lifecycle hook, executing attacker-supplied code on the installer's machine.\n\n## Source: ghsa-malware (1eace483be8eea721e54ca46b6c2e0a3a9a5b48bed630479af3ee5eaf483f2e2)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/idw-ui-components is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (31a3e4ddc00fec14f6d8972757e768d6b7743225a6313f0a0048c1d90a4ba9b5)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is itself obfuscated with obfuscator.io-style hex identifiers (_0x... variables, per-function alias tables mapping method calls and string constants such as '--version', '/etc/os-release', 'Alpine'). It constructs a URL of the form https://github.com/oven-sh/bun/releases/download/bun-v<version>/<platform>.zip, downloads the Bun runtime binary, chmods it 0755, and then execFileSyncs the Bun binary against a bundled sibling file math_init.js in the package directory. math_init.js is a ~730 KB single-line file tagged '// @bun @bun-cjs' with mangled identifiers, a ~thousand-entry string/number constant table, and a rotation function (WV8StW) that shifts that table — a heavily obfuscated Bun-compiled payload. The package is advertised as a UI-components library and has no functional need for an alternate JavaScript runtime; the effect of `npm install @onereach/idw-ui-components` is to fetch a runtime specifically to execute a concealed payload that Node-based scanners do not inspect. Both the preinstall dropper and the executed payload are obfuscated, and the payload's name ('math_init') is unrelated to the stated UI purpose.\n\n## Source: ghsa-malware (1eace483be8eea721e54ca46b6c2e0a3a9a5b48bed630479af3ee5eaf483f2e2)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +92,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@onereach/idw-ui-components/v/0.1.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/idw-ui-components/v/0.1.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/idw-ui-components/v/0.1.2"
     }
   ],
   "database_specific": {
@@ -125,6 +143,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.1.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014048",
+        "import_time": "2026-08-05T08:22:25.229751054Z",
+        "modified_time": "2026-08-05T07:53:38Z",
+        "sha256": "31a3e4ddc00fec14f6d8972757e768d6b7743225a6313f0a0048c1d90a4ba9b5",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014197",
+        "import_time": "2026-08-05T08:22:35.765549787Z",
+        "modified_time": "2026-08-05T08:15:23Z",
+        "sha256": "ffabc7c26b28b7c43ff7742b6349d5c8970f5058234191cbd8a5fafe5f6dc844",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.2"
         ]
       }
     ]

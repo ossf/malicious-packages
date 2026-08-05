@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11667",
   "published": "2026-08-04T15:21:44Z",
-  "modified": "2026-08-05T07:08:50.513870471Z",
+  "modified": "2026-08-05T08:24:51.434970116Z",
   "aliases": [
     "GHSA-v4pr-r83g-jq5f"
   ],
   "summary": "Malicious code in @or-sdk/adapters (npm)",
-  "details": "npm/@or-sdk/adapters is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9a4170eb37b0ee6ea90293905e4c66e232f765b57fab31a396d480954ce5d16a)\nThe package declares itself as a small OneReach adapters SDK, but its `preinstall` script invokes `setup.mjs`, which downloads the Bun runtime from `github.com/oven-sh/bun/releases/download/bun-v1.3.13/...zip` into a temp directory, marks it executable, and then runs the bundled `math_init.js` under Bun via `execFileSync`. `math_init.js` is a ~727KB single-line obfuscator.io-style file (shuffled `n7gIxM` string/int array with a `WV8StW` rotator, `_0xNNNN` identifiers). `setup.mjs` itself is similarly obfuscated to hide the download-extract-exec flow. Executing an opaque obfuscated payload under an alternate runtime at install time evades Node-based static analysis; neither the Bun download nor the payload is hash-/signature-verified. The obfuscation, the runtime-swap execution path, and the mismatch between the declared adapters-SDK purpose and a 727KB obfuscated 'math_init' sibling are jointly consistent with an install-time dropper.\n\n## Source: ghsa-malware (45adcf99f97cf81ddf41ed76f11dca2ccf2ed9f1078439de1505b85a86e3e75d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@or-sdk/adapters is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (09805f947683926288e40675cae1dbf96ed5cc9fd4fd94922773ff1164697a32)\npackage.json declares preinstall=`node setup.mjs`. setup.mjs is written in obfuscator.io style (variables like `_0x488df8`, string-proxy objects) and, at install time, either invokes an existing `bun` binary or downloads the Bun runtime v1.3.13 zip from github.com/oven-sh/bun releases, extracts it to a temp directory, chmods it executable, and runs the sibling file `math_init.js` under Bun via `execFileSync`. `math_init.js` is a 727KB single-line Bun-compiled bundle (`// @bun @bun-cjs` header) whose strings — including any network destinations, filesystem paths, and commands — are hidden behind a numeric string-array cipher (`n7gIxM=[...]`), an array-rotation function, and a base-N decoder, so its actual behavior is opaque to static inspection. The package presents itself as a thin `@or-sdk` adapter SDK but ships an alternate-runtime dropper: the harmful code is executed by a freshly downloaded second-language runtime rather than Node, bypassing Node-based supply-chain scanners. Obfuscation is applied both to the install loader and to the payload it executes, and the alternate runtime is fetched fresh on every install with no integrity check tying it to the package's declared purpose.\n\n## Source: ghsa-malware (45adcf99f97cf81ddf41ed76f11dca2ccf2ed9f1078439de1505b85a86e3e75d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -73,6 +83,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@or-sdk/adapters/v/0.3.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/adapters/v/0.3.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/adapters/v/0.3.6"
     }
   ],
   "database_specific": {
@@ -116,6 +134,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.3.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014011",
+        "import_time": "2026-08-05T08:22:22.528434835Z",
+        "modified_time": "2026-08-05T07:48:23Z",
+        "sha256": "09805f947683926288e40675cae1dbf96ed5cc9fd4fd94922773ff1164697a32",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014142",
+        "import_time": "2026-08-05T08:22:31.890853717Z",
+        "modified_time": "2026-08-05T08:07:21Z",
+        "sha256": "d6916b6e6bd5803a4e8ce89bd28bb19d20db1e11d1cbfae508fec5541c80c27f",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.6"
         ]
       }
     ]

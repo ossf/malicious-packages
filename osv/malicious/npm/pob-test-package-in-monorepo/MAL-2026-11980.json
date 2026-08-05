@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11980",
   "published": "2026-08-04T15:20:06Z",
-  "modified": "2026-08-05T07:08:54.872577517Z",
+  "modified": "2026-08-05T08:24:55.621093305Z",
   "aliases": [
     "GHSA-438w-p37w-9w8j"
   ],
   "summary": "Malicious code in pob-test-package-in-monorepo (npm)",
-  "details": "npm/pob-test-package-in-monorepo is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d2541302a99106cb8372c2679b794aae1f1226eb144134eaf8c4bf122badcf7d)\nThe package's advertised functionality is a trivial default export (`export default 'John'` in lib/index.js), but package.json declares a `preinstall` hook that runs `node setup.mjs`. setup.mjs is itself obfuscated (obfuscator.io-style hex identifiers and proxy-object string indirection) and, at install time, downloads the Bun runtime binary for the installer's platform/arch from the oven-sh/bun GitHub releases, chmods it executable in a temp directory, and uses `execFileSync` to run the sibling `math_init.js` under that freshly-downloaded runtime. `math_init.js` is a 727KB Bun-compiled CJS module (`// @bun @bun-cjs` header) implemented as a rotated string-array VM (numeric token array, rotator function, 90-character permutation-alphabet decoder) with randomized identifiers and no documentation in README or CHANGELOG. The obfuscated payload runs automatically on every `npm install` under an alternate runtime chosen specifically to avoid the Node.js execution environment. This is the alternate-runtime-dropper pattern: install-time execution of opaque attacker-controlled code on the installer's machine, with the loader itself obfuscated to frustrate review.\n\n## Source: ghsa-malware (61528d410a4f483327b9b70a274c336e2920ac7fcc40be2a7c76d8ac90a7cb27)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/pob-test-package-in-monorepo is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6eb7ddc4a79c6308d6e2f29098479c1bc943a2a0e7d9eb753c649ba11f083d80)\npob-test-package-in-monorepo@5.2.7 advertises a trivial library whose lib/index.js is six lines exporting the string 'John'. The tarball additionally ships setup.mjs and math_init.js, and package.json declares scripts.preinstall = 'node setup.mjs'. On npm install, setup.mjs downloads the Bun runtime binary from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<arch>.zip into a temp directory, chmods it executable, and invokes execFileSync(bunPath, [math_init.js]). math_init.js is a ~727KB single-line Bun-CJS bundle (// @bun @bun-cjs header) with hex-named identifiers (_0xXXXX), a shuffled string array (n7gIxM), and a rotator/decoder pair (WV8StW, hc1jfK9) — obfuscator.io-style packing that executes under the freshly downloaded alien runtime, bypassing Node-based scanning of the shipped source. The CHANGELOG's most recent entry is 5.2.0 ('test feat2'); setup.mjs and math_init.js are not documented in any changelog entry, and are structurally unrelated to a package whose declared purpose is exporting one string literal. The alternate-runtime dropper shape, the mismatch between declared purpose and shipped contents, and the undocumented addition of a large obfuscated payload in a point release are consistent with an unauthorized publish of a hijacked package name.\n\n## Source: ghsa-malware (61528d410a4f483327b9b70a274c336e2920ac7fcc40be2a7c76d8ac90a7cb27)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -34,6 +34,56 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -140,6 +190,46 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.15"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pob-test-package-in-monorepo/v/5.2.11"
     }
   ],
   "database_specific": {
@@ -246,6 +336,106 @@
         "source": "amazon-inspector",
         "versions": [
           "5.2.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013787",
+        "import_time": "2026-08-05T08:22:06.333513247Z",
+        "modified_time": "2026-08-05T07:14:56Z",
+        "sha256": "05959b9c279aa4ccb348b098b0b0a414a30709aa7ef5cd42c3415a8dd816033f",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.15"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013793",
+        "import_time": "2026-08-05T08:22:06.784471891Z",
+        "modified_time": "2026-08-05T07:15:47Z",
+        "sha256": "45e4072f62d28620d73d710d1b71ee1dc5c50f174c8fb5e9148fc5780107b242",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013931",
+        "import_time": "2026-08-05T08:22:17.097406591Z",
+        "modified_time": "2026-08-05T07:36:14Z",
+        "sha256": "8d0d06155bd46c553756159f204f6ad7604ee6ac009e7340f7ca68ab5486d042",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014088",
+        "import_time": "2026-08-05T08:22:27.978844719Z",
+        "modified_time": "2026-08-05T07:59:28Z",
+        "sha256": "dfba8af2604fda16e1cf49db43fbbe2eedba17527a96adc01b5ca318fefd1e33",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014223",
+        "import_time": "2026-08-05T08:22:37.4909176Z",
+        "modified_time": "2026-08-05T08:19:13Z",
+        "sha256": "edf7ec31922eedd603a5602acb47193c5e67b2112e81e12d70e8c20878bf8760",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013907",
+        "import_time": "2026-08-05T08:22:15.23241381Z",
+        "modified_time": "2026-08-05T07:32:34Z",
+        "sha256": "28b20058dfd7a555c504eb022f504495cdd08d07f69a97c9596b240d8c8956f3",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013769",
+        "import_time": "2026-08-05T08:22:05.085522072Z",
+        "modified_time": "2026-08-05T07:12:12Z",
+        "sha256": "2cbee8b96a4ef1b2b5c9544bd80988637b0b3234288d8b75b17ed778ac449fd2",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013927",
+        "import_time": "2026-08-05T08:22:16.878859704Z",
+        "modified_time": "2026-08-05T07:35:37Z",
+        "sha256": "6eb7ddc4a79c6308d6e2f29098479c1bc943a2a0e7d9eb753c649ba11f083d80",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013788",
+        "import_time": "2026-08-05T08:22:06.39885159Z",
+        "modified_time": "2026-08-05T07:15:03Z",
+        "sha256": "92d1b7889afa678905248bc92e2017697eea5b13a4ab507613374dba6b516537",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013796",
+        "import_time": "2026-08-05T08:22:06.976149092Z",
+        "modified_time": "2026-08-05T07:16:13Z",
+        "sha256": "ab9d1d7ddd4c01776cd775be1fb96cfc9be2920f765a126ece12dd1517e136f1",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.11"
         ]
       }
     ]

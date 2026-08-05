@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11990",
   "published": "2026-08-04T15:27:22Z",
-  "modified": "2026-08-05T07:08:56.583198582Z",
+  "modified": "2026-08-05T08:24:57.048941575Z",
   "aliases": [
     "GHSA-wf98-jfcg-4vch"
   ],
   "summary": "Malicious code in verdaccio-okta-oauth (npm)",
-  "details": "npm/verdaccio-okta-oauth is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (854fdacaf58888b8e0034530e32f4f8309b5de999a335ac79dbc1ec00b58ceab)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is itself obfuscated (hex-named identifiers, string-dictionary lookups) and, at install time, downloads the Bun runtime zip from a GitHub releases URL, unzips it to a temporary directory, chmod +x's the bun binary, and invokes it against a bundled ~727KB sibling file math_init.js. math_init.js is heavily obfuscated (single-line @bun-cjs bundle, shuffled string-array rotator, hex-named identifiers, fragmented URL-shaped constants) and is never reached through Node's normal require graph — it is executed only under the freshly dropped Bun binary. The package advertises itself as a Verdaccio Okta OAuth plugin and lists repository https://github.com/servicetitan/uikit.git, directory packages/verdaccio-okta-oauth, but nothing in the shipped code implements an OAuth flow; the alternate-runtime bootstrap and obfuscated payload are unrelated to the stated purpose and consistent with impersonation of an internal ServiceTitan package. Installing the package auto-executes attacker-controlled obfuscated code on the installer's machine via a second language runtime, bypassing Node-based supply-chain scanners.\n\n## Source: ghsa-malware (ab99ed07e1ae7af4dfebd7f0127bf3d8329ae1a74c416ad2cd85d7f23090503e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/verdaccio-okta-oauth is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a1e8f841ce4581c35eb47147e4667cc58cc0037ee7668f89f0d2196aaf9a876)\nThe package's preinstall script (`node setup.mjs`) downloads the Bun runtime from github.com/oven-sh/bun/releases (v1.3.13) into a temporary directory, extracts and chmods it, then invokes it against a sibling file `math_init.js` via `execFileSync(bunBinary, [path.join(D, 'math_init.js')], {stdio:'inherit', cwd:D})`. `math_init.js` is a single-line ~727 KB obfuscator.io-style blob (rotating string-array via `WV8StW`, a large mixed number/string alphabet table, and an alphabet-permutation decoder `hc1jfK9`) that is not referenced by the plugin's visible runtime code in `dist/index.js`. Fetching a second-language runtime at install time solely to execute an obfuscated sibling file is the alternate-runtime-dropper pattern — it smuggles the executed code into an alien runtime so Node-based tooling does not resolve it, and the obfuscation prevents static verification of what the payload does. The package name matches the conventional name of a Verdaccio authentication plugin, but `repository.url` points at `github.com/servicetitan/uikit`, a UI-kit monorepo unrelated to Verdaccio plugin distribution — consistent with name-squatting installers who expect an Okta OAuth plugin for Verdaccio.\n\n## Source: ghsa-malware (ab99ed07e1ae7af4dfebd7f0127bf3d8329ae1a74c416ad2cd85d7f23090503e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -34,6 +34,36 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -181,6 +211,30 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/verdaccio-okta-oauth/v/38.1.4"
     }
   ],
   "database_specific": {
@@ -322,6 +376,66 @@
         "source": "amazon-inspector",
         "versions": [
           "38.1.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013939",
+        "import_time": "2026-08-05T08:22:17.66230156Z",
+        "modified_time": "2026-08-05T07:37:28Z",
+        "sha256": "32eebe493cc9244949826952ad25d0ee035ecc1b163dacf44c8be0c4808c66c8",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013805",
+        "import_time": "2026-08-05T08:22:07.546375617Z",
+        "modified_time": "2026-08-05T07:17:31Z",
+        "sha256": "438429e88bf90bc311a2f48a592402206c9e730d96949f1cbe2c076a6dd946df",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013930",
+        "import_time": "2026-08-05T08:22:17.017585502Z",
+        "modified_time": "2026-08-05T07:36:07Z",
+        "sha256": "616255f964da6190c783ce58ea8d334ec0ebd6a361ab848b1a8149f4a369247c",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013920",
+        "import_time": "2026-08-05T08:22:16.300400837Z",
+        "modified_time": "2026-08-05T07:34:36Z",
+        "sha256": "8a1e8f841ce4581c35eb47147e4667cc58cc0037ee7668f89f0d2196aaf9a876",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013735",
+        "import_time": "2026-08-05T08:22:02.763520899Z",
+        "modified_time": "2026-08-05T07:07:00Z",
+        "sha256": "e299aaef71b364ad11a40752f9d26d37055b5a0ac17d7cd0f16d247d10a5742d",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013952",
+        "import_time": "2026-08-05T08:22:18.427330535Z",
+        "modified_time": "2026-08-05T07:39:32Z",
+        "sha256": "eb0698ea8801e2c56632db31b85cc185adb12df96d70b7ef113b8b6fd4d6f8cc",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.4"
         ]
       }
     ]

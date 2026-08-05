@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11733",
   "published": "2026-08-04T15:23:25Z",
-  "modified": "2026-08-05T07:08:50.546060337Z",
+  "modified": "2026-08-05T08:24:52.117202260Z",
   "aliases": [
     "GHSA-5xj3-95j7-x3cv"
   ],
   "summary": "Malicious code in @or-sdk/tickets (npm)",
-  "details": "npm/@or-sdk/tickets is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (df577aea55b522830a03a1b7fe1ba92f5477a7afd657b03ec7e28ed187eabea5)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is obfuscated (obfuscator.io-style _0x identifiers with indirection wrappers) and, when Bun is not already present, downloads a Bun runtime zip from github.com/oven-sh/bun/releases, extracts the bun binary to a temp directory, chmod +x it, and then invokes it against the sibling file math_init.js at install time. math_init.js is a 727KB obfuscated blob using a string-array rotation cipher (WV8StW shift function, n7gIxM mixed literal/int array, hc1jfK9 decoder over a scrambled alphabet) — the standard shape of an obfuscator-encoded loader. The package advertises itself as a tickets SDK; the dist/ SDK entry does not reference math_init.js, and nothing in the advertised purpose requires a second language runtime or a 727KB obfuscated script at install. The delivery pattern is the alternate-runtime dropper: the sibling payload is executed by a freshly fetched second runtime, bypassing Node-level inspection, so any code the payload contains runs with the installer's privileges on `npm install`.\n\n## Source: ghsa-malware (aa7c198144de8a98181bb64a82f80882c590168cb48d0c22b9352589b3a5da52)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@or-sdk/tickets is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (26c831c2ae400fad88cf24f254f1df2a6c5d6f19a206b55746cbd4df2fc048a3)\nPackage `@or-sdk/tickets@1.9.5` ships a `preinstall` script (`setup.mjs`) that downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<target>.zip`, unzips it to a temporary directory, marks the binary executable, and then invokes it against a sibling file `math_init.js` shipped in the tarball. `math_init.js` is a 727KB Bun-bundled blob (`// @bun @bun-cjs`) whose contents are fully obfuscated (shuffled string/constant array, `_0x*` mangled identifiers, character-code decoder), so its behavior cannot be audited without execution. The advertised purpose of the package is a ticket-management SDK, which has no legitimate need to fetch a second language runtime at install time solely to run an opaque bundled payload. The Bun runtime is used specifically to execute a shipped obfuscated file under an alternate interpreter that bypasses Node-based inspection — the alternate-runtime dropper pattern. Both the loader (`setup.mjs`) and the payload (`math_init.js`) are obfuscated, and execution occurs automatically on `npm install` via the `preinstall` lifecycle hook.\n\n## Source: ghsa-malware (aa7c198144de8a98181bb64a82f80882c590168cb48d0c22b9352589b3a5da52)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -87,6 +92,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@or-sdk/tickets/v/1.9.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/tickets/v/1.9.5"
     }
   ],
   "database_specific": {
@@ -140,6 +149,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.9.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014177",
+        "import_time": "2026-08-05T08:22:34.353155437Z",
+        "modified_time": "2026-08-05T08:12:32Z",
+        "sha256": "26c831c2ae400fad88cf24f254f1df2a6c5d6f19a206b55746cbd4df2fc048a3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.5"
         ]
       }
     ]

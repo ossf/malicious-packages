@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11723",
   "published": "2026-08-04T13:20:45Z",
-  "modified": "2026-08-05T07:08:50.539175980Z",
+  "modified": "2026-08-05T08:24:52.090942933Z",
   "aliases": [
     "GHSA-f3pc-vvwm-g95f"
   ],
   "summary": "Malicious code in @or-sdk/queue-manager (npm)",
-  "details": "npm/@or-sdk/queue-manager is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5ce24523bff92fbb22b0488c1385fa1192e7ec605a80563675c3bed7c7b2e035)\npackage.json declares `preinstall: node setup.mjs`. On `npm install`, setup.mjs downloads the Bun runtime (v1.3.13) from github.com/oven-sh/bun releases into an OS temporary directory, chmods it executable, and uses that Bun binary to execute the bundled sibling file `math_init.js` — a single-line 727 KB `@bun-cjs` bundle whose program is reconstructed at runtime from a large numeric/string lookup table `n7gIxM` via an array-rotation function `WV8StW` and a per-character decoder `hc1jfK9` keyed on a scrambled alphabet. No URLs, imports, or human-readable identifiers survive in the payload; behavior is only observable by executing it. The alternate-runtime delivery causes the payload to run under Bun rather than Node, so Node-oriented install-phase inspection does not see it. A queue-manager library has no functional need for a second language runtime at install time or for an opaque, heavily obfuscated auto-executed payload. CHANGELOG entries link to an internal-only host (`gitlab.internal.onereach.io/onereach/platform/or-sdk-next/...`) while the package is published on the public npm registry under `@or-sdk/queue-manager`, consistent with a dependency-confusion / name-hijack shape against an internal SDK.\n\n## Source: ghsa-malware (5e1d6755284384e417c6f2abae3ced22d25114092873c6b655f3c8c4619cbf88)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@or-sdk/queue-manager is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9ed66dd1eb86438a500eb74c97bb979e57bd77ea4dc90e401ee870ac00eedffd)\nThe package's `preinstall` hook (`node setup.mjs`) downloads the Bun JavaScript runtime from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<platform>.zip into a temporary directory, unpacks it, marks it executable, and invokes it with the bundled `math_init.js` file as its argument at install time. `math_init.js` is a 727KB file at the tarball root carrying a `// @bun @bun-cjs` header and heavy obfuscator.io-style transforms: hex-mangled identifiers, a shuffled numeric/string constant array (`n7gIxM=[...]`) with a rotation function (`WV8StW`), and a base-N string decoder (`hc1jfK9`). `setup.mjs` itself is also obfuscated (hex-mangled identifiers such as `_0x488df8`, `_0x52943e`, and per-function string-table indirection objects hiding URLs, filenames, and flags like `--version`, `/etc/os-release`). The package presents itself as a QueueManager SDK client, a purpose that does not require a second JavaScript runtime; fetching an alternate runtime specifically to execute a bundled opaque payload at install time is the alternate-runtime-dropper pattern, and executing under Bun rather than Node evades Node-based install-time scanners. The payload runs automatically on `npm install` with the invoking user's privileges before any code inspection, and its behavior is hidden behind the obfuscation.\n\n## Source: ghsa-malware (5e1d6755284384e417c6f2abae3ced22d25114092873c6b655f3c8c4619cbf88)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -78,6 +88,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@or-sdk/queue-manager/v/1.4.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/queue-manager/v/1.4.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/queue-manager/v/1.4.6"
     }
   ],
   "database_specific": {
@@ -121,6 +139,26 @@
         "source": "amazon-inspector",
         "versions": [
           "1.4.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014073",
+        "import_time": "2026-08-05T08:22:26.964577595Z",
+        "modified_time": "2026-08-05T07:57:19Z",
+        "sha256": "6a385561649cd4cbafdeb43000735c9d297f1be8d92f3aef5bfa2bcc16f363ed",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014157",
+        "import_time": "2026-08-05T08:22:32.901251018Z",
+        "modified_time": "2026-08-05T08:09:25Z",
+        "sha256": "9ed66dd1eb86438a500eb74c97bb979e57bd77ea4dc90e401ee870ac00eedffd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.6"
         ]
       }
     ]

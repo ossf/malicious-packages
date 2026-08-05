@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11694",
   "published": "2026-08-04T15:20:51Z",
-  "modified": "2026-08-05T07:08:50.527501577Z",
+  "modified": "2026-08-05T08:24:51.656394379Z",
   "aliases": [
     "GHSA-9gf9-qpp6-74fx"
   ],
   "summary": "Malicious code in @or-sdk/flow-templates (npm)",
-  "details": "npm/@or-sdk/flow-templates is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b6053004cc9c4ddea42127c0fae115f5b4aa46e7c791bf97a77c5b199c9e98bf)\nThe package declares a `preinstall` script that runs `setup.mjs`, which downloads a per-platform Bun runtime zip from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...`, extracts and chmods it executable, and then invokes the freshly downloaded Bun binary against the sibling file `math_init.js` shipped in the tarball. `math_init.js` is a ~727KB heavily obfuscated bundle using a rotated string-array (`function WV8StW(MmgoCP,...) {... MmgoCP.push(MmgoCP.shift())... }`), a multi-hundred-entry constant array, and randomized `_0xXXXX`-style identifiers; `setup.mjs` itself is obfuscated with the same scheme. The advertised purpose of the package is a flow-templates SDK, which does not require an alternate JavaScript runtime or an opaque install-time bundle named `math_init.js`. The alternate-runtime is used specifically to execute an opaque sibling script at install time, bypassing Node-based inspection, with no hash or signature verification of either the Bun binary or the payload. Installing this package causes arbitrary attacker-controlled code inside `math_init.js` to execute automatically on `npm install`.\n\n## Source: ghsa-malware (e408591d11e8af6345f53a07b28f0b41bc3f38706e8b22549f3410d6dfd0797a)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@or-sdk/flow-templates is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (918774a9c3455910b6ec9026d26761e8c4af528caea0603d700bbdbdccb956e4)\nThe package declares a preinstall hook (`node setup.mjs`) that downloads the Bun runtime from github.com/oven-sh/bun releases (v1.3.13), extracts and chmods the binary, and invokes it against a bundled 727 KB sibling file `math_init.js`. `math_init.js` is a Bun-only bundle (`// @bun @bun-cjs` header) heavily obfuscated with obfuscator.io fingerprints (rotated string array `n7gIxM`, rotator `WV8StW`, alphabet-substitution decoder `hc1jfK9`) whose behavior is not statically inspectable and is not reachable from the advertised `FlowTemplates` SDK API in `dist/cjs/index.js`. The preinstall entrypoint `setup.mjs` is itself obfuscated with hex-mangled identifiers (`_0x488df8`, `_0x52943e`, `_0x19328d`) and string-property indirection for constants such as `--version`, `ldd`, `/etc/os-release`, and the Bun download URLs. Fetching an alternate language runtime at install time specifically to execute an obfuscated in-package payload that has no relation to the package's documented SDK purpose is an alternate-runtime dropper pattern; the code that ultimately runs on the installer's machine at `npm install` time is hidden behind the Bun bundle.\n\n## Source: ghsa-malware (e408591d11e8af6345f53a07b28f0b41bc3f38706e8b22549f3410d6dfd0797a)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -73,6 +83,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@or-sdk/flow-templates/v/2.1.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/flow-templates/v/2.1.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/flow-templates/v/2.1.6"
     }
   ],
   "database_specific": {
@@ -116,6 +134,26 @@
         "source": "amazon-inspector",
         "versions": [
           "2.1.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014108",
+        "import_time": "2026-08-05T08:22:29.264577516Z",
+        "modified_time": "2026-08-05T08:02:23Z",
+        "sha256": "918774a9c3455910b6ec9026d26761e8c4af528caea0603d700bbdbdccb956e4",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014014",
+        "import_time": "2026-08-05T08:22:22.751738216Z",
+        "modified_time": "2026-08-05T07:48:48Z",
+        "sha256": "f1e89f29235801cecbaabb5319ef3eed4fc90e1e10f206e433e757a66eb4f89b",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.6"
         ]
       }
     ]
