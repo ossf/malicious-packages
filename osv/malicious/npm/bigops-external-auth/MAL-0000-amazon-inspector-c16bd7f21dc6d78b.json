@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:44:58Z",
+  "modified": "2026-08-05T08:44:58Z",
+  "summary": "Import-time binary dropper fetches and executes remote payload from obfuscated Cloudflare Worker hosts with DNS-TXT fallback",
+  "details": "On require('bigops-external-auth'), index.js loads _adapter.js which downloads a platform-specific native binary from Cloudflare Worker hosts whose hostnames are reassembled at runtime from split string arrays (e.g. [\"oob\",\"-wo\",\"rker.cf100-416.worke\",\"rs.de\",\"v\"].join(\"\")) to evade static analysis. The fetched bytes are written to a temp path under a disguised name (dotnet_diag_*.exe /.cache_*), chmod 0755, and spawned detached via cp.spawn(\"/bin/sh\", [\"-c\", fp + \" &\"], {detached:true}) or spawn(\"cmd\",...) on Windows. If the HTTPS fetch fails, a fallback channel retrieves a base64-chunked payload via DNS TXT records at *.wel1.ru (hostnames also reassembled via.join(\"\")) and reconstructs it with Buffer.from(parts.join(\"\"), \"base64\"), designed to bypass egress HTTP filtering. A second parallel dropper is shipped in lib/telemetry.js (81KB), masquerading as a Sentry-like SDK, structurally identical to the active dropper (spawn /bin/sh with fetched file, chmodSync 755 via string-concatenated method name fs[\"chmod\"+\"Sync\"], base64 chunk assembly), not currently on the reachable graph from index.js but present in the tarball. Behavior fires automatically on require/import — any consumer that installs and loads this package executes attacker-controlled native code on the host.",
+  "affected": [
+    {
+      "package": {
+        "name": "bigops-external-auth",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "35.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_adapter.js",
+              "sha256": "f98e20910c57c43617f3814acb099f2c09bfefb7307f5484c85c45f300c97d50",
+              "tlsh": "12b177aa15a670084bb0d7e5c7175415f56bf6633380d688fb9c99984fb222483f2efc"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "3c86aa9a185c92849cbb619a382c874187a3a7aa7b13b8638318870f5a538e3d",
+              "tlsh": "94835055566a242186b2b368df234107ff3685272643429dbafc82dc1fbd72092a5ffc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bigops-external-auth-35.1.6.tgz",
+              "hashes": {
+                "sha1": "8747ac05fe4484dd9f7e65fd567a284c1946288c",
+                "sha512_sri": "sha512-lm9wzZzKKLldbBOgehtGpTsaX+qXHMcMRrM5JFWA5qR9Taj7aPNzNuzHY8ggYrTGbIJr0FfCqDUqyyCGclR6YQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bigops-external-auth/v/35.1.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014401",
+        "import_time": "2026-08-05T09:28:06.626462291Z",
+        "modified_time": "2026-08-05T08:44:58Z",
+        "sha256": "c16bd7f21dc6d78b406fc39906d8cbb621072c638f84593871016f3b5ba5bae5",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.1.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

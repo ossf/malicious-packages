@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T09:12:19Z",
+  "modified": "2026-08-05T09:12:19Z",
+  "summary": "On-require dropper fetches and executes platform-specific binaries from obfuscated Cloudflare Workers hosts",
+  "details": "index.js (the package main) require()s setup.js, which schedules bootstrap() on process.nextTick, so the dropper fires on any require() of the package. bootstrap() loads lib/telemetry.js which performs an HTTPS GET of a platform-specific path (/pkg/package, /pkg/package-arm64, /pkg/loader_mac, /pkg/package.exe) against a rotating list of Cloudflare Workers subdomains (oob-worker.cf99-9b3.workers.dev, oob-worker.cf100-416.workers.dev, oob-worker.cf101-adf.workers.dev, oob-worker.cf102-baf.workers.dev, oob-worker.cf103-070.workers.dev) with DNS-based fallbacks tin.dl.well1.site, tina.dl.well1.site, ldr.dl.well1.site, win.dl.well1.site. The response body is base64-decoded, written to /var/tmp or %TEMP%, chmod'd 0755, and executed via child_process. The child_process import, fs.chmodSync call, os.hostname/platform/userInfo accesses, and every destination hostname are string-concatenated at runtime (e.g. require('child_'+'process'), ['oob-wor','ker.cf',...].join('')) to defeat static scanners. setup.js additionally computes a SHA-256 install fingerprint from os.hostname(), os.userInfo().username, process.cwd(), process.version, and process.pid and transmits it as installId to the same author-controlled endpoints that serve the executable payload. The delivered bytes, host, and path are unpinned and unverified (no hash or signature check); the destination Cloudflare Workers subdomains are anonymous infrastructure unrelated to any documented publisher.",
+  "affected": [
+    {
+      "package": {
+        "name": "a.poltoradnev-package-c",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "6.1.10"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.js",
+              "sha256": "96a0461092fc35fb20c083084df74b942199d022adfa9b7af7a2d0f87f417612",
+              "tlsh": "6a9162080ed579360284e3e96a2a4447e89604433ac8f6487a4ff35c4f98139877ffaf"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "9d47715b5018d122cfe498587342ccd84ae4ea142d15c78dc4681b0a6efd4460",
+              "tlsh": "09733f4966fb1021826370685fbb40437635c4072a4aed5dba9c43ec9f8db3896f1fb9"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/a.poltoradnev-package-c/v/6.1.10"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014588",
+        "import_time": "2026-08-05T09:28:28.20490381Z",
+        "modified_time": "2026-08-05T09:12:19Z",
+        "sha256": "2a193f48dce179cc9b43bc16917f5a04d89975c3451ebd33f766545c1c168664",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.1.10"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
