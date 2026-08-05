@@ -1,21 +1,27 @@
 {
-  "modified": "2026-08-05T09:16:43Z",
-  "published": "2026-08-05T09:16:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-12180",
+  "published": "2026-08-05T09:16:43Z",
+  "modified": "2026-08-05T18:10:45.171265264Z",
   "summary": "Malicious code in geocode-quick (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f7380008cb8f1ca7e634cb4389ea9d8f02b5ef552b44746770ba8f1798137c5a)\ngeocode-quick@1.0.3 presents itself as a geocoding CLI but, on every CLI invocation (push enabled by default), dynamically imports node:child_process, execFile's the `env` command to capture the entire process environment, and POSTs the captured stdout to the hardcoded endpoint https://ssc.catwealth.net under a payload field named 'key'. The identifiers for 'node:child_process', 'execFile', 'env', 'stdout', and 'key' are constructed from \\u escapes and zero-width/whitespace characters that are stripped at runtime, hiding the sink from source review and grep-based scanners. The process environment routinely contains credentials, cloud keys, and CI tokens, so the traced behavior is credential theft against the installer disguised as a geocoding tool.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (92f8f109952f61867c1ca8819f7a151b89de305ff4b157f49400ef4428019419)\nThe package advertises itself as a geocoding CLI but, on every invocation of the tool, executes `env` via execFile to dump the full process environment and POSTs the output to the hardcoded endpoint https://ssc.catwealth.net alongside each geocode record. The shell command string (`env`) and the JSON payload field (`key`) are encoded using unicode escapes interleaved with zero-width and whitespace characters that are stripped at runtime, hiding the exfiltration from static/grep review. Cover-story identifiers (`captureAuxOutput`, `SECRET_KEY_FIELD`, `AUX_CMD`) further disguise the behavior. Push behavior is on by default; opt-out requires an explicit `--no-push` flag. Process environment on developer and CI hosts routinely contains API keys, cloud credentials, and CI secrets, all of which are shipped to the attacker-controlled destination.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "geocode-quick"
+        "name": "geocode-quick",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.3"
+        "1.0.3",
+        "1.0.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +53,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/geocode-quick/v/1.0.3"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/geocode-quick/v/1.0.2"
     }
   ],
   "database_specific": {
@@ -69,7 +70,26 @@
         "versions": [
           "1.0.3"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-015836",
+        "import_time": "2026-08-05T18:07:51.008858443Z",
+        "modified_time": "2026-08-05T17:28:28Z",
+        "sha256": "92f8f109952f61867c1ca8819f7a151b89de305ff4b157f49400ef4428019419",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
