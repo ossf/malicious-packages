@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11874",
   "published": "2026-08-04T13:21:05Z",
-  "modified": "2026-08-05T00:12:10.005868173Z",
+  "modified": "2026-08-05T00:46:45.020761844Z",
   "aliases": [
     "GHSA-x4vx-m5pv-w23h"
   ],
   "summary": "Malicious code in @servicetitan/hammer-react (npm)",
-  "details": "npm/@servicetitan/hammer-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (acc60eafa11d42b730e5415b24b74dc4560a0e8bfdd77ddc50cbc9bc564b19ee)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/hammer-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a636323eb79b4f73bf4a415baf380f36dc8b23deba6baab58e118cd0d339e265)\npackage.json declares scripts.preinstall = \"node setup.mjs\". setup.mjs is obfuscator.io-style obfuscated (hex-prefixed identifiers, rotated string array, numeric-cipher literal table) and, on npm install, downloads a Bun runtime binary from github.com/oven-sh/bun/releases for the installer's platform+arch, unzips it to a temp directory, chmods it executable, and invokes it against a sibling file math_init.js — a 727 KB single-line `// @bun @bun-cjs` bundle at the tarball root that is also fully obfuscated with a large numeric string table (n7gIxM) and no readable source. The package's declared purpose is a React UI component library, which has no functional need for an alternate JavaScript runtime or an obfuscated multi-hundred-kilobyte install-time payload. package.json's files allow-list is [\"dist\", \"CHANGELOG.md\"], yet setup.mjs and math_init.js appear at the tarball root — the payload is not part of the author's declared publish surface. The combination of preinstall-triggered acquisition of an alternate runtime, execution of an opaque bundled blob whose behavior is intentionally unreadable, purpose mismatch with a React UI kit, and files-allow-list mismatch is consistent with a compromised-publish supply-chain attack: installing this version runs attacker-controlled code on the installer's host at install time before any application code executes.\n\n## Source: ghsa-malware (acc60eafa11d42b730e5415b24b74dc4560a0e8bfdd77ddc50cbc9bc564b19ee)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,8 +29,41 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ca99e7bca5bc87037a39790a55cf08cb8a84291520106c6881ecc5c2490ecd79",
+              "tlsh": "7e513624c8548da31d8916ac68364343501c908b4c22f58c3bb5a31f8f6d7af7676baf"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hammer-react-1.42.7.tgz",
+              "hashes": {
+                "sha1": "fbfecc9045e0e927cf841cbb1d979297d1840cd6",
+                "sha512_sri": "sha512-nXkxpFaj0olekGWArRip4UiMYqt5jEKL2lgqQsgX1BPPEaxEgbvW7OUWH8kymECGcCFEJ0D+sKNcZHKMK7Gz4w=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -54,6 +87,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-x4vx-m5pv-w23h"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/hammer-react/v/1.42.7"
     }
   ],
   "database_specific": {
@@ -92,6 +129,16 @@
           "1.42.2",
           "1.42.7"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-011416",
+        "import_time": "2026-08-05T00:44:45.60863968Z",
+        "modified_time": "2026-08-05T00:12:33Z",
+        "sha256": "a636323eb79b4f73bf4a415baf380f36dc8b23deba6baab58e118cd0d339e265",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.42.7"
+        ]
       }
     ]
   },
@@ -100,6 +147,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

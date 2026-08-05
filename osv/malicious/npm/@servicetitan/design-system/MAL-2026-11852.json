@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11852",
   "published": "2026-08-04T13:20:24Z",
-  "modified": "2026-08-05T00:12:09.976600184Z",
+  "modified": "2026-08-05T00:46:45.009049630Z",
   "aliases": [
     "GHSA-cjgc-69g5-x5qv"
   ],
   "summary": "Malicious code in @servicetitan/design-system (npm)",
-  "details": "npm/@servicetitan/design-system is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (e74ee06b998ea34ae2e79c8bcc54fc05c2cf0405d431fae63d7536725d1e22ee)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/design-system is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (65b9973b1f7ebcfdf05932780b0a74ab2e0c5a7d5518335e8b9fa23eb3a023ac)\npackage.json declares `preinstall: node setup.mjs`. setup.mjs is obfuscated (obfuscator.io-style `_0x` identifiers, per-scope string-mapping) and, at install time, downloads a Bun runtime binary from `https://github.com/oven-sh/bun/releases/download/bun-v<VERSION>/<archive>.zip`, extracts it to a temp directory, chmods it executable, and then invokes it via `execFileSync` to run the sibling file `math_init.js`. math_init.js is a 727 KB single-line blob prefixed with `// @bun @bun-cjs` (a Bun-only directive that Node cannot load), containing a rotated string-array decoder (`WV8StW` shift-based rotation with a large hex-encoded index table `n7gIxM` and charset-based decoder `hc1jfK9`) — the payload is gated to only run under the freshly-dropped Bun runtime, bypassing Node-based scanners. The package manifest advertises the ServiceTitan Anvil React design system (homepage v1.anvil.servicetitan.com, github:servicetitan/anvil), but the tarball ships only setup.mjs, math_init.js, and a placeholder dist tree — none of which are consistent with a React component library. The alternate-runtime-dropper shape, Bun-only obfuscated payload, and namespace impersonation together match the install-time-rce fingerprint: installing this package auto-executes attacker-controlled code on the installer's machine under a runtime chosen to defeat inspection.\n\n## Source: ghsa-malware (e74ee06b998ea34ae2e79c8bcc54fc05c2cf0405d431fae63d7536725d1e22ee)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,8 +29,41 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "8ba1d229f268cc5c8d3bd5aaff38bd9f79f7d9dca87f3c61f61e6c8e9fa0fb85",
+              "tlsh": "a6513769c8894de31acb14b828360142512da52f5e78749c37f1b15dcf2c3ef7176aae"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "design-system-14.5.9.tgz",
+              "hashes": {
+                "sha1": "da1709d0e3760da369e8352a8ea8854d3b8dda8d",
+                "sha512_sri": "sha512-W1Xeylo4kW8zF8K0kYcJkv4hr6KeGcYlA/BA9E9ZMhUDbSfUXq/+ijtJe9vavZsc0hKG6yq0gHK00st8ObF/7Q=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -54,6 +87,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-cjgc-69g5-x5qv"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/design-system/v/14.5.9"
     }
   ],
   "database_specific": {
@@ -92,6 +129,16 @@
           "14.5.4",
           "14.5.10"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-011410",
+        "import_time": "2026-08-05T00:44:44.794729531Z",
+        "modified_time": "2026-08-05T00:11:41Z",
+        "sha256": "65b9973b1f7ebcfdf05932780b0a74ab2e0c5a7d5518335e8b9fa23eb3a023ac",
+        "source": "amazon-inspector",
+        "versions": [
+          "14.5.9"
+        ]
       }
     ]
   },
@@ -100,6 +147,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

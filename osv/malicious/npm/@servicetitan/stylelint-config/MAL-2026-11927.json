@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11927",
   "published": "2026-08-04T13:18:27Z",
-  "modified": "2026-08-05T00:12:10.058133688Z",
+  "modified": "2026-08-05T00:46:45.053560123Z",
   "aliases": [
     "GHSA-m997-4hj4-92h7"
   ],
   "summary": "Malicious code in @servicetitan/stylelint-config (npm)",
-  "details": "npm/@servicetitan/stylelint-config is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (afa7e8c506e909b9cea0f8bb7b8776f175753f4183ae404b2ecfc1f4369b8060)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/stylelint-config is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9c83c6c7f1521f1132a0faa6a1290de104f5b65b3e9b0bdb23c9aed2873a6c6f)\nThe package declares itself as a stylelint config but ships a preinstall hook (`node setup.mjs`, wired via package.json scripts.preinstall) that runs automatically on `npm install`. setup.mjs is obfuscator.io-style renamed (identifiers like `_0x488df8` for `fs`, `_0x52943e` for `https`, per-function proxy dictionaries mapping strings such as `/etc/os-release` and `Alpine`) and performs a download-extract-execute flow: it fetches the Bun runtime v1.3.13 from github.com/oven-sh/bun releases, extracts it to a temporary directory, chmods it executable, then invokes it via `execFileSync` to run the bundled sibling file `math_init.js`. math_init.js is a 727 KB `// @bun @bun-cjs` bundle with heavy string-array rotation (`WV8StW` shifts array `n7gIxM`), a base64-like alphabet decoder (`hc1jfK9`), and fully renamed identifiers; its contents are not human-readable and its name has no relation to a stylelint configuration. A stylelint config package has no legitimate need for the Bun runtime or a separate 727 KB compiled JS blob, and no legitimate need to obfuscate its own install script. The combination — alternate-runtime dropper at preinstall time, obfuscated wrapper, and obfuscated payload unrelated to the package's declared purpose — matches the npm-account-compromise supply-chain attack pattern.\n\n## Source: ghsa-malware (afa7e8c506e909b9cea0f8bb7b8776f175753f4183ae404b2ecfc1f4369b8060)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,8 +29,36 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "stylelint-config-38.1.4.tgz",
+              "hashes": {
+                "sha1": "e0b6cec18be93085da0a4bdfd18b8071192f9374",
+                "sha512_sri": "sha512-seUUftW8KRTBE3MHgZ1bNDiLRD1g0izIw0nILnVnJzELpZkEcTAg0Jy/3MbbNsEuQ0RglEzKcM/h85FRlZGejQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -54,6 +82,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-m997-4hj4-92h7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/stylelint-config/v/38.1.4"
     }
   ],
   "database_specific": {
@@ -92,6 +124,16 @@
           "38.1.1",
           "38.1.7"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-011450",
+        "import_time": "2026-08-05T00:44:51.111985847Z",
+        "modified_time": "2026-08-05T00:17:32Z",
+        "sha256": "9c83c6c7f1521f1132a0faa6a1290de104f5b65b3e9b0bdb23c9aed2873a6c6f",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.4"
+        ]
       }
     ]
   },
@@ -100,6 +142,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },
