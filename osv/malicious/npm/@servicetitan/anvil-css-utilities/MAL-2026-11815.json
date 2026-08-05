@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11815",
   "published": "2026-08-04T13:25:57Z",
-  "modified": "2026-08-05T04:40:32.197684501Z",
+  "modified": "2026-08-05T06:02:51.522083868Z",
   "aliases": [
     "GHSA-4vc6-772g-qrp6"
   ],
   "summary": "Malicious code in @servicetitan/anvil-css-utilities (npm)",
-  "details": "npm/@servicetitan/anvil-css-utilities is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6f5ab9d7f7b82783beb5d441e0734db1b62ab59309c9a3b72928c8c75a46808a)\nThe package advertises itself as a CSS utilities library (dist/ ships only utilities.css and its source map), but its package.json declares a preinstall hook `node setup.mjs`. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun releases, chmods it 0755, and uses it via execFileSync to run a bundled sibling file math_init.js. math_init.js is a ~727KB single-expression obfuscated bundle (header `// @bun @bun-cjs`, string-array rotation, hex-named identifiers, large integer/character constant pool) that is only executable under the fetched Bun runtime, evading Node-based inspection. Both setup.mjs and math_init.js are shipped at the tarball root but are not listed in package.json `files` (declared as [\"dist\",\"readme.md\"]), so the install-time execution surface is entirely outside the declared manifest. A CSS-only utilities package has no legitimate need for an alternate language runtime or an obfuscated executable at install time; installing this version runs opaque attacker-controlled code under the invoking user's privileges. The @servicetitan scope is consistent with impersonation or hijack of a legitimate corporate namespace.\n\n## Source: ghsa-malware (7f6e9d6d4fe3d82597305215318ee5e76a4b6ba24dae300ecf629a089064b5a7)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/anvil-css-utilities is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c600e5bddd6cf837a5a19c9adc7b35f9ba9660e82274470e242d7c48e2a42be1)\nThe package advertises itself as a CSS utilities library but declares a preinstall hook (`node setup.mjs`) that downloads the Bun runtime from GitHub releases (`https://github.com/oven-sh/bun/releases/download/bun-v<ver>/<platform>.zip`) into a temporary directory, unzips it, marks it executable, and invokes it via `execFileSync` to run a bundled sibling file `math_init.js`. `math_init.js` is a ~727KB single-line `@bun @bun-cjs` bundle with a rotated string-array decoder (functions such as `WV8StW` rotating `n7gIxM`, and a custom-alphabet decoder `hc1jfK9`) and hex-mangled identifiers; its contents are opaque and unrelated to CSS. The file is not listed in `package.json` `files` (which declares only `dist` and `readme.md`). `setup.mjs` itself uses `_0x`-prefixed identifiers and per-function property-bag literals (e.g. `_0x19328d.YCZJE(execFileSync, 'ldd',...)`) to indirect calls and hide constants including the Bun download URL and platform selectors. On `npm install`, this preinstall path executes attacker-authored, obfuscated code on the installer's host through a second language runtime that a CSS utilities package has no legitimate reason to install.\n\n## Source: ghsa-malware (7f6e9d6d4fe3d82597305215318ee5e76a4b6ba24dae300ecf629a089064b5a7)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -127,6 +137,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/anvil-css-utilities/v/14.5.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/anvil-css-utilities/v/14.5.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/anvil-css-utilities/v/14.5.4"
     }
   ],
   "database_specific": {
@@ -214,6 +232,26 @@
         "source": "amazon-inspector",
         "versions": [
           "14.5.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012778",
+        "import_time": "2026-08-05T06:00:03.140250645Z",
+        "modified_time": "2026-08-05T04:47:43Z",
+        "sha256": "c600e5bddd6cf837a5a19c9adc7b35f9ba9660e82274470e242d7c48e2a42be1",
+        "source": "amazon-inspector",
+        "versions": [
+          "14.5.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012809",
+        "import_time": "2026-08-05T06:00:06.990325351Z",
+        "modified_time": "2026-08-05T04:52:23Z",
+        "sha256": "fd53867218f7ce8421248bd954e2baee5e6e97c6db37262d69f700f08832d2b0",
+        "source": "amazon-inspector",
+        "versions": [
+          "14.5.4"
         ]
       }
     ]

@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11878",
   "published": "2026-08-04T15:27:50Z",
-  "modified": "2026-08-05T04:40:32.383278859Z",
+  "modified": "2026-08-05T06:02:51.626691421Z",
   "aliases": [
     "GHSA-97vr-59jg-x83f"
   ],
   "summary": "Malicious code in @servicetitan/html-sketchapp (npm)",
-  "details": "npm/@servicetitan/html-sketchapp is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ffa8a6063e6d342d53e8e671bb06420406df6fd02aebef35cee63d5472330fac)\nThis package publishes under the @servicetitan npm scope but its package.json author/repository/homepage/bugs all point to the unrelated upstream brainly/html-sketchapp — a legitimate MIT HTML-to-Sketch converter that ships no preinstall script, no setup.mjs, and no math_init.js. This tarball adds a scripts.preinstall entry (`node setup.mjs`) that, on `npm install`, checks whether the Bun runtime is on PATH and, if not, downloads a Bun release zip from github.com/oven-sh/bun/releases, extracts the `bun` binary to a temp path, chmod +x's it, and invokes it (via execFileSync) against a sibling file `math_init.js`. `math_init.js` is a 727KB `// @bun @bun-cjs` compiled bundle with heavy string-array-shuffle obfuscation (rotator function, large mixed numeric/string constant table, hex-mangled identifiers), unrelated by filename to the package's advertised HTML-to-Sketch purpose and not referenced from the declared `main` entry (build/html2asketch/index). The obfuscated payload is executed via a freshly-installed alternate runtime at install time under a trojanized fork of a legitimate upstream project — the alternate-runtime-dropper pattern, with attacker-controlled code running on every installer's machine.\n\n## Source: ghsa-malware (d970f3c09cd35c6f124b015d20b233e923d772b9ddd1f40be125fa2511d24f41)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/html-sketchapp is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (78569ef919db1a63d5ac87f07c0fc46c027a58149071eef17d217b6c5094b0b8)\nThe package's preinstall hook (`node setup.mjs`) downloads the Bun runtime from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<platform>.zip to a temp directory, chmods it executable, and invokes it against a bundled 727KB obfuscated JavaScript file `math_init.js` at the tarball root. Both `setup.mjs` and `math_init.js` are heavily obfuscated: `setup.mjs` uses `_0xNNNN` identifier indirection and dictionary-based string obfuscation to hide platform detection, download, and exec logic; `math_init.js` is a `@bun @bun-cjs` bundle with a shuffled string-array rotator (`WV8StW` shifting `MmgoCP`) and hex-mangled identifiers, with no readable control flow. Neither `math_init.js` nor `setup.mjs` is declared in `package.json`'s `files` array, though the manifest enumerates the package's real content (`asketch2sketch`, `html2asketch`, `build/...`) — the executed payload is present in the tarball but absent from the author's declared file manifest. The package's advertised purpose is HTML-to-Sketch conversion and has no functional need for a separate language runtime or a file named `math_init.js`. This matches the alternate-runtime dropper pattern: pulling in Bun to execute an opaque bundle smuggles code execution on install past Node-oriented inspection.\n\n## Source: ghsa-malware (d970f3c09cd35c6f124b015d20b233e923d772b9ddd1f40be125fa2511d24f41)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -131,6 +136,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/html-sketchapp/v/4.2.14"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/html-sketchapp/v/4.2.9"
     }
   ],
   "database_specific": {
@@ -228,6 +237,16 @@
         "source": "amazon-inspector",
         "versions": [
           "4.2.14"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012773",
+        "import_time": "2026-08-05T06:00:02.565348452Z",
+        "modified_time": "2026-08-05T04:47:03Z",
+        "sha256": "78569ef919db1a63d5ac87f07c0fc46c027a58149071eef17d217b6c5094b0b8",
+        "source": "amazon-inspector",
+        "versions": [
+          "4.2.9"
         ]
       }
     ]

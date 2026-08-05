@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11945",
   "published": "2026-08-04T13:21:30Z",
-  "modified": "2026-08-05T04:40:32.584490109Z",
+  "modified": "2026-08-05T06:02:51.737462660Z",
   "aliases": [
     "GHSA-mqwx-8hgf-w2v2"
   ],
   "summary": "Malicious code in @servicetitan/toolbelt-shared-registry (npm)",
-  "details": "npm/@servicetitan/toolbelt-shared-registry is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e4030b52c23697688db2771212b4ab68cc80f204939a490851b585fa1023e983)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs downloads the Bun runtime from GitHub releases (bun-v1.3.13) into a temp directory, unzips it, chmods it executable, and then invokes the freshly downloaded Bun binary against a local file math_init.js. math_init.js is a single-line, 727KB, obfuscator.io-style bundle (rotated string array via function WV8StW, hex-mangled identifiers, no imports, no human-readable strings) with a '// @bun @bun-cjs' header, so it can only run under Bun rather than Node. The filename has no relation to the package's advertised purpose (a small React IoC registry, whose actual code lives unrelated in dist/index.js). Fetching a second alternate runtime at install specifically to execute a heavily obfuscated payload is the alternate-runtime-dropper pattern used to evade Node-oriented install-time scanners. The scoped-vendor name (@servicetitan) combined with install-time delivery of unrelated obfuscated code is consistent with a namespace compromise or typosquat against the ServiceTitan scope.\n\n## Source: ghsa-malware (e91e5c6343f746fb7f2603ef84270a4b1eca90132fadfb98714c7cd88fbdc8d2)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/toolbelt-shared-registry is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4210cde1fb60d0142d71688309bb93f801b1c29e3e1dd20e0c5fe4e2af8f66ec)\npackage.json declares scripts.preinstall = \"node setup.mjs\". setup.mjs is variable-name-obfuscated and, at install time, detects the host platform and libc (glibc vs musl), downloads a Bun runtime archive from github.com/oven-sh/bun releases, extracts the bun binary to a temporary directory, chmods it 0755, and execFileSyncs it against the sibling file math_init.js shipped in the tarball. math_init.js is a ~728KB Bun-bundled artifact (leading `// @bun @bun-cjs` marker) consisting of a shuffled string array and a lookup decoder (WV8StW rotates the array; hc1jfK9 maps characters through a scrambled alphabet), with randomized identifiers, no corresponding source in src/, no documentation, and no reference from dist/index.js. The advertised library code in dist/ is a small React/IOC registry helper and does not require a second language runtime. Pulling the Bun runtime specifically to execute an opaque payload that Node-based tooling cannot inspect gives whoever published this version host-level code execution on any developer machine or CI runner that runs npm install. The package is published under the @servicetitan scope with plausible ServiceTitan-adjacent metadata (peerDependencies on @servicetitan/react-ioc and @servicetitan/web-components), while all hostile behavior is confined to setup.mjs + math_init.js and is unrelated to the advertised registry functionality — consistent with a compromised-maintainer or scope-impersonation scenario.\n\n## Source: ghsa-malware (e91e5c6343f746fb7f2603ef84270a4b1eca90132fadfb98714c7cd88fbdc8d2)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -127,6 +137,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/toolbelt-shared-registry/v/1.14.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/toolbelt-shared-registry/v/1.14.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/toolbelt-shared-registry/v/1.14.1"
     }
   ],
   "database_specific": {
@@ -214,6 +232,26 @@
         "source": "amazon-inspector",
         "versions": [
           "1.14.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012711",
+        "import_time": "2026-08-05T05:59:55.326446511Z",
+        "modified_time": "2026-08-05T04:38:20Z",
+        "sha256": "4210cde1fb60d0142d71688309bb93f801b1c29e3e1dd20e0c5fe4e2af8f66ec",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.14.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012828",
+        "import_time": "2026-08-05T06:00:09.251401168Z",
+        "modified_time": "2026-08-05T04:55:07Z",
+        "sha256": "7a8b426e38e596c7259be0fa0870eb2252e30ba5749224cf2f3280b8070356b3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.14.1"
         ]
       }
     ]

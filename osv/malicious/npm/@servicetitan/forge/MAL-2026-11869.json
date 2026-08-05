@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11869",
   "published": "2026-08-04T13:17:51Z",
-  "modified": "2026-08-05T04:40:32.357738982Z",
+  "modified": "2026-08-05T06:02:51.612619678Z",
   "aliases": [
     "GHSA-3263-rw8q-84j5"
   ],
   "summary": "Malicious code in @servicetitan/forge (npm)",
-  "details": "npm/@servicetitan/forge is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (eec25d1cd9e12e3d3a81796f56e79a623713ebc2c71b6e995a50312b80aa507c)\nThis package, advertised as a React UI component library, declares a `preinstall` script (`node setup.mjs`) that runs automatically on `npm install`. The `setup.mjs` wrapper is itself obfuscated in obfuscator.io style (dictionary-keyed method dispatch, `_0x`-prefixed identifiers, indirection functions) and downloads the Bun runtime from GitHub releases (oven-sh/bun bun-v1.3.13) into a temporary directory, marks it executable, and uses it via `execFileSync` to run the adjacent `math_init.js`. `math_init.js` is a 727KB Bun-compiled bundle (`// @bun @bun-cjs` header) with obfuscator.io-style protection: a shuffled mixed number/string array rotated by a `WV8StW` function, `_0x`-style identifiers, and character-code reassembly via `String.fromCodePoint`. The delivery chain — fetching an alternate JavaScript runtime at install time solely to execute an opaque, heavily obfuscated bundle under a package name that has no legitimate need for either — is the alternate-runtime-dropper shape and executes attacker-supplied code on the installer's machine at `npm install` time. Obfuscation extends to both the preinstall wrapper and the executed payload, blocking Node-focused scanners from inspecting the behavior.\n\n## Source: ghsa-malware (9d3ba5a69d259f808bc80b23fb9169d2661e484f14b102a7a5029e87d369ab22)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/forge is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (29a183bf3b02c75d795d35fc28ff73d4c7c135081193b46c7aeda200d4f313ef)\nThe package advertises itself as a React UI component library but its preinstall lifecycle hook (`node setup.mjs`) downloads the Bun runtime from GitHub releases, marks it executable, and invokes it against a bundled 727 KB file `math_init.js` that is not referenced by the library's public API in forge.cjs. `math_init.js` begins with a `// @bun @bun-cjs` header and is heavily obfuscated in the obfuscator.io style (rotated string array via a `WV8StW` shift rotator, hex-mangled `_0x` identifiers, hundreds of encoded constants), making its runtime behavior opaque. The loader itself, setup.mjs, is also obfuscated with hex-mangled identifiers and per-function wrapper-property maps (e.g. `_0x19328d.YCZJE(execFileSync, 'ldd',...)`) that indirect ordinary calls — a shape inconsistent with a normal native-dependency installer. Executing the payload via a freshly dropped Bun binary bypasses Node-based inspection tooling and runs attacker-controlled logic on every installer's machine at `npm install` time, regardless of whether the consumer intends to use the library. The combination of alternate-runtime dropper, purpose mismatch with the package's stated function, obfuscated loader, and obfuscated payload matches the install-time remote-code-execution attack pattern.\n\n## Source: ghsa-malware (9d3ba5a69d259f808bc80b23fb9169d2661e484f14b102a7a5029e87d369ab22)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,21 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -108,6 +123,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/forge/v/0.5.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/forge/v/0.5.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/forge/v/0.5.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/forge/v/0.5.2"
     }
   ],
   "database_specific": {
@@ -185,6 +212,36 @@
         "source": "amazon-inspector",
         "versions": [
           "0.5.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012848",
+        "import_time": "2026-08-05T06:00:11.616664325Z",
+        "modified_time": "2026-08-05T04:57:59Z",
+        "sha256": "29a183bf3b02c75d795d35fc28ff73d4c7c135081193b46c7aeda200d4f313ef",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012715",
+        "import_time": "2026-08-05T05:59:55.781466791Z",
+        "modified_time": "2026-08-05T04:38:52Z",
+        "sha256": "9c786a1a8d65a63136030c67c2defe0a27acf0cdd37ef73b500be39fb820ce0c",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012754",
+        "import_time": "2026-08-05T06:00:00.329898773Z",
+        "modified_time": "2026-08-05T04:44:22Z",
+        "sha256": "bf2dba786678aa021e143b03dd2f3b2743e7237232c5c6866a1a354770e82d16",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.2"
         ]
       }
     ]
