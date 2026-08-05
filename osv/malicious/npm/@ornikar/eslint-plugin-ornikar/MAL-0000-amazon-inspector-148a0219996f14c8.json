@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T02:23:45Z",
+  "modified": "2026-08-05T02:23:45Z",
+  "summary": "@ornikar/eslint-plugin-ornikar 24.0.8 preinstall drops Bun runtime and executes obfuscated in-package payload",
+  "details": "package.json declares `preinstall: node setup.mjs`. setup.mjs performs platform detection (process.platform/process.arch, `/etc/os-release` for Alpine, `ldd --version` for musl vs glibc) to select a per-OS Bun asset, downloads the Bun runtime archive from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/<asset>.zip`, extracts it to a temporary directory, chmods the binary executable, and immediately invokes it with `execFileSync(bun, [join(D, 'math_init.js')], {stdio:'inherit', cwd:D})`. The executed sibling file `math_init.js` is a 727 KB `@bun @bun-cjs` bundle with a rotated string/number table and hex-mangled identifiers (`_0x...`, `WV8StW` rotation function) — no readable logic and no relation to ESLint. This is the alternate-runtime-dropper pattern: an ESLint plugin has no legitimate need to fetch a second language runtime at install time and use it to execute an obfuscated in-package bundle. The dropped runtime and the obfuscation of a >700 KB payload of unknown function together bypass Node-level scanners and run attacker-selected code on the installer's host at `npm install` time, before any manual review of the package is possible.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ornikar/eslint-plugin-ornikar",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "24.0.8"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "eslint-plugin-ornikar-24.0.8.tgz",
+              "hashes": {
+                "sha1": "7543f804225d3163591b5c3ed7e0d694a607650d",
+                "sha512_sri": "sha512-CqaQUd2Nf9lJ7sAyU/Osf0mloS2Cz5B5005BUpIHfXZPdk4sT7dK7Th7TdBS/zbchziX3/frEGPAG8LZlkg3Ng=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-plugin-ornikar/v/24.0.8"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011761",
+        "import_time": "2026-08-05T03:11:43.220478468Z",
+        "modified_time": "2026-08-05T02:23:45Z",
+        "sha256": "148a0219996f14c89d645873231c905d289a4183c09a0a8e76b15582e790a927",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.8"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

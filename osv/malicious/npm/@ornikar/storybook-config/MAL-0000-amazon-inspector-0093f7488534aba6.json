@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T02:43:01Z",
+  "modified": "2026-08-05T02:43:01Z",
+  "summary": "Obfuscated preinstall downloads Bun runtime and executes opaque bundled payload",
+  "details": "package.json declares `preinstall: node setup.mjs`. setup.mjs is heavily obfuscated (obfuscator.io-style `_0x...` names, per-function string-map dispatch, Alpine/musl fingerprinting to pick a Bun variant). At install it probes for a local `bun` binary and, if missing, downloads the Bun runtime zip from `github.com/oven-sh/bun/releases/download/bun-v1.3.13/...`, unzips it into a temp directory, chmods it executable, and invokes it against the sibling file `math_init.js` via `execFileSync`. `math_init.js` is a 727,680-byte Bun-compiled bundle (`// @bun @bun-cjs` header) that is unreadable without deobfuscation — the file name and contents are unrelated to the package's stated purpose (Storybook configuration). The Bun download source is Bun's official release host, but the executed code is the opaque bundled `math_init.js` shipped in the tarball, not Bun itself; running it under an alien runtime downloaded at install time evades Node-based install-time inspection. The obfuscation of the lifecycle script itself, the mismatch between the payload's contents and the package's declared purpose, and auto-execution on `npm install` place this in the alternate-runtime-dropper attack shape.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ornikar/storybook-config",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "12.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "storybook-config-12.1.6.tgz",
+              "hashes": {
+                "sha1": "43060b4b7562b7213816a0faa85d8bf33f45ec2e",
+                "sha512_sri": "sha512-UkzXplv6umJV7vjhL1wMtBXp0y2PRSwRI/4VVWEQPWjlXJIKZ+iecVYM/aVldqLJ0XkmBKhM+sByUzt3qM8e4Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/storybook-config/v/12.1.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011898",
+        "import_time": "2026-08-05T03:11:57.854384663Z",
+        "modified_time": "2026-08-05T02:43:01Z",
+        "sha256": "0093f7488534aba66549cad33d39998715fcae51aa1fbe911a6d2c8e8266aa23",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.1.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

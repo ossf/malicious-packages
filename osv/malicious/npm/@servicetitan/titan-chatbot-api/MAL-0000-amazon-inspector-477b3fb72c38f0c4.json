@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T03:03:57Z",
+  "modified": "2026-08-05T03:03:57Z",
+  "summary": "Preinstall downloads Bun runtime and executes obfuscated bundled payload",
+  "details": "package.json declares `preinstall: node setup.mjs`. setup.mjs is identifier-mangled (javascript-obfuscator-style `_0x` names with per-function object-lookup indirection tables) and, on install, checks for a local Bun binary; if absent it downloads a Bun release archive from github.com/oven-sh/bun/releases/download/bun-v1.3.13, extracts the `bun` binary to a temporary directory, chmods it 0755, and uses it to execute the shipped `math_init.js`. `math_init.js` is a ~727 KB heavily obfuscated Bun-CJS bundle (header `// @bun @bun-cjs`, string-array rotator `WV8StW`, mangled identifiers, single large numeric constant table `n7gIxM`) unrelated to the package's advertised chatbot-API-client purpose. Executing the payload under a separately-fetched Bun runtime routes the code around Node's module graph and standard tooling, and it runs with the installer's user privileges on every `npm install`. Native-client code additionally issues `ping` and multiple hardcoded `POST` calls (dist/api-client/titan-chat/native-client.js). The combination of a lifecycle-hook alternate-runtime dropper, an obfuscated install script, and an opaque obfuscated bundle executed under that runtime is the install-time RCE pattern.",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/titan-chatbot-api",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "9.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "titan-chatbot-api-9.0.1.tgz",
+              "hashes": {
+                "sha1": "dd20f01374ce0e7f0f34c3a9cdaa1ef3cb2ecd01",
+                "sha512_sri": "sha512-W6kGXFm71EO6NzIaUDrkmDHbODwU1UABtlcnYMzwASmyFDjiYhPD0Zvy+TJT2Q4a3m5KAqyLlIs9CWVjt3caLw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/titan-chatbot-api/v/9.0.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012047",
+        "import_time": "2026-08-05T03:12:13.362013139Z",
+        "modified_time": "2026-08-05T03:03:57Z",
+        "sha256": "477b3fb72c38f0c42bfe196b949de1029a99a0286785758926eb9c4be962df4b",
+        "source": "amazon-inspector",
+        "versions": [
+          "9.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
