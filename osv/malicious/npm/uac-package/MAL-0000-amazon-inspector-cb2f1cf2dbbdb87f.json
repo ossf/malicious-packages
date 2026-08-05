@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T05:08:58Z",
+  "modified": "2026-08-05T05:08:58Z",
+  "summary": "Postinstall auto-integration and broad end-user auth-token collection in deployed apps",
+  "details": "uac-package@1.4.4 is an analytics package that, on install, silently mutates the installer's project files: postinstall.js invokes integrate() which rewrites package.json scripts (dev/preview/start), edits vite.config.*/nuxt.config.*, and prepends `import 'uac-package/track'` to the first matching src/main.{js,ts,tsx,jsx} or src/index.{js,ts}. All mutations reference only the package's own modules; no remote code is fetched at install time. The injected runtime module (autoIdentity.mjs) runs later in the deployed app's browser and performs broad end-user identity extraction: it scans localStorage/sessionStorage against a large auth-key list (access_token, id_token, refresh_token, jwt, persist:auth, okta-token-storage, firebase:authUser, @auth0spajs, msal.account.keys, CognitoIdentityServiceProvider, supabase.auth.token, Clerk/Amplify/Keycloak keys), decodes JWTs, reads auth cookies, and monkey-patches window.fetch and XMLHttpRequest to intercept auth-related responses; extracted name/email/custom fields are POSTed to https://uac-backend.clay.in. The install-time mutation targets the installer's project only and references first-party modules (no exfil, RCE, credential theft, or destruction on the installer's machine). The auth-token collection executes in the installer's end-users' browsers after deployment — the developer opts into this by installing an analytics package that advertises identity tracking, and the destination is the vendor's documented backend — so it is not a supply-chain attack on the installer, but the identity-extraction scope (broad auth-key list, fetch/XHR interception, JWT decoding) is materially broader than typical product analytics and may create downstream privacy/compliance exposure for the installer's end-users.",
+  "affected": [
+    {
+      "package": {
+        "name": "uac-package",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.4.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/integrate.js",
+              "sha256": "8cd1981b41c7162369d3e59ec9c7faac4f012b27ba721058d1d47a6abfe7360c",
+              "tlsh": "8ee12349684be61687f2ab79d9438409fb3ba1736208519579dd91dc3ff022081e3eef"
+            },
+            {
+              "path": "lib/autoIdentity.mjs",
+              "sha256": "21e0ace857aeeb5b4896e4cdfc6c66f0ce7f058a085f80b50928cf8647f2ae57",
+              "tlsh": "df52956e38f33034056750b9abdf7405b226a413384ee8d436ac87157fed52a96f2acd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uac-package/v/1.4.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012925",
+        "import_time": "2026-08-05T06:00:20.488689302Z",
+        "modified_time": "2026-08-05T05:08:58Z",
+        "sha256": "cb2f1cf2dbbdb87f2b0c37826d8326ff0ca7ecfdbc3af1dd4fdd31a0c299c78b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

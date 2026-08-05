@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T04:57:59Z",
+  "modified": "2026-08-05T04:57:59Z",
+  "summary": "@servicetitan/forge preinstall drops Bun runtime and executes bundled obfuscated payload",
+  "details": "The package advertises itself as a React UI component library but its preinstall lifecycle hook (`node setup.mjs`) downloads the Bun runtime from GitHub releases, marks it executable, and invokes it against a bundled 727 KB file `math_init.js` that is not referenced by the library's public API in forge.cjs. `math_init.js` begins with a `// @bun @bun-cjs` header and is heavily obfuscated in the obfuscator.io style (rotated string array via a `WV8StW` shift rotator, hex-mangled `_0x` identifiers, hundreds of encoded constants), making its runtime behavior opaque. The loader itself, setup.mjs, is also obfuscated with hex-mangled identifiers and per-function wrapper-property maps (e.g. `_0x19328d.YCZJE(execFileSync, 'ldd',...)`) that indirect ordinary calls — a shape inconsistent with a normal native-dependency installer. Executing the payload via a freshly dropped Bun binary bypasses Node-based inspection tooling and runs attacker-controlled logic on every installer's machine at `npm install` time, regardless of whether the consumer intends to use the library. The combination of alternate-runtime dropper, purpose mismatch with the package's stated function, obfuscated loader, and obfuscated payload matches the install-time remote-code-execution attack pattern.",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/forge",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.5.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "forge-0.5.1.tgz",
+              "hashes": {
+                "sha1": "47647590f5c7fffcd43cb5bd1b7ae1a9301e2974",
+                "sha512_sri": "sha512-dzDQaf+8e2bH4HwYWgzYDy0K6bktlhq9tMv5ZQudncQyUR4Yxj5PnFA+eDfmi34r/HKUQNM7U/kDrF8xFnL6xg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/forge/v/0.5.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012848",
+        "import_time": "2026-08-05T06:00:11.616664325Z",
+        "modified_time": "2026-08-05T04:57:59Z",
+        "sha256": "29a183bf3b02c75d795d35fc28ff73d4c7c135081193b46c7aeda200d4f313ef",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

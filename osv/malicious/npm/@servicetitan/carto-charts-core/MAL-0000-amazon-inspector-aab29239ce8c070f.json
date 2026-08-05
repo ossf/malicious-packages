@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T04:38:28Z",
+  "modified": "2026-08-05T04:38:28Z",
+  "summary": "@servicetitan/carto-charts-core preinstall fetches Bun runtime and executes obfuscated in-tarball payload",
+  "details": "package.json declares scripts.preinstall = \"node setup.mjs\". setup.mjs is obfuscator.io-style obfuscated (hex-named identifiers, string-array indirection) and downloads the Bun runtime from https://github.com/oven-sh/bun/releases (or uses a local bun on PATH), extracts the platform-specific bun binary, chmod +x it, and execFileSyncs it against a sibling file math_init.js in the package root. math_init.js is a 727KB heavily obfuscated payload (numeric+string constant array plus a WV8StW string-array shuffling function; sha256 9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc). Both setup.mjs and math_init.js sit at the tarball root but are outside the author-declared files allowlist in package.json (\"files\":[\"dist\",\"README.md\"]), indicating they were smuggled into the published tarball outside the normal build. The package advertises itself as an ECharts theme/data-viz layer with no DOM and no rendering — there is no legitimate reason for such a library to fetch a second runtime at install time to execute an opaque obfuscated blob. This is the alternate-runtime-dropper pattern: Bun is fetched specifically to run an in-tarball payload that scanners inspecting Node-resolved code would not analyze. Installing the package causes attacker-controlled code to execute on the installer's host at npm install time.",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/carto-charts-core",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "272f878aa80e692788c6ead6ee819303718629829996e7a7ed776b425bd0da56",
+              "tlsh": "45113815c4a59ea321c826e1a86b0996567248470d047e0c33ca622c4f8d3db96ffadf"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "carto-charts-core-0.0.4.tgz",
+              "hashes": {
+                "sha1": "a380ac8d5f1824292f1468013d8fa29f018e4246",
+                "sha512_sri": "sha512-xIK8CLG63OtTG02DOeNHaUnd0ODqwbjdDQmu+f9wp4HoJSwYKNhCEgm59NscnYIfYnC2hvLiHJaScSRlz1zDbA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-charts-core/v/0.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012712",
+        "import_time": "2026-08-05T05:59:55.455617406Z",
+        "modified_time": "2026-08-05T04:38:28Z",
+        "sha256": "aab29239ce8c070f054da7fffd20d40eb68ae25fce31dcb620cbf7c87ab4f756",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

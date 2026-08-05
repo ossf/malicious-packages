@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T04:45:21Z",
+  "modified": "2026-08-05T04:45:21Z",
+  "summary": "@servicetitan/startup preinstall downloads Bun runtime and executes obfuscated bundled payload",
+  "details": "The package's preinstall hook runs `node setup.mjs`, which is heavily obfuscated (hex-identifier variables, per-function dead-code string-lookup objects wrapping calls like `execFileSync` and HTTP downloads). setup.mjs downloads a Bun runtime archive from github.com/oven-sh/bun/releases/download/bun-v<version>/*.zip, extracts the `bun` binary to a temporary directory, marks it executable, and invokes it against `math_init.js` — a 727KB obfuscated blob shipped at the tarball root that is not listed in the package.json `files` array and is not mentioned in the README. `math_init.js` uses shuffled-array string obfuscation (a rotator function permuting a large mixed hex/string table) and is executed exclusively under the downloaded Bun runtime, so its behavior is not reachable through Node-based static review. The stated purpose of the package is a Lerna/TypeScript scaffold CLI, which does not require an alternate language runtime or a large opaque payload. Fetching a second runtime and using it to execute undeclared obfuscated code at `npm install` time on every installer's machine is the alternate-runtime-dropper pattern.",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/startup",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "38.1.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "startup-38.1.2.tgz",
+              "hashes": {
+                "sha1": "cd6a9d8d70b3c5369311f493fa69aaa2ec87a091",
+                "sha512_sri": "sha512-HfPBc933bB2UQM+T+jLHJVgOfuEQPfwy56RwJ04rrs+E4/Zy4oNLGbLpreiynyyEH6CmUkfOUKrjwvQSvR2O1g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/startup/v/38.1.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012761",
+        "import_time": "2026-08-05T06:00:01.247926783Z",
+        "modified_time": "2026-08-05T04:45:21Z",
+        "sha256": "62e85b0e59de84c47718b38cc9b3b75f1676bdcda3552878d224ce0eba06502e",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
