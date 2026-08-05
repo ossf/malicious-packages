@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:13:35Z",
+  "modified": "2026-08-05T08:13:35Z",
+  "summary": "@or-sdk/tags preinstall fetches Bun runtime to execute bundled obfuscated payload",
+  "details": "The package's npm preinstall hook runs `node setup.mjs`, which downloads a platform-specific Bun runtime binary from GitHub releases, extracts it to a temporary directory, marks it executable, and invokes it against a bundled 727KB obfuscated JavaScript file `math_init.js` (`execFileSync(bunPath, [path.join(D, 'math_init.js')], { stdio: 'inherit', cwd: D })`). Bun is not otherwise a documented dependency of a `tags` SDK, and the payload is not reachable via Node's normal require graph — it only runs because the preinstall script fetches an alternate runtime specifically to execute it. Both `setup.mjs` and `math_init.js` are heavily obfuscated: `setup.mjs` uses hex-named identifiers (`_0x488df8`, `_0x52943e`,...) and string-indirection objects to hide URL, path, and command literals, and `math_init.js` is a single-line file with a large rotating string/number constant array and short-variable obfuscation with no corresponding readable source under `src/`. The combination — lifecycle-hook fetch of a foreign language runtime, execution of an opaque bundled payload with no source-form counterpart, and heavy obfuscation of both the loader and the payload — matches the alternate-runtime-dropper pattern and produces arbitrary code execution on the installer's machine at `npm install` time, outside the visibility of Node-focused supply-chain tooling.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/tags",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/tags/v/1.1.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014184",
+        "import_time": "2026-08-05T08:22:34.886210938Z",
+        "modified_time": "2026-08-05T08:13:35Z",
+        "sha256": "028b2ebc684d2f357cc848a867d5e4e0997a81185b0d825bcea2722b9a908448",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

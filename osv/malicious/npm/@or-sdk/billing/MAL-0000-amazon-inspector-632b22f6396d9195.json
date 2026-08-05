@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:03:50Z",
+  "modified": "2026-08-05T08:03:50Z",
+  "summary": "@or-sdk/billing preinstall downloads Bun runtime to execute bundled obfuscated payload",
+  "details": "The package is advertised as a billing SDK but its `preinstall` script runs `node setup.mjs`, which downloads the Bun runtime from the oven-sh/bun GitHub releases (pinned v1.3.13), extracts it, marks it executable, and then uses that downloaded runtime to execute a sibling file `math_init.js` (`execFileSync(bunPath, [join(D, 'math_init.js')], {stdio: 'inherit', cwd: D})`). `math_init.js` is a 727KB Bun-compiled (`// @bun @bun-cjs`) file with heavy obfuscation: mangled identifiers such as `_0xNNNN`, `MmgoCP`, `WV8StW`, a large opaque numeric/string constant table `n7gIxM`, and a string-array rotation cipher (`push(shift())`). The file is not referenced from the library's TypeScript sources under `dist/` and only runs under the fetched Bun binary — bypassing Node-based tooling that would otherwise see the code path. Fetching a second language runtime at install time to execute an opaque bundled blob is unrelated to billing SDK functionality and matches the alternate-runtime dropper pattern for install-time code execution.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/billing",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "27.2.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/billing/v/27.2.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014118",
+        "import_time": "2026-08-05T08:22:29.925723819Z",
+        "modified_time": "2026-08-05T08:03:50Z",
+        "sha256": "632b22f6396d91956611cb9d1fabded134b031a6d825285e925632a7baf6e561",
+        "source": "amazon-inspector",
+        "versions": [
+          "27.2.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T07:52:29Z",
+  "modified": "2026-08-05T07:52:29Z",
+  "summary": "Preinstall hook fetches Bun runtime and executes bundled obfuscated payload",
+  "details": "package.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is obfuscated with obfuscator.io-style transformations (hex-mangled identifiers such as _0x488df8, per-function string dictionaries mapping keys to literals like 'ldd', '/etc/os-release', 'Alpine', 'bun', 'bun.exe'). At npm install time it fetches the Bun runtime zip from github.com/oven-sh/bun/releases, unpacks it, chmods it executable, and invokes it against the bundled sibling file math_init.js via execFileSync. math_init.js is a 727KB Bun-compiled bundle ('// @bun @bun-cjs') with string-array rotation and hex-mangled identifiers; the declared package source (src/EventManager.ts, ~680 bytes) is a thin @or-sdk/base wrapper that never references math_init.js, so the bundle is not a build artifact of the stated event-manager SDK. The alternate-runtime execution pattern uses Bun to run in-package code that Node-based tooling does not analyze, and the obfuscation of both the loader and the payload hides the runtime behavior. The package's declared purpose (an event-manager wrapper) has no need to pull a second runtime at install and execute a large obfuscated bundle.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/event-manager",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/event-manager/v/1.1.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014040",
+        "import_time": "2026-08-05T08:22:24.614896283Z",
+        "modified_time": "2026-08-05T07:52:29Z",
+        "sha256": "c7b007eab3c0de96a273b1d44a899d42dd44ab1acd77ce0d7b3f560b14fc1caa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:20:46Z",
+  "modified": "2026-08-05T08:20:46Z",
+  "summary": "@or-sdk/library preinstall drops Bun runtime and executes obfuscated sibling bundle",
+  "details": "On `npm install`, the package's preinstall hook runs `node setup.mjs`, which downloads the Bun runtime from oven-sh/bun GitHub releases (v1.3.13) for the installer's platform, unpacks it to a temp directory, chmods it executable, and invokes it with the sibling file `math_init.js` (`execFileSync(bunPath, [path.join(D, 'math_init.js')], { stdio: 'inherit', cwd: D })`). `math_init.js` is a 727 KB single-line `@bun @bun-cjs` bundle obfuscated with a ~1000-entry string-array shuffle (`MmgoCP.push(MmgoCP.shift())`) and hex-mangled identifiers; it is unrelated to the advertised HTTP SDK code that lives in `dist/cjs/` and is not mentioned in the README. `setup.mjs` itself is also obfuscated (obfuscator.io-style `_0xXXXXXX` identifiers and per-function lookup-object trampolines) despite implementing only a download-unzip-exec launcher. The README markets `@or-sdk/library` as a `LibraryV1`/`LibraryV2` HTTP SDK and does not disclose the Bun runtime download, the sibling payload, or install-time code execution. The net effect on `npm install` is that an alien runtime is downloaded to the installer's machine and used to execute a deliberately unreadable bundled payload of unknown behavior, bypassing Node.js-focused scanners.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/library",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.5.8"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/library/v/0.5.8"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014234",
+        "import_time": "2026-08-05T08:22:38.091281646Z",
+        "modified_time": "2026-08-05T08:20:46Z",
+        "sha256": "485efff4b64596b9bf08c5d7ece848de7db24b777b3d97f97dc3ba3351f4e753",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.8"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

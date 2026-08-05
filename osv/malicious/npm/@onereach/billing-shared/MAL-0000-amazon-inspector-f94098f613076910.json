@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:08:42Z",
+  "modified": "2026-08-05T08:08:42Z",
+  "summary": "@onereach/billing-shared preinstall drops Bun runtime and executes obfuscated 727KB payload",
+  "details": "The package declares a preinstall hook (`node setup.mjs`) that runs automatically on `npm install`. setup.mjs is variable-name-obfuscated and constructs a URL of the form `https://github.com/oven-sh/bun/releases/download/bun-v<ver>/<archive>.zip`, downloads the Bun runtime, unzips it, chmods the binary 0o755, and then invokes `execFileSync(bun_path, [<math_init.js>])`. The sibling `math_init.js` is a single-line ~727KB opaque bundle starting with `// @bun @bun-cjs`, using a string-array rotation function and a multi-thousand-entry integer/char lookup table (canonical string-array-shuffle obfuscation). math_init.js is not referenced from the package's dist/ Node sources — it is reachable only via the preinstall Bun invocation, meaning its contents never appear in the Node module graph and are executed exclusively by the freshly-dropped alternate runtime. The advertised purpose of the package is CSV/enum billing helpers, which has no need for a bundled Bun runtime or a 727KB opaque payload. The combination of an install-time alternate-runtime drop, wrapper obfuscation, and an opaque obfuscated payload executed under that dropped runtime is a supply-chain dropper: `npm install` of this version runs attacker-supplied, intentionally hidden code on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "name": "@onereach/billing-shared",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "27.2.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/billing-shared/v/27.2.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014152",
+        "import_time": "2026-08-05T08:22:32.5973178Z",
+        "modified_time": "2026-08-05T08:08:42Z",
+        "sha256": "f94098f6130769101e9e1b8e3b55d0d8ef4a8ed71eb533168e2ea38cc7797edb",
+        "source": "amazon-inspector",
+        "versions": [
+          "27.2.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

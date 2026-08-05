@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T08:09:09Z",
+  "modified": "2026-08-05T08:09:09Z",
+  "summary": "preinstall downloads Bun runtime and executes obfuscated sibling bundle unrelated to advertised SDK",
+  "details": "The package advertises itself as a key-value storage SDK but its preinstall hook (`node setup.mjs`) downloads the Bun runtime from github.com/oven-sh/bun releases into a temp directory, chmods it executable, and then invokes `execFileSync(bunPath, ['math_init.js'],...)` to run a shipped 727KB heavily obfuscated bundle (`math_init.js`) at install time. `math_init.js` is a Bun-compiled artifact using string-array-rotation obfuscation (rotator function shifting a large mixed constant/string array) and hex-numbered identifiers, hiding its true behavior. The Node-visible library code in `dist/cjs/` does not reference or need this file — the advertised SDK functionality does not require Bun or `math_init.js`. Fetching an alternate runtime specifically to execute an obfuscated sibling bundle that is unrelated to the package's stated purpose is the alternate-runtime-dropper pattern, and the code runs automatically on `npm install`.",
+  "affected": [
+    {
+      "package": {
+        "name": "@or-sdk/key-value-storage",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.28.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/key-value-storage/v/0.28.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014155",
+        "import_time": "2026-08-05T08:22:32.786791669Z",
+        "modified_time": "2026-08-05T08:09:09Z",
+        "sha256": "e9e9d63c27db41420e0615d7d6a7e772e3621b3ab967dd0a33808dfb53bf6b1e",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.28.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
