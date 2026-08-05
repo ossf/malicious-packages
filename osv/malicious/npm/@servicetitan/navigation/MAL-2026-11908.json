@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11908",
   "published": "2026-08-04T15:25:59Z",
-  "modified": "2026-08-05T00:46:45.044378977Z",
+  "modified": "2026-08-05T03:14:14.610342546Z",
   "aliases": [
     "GHSA-4774-g3fw-f2gg"
   ],
   "summary": "Malicious code in @servicetitan/navigation (npm)",
-  "details": "npm/@servicetitan/navigation is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5b3c758c2a66aefccd52465927fc76b79cda56990cbf7719d436a12cdf3a10ea)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs is obfuscated (hex-mangled identifiers, string-array indirection) and at install time downloads the Bun runtime from github.com/oven-sh/bun releases into a temp directory, unzips it, chmods it executable, and invokes it against a shipped 727 KB payload file math_init.js. math_init.js is heavily obfuscated (obfuscator.io-style rotated string array, large constants array, hex-mangled identifiers, string decoder) and cannot be interpreted as ordinary source. Fetching an alternate language runtime at install time solely to execute an opaque bundled blob bypasses Node-based scanning and has no relationship to the package's advertised purpose (a React navigation component library). The package presents as a ServiceTitan design-system component library, but the surrounding tsx component tree is decorative cover for the preinstall dropper.\n\n## Source: ghsa-malware (64564715b6ea6e9241019f3fbca05aafcc2eeeaf066844e0d56e2485d0b05869)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/navigation is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ea9440caadc7f542edadf21050fa789a35f0c5ceba6bda669854229cd1633de4)\npackage.json declares a preinstall script `node setup.mjs`. setup.mjs downloads a Bun runtime binary from oven-sh's GitHub releases (pinned to bun-v1.3.13), makes it executable, and uses that runtime to execute a bundled 727KB obfuscated CJS blob `math_init.js` (`// @bun @bun-cjs` header, shifted string-array decoder, hex-mangled identifiers, large opaque constant pool). Neither `setup.mjs` nor `math_init.js` is listed in `package.json` `files` (which declares only `dist` and `src`), while the `dist/` tree still contains an intact React navigation library — consistent with trojanization of an otherwise legitimate ServiceTitan package. A React navigation component library has no functional need for a second language runtime or a `math`-named obfuscated blob, and running the payload under an alien runtime evades Node-focused static inspection. Execution fires automatically on `npm install` via the preinstall lifecycle hook.\n\n## Source: ghsa-malware (64564715b6ea6e9241019f3fbca05aafcc2eeeaf066844e0d56e2485d0b05869)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +96,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/navigation/v/14.1.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/navigation/v/14.1.3"
     }
   ],
   "database_specific": {
@@ -138,6 +147,16 @@
         "source": "amazon-inspector",
         "versions": [
           "14.1.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012034",
+        "import_time": "2026-08-05T03:12:12.053164522Z",
+        "modified_time": "2026-08-05T03:02:08Z",
+        "sha256": "ea9440caadc7f542edadf21050fa789a35f0c5ceba6bda669854229cd1633de4",
+        "source": "amazon-inspector",
+        "versions": [
+          "14.1.3"
         ]
       }
     ]

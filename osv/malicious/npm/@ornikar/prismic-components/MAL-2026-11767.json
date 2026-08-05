@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11767",
   "published": "2026-08-04T15:20:16Z",
-  "modified": "2026-08-05T00:46:44.947134329Z",
+  "modified": "2026-08-05T03:14:14.411235492Z",
   "aliases": [
     "GHSA-5xqc-8496-wrhq"
   ],
   "summary": "Malicious code in @ornikar/prismic-components (npm)",
-  "details": "npm/@ornikar/prismic-components is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (31c8cec70647358e6ad5ce728dc0061400c0e4d05e6a3e74235b6978804c93e9)\nThe package declares a `preinstall` script (`node setup.mjs`) that downloads the Bun v1.3.13 runtime from GitHub releases into a temp directory, chmods it executable, and uses it to execute a sibling file `math_init.js`. `math_init.js` is a ~727 KB single-line Bun-CJS bundle (header `// @bun @bun-cjs`) with a rotating string-array decoder (`WV8StW` shift routine) and thousands of hex-encoded constants — an opaque, obfuscated payload that cannot be inspected without executing it under Bun. The package has no library surface consistent with its advertised name: `description` and `author` are empty, `main` points at an `index.js` that is absent from the tarball, and the only functional artifact is the preinstall dropper plus its obfuscated payload. The `@ornikar` scope belongs to a real company, and this artifact carries the shape of a dependency-confusion / scope-squat lure against that scope. Installing this package triggers automatic execution of attacker-controlled, obfuscated code under a smuggled alternate runtime on `npm install`.\n\n## Source: ghsa-malware (c606d8b0f3f3bcae6e891afa572fe071647e0bdb281a70c1871e1d36219ff294)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@ornikar/prismic-components is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (72a5b5c2683fe94dd06992412b580aadea27ab566656fbcf6576aa2f75df378f)\nPackage @ornikar/prismic-components@0.0.7 is scoped to a real organization (Ornikar) but ships empty metadata (blank description, blank author) and declares main:'index.js' with no index.js in the tarball — the only substantive content is a preinstall dropper. The preinstall hook (scripts.preinstall = 'node setup.mjs') downloads the Bun runtime from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/ into a temp directory, chmod +x's it, and uses that alternate runtime to execFileSync a sibling file math_init.js — a 727 KB obfuscator.io-style Bun-CJS bundle (hex-named identifiers, ~1500-entry string-array lookup with rotation routine) that a Node-based analyzer cannot introspect. setup.mjs itself is obfuscated with the same fingerprint to hide the download-and-exec dataflow. Installing this package on any developer machine or CI system that resolves @ornikar/* names causes attacker-controlled opaque code to execute at install time under a runtime staged specifically to evade Node-based inspection. Naming and metadata are consistent with a dependency-confusion attack against Ornikar's internal package namespace.\n\n## Source: ghsa-malware (c606d8b0f3f3bcae6e891afa572fe071647e0bdb281a70c1871e1d36219ff294)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +29,51 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -99,6 +144,42 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/prismic-components/v/0.0.5"
     }
   ],
   "database_specific": {
@@ -160,6 +241,96 @@
         "source": "amazon-inspector",
         "versions": [
           "0.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011636",
+        "import_time": "2026-08-05T03:11:29.871628315Z",
+        "modified_time": "2026-08-05T02:05:46Z",
+        "sha256": "72a5b5c2683fe94dd06992412b580aadea27ab566656fbcf6576aa2f75df378f",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011572",
+        "import_time": "2026-08-05T03:11:22.184126518Z",
+        "modified_time": "2026-08-05T01:56:50Z",
+        "sha256": "b075623b8ba600a0f830e9b4c75ca89d1250dc476290e70f3ffc730e20cf48f9",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011718",
+        "import_time": "2026-08-05T03:11:38.582763912Z",
+        "modified_time": "2026-08-05T02:17:42Z",
+        "sha256": "0371c4cd1a8f64b17f3a31880296f9ef02e437c87c2f21acc7821564b09be492",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011634",
+        "import_time": "2026-08-05T03:11:29.580803473Z",
+        "modified_time": "2026-08-05T02:05:30Z",
+        "sha256": "9edcbea66491017e71915f72873233ce23ea3597d34dc85d7556b9741877e0f7",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011631",
+        "import_time": "2026-08-05T03:11:28.815255283Z",
+        "modified_time": "2026-08-05T02:05:04Z",
+        "sha256": "a6ca6556a11d399b4f321de84af8ff53e40892af614c3b085d740a2819d6ff00",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011840",
+        "import_time": "2026-08-05T03:11:51.576702906Z",
+        "modified_time": "2026-08-05T02:34:56Z",
+        "sha256": "c87bbfae6dffc5d7a93c22f2d35a4f7cc943294d717115b8399072f54e4427de",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011839",
+        "import_time": "2026-08-05T03:11:51.501108201Z",
+        "modified_time": "2026-08-05T02:34:49Z",
+        "sha256": "d923fc8cf74c6221b91abf8c47fd7ef331f98201338b2a2fdc55e1d63e789214",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011714",
+        "import_time": "2026-08-05T03:11:38.184006089Z",
+        "modified_time": "2026-08-05T02:17:08Z",
+        "sha256": "e86d9d8bd93478e16aad45fc5ffd7f72c01872879e717a817d1a95f8b2ba524a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011571",
+        "import_time": "2026-08-05T03:11:22.099928376Z",
+        "modified_time": "2026-08-05T01:56:41Z",
+        "sha256": "61951affa9e97699c2bc9980d226fcdc45432da5e2f18f80f96f6cd9591d4e27",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.5"
         ]
       }
     ]

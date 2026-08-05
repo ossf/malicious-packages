@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11906",
   "published": "2026-08-04T13:19:13Z",
-  "modified": "2026-08-05T01:41:29.186052744Z",
+  "modified": "2026-08-05T03:14:14.607663891Z",
   "aliases": [
     "GHSA-9jv6-vrwm-wvjr"
   ],
   "summary": "Malicious code in @servicetitan/moneyout-api-client (npm)",
-  "details": "npm/@servicetitan/moneyout-api-client is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9651625fdbbb73fca1c9f6bf3b21a7d02d085b9c3a3a4b546c76327bd2876e2f)\nPackage published under the @servicetitan scope claims to be an auto-generated TypeScript API client for MoneyOut, but ships a preinstall dropper unrelated to that purpose. package.json declares \"preinstall\": \"node setup.mjs\"; setup.mjs downloads the Bun runtime from github.com/oven-sh/bun/releases into a temp directory, chmods it executable, and execFileSyncs the sibling file math_init.js under that freshly-downloaded runtime. math_init.js is a 727 KB single-line file using string-array/index-lookup obfuscation (constant table with a custom decoder and rotator) whose contents cannot be inspected statically. Executing an obfuscated blob via an alternate runtime at install time bypasses scanners that only inspect Node-resolved code and runs attacker-chosen code on every installer with the developer's user privileges. An auto-generated API client has no legitimate need for a Bun download or an obfuscated init blob, indicating scope impersonation or maintainer compromise.\n\n## Source: ghsa-malware (64c27655c7e3129983f27b12c0d9b667001f65b8120e6dec02dd12d0b6124aec)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/moneyout-api-client is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c366653e73e2fe99af7a11cd3539161996a74544adaf2d7caff3551d9915724)\nThe package declares a preinstall hook `node setup.mjs` that downloads the Bun runtime from GitHub releases (oven-sh/bun v1.3.13) and then invokes it against a sibling file `math_init.js` — a ~727KB heavily obfuscated JavaScript blob (mangled identifiers, ~5000-element numeric string-array lookup, rotating dispatcher, no source map) shipped at the tarball root. The payload's name is unrelated to the package's advertised purpose as a MoneyOut API client, and its content is not auditable. Execution occurs under the freshly-fetched alternate runtime, bypassing Node-based inspection. Additionally, `package.json` declares `\"files\": [\"dist\", \"package.json\"]`, but the published tarball also contains `setup.mjs` and `math_init.js` — files smuggled outside the declared manifest allowlist. This shape (undeclared payload at tarball root plus a preinstall that fetches a second runtime specifically to execute an obfuscated blob) is consistent with a compromised publish on the @servicetitan scope rather than a legitimate release.\n\n## Source: ghsa-malware (64c27655c7e3129983f27b12c0d9b667001f65b8120e6dec02dd12d0b6124aec)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,21 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +106,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/moneyout-api-client/v/1.29.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/moneyout-api-client/v/1.29.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/moneyout-api-client/v/1.29.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/moneyout-api-client/v/1.29.7"
     }
   ],
   "database_specific": {
@@ -138,6 +165,36 @@
         "source": "amazon-inspector",
         "versions": [
           "1.29.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012018",
+        "import_time": "2026-08-05T03:12:10.436396596Z",
+        "modified_time": "2026-08-05T02:59:53Z",
+        "sha256": "5c366653e73e2fe99af7a11cd3539161996a74544adaf2d7caff3551d9915724",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.29.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012092",
+        "import_time": "2026-08-05T03:12:17.377946584Z",
+        "modified_time": "2026-08-05T03:10:23Z",
+        "sha256": "9b22b8a5b35d6430944187b5410b65429cce6a2d97c44e0d83983f7f81ec41bb",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.29.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012091",
+        "import_time": "2026-08-05T03:12:17.293232827Z",
+        "modified_time": "2026-08-05T03:10:11Z",
+        "sha256": "a5ee205deb4b379905a426788b3264807b711269995dfef06082fae848c87e35",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.29.7"
         ]
       }
     ]

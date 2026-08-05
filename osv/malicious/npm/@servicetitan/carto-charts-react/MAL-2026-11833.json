@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11833",
   "published": "2026-08-04T15:29:41Z",
-  "modified": "2026-08-05T00:46:44.998784432Z",
+  "modified": "2026-08-05T03:14:14.531257761Z",
   "aliases": [
     "GHSA-35h6-5mqq-hcj8"
   ],
   "summary": "Malicious code in @servicetitan/carto-charts-react (npm)",
-  "details": "npm/@servicetitan/carto-charts-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (90690ccb7ad7ae70097d235658e82e5b87aa4bb75a04002a444fdfb34f5dc753)\n@servicetitan/carto-charts-react@0.0.8 ships an obfuscated preinstall script (setup.mjs) that downloads the Bun runtime from oven-sh's GitHub releases for the host platform, extracts it to a temp directory, chmod +x's the binary, and immediately executes a bundled 727KB obfuscated CJS payload (math_init.js) with that alternate runtime. Both setup.mjs and math_init.js are transformed with obfuscator.io-style techniques (shifted string arrays, hex-named identifiers, custom-alphabet decoders, per-function property maps that hide simple literals like \"unzip\", \"--version\", \"ldd\", and the GitHub URL). package.json declares \"files\":[\"dist\"], yet setup.mjs and math_init.js are shipped at the tarball root outside the declared files surface. The alternate-runtime-dropper pattern (invoking a second, non-Node runtime at install time) bypasses Node-based install scanners; the payload's contents cannot be audited by the installer before execution. A React wrapper around echarts-for-react has no legitimate need to fetch a second language runtime or execute an obfuscated bundle on install.\n\n## Source: ghsa-malware (0969b95db121d63b3f51f2699ecaaf5d9c3651e838ad7acfb2ffada3309a5d34)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/carto-charts-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c47ff17cdbd24f0e3107f8ed3291b2f455c57b402159ffc3112b6aec9238eba6)\nThe package declares a `preinstall` script that runs `setup.mjs`, which downloads the Bun runtime archive from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/, extracts and chmods the `bun` binary, and then invokes it to execute a bundled sibling file `math_init.js`. `math_init.js` is a 727 KB single-bundle file carrying a `// @bun @bun-cjs` header, minified to two lines and obfuscated with a string-array rotator (`WV8StW` over table `n7gIxM`); `setup.mjs` itself uses `_0xXXXX`-style identifier obfuscation. The bundled payload is not imported by `dist/index.js` (a small benign React ECharts wrapper) and is only reachable through the preinstall path, so it executes automatically on `npm install` under a freshly-downloaded alternate runtime that evades Node-oriented inspection. The advertised purpose is a React chart wrapper, which has no legitimate need to fetch a second language runtime and hand it an opaque payload at install time. The package publishes under the `@servicetitan` scope while the install-time behavior does not match a company-authored UI library, consistent with a namespace-squat using a benign-looking main entry as decoy.\n\n## Source: ghsa-malware (0969b95db121d63b3f51f2699ecaaf5d9c3651e838ad7acfb2ffada3309a5d34)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +101,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/carto-charts-react/v/0.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-charts-react/v/0.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-charts-react/v/0.0.4"
     }
   ],
   "database_specific": {
@@ -138,6 +156,26 @@
         "source": "amazon-inspector",
         "versions": [
           "0.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012014",
+        "import_time": "2026-08-05T03:12:09.869779132Z",
+        "modified_time": "2026-08-05T02:59:19Z",
+        "sha256": "d8bc5b9256f86aac8c6ce47f98d2295abd868f797cea7c16a8268e437755af43",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012012",
+        "import_time": "2026-08-05T03:12:09.66736656Z",
+        "modified_time": "2026-08-05T02:59:04Z",
+        "sha256": "c47ff17cdbd24f0e3107f8ed3291b2f455c57b402159ffc3112b6aec9238eba6",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.4"
         ]
       }
     ]

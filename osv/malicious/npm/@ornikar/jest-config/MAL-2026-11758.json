@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11758",
   "published": "2026-08-04T15:17:31Z",
-  "modified": "2026-08-05T00:46:44.942284270Z",
+  "modified": "2026-08-05T03:14:14.371086103Z",
   "aliases": [
     "GHSA-mmqv-gqg9-h67h"
   ],
   "summary": "Malicious code in @ornikar/jest-config (npm)",
-  "details": "npm/@ornikar/jest-config is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d8261c4695679f49b46b7c1c70a4d331cff0ebea16a221f1c76d8a4b1fea3378)\npackage.json declares `preinstall: node setup.mjs`. setup.mjs is itself obfuscated (hex-named identifiers, inlined string tables) and performs libc/distro fingerprinting (`ldd --version` for musl, `/etc/os-release` for Alpine) to select a matching Bun build, downloads the Bun runtime archive from the oven-sh GitHub releases, unpacks it, chmods it executable, and then invokes it via `execFileSync` on the shipped `math_init.js` — a 727KB Bun-compiled CJS bundle (`// @bun @bun-cjs` header) using string-array + rotated-index obfuscation. The package is advertised as a Jest configuration helper; shipping and executing a compiled Bun bundle at install time has no relation to that purpose, and using an alternate runtime causes the payload to run outside standard Node-based inspection. The payload executes automatically on `npm install` before any consumer code runs.\n\n## Source: ghsa-malware (b9caf93498e1b02057c626402fc902026477391918dbba3f18d92f51f39e4392)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@ornikar/jest-config is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (457e405853dfeeb410cf06bc20b7afdda4ef4b227fe0859d2476782b6fa0826a)\nThe package advertises a Jest preset (main: jest-preset.js) but ships a preinstall script (scripts.preinstall = \"node setup.mjs\") that, on npm install, probes for a local bun binary and — if absent — downloads a Bun release archive from github.com/oven-sh/bun/releases, extracts it to a temp directory, chmods it executable, and runs it against a shipped 720KB math_init.js file. setup.mjs itself uses obfuscator-style identifiers (_0xNNNN naming, string-object indirection) to hide the download-and-exec logic. math_init.js begins with `// @bun @bun-cjs` and consists of a shuffled numeric/string constant array with a rotator function and mangled identifiers; no source form of it is shipped. The runtime and the executed payload have no relation to a Jest configuration preset, and the upstream ornikar/shared-configs repository history for this package does not describe any Bun-based initialization. Installing this version causes arbitrary attacker-shipped code to run on the installer's machine under a Bun runtime fetched at install time, using the alternate-runtime-dropper pattern to bypass Node-focused inspection.\n\n## Source: ghsa-malware (b9caf93498e1b02057c626402fc902026477391918dbba3f18d92f51f39e4392)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +29,56 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -90,6 +140,46 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.13"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/jest-config/v/13.0.4"
     }
   ],
   "database_specific": {
@@ -141,6 +231,106 @@
         "source": "amazon-inspector",
         "versions": [
           "13.0.13"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011859",
+        "import_time": "2026-08-05T03:11:53.560341752Z",
+        "modified_time": "2026-08-05T02:37:40Z",
+        "sha256": "40e47cf92323778a69d5191a16ae24f6325d9691d753f3e64d2b9af827e81e7a",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011860",
+        "import_time": "2026-08-05T03:11:53.688529381Z",
+        "modified_time": "2026-08-05T02:37:47Z",
+        "sha256": "41a3202d317a212caafa2ede1e13787c1341154a8faa6773fbfaa7d12f352773",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011857",
+        "import_time": "2026-08-05T03:11:53.295204819Z",
+        "modified_time": "2026-08-05T02:37:25Z",
+        "sha256": "457e405853dfeeb410cf06bc20b7afdda4ef4b227fe0859d2476782b6fa0826a",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011852",
+        "import_time": "2026-08-05T03:11:52.724295929Z",
+        "modified_time": "2026-08-05T02:36:41Z",
+        "sha256": "e13f49b8edf5145880dc3c24ff77e6ffb4b22355d017af5a26918b944515ec21",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011858",
+        "import_time": "2026-08-05T03:11:53.409985573Z",
+        "modified_time": "2026-08-05T02:37:32Z",
+        "sha256": "e3221c431a918bd68dfc982c0de99035db37f43f1a6f7ed77a15e28aafe42112",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011851",
+        "import_time": "2026-08-05T03:11:52.632525878Z",
+        "modified_time": "2026-08-05T02:36:32Z",
+        "sha256": "410b4d3988f49d44d4171ae78e424ca3ef2eb6dc43b734f1dd64d54d8e63f2d5",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011671",
+        "import_time": "2026-08-05T03:11:33.508905388Z",
+        "modified_time": "2026-08-05T02:11:03Z",
+        "sha256": "88e2e43e7296494caffc37ff16fa970c6118cf3fb671310faf2135e70e3fdec8",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011760",
+        "import_time": "2026-08-05T03:11:43.116658342Z",
+        "modified_time": "2026-08-05T02:23:38Z",
+        "sha256": "8e6e1a5fd7afdae82a3b501bb282cd4abafb9104545ee18478f199949f66ed6d",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011762",
+        "import_time": "2026-08-05T03:11:43.313019207Z",
+        "modified_time": "2026-08-05T02:23:55Z",
+        "sha256": "b56318a8db4de6acc2f7800d8efdfd9a7bd513ce8e2584d6efd753a302259ef2",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011759",
+        "import_time": "2026-08-05T03:11:43.021797869Z",
+        "modified_time": "2026-08-05T02:23:31Z",
+        "sha256": "e9b4c7f2e79c288f994a0fdf3fbb865557dd4f44ce08ad02b507311d5f9a2efa",
+        "source": "amazon-inspector",
+        "versions": [
+          "13.0.4"
         ]
       }
     ]

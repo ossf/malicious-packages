@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11750",
   "published": "2026-08-04T15:12:50Z",
-  "modified": "2026-08-05T00:46:44.939113615Z",
+  "modified": "2026-08-05T03:14:14.325515379Z",
   "aliases": [
     "GHSA-h957-h79m-9cv6"
   ],
   "summary": "Malicious code in @ornikar/eslint-config-react (npm)",
-  "details": "npm/@ornikar/eslint-config-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c43fe18efd20c87dd0bebf2bd584566c90a5bd3b3a5b8f470884b762be25bb7a)\nThe package declares a `preinstall` hook (`node setup.mjs`) that, on `npm install`, downloads the Bun JavaScript runtime from a GitHub release URL, extracts it to a temporary directory, marks it executable, and invokes it via `execFileSync` to run `math_init.js` — a 727KB heavily-obfuscated `@bun @bun-cjs` bundle shipped alongside the ESLint config. The bundle uses hex-mangled identifiers and a rotating string-array decoder (`WV8StW`) and is not referenced by the package's `main` (`index.js`), so it is only reachable through the preinstall-spawned Bun process. The manifest describes the package as an ESLint React config, and `main` is a plain FlatCompat ESLint export — nothing in the stated purpose requires an alternate JS runtime or an opaque 727KB payload at install time. Executing an obfuscated bundle under a non-Node runtime spawned from preinstall is arbitrary code execution on the installer's machine and also evades Node-based install-time scanners.\n\n## Source: ghsa-malware (83c979ca0decb09b8e2f82a39c7c02c58bdfff61ef3c936d37ba9c27bf686219)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@ornikar/eslint-config-react is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4dad56c3080f81dbfc2e573c133124bace20b4eca25ebed3437697f859dfcdd0)\nThis release of @ornikar/eslint-config-react declares `scripts.preinstall = \"node setup.mjs\"`, which fires automatically on `npm install`. `setup.mjs` is obfuscated (obfuscator.io-style `_0xNNNN` identifiers, per-function string-property lookup tables) and downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...zip`, extracts it, then `execFileSync`s the downloaded Bun binary against a sibling file `math_init.js`. `math_init.js` is a ~727KB `@bun @bun-cjs` bundle with a shuffled string/number array and a custom character-substitution decoder (`hc1jfK9`) — its real behavior is hidden from static inspection and it is executed under an alternate JavaScript runtime that Node-focused install-time scanners do not observe. The declared purpose of the package is a plain ESLint flat-config (`main: index.js`); fetching a second JavaScript runtime and executing a 700KB obfuscated bundle at install time has no relationship to that purpose. The tarball composition (ESLint-config metadata alongside an obfuscated loader, an obfuscated payload, and a preinstall lifecycle hook that wires them together) is consistent with a maintainer-account compromise or malicious release into the @ornikar scope rather than a legitimate publish.\n\n## Source: ghsa-malware (83c979ca0decb09b8e2f82a39c7c02c58bdfff61ef3c936d37ba9c27bf686219)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +29,56 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -95,6 +145,46 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/eslint-config-react/v/24.0.9"
     }
   ],
   "database_specific": {
@@ -146,6 +236,106 @@
         "source": "amazon-inspector",
         "versions": [
           "24.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011864",
+        "import_time": "2026-08-05T03:11:54.061208336Z",
+        "modified_time": "2026-08-05T02:38:19Z",
+        "sha256": "035497cad10bdab9bcd2fc10536a3b39d63ef9546738769a9b4850c4c7f6b6d4",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011866",
+        "import_time": "2026-08-05T03:11:54.240676797Z",
+        "modified_time": "2026-08-05T02:38:34Z",
+        "sha256": "16ca15fbf1ec37e708f5706fe84ca7d9d31be26d06ccee82b300f17fb2e4a765",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011605",
+        "import_time": "2026-08-05T03:11:26.082986598Z",
+        "modified_time": "2026-08-05T02:01:27Z",
+        "sha256": "210aa9f54f2ba8d482cf4fcad0714269135a75b480098e26f286089603b3b39b",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011867",
+        "import_time": "2026-08-05T03:11:54.320179924Z",
+        "modified_time": "2026-08-05T02:38:44Z",
+        "sha256": "82d747d83531d22b9815c38918bc92fa50a6bd9e6c2343528660803097b92147",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011607",
+        "import_time": "2026-08-05T03:11:26.243283275Z",
+        "modified_time": "2026-08-05T02:01:44Z",
+        "sha256": "9a237845714be19f890b7b1ce4c25523a0189faefaeb8369544b921aa81a54ca",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011561",
+        "import_time": "2026-08-05T03:11:21.133923223Z",
+        "modified_time": "2026-08-05T01:55:15Z",
+        "sha256": "9ab6036bd7c661b86f7e7865f6c984666bb7c59130f8aa03483da7d67177ffff",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011669",
+        "import_time": "2026-08-05T03:11:33.329888332Z",
+        "modified_time": "2026-08-05T02:10:46Z",
+        "sha256": "4d7f7ef1c9fb5e6565361ece418df599430a9adacffe0719a67c5b18321e2d30",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011557",
+        "import_time": "2026-08-05T03:11:20.687100817Z",
+        "modified_time": "2026-08-05T01:54:38Z",
+        "sha256": "4dad56c3080f81dbfc2e573c133124bace20b4eca25ebed3437697f859dfcdd0",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011670",
+        "import_time": "2026-08-05T03:11:33.420176741Z",
+        "modified_time": "2026-08-05T02:10:54Z",
+        "sha256": "5e252dbbab7b0adf016050429a19be3687d80a9ba38c7ce3c47c339a0ea7797f",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011758",
+        "import_time": "2026-08-05T03:11:42.934847972Z",
+        "modified_time": "2026-08-05T02:23:23Z",
+        "sha256": "aed53a6b37f0e429faa54bcfaa3c650d779a25cbe9294ee92ce8587389d770ff",
+        "source": "amazon-inspector",
+        "versions": [
+          "24.0.9"
         ]
       }
     ]

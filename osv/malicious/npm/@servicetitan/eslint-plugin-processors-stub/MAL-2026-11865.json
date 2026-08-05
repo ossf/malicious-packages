@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11865",
   "published": "2026-08-04T15:30:37Z",
-  "modified": "2026-08-05T00:46:45.016010761Z",
+  "modified": "2026-08-05T03:14:14.566983658Z",
   "aliases": [
     "GHSA-c9r2-qv4w-8hm4"
   ],
   "summary": "Malicious code in @servicetitan/eslint-plugin-processors-stub (npm)",
-  "details": "npm/@servicetitan/eslint-plugin-processors-stub is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ce850da0cf2a5b3c53ef8ecd207da5576d471e32920c809f100756c3aa814895)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun releases into a temp directory, chmods the extracted bun binary executable, and invokes it against the sibling file math_init.js during npm install. math_init.js is a 728KB single-line, heavily obfuscated bundle (string-array rotation decoder, hex-named identifiers, runtime-reconstructed strings including URL/host fragments) — its network destinations are only resolvable at runtime and are not first-party. The advertised functionality shipped in dist/index.js is a 14-line ESLint processor stub that has no need for a Bun runtime or a 728KB payload; the manifest description is empty and the dropper is unrelated to any documented purpose. The @servicetitan scope prefix and reference to github.com/servicetitan/uikit are used as cover for install-time execution of an alien-runtime obfuscated payload.\n\n## Source: ghsa-malware (9f95e6c177290be9807d943fa6419f736397842ae33c24af8dabb1a7c981264d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/eslint-plugin-processors-stub is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4041539ab8e1a4984309094c6e3a2742994b84819fffbf14cde54698a97bd489)\nThe package advertises itself as a trivial ESLint processors stub (dist/index.js is ~15 lines) but ships a preinstall lifecycle script `node setup.mjs` that automatically runs on `npm install`. setup.mjs downloads the Bun runtime from oven-sh's GitHub releases into a temp directory and then invokes `execFileSync(bunBinary, [math_init.js])` against a bundled 727,680-byte file `math_init.js`. That file is a Bun-compiled bundle (`// @bun @bun-cjs`) with hex-obfuscated identifiers, a rotated string/opcode array, and a `WV8StW` array-shuffler decoder consistent with the obfuscator.io shape. The advertised ESLint stub function does not require a second runtime or an opaque 727KB payload; the alternate runtime is used specifically to execute code that would otherwise be inspected by Node-focused tooling. The package is published under the `@servicetitan/` corporate scope with an empty description and a repository field pointing at `github.com/servicetitan/uikit.git` that does not correspond to a public package by this name — matching the dependency-confusion shape targeting ServiceTitan internal builds. On any machine or CI job that resolves this name, `npm install` auto-executes the obfuscated payload under the freshly-dropped Bun runtime.\n\n## Source: ghsa-malware (9f95e6c177290be9807d943fa6419f736397842ae33c24af8dabb1a7c981264d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,16 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +101,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-processors-stub/v/12.8.20"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-processors-stub/v/12.8.16"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/eslint-plugin-processors-stub/v/12.8.17"
     }
   ],
   "database_specific": {
@@ -137,6 +155,26 @@
         "source": "amazon-inspector",
         "versions": [
           "12.8.20"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011984",
+        "import_time": "2026-08-05T03:12:06.614975381Z",
+        "modified_time": "2026-08-05T02:55:06Z",
+        "sha256": "4041539ab8e1a4984309094c6e3a2742994b84819fffbf14cde54698a97bd489",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012026",
+        "import_time": "2026-08-05T03:12:11.289530231Z",
+        "modified_time": "2026-08-05T03:00:59Z",
+        "sha256": "f2d6b4a835a146f449f6ff26dc920d31c6eaa2b1584c0670fcfdf8ffb54e2e04",
+        "source": "amazon-inspector",
+        "versions": [
+          "12.8.17"
         ]
       }
     ]

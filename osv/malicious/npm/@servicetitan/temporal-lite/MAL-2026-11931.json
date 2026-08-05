@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11931",
   "published": "2026-08-04T15:31:13Z",
-  "modified": "2026-08-05T00:46:45.060091859Z",
+  "modified": "2026-08-05T03:14:14.632647580Z",
   "aliases": [
     "GHSA-76vq-x7xq-w466"
   ],
   "summary": "Malicious code in @servicetitan/temporal-lite (npm)",
-  "details": "npm/@servicetitan/temporal-lite is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (bdf6fd6f79cd9eb570dec2cd62c086f127e97338c10b73c4c24ca252cb2a61fb)\npackage.json declares scripts.preinstall=`node setup.mjs`. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun releases into a temp directory, chmod +x's the binary, and executes it against the adjacent math_init.js — a 727KB single-line, heavily obfuscated file with a rotated string-array pool and `_0x`-style opaque identifiers (obfuscator.io shape). Invoking the payload under a freshly-fetched alternate runtime is the alternate-runtime-dropper pattern: the code executes on install, out of view of Node-based tooling, and its contents cannot be statically inspected. The package is published under the `@servicetitan` scope with a `github.com/servicetitan/anvil-uikit-contrib.git` repository URL but ships no functionality matching that scope's stated purpose — the tarball's only install-time effect is fetching an alien runtime and running the obfuscated blob against it. This is scope impersonation combined with install-time execution of opaque attacker-controlled code on the installer's machine.\n\n## Source: ghsa-malware (3e9f0b57953d9e39d9a7ecfb43592783c33c863aaeaf0d69d10ea15014bdcbe5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@servicetitan/temporal-lite is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (43990d47f8836ae516bbd180654db2f1a03eb4a23305b235312a2d4164faa800)\n@servicetitan/temporal-lite 3.4.7 declares itself as a small Temporal date/time polyfill, but ships a preinstall lifecycle (`scripts.preinstall = \"node setup.mjs\"`) that at `npm install` time downloads the Bun runtime binary from `https://github.com/oven-sh/bun/releases/download/bun-v<ver>/<arch>.zip`, extracts it to a temp directory, chmods it executable, and uses it to `execFileSync` a bundled sibling file `math_init.js`. `math_init.js` is a ~727 KB single-line Bun-compiled bundle (`// @bun @bun-cjs` header) with hex-named identifiers and a string-array rotation routine (`WV8StW`); no source is shipped and its contents are not human-readable. The package's `dist/` tree contains only ordinary Temporal polyfill code with no reference to Bun or `math_init.js`, there is no native source or `binding.gyp` that would justify a second runtime, and the repository URL points at an unrelated UI monorepo. The alternate-runtime execution path exists solely to run opaque code on the installer's machine at install time and to evade Node-based static analysis, which the Node interpreter never touches.\n\n## Source: ghsa-malware (3e9f0b57953d9e39d9a7ecfb43592783c33c863aaeaf0d69d10ea15014bdcbe5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,6 +25,21 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -91,6 +106,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@servicetitan/temporal-lite/v/3.4.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/temporal-lite/v/3.4.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/temporal-lite/v/3.4.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/temporal-lite/v/3.4.5"
     }
   ],
   "database_specific": {
@@ -137,6 +164,36 @@
         "source": "amazon-inspector",
         "versions": [
           "3.4.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012063",
+        "import_time": "2026-08-05T03:12:14.849016922Z",
+        "modified_time": "2026-08-05T03:06:19Z",
+        "sha256": "43990d47f8836ae516bbd180654db2f1a03eb4a23305b235312a2d4164faa800",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.4.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012065",
+        "import_time": "2026-08-05T03:12:15.035205357Z",
+        "modified_time": "2026-08-05T03:06:37Z",
+        "sha256": "607988a0d7094be9a08598fa3f8a9840038e2069298fbc803d9c65e93d5177dc",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.4.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012066",
+        "import_time": "2026-08-05T03:12:15.119826703Z",
+        "modified_time": "2026-08-05T03:06:46Z",
+        "sha256": "a793d4ab579950995c76cbf6c8d5cf1578878d5df4444a3d43ca4cdcf4642f29",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.4.5"
         ]
       }
     ]

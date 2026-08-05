@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11740",
   "published": "2026-08-04T15:17:12Z",
-  "modified": "2026-08-05T00:46:44.930401297Z",
+  "modified": "2026-08-05T03:14:14.279324675Z",
   "aliases": [
     "GHSA-x2q9-5wm2-wf59"
   ],
   "summary": "Malicious code in @ornikar/babel-preset-base (npm)",
-  "details": "npm/@ornikar/babel-preset-base is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (475630b5ca986b437a3545e7f6d84b5ac85b0291373697b85c0881871cad3234)\nThe package advertises itself as a Babel preset but ships install-time code unrelated to that purpose. package.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs downloads a Bun runtime archive from github.com/oven-sh/bun/releases (architecture-selected zip), extracts it to a temp directory, chmods it executable, and invokes it against a shipped math_init.js via execFileSync. math_init.js is a 727 KB single-module bundle with a `// @bun @bun-cjs` header whose control flow is hidden behind a shuffled string/number dictionary (`n7gIxM`), a rotation function (`WV8StW`), and a custom character-substitution decoder (`hc1jfK9`); the identifiers are randomized and the code is not human-readable. The package's advertised entry (index.js) is a ~30-line Babel preset with no build-time need for an alternate language runtime. Running `npm install` on this version causes an obfuscated payload to execute on the installer host through a runtime the Babel preset has no legitimate reason to introduce.\n\n## Source: ghsa-malware (2a43b98dcd39273c728a44da6d619686315251439a306d5141bbca1518090bed)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@ornikar/babel-preset-base is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (335c34cb5e5f4cb4b8d229a1e1f5482c02d50c861c81ce23738614806da57e15)\nPackage advertises itself as a Babel preset (index.js is 787 bytes of legitimate Babel preset configuration), but the tarball also ships setup.mjs (obfuscator.io-style with _0x-prefixed identifiers and property-dispatch wrappers around execFileSync/https.get) and math_init.js (727680 bytes, heavily obfuscated with a rotated string-array preamble). The package.json preinstall script runs `node setup.mjs`, which detects platform/arch (including Alpine musl via `ldd --version` and `/etc/os-release`), downloads the Bun runtime archive from github.com/oven-sh/bun/releases/download/bun-v1.3.13/<target>.zip to a tmpdir, extracts it, chmods the binary to 0755, and then execFileSyncs the downloaded Bun binary against math_init.js. math_init.js is not referenced from index.js and is unrelated to Babel preset functionality; it exists only to be executed under the freshly downloaded alternate runtime at install time. The alternate-runtime choice bypasses static analyzers and policies that inspect only Node-resolved code, and the obfuscation of both the loader and the payload conceals what runs on the installer's machine. Installing this package triggers arbitrary-code-execution on the installer's host.\n\n## Source: ghsa-malware (2a43b98dcd39273c728a44da6d619686315251439a306d5141bbca1518090bed)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -30,6 +30,61 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -96,6 +151,50 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.13"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.8"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.14"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/babel-preset-base/v/6.0.10"
     }
   ],
   "database_specific": {
@@ -148,6 +247,116 @@
         "source": "amazon-inspector",
         "versions": [
           "6.0.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011582",
+        "import_time": "2026-08-05T03:11:23.724556445Z",
+        "modified_time": "2026-08-05T01:58:10Z",
+        "sha256": "488f093e2df1ac185edf12e5b32c9cf3e62803cf9b50d8354859898243009989",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011686",
+        "import_time": "2026-08-05T03:11:35.014655131Z",
+        "modified_time": "2026-08-05T02:13:09Z",
+        "sha256": "5750d607c401c03ea7d009457318bbf297428b7ded3aff415974494cd9632cee",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011878",
+        "import_time": "2026-08-05T03:11:55.540229708Z",
+        "modified_time": "2026-08-05T02:40:16Z",
+        "sha256": "5bc69aaab15a7277f8166ba734172faf5425e2de36326490375a630800c0bc2d",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011877",
+        "import_time": "2026-08-05T03:11:55.447926243Z",
+        "modified_time": "2026-08-05T02:40:08Z",
+        "sha256": "65e38829443c9ca7f9bda47c70302cbe7a280bd673da50223fdb7b1d71c34493",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011874",
+        "import_time": "2026-08-05T03:11:55.095968355Z",
+        "modified_time": "2026-08-05T02:39:40Z",
+        "sha256": "ecca86433a847b96d138702af5317fcbf05f08637186663a06afbec0f752369f",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011879",
+        "import_time": "2026-08-05T03:11:55.652847101Z",
+        "modified_time": "2026-08-05T02:40:23Z",
+        "sha256": "0ae4f81d3576e5b107316378170ccddb123ef7bccfdd092f4d58c88b0b2f17cc",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011876",
+        "import_time": "2026-08-05T03:11:55.307929441Z",
+        "modified_time": "2026-08-05T02:39:56Z",
+        "sha256": "335c34cb5e5f4cb4b8d229a1e1f5482c02d50c861c81ce23738614806da57e15",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011702",
+        "import_time": "2026-08-05T03:11:37.08089921Z",
+        "modified_time": "2026-08-05T02:15:24Z",
+        "sha256": "592a20d43d17c457d61d05bff83aaf58559a0b4a978ad3db8cda8be088e06d38",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.13"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011873",
+        "import_time": "2026-08-05T03:11:54.95211627Z",
+        "modified_time": "2026-08-05T02:39:33Z",
+        "sha256": "71a6e96ca57808634cca5964ddcc3c2b77e010fcf52626ab8cbbc1b0753e7532",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011881",
+        "import_time": "2026-08-05T03:11:55.910447629Z",
+        "modified_time": "2026-08-05T02:40:41Z",
+        "sha256": "d8dfd87ba4c3d96a6aa1ee734aef79ba6d2dd238ab4a443e5c5ec34729eff26c",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.14"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011749",
+        "import_time": "2026-08-05T03:11:41.690765847Z",
+        "modified_time": "2026-08-05T02:22:14Z",
+        "sha256": "2026afedc6dabcaca35b2db138bfcd02fbec899406e2c4de98cdb872621a672f",
+        "source": "amazon-inspector",
+        "versions": [
+          "6.0.10"
         ]
       }
     ]
