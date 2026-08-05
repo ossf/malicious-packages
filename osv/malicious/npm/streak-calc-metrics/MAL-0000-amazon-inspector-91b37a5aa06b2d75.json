@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T12:13:50Z",
+  "modified": "2026-08-05T12:13:50Z",
+  "summary": "streak-calc-metrics ships a bundled Linux C2 implant executed at import time",
+  "details": "streak-calc-metrics@1.0.0 is presented as a native math accelerator for streak calculations but ships a bundled Linux ELF at dist/calc.bin that the main module unconditionally chmods and spawns detached at import time (cp.spawn(binaryPath, [], { stdio: 'pipe', shell: false, detached: true })). The ELF self-identifies as 'REDSHELL' and beacons to hardcoded C2 IP 217.60.77.63 with the protocol tag SECURE_BEACON|...|REDSHELL, providing a full remote shell over /bin/sh and /bin/bash. The implant downloads and executes arbitrary ELF binaries and shellcode over plain HTTP with TLS verification disabled from http://217.60.77.63/Others/<name> and http://217.60.77.63/SC/<name>, staging into /tmp/.elf_* or via memfd_create (syscall 319) and chmod +x before execution, with no hash or signature check. It exposes command handlers /ssh_keys, /creds, /dbfind, /env, and /dataextract <path> that harvest the installer's SSH keys, credential files, environment variables, and arbitrary filesystem paths, then exfiltrates them in chunks via POST /api/extract-receive using markers such as BIGEXTRACT_START and Destination: Loot_%s_%s_%s. Persistence is established by writing ~/.config/systemd/user/svc-update.service (Description='System Update Service', ExecStart=/proc/self/exe, Restart=always) and enabling it with systemctl --user daemon-reload && systemctl --user enable --now svc-update.service. The implant additionally exposes a remote-controlled SOCKS5 proxy (/socks start <port>) and arbitrary TCP port forwarding (/portfwd start <lport> <rhost> <rport>), turning the installer's host into a pivot into internal networks. The JS wrapper contains a cover story ('Native accelerator loaded and verified', 'Performance mode enabled') and an inverted SHA-256 integrity check against 4537b1189ce419f1a595cf47216c03f80e9170ce80dad8d9227a1e52f9cb3466 that never blocks execution.",
+  "affected": [
+    {
+      "package": {
+        "name": "streak-calc-metrics",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.mjs",
+              "sha256": "69fe4881065cf4a5e30cbaeaf30c16fd891d5bfc5a6263e518fb3ef2e23d0889",
+              "tlsh": "9d31522aafbe632897fc0742ce38b293162d44831f82d895e99d573970c175ce3d097a"
+            },
+            {
+              "path": "dist/calc.bin",
+              "sha256": "4537b1189ce419f1a595cf47216c03f80e9170ce80dad8d9227a1e52f9cb3466",
+              "tlsh": "83531a2bbdc28e3fc084d53087dfd42269b5705aaa33712f26111f293d59a69473f72a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "streak-calc-metrics-1.0.0.tgz",
+              "hashes": {
+                "sha1": "6008b2b8c7c685dac5c215ae345f01dca6ce46da",
+                "sha512_sri": "sha512-nBN3+8lQq0enHPd1SMLysywjyBvBuyqY3oLvwkELRgcSzbEEZhUcKqMSdfZOMnhGbXhxqSnebcTNGpIctOmxzw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/streak-calc-metrics/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-014630",
+        "import_time": "2026-08-05T12:15:14.203832719Z",
+        "modified_time": "2026-08-05T12:13:50Z",
+        "sha256": "91b37a5aa06b2d75f250bd23ce01f2667646c1aa7609ec2323f226842e043e9d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
