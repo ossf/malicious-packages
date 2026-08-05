@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11606",
   "published": "2026-08-04T15:20:35Z",
-  "modified": "2026-08-05T00:12:09.700388394Z",
+  "modified": "2026-08-05T07:08:50.449596606Z",
   "aliases": [
     "GHSA-mg9j-55m3-8955"
   ],
   "summary": "Malicious code in @onereach/lambda-invocation (npm)",
-  "details": "npm/@onereach/lambda-invocation is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (7440dcaa84697e19f47e3617a0b77ef5481a654e656b36ef5aa785be325f1576)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@onereach/lambda-invocation is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ef9000e5e36dd36a571b8c1e7b1cfe94de39891c3f00326c4697fc342ce2b8cc)\nThe package declares a `preinstall` hook (`node setup.mjs`) that downloads the Bun runtime from GitHub releases (`https://github.com/oven-sh/bun/releases/download/bun-v...`), extracts it to a temp directory, marks it executable, and then invokes it against a sibling file `math_init.js` via `execFileSync(bunPath, [join(D, 'math_init.js')], {stdio:'inherit', cwd:D})`. Bun is downloaded and used to run the bundled file even when Bun is already present on the host, so the alternate runtime is unconditionally used to execute the shipped payload. `math_init.js` is a 727,680-byte single-line `// @bun @bun-cjs` bundle (sha256 9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc) obfuscated with string-array rotation (`WV8StW` rotating array `n7gIxM`), codepoint-based string reconstruction (`hc1jfK9`), and hex-mangled identifiers, making its behavior opaque to static inspection. The package advertises itself as a thin AWS Lambda invocation helper; shipping and executing an opaque 727KB Bun-only bundle named `math_init.js` from a preinstall hook is inconsistent with that stated purpose. `npm install` auto-executes `preinstall` on every consumer, so installing this version causes the obfuscated payload to run under the freshly downloaded Bun runtime on developer and CI hosts.\n\n## Source: ghsa-malware (7440dcaa84697e19f47e3617a0b77ef5481a654e656b36ef5aa785be325f1576)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,8 +25,41 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lambda-invocation-1.2.1.tgz",
+              "hashes": {
+                "sha1": "1716c7fac14ea00bcb9b0442544b6e2ab7424c94",
+                "sha512_sri": "sha512-1Ib02uuaNDTdtT/GSJVePFFFNA9c0d8ammR5BgGjpsxGVX7MpQ4jCWdRsiF8Cez2tijH/Qe1oYnEYIYVuNRJMQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -50,6 +83,14 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-mg9j-55m3-8955"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/lambda-invocation/v/1.2.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/lambda-invocation/v/1.2.3"
     }
   ],
   "database_specific": {
@@ -84,6 +125,26 @@
           "1.2.2",
           "1.2.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013595",
+        "import_time": "2026-08-05T07:06:55.603013106Z",
+        "modified_time": "2026-08-05T06:46:05Z",
+        "sha256": "2e16f15e8194a67da5b8c13ea165f0b1e8f11d69a8544f74f4de4452d0f36ece",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013495",
+        "import_time": "2026-08-05T07:06:50.390049653Z",
+        "modified_time": "2026-08-05T06:31:25Z",
+        "sha256": "ef9000e5e36dd36a571b8c1e7b1cfe94de39891c3f00326c4697fc342ce2b8cc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.3"
+        ]
       }
     ]
   },
@@ -92,6 +153,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

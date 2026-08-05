@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11671",
   "published": "2026-08-04T15:20:57Z",
-  "modified": "2026-08-05T00:12:09.767810354Z",
+  "modified": "2026-08-05T07:08:50.516512502Z",
   "aliases": [
     "GHSA-9hq7-f447-rr4m"
   ],
   "summary": "Malicious code in @or-sdk/apps (npm)",
-  "details": "npm/@or-sdk/apps is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (da11d1d555444967787d7b6a6b999bbdd59538e93f37fb2c7f2a2846a01c26ad)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@or-sdk/apps is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (68b57bc8fd56db5678ad6a8a5e5c4d4265f8a3da8a07ae3c55f79b88c59fcf0e)\nThe package declares a preinstall lifecycle hook that runs setup.mjs, which downloads a Bun runtime archive from github.com/oven-sh/bun releases, extracts it to a temporary directory, marks the binary executable, and uses that freshly downloaded runtime to execute a sibling file math_init.js. math_init.js is a ~727 KB single-line, heavily obfuscated JavaScript blob (string-array rotation via a large mixed constant array, mangled identifiers) whose behavior is not readable without full deobfuscation. setup.mjs itself uses obfuscator.io-style string-array indirection (per-function literal-lookup objects wrapping strings such as \"ldd\", \"/etc/os-release\", \"Alpine\", \"bun\", \"powershell\", \"Expand-Archive\"), hiding the drop-and-exec chain from review. Executing the payload under a freshly fetched alternate runtime bypasses Node-based install-time scanning. The package scope also mirrors an internal-only repository referenced in CHANGELOG.md (gitlab.internal.onereach.io/onereach/platform/or-sdk-next), and setup.mjs and math_init.js have no counterpart under src/, consistent with a dependency-confusion package published to public npm to shadow an internal scope.\n\n## Source: ghsa-malware (da11d1d555444967787d7b6a6b999bbdd59538e93f37fb2c7f2a2846a01c26ad)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,8 +25,32 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "CHANGELOG.md",
+              "sha256": "1f98035b54898560367278ae5e835765c5c476cdbcf990328028909cc48f07c4",
+              "tlsh": "8bf167b1e306ad723d2292e56b217524eb37790bfdb261cc3d25f7228d50bf0da18199"
+            }
+          ]
+        }
       }
     }
   ],
@@ -50,6 +74,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-9hq7-f447-rr4m"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@or-sdk/apps/v/1.2.6"
     }
   ],
   "database_specific": {
@@ -84,6 +112,16 @@
           "1.2.7",
           "1.2.6"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013481",
+        "import_time": "2026-08-05T07:06:49.59549073Z",
+        "modified_time": "2026-08-05T06:29:21Z",
+        "sha256": "68b57bc8fd56db5678ad6a8a5e5c4d4265f8a3da8a07ae3c55f79b88c59fcf0e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.6"
+        ]
       }
     ]
   },
@@ -92,6 +130,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },

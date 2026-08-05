@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11966",
   "published": "2026-08-04T11:32:31Z",
-  "modified": "2026-08-05T00:12:11.737280213Z",
+  "modified": "2026-08-05T07:08:52.184202466Z",
   "aliases": [
     "GHSA-g3q3-j6vf-388h"
   ],
   "summary": "Malicious code in ecto (npm)",
-  "details": "npm/ecto version 5.0.1 is a trojanized release published on 2026-08-04 during the compromise of the npm/GitHub maintainer account behind the keyv and cacheable package families (user \"Jaredwray\"). Attackers pushed the malicious payload to the source repository and cut releases through GitHub Actions, so the poisoned versions reached npm with a valid, signed provenance attestation (provenance attests build integrity, not source integrity). Delivery is through the npm install lifecycle: the trojanized package.json adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs before any project code on a bare `npm install`, while the normal compiled output is left intact so the package still works after install. setup.mjs downloads a standalone Bun runtime and uses it to run a second stage (shipped as Math_Symbol.js, a heavily obfuscated ~728 KB Bun bundle, referenced at runtime as math_init.js). The stealer harvests credentials from cloud instance metadata (AWS IMDS at 169.254.169.254, ECS at 169.254.170.2, GCP, Azure), AWS/GCP/Azure keys, HashiCorp Vault tokens, Kubernetes service-account tokens, GitHub Actions OIDC and org/repo secrets, and npm tokens, with a TruffleHog-style regex sweep for further secrets and private keys. Using the stolen npm identity (including npm OIDC trusted publishing) it enumerates and republishes further packages the token can reach — which, for a maintainer controlling both keyv and cacheable, gave the worm a large blast radius. Stolen findings are exfiltrated to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and to destinations resolved over DNS, and autostart hooks are planted in the repository's .claude/ and .vscode/ configuration to run the loader when a developer or AI coding agent opens a clone. Treat any environment that installed this version (with install scripts enabled) as fully compromised and rotate every reachable credential. Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (a3862d291481a61556391c6121b6d1d5ebe65892d2d7586547148766e3b4bd1b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/ecto version 5.0.1 is a trojanized release published on 2026-08-04 during the compromise of the npm/GitHub maintainer account behind the keyv and cacheable package families (user \"Jaredwray\"). Attackers pushed the malicious payload to the source repository and cut releases through GitHub Actions, so the poisoned versions reached npm with a valid, signed provenance attestation (provenance attests build integrity, not source integrity). Delivery is through the npm install lifecycle: the trojanized package.json adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs before any project code on a bare `npm install`, while the normal compiled output is left intact so the package still works after install. setup.mjs downloads a standalone Bun runtime and uses it to run a second stage (shipped as Math_Symbol.js, a heavily obfuscated ~728 KB Bun bundle, referenced at runtime as math_init.js). The stealer harvests credentials from cloud instance metadata (AWS IMDS at 169.254.169.254, ECS at 169.254.170.2, GCP, Azure), AWS/GCP/Azure keys, HashiCorp Vault tokens, Kubernetes service-account tokens, GitHub Actions OIDC and org/repo secrets, and npm tokens, with a TruffleHog-style regex sweep for further secrets and private keys. Using the stolen npm identity (including npm OIDC trusted publishing) it enumerates and republishes further packages the token can reach — which, for a maintainer controlling both keyv and cacheable, gave the worm a large blast radius. Stolen findings are exfiltrated to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and to destinations resolved over DNS, and autostart hooks are planted in the repository's .claude/ and .vscode/ configuration to run the loader when a developer or AI coding agent opens a clone. Treat any environment that installed this version (with install scripts enabled) as fully compromised and rotate every reachable credential. Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f4d3c23dd89ecdb07942046a9f90f65ebd4c8a206f3e7a4124fd353e14b56ba8)\npackage.json declares `preinstall: node setup.mjs`, causing the script to run automatically on `npm install`. setup.mjs is heavily obfuscated (obfuscator.io-style string-array plus RC4-style decoder, with the destination URL assembled by string concatenation to hide it from static inspection). It downloads the Bun runtime from github.com/oven-sh/bun releases into the OS temp directory, marks it executable, and then invokes it via execFileSync to run the sibling file `Math_Symbol.js` — a ~727KB `// @bun @bun-cjs` bundle that is itself heavily obfuscated (shuffled numeric/string arrays, custom base64 alphabet, rotator function). The package's advertised purpose (a template consolidation engine) has no legitimate need to fetch an alternate JavaScript runtime at install time, and executing the bundled payload under Bun rather than Node evades Node-focused supply-chain scanners that would otherwise trace the payload. The combination of preinstall auto-execution, alternate-runtime dropper, obfuscated loader with concealed URL construction, and a large opaque obfuscated payload constitutes install-time remote code execution on any machine that runs `npm install ecto@5.0.1`.\n\n## Source: ghsa-malware (a3862d291481a61556391c6121b6d1d5ebe65892d2d7586547148766e3b4bd1b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -23,8 +23,31 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "54dc7ea54a1317cca0e890a2770630cf7fa6c97813e0cb9d2caa93012b350668",
+              "tlsh": "22d2e98e35aa70e2526331b37c7791a5f97facc077c84414f998ac5afd6c22cc18669c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ecto-5.0.1.tgz",
+              "hashes": {
+                "sha1": "b2b2deb9af92166d3349a447990e4fb28db14c99",
+                "sha512_sri": "sha512-58Kx5KqgGf3Qqxtvv0YA9Dcl1/DjTm3q8Tmjct/f2fhfTyqwsZyw9n8hlNA+OK9ibhMdm5ErXJYyMrJb5Xun9g=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -48,6 +71,10 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-g3q3-j6vf-388h"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ecto/v/5.0.1"
     }
   ],
   "database_specific": {
@@ -80,6 +107,16 @@
         "versions": [
           "5.0.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013484",
+        "import_time": "2026-08-05T07:06:49.729241291Z",
+        "modified_time": "2026-08-05T06:29:47Z",
+        "sha256": "f4d3c23dd89ecdb07942046a9f90f65ebd4c8a206f3e7a4124fd353e14b56ba8",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.0.1"
+        ]
       }
     ]
   },
@@ -88,6 +125,13 @@
       "name": "Aikido Security",
       "contact": [
         "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
       ],
       "type": "FINDER"
     },
