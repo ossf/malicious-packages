@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-05T03:54:23Z",
+  "modified": "2026-08-05T03:54:23Z",
+  "summary": "Preinstall hook downloads Bun runtime and executes an obfuscated 727KB sibling payload",
+  "details": "@servicetitan/lazy-module 38.1.1 advertises itself as a small React Suspense wrapper (dist/index.js is ~4KB) but ships a preinstall lifecycle hook that performs an alternate-runtime dropper pattern. package.json declares `preinstall: node setup.mjs`. setup.mjs is itself obfuscated (hex-named identifiers such as `_0x488df8`, per-function control-flow-flattening objects mapping string constants to method names — the obfuscator.io fingerprint) and downloads the Bun runtime tarball from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/...`, extracts it, and invokes `execFileSync(bunPath, ['math_init.js'],...)`. The executed sibling `math_init.js` is a 727,680-byte `@bun @bun-cjs` compiled bundle using shuffled string-array obfuscation with a rotator function and ~1200-element constants array, and its filename (math initialization) is unrelated to the package's declared React lazy-loading purpose. Fetching an alternate runtime at npm install specifically to run a heavily obfuscated sibling bundle bypasses Node-based install-time inspection and executes attacker-controlled code on any machine that runs `npm install`.",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/lazy-module",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "38.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lazy-module-38.1.1.tgz",
+              "hashes": {
+                "sha1": "3dfe66d382b1b086854f6d15405b4991c7dec30b",
+                "sha512_sri": "sha512-HReYfsc7III9egSmGMv0+pGl9dxxVBX59RcoiyhkKkTKEeHXlLBZJhHCndaMYLI9DJaGXHES/ek9MYMhK77Ezg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/lazy-module/v/38.1.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-012401",
+        "import_time": "2026-08-05T04:38:06.270802049Z",
+        "modified_time": "2026-08-05T03:54:23Z",
+        "sha256": "78bf30bcab16d8b1ef316bce41ac84348183fec87a0bd5dc2b611428f4d82987",
+        "source": "amazon-inspector",
+        "versions": [
+          "38.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
