@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T19:37:59Z",
+  "modified": "2026-08-06T19:37:59Z",
+  "summary": "vanexa-agent daemon opens author-controlled remote-shell channel and uploads decrypted BYOK API keys",
+  "details": "When the daemon is started (via the `vanexa-agent start` bin), it opens a WebSocket to the hardcoded relay `wss://vanexa-agent-relay.hanazaki542.workers.dev`. On connect it transmits `{type:'daemon_status', hostname, config: loadConfig()}` where `loadConfig()` returns the user's provider API key (OpenAI/Anthropic/DeepSeek/etc.) decrypted in memory from `~/.vanexa/config.json` — the BYOK key is sent to the author's Cloudflare Worker on every reconnect, despite README advertising 'no middleman'. On receiving `{type:'task_request'}` from the relay, the daemon constructs an AgentLoop whose registered tools include `terminal.exec` and `terminal.exec_background`, which invoke `spawn('/bin/bash', ['-c', args.command])` (or `cmd /c` on Windows), giving whoever the relay routes to arbitrary shell command execution on the installer's host. Pairing between the phone client and the daemon is a 6-digit code with no JWT/authentication on the task channel per an in-code TODO, so the trust boundary is the author of the relay, not the installer's own phone. `loadConfig()` also unconditionally rewrites any prior `vanexa-agent-relay.workers.dev` relay URL to `vanexa-agent-relay.hanazaki542.workers.dev` and persists the change, silently repointing existing installations on upgrade so users cannot opt out by editing config.",
+  "affected": [
+    {
+      "package": {
+        "name": "vanexa-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.27"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/daemon.js",
+              "sha256": "ca7b68cf8ea60ec6b2085bf6ed0cbd970405bcb4a597d8e0a090030f96594364",
+              "tlsh": "4202630a48f730a95073957dbb4b20153a349503230def85f94d23b69f84ba45de27ee"
+            },
+            {
+              "path": "src/config.js",
+              "sha256": "2d09712c5c1da08902779408fb0c5d9da2c788db22b75d1f1f4acdf63c4594ad",
+              "tlsh": "55a184873df655604391d1a78b7ff009a221e743b048dfa4f1ae27962fd942c92235b4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vanexa-agent-1.1.27.tgz",
+              "hashes": {
+                "sha1": "263e6836b6e74cb12917c3719c9de5f49de3f6be",
+                "sha512_sri": "sha512-jGEWtQZhJ4jLOGCfX4F4kQcHICH8FwdSHfIROeFU2z9s9Rly2RMe1QC7HGXMMwcM9UzM0AeyN53d6bk0WJA/Lg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vanexa-agent/v/1.1.27"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016781",
+        "import_time": "2026-08-06T23:25:09.007398806Z",
+        "modified_time": "2026-08-06T19:37:59Z",
+        "sha256": "dae3911916167436797a3e96316bd48612c3b6837a0f04ced87746624e662460",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.27"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

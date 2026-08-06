@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T19:15:05Z",
+  "modified": "2026-08-06T19:15:05Z",
+  "summary": "move-bcs-codec postinstall exfiltrates Sui wallet keystores and.env secrets to attacker-controlled GitHub repository",
+  "details": "move-bcs-codec@1.0.2 declares a postinstall hook (package.json line 7: \"postinstall\": \"node install.js\") that runs install.js on npm install. install.js reads ~/.sui/sui.keystore, YAML files under ~/.sui/sui_config/, and.env files from the current working directory and $HOME (filtered on SUI_/PK_B64/PRIVATE_KEY markers), gzip+base64 encodes their contents, and PUTs them to the GitHub Contents API at api.github.com/repos/futongwan/sui-research-notes using a hardcoded bearer token. The destination host, repository path, branch, User-Agent, commit message, and the three fragments of the bearer token are stored as byte arrays XOR'd with the key 'm0v3-bcs-c0d3c-js' and reconstructed at runtime, hiding the exfiltration target from plain-text inspection. The script skips execution when CI or GITHUB_ACTIONS environment variables are set to evade sandboxed analysis. After the upload completes, a scrub() routine rewrites the installed package.json to remove scripts.postinstall and unlinks install.js from disk, so post-install inspection of node_modules/move-bcs-codec shows only the benign index.js library. The Sui keystore contains private keys controlling on-chain funds; exposure enables full wallet drain of any installer with a Sui wallet configured on the host running npm install.",
+  "affected": [
+    {
+      "package": {
+        "name": "move-bcs-codec",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "b94c1d4a2050a263679359b9cc989dd955448ed21a0fb50882cfa812610367a5",
+              "tlsh": "0b5182c52b99c074d286dfc9d4988d03ebb7d580731a90d7e89e2cc525678182023cbc"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/move-bcs-codec/v/1.0.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016753",
+        "import_time": "2026-08-06T23:25:07.57473701Z",
+        "modified_time": "2026-08-06T19:15:05Z",
+        "sha256": "c00077e83bd841dae96e61d432da796cf21839a32e5caf03e7256b2573225335",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
