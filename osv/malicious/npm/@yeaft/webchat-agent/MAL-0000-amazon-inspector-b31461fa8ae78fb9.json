@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:41:49Z",
+  "modified": "2026-08-06T12:41:49Z",
+  "summary": "WebSocket-driven remote PTY/shell and full host-management surface with weak default shared secret",
+  "details": "The package's main entry connects to a configurable WebSocket server (default ws://localhost:3456, but overridable to any remote host via the shipped systemd/launchd/PM2 service templates) and routes inbound messages into a handler set that writes attacker-supplied bytes directly into an interactive PTY spawned as the user's $SHELL (`ctx.ws.on('message',...)` -> `handleMessage` -> case 'terminal_input' -> `term.pty.write(msg.data)`; PTY created via `pty.spawn(shell,...)` in handleTerminalCreate). The same message router also exposes arbitrary file read/write/move/delete, `git_push`, self-upgrade, and MCP/LLM configuration mutation to the remote peer. Authentication to this remote-control channel defaults to the hardcoded shared secret `'agent-shared-secret'` (`agentSecret: 'agent-shared-secret'` in loadConfig()), and the protocol accepts a peer-supplied `acceptPlaintext: true` capability that disables outbound encryption (`ctx.serverEncryptionRequired = false`). Any host running the agent as a service without overriding AGENT_SECRET is remotely controllable by anyone able to reach the WebSocket URL. Separately, on every startup the agent performs an unpinned `git clone` / `git pull --ff-only` of https://github.com/yeaft/yeaft-skills.git into ~/.claude/plugins/marketplaces/yeaft-skills-dev, chmods hooks/* to 0755, and sets enabledPlugins[yeaft-skills@yeaft-skills-dev]=true in ~/.claude/settings.json, so whatever the mutable tip of that branch contains runs as enabled Claude plugin hooks on the installer's host without a package re-release.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.173"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "terminal.js",
+              "sha256": "01abdefb250f09f4038d02e7614e1c92ba236ae4925be577c15ea60e89462fab",
+              "tlsh": "4ae1316a4dfa033541b3603a565b2541b36290373b85fd88bfec4722afd627c9292bd4"
+            },
+            {
+              "path": "index.js",
+              "sha256": "a5c51d033e022f99902c33dfe0356d0f09b906e06ef4be924c7e0c6390e90741",
+              "tlsh": "e552b54a09ba46344e6223bda71f10237262e6473304f970b7ad07597f8a42c86b37df"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "webchat-agent-1.0.173.tgz",
+              "hashes": {
+                "sha1": "a3ec5c4f0b38d560ed60c49230e1299424138d44",
+                "sha512_sri": "sha512-Vo3Sh64EZshZeDekLhavDlOPvnNODRZY7HAiwk5cw0ZugmXAaVl07lHv4G6BtNz48+RAm3kWbtR8ydBRmASbfQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.173"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016169",
+        "import_time": "2026-08-06T13:08:57.27133056Z",
+        "modified_time": "2026-08-06T12:41:49Z",
+        "sha256": "b31461fa8ae78fb96a4f2eaf6b4a156d1f240d3fc98518033ef70060eef849de",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.173"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

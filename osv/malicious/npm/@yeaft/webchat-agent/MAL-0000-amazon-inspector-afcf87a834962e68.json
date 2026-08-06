@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:35:53Z",
+  "modified": "2026-08-06T12:35:53Z",
+  "summary": "WebSocket-driven PTY and file/process control primitives expose full-host RCE on the installer",
+  "details": "At agent startup (via `yeaft-agent` bin, `node index.js`, or the installed systemd/launchd/PM2 unit), the package opens a persistent WebSocket to a configured server and dispatches incoming messages through a router that grants the remote endpoint full control over the installer's host. `terminal_create` messages spawn a bash/PowerShell PTY (`pty.spawn(shell,...)`) in the agent's workDir, and `terminal_input` messages write attacker-supplied bytes directly into that PTY via `term.pty.write(msg.data)` — arbitrary shell command execution under whichever account runs the agent. The same router also handles `read_file` / `write_file` / `delete_files` / `move_files` / `upload_to_dir` (arbitrary filesystem read/write), `git_add` / `git_commit` / `git_push` (repo mutation and push under the installer's git identity), and `restart_agent` / `upgrade_agent` (writes 0o755 shell scripts, runs `npm install <pkg>@latest`, reloads systemd/launchd units, and re-execs the agent). On every start, `ensureYeaftSkills()` additionally `git clone`s or `git pull --ff-only`s https://github.com/yeaft/yeaft-skills.git into `~/.claude/plugins/marketplaces/yeaft-skills-dev/` from an unpinned default branch, chmod 0o755s hook scripts, and flips `settings.enabledPlugins[<yeaft key>] = true` in `~/.claude/settings.json`. Anyone who controls (or compromises) the configured WebSocket server, or MITMs it, obtains interactive shell, filesystem, and process-lifecycle control of the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.272"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "terminal.js",
+              "sha256": "19f34f860687ef903420c50d6f7d1be5f1f4c0370efb350e19767de8c99523f8",
+              "tlsh": "43f141670dba033545b360365a5b2251b362a0333f84fd88bfec4762af9657c91a2bc4"
+            },
+            {
+              "path": "connection/message-router.js",
+              "sha256": "2a7f6e40840e486a01c3deb1c2e49c03bc2b30106e5bbb5b0df357795718bd60",
+              "tlsh": "65b250a3d8bf4d3a492b54a8e3bfb0526f17969751009ee979dcc304df688cd81432e6"
+            },
+            {
+              "path": "index.js",
+              "sha256": "e56f229ee640354ef4ae82174704cbdf4327504191add3adbc2a5a9d7d737c8c",
+              "tlsh": "bd62d75a09ba46354e6323bdb70f10137662a6473204f970b7ad07597f8a42c86b37ef"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "webchat-agent-1.0.272.tgz",
+              "hashes": {
+                "sha1": "436b48e198bdf3898a8d8cb80cdcf0956bb8c210",
+                "sha512_sri": "sha512-5Eiva+cMZhgEHridHzgcWCJ8YkpmJRT8kVFO2qK0bEZkI34jZBEwZvsZ5FfUd+3Ow+92sJLsDL4wLtoVTtMdjA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.272"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016130",
+        "import_time": "2026-08-06T13:08:52.904286141Z",
+        "modified_time": "2026-08-06T12:35:53Z",
+        "sha256": "afcf87a834962e685bef1b57e4337c41245f50f585ad882bad01598d52e630bd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.272"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

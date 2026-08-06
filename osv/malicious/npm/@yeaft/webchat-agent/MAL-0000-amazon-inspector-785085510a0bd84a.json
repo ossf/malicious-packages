@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:51:23Z",
+  "modified": "2026-08-06T12:51:23Z",
+  "summary": "Remote-controlled agent exposes local shell, filesystem, and self-upgrade to configured WebSocket server",
+  "details": "The package runs a long-lived agent process that connects out to a WebSocket server (default ws://localhost:3456, configurable via env/config) and dispatches server-sent messages into privileged local operations on the installer's host. `terminal_create` spawns an interactive shell via node-pty (`process.env.SHELL || 'bash'` on Unix, PowerShell/cmd on Windows); `terminal_input` writes `msg.data` received from the socket directly into the PTY (`term.pty.write(msg.data)` in connection/index.js), giving whoever controls the server arbitrary shell execution. Additional message types perform server-directed file read/write and git push/reset. On receiving an `upgrade_agent` message the agent resolves the latest version of `@yeaft/webchat-agent` from registry.npmjs.org and runs an unpinned `npm install @yeaft/webchat-agent@latest` in a detached script, then restarts itself under systemd / launchd / PM2 — so the same server channel can force the host to fetch and execute any future published version. Access is gated only by a shared AGENT_SECRET; compromise of the configured server or that secret yields full-host RCE on every connected agent. service/linux.js also mutates PATH (~/.local/bin, ~/.npm-global/bin) to make the agent discoverable across shells.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.207"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "terminal.js",
+              "sha256": "01abdefb250f09f4038d02e7614e1c92ba236ae4925be577c15ea60e89462fab",
+              "tlsh": "4ae1316a4dfa033541b3603a565b2541b36290373b85fd88bfec4722afd627c9292bd4"
+            },
+            {
+              "path": "connection/upgrade.js",
+              "sha256": "ed09ea3d3b4207de5197bb71ff1925dbb000737f3b0789aaa95c8c47bebb98db",
+              "tlsh": "59b2096833b301351a75126adb2f90127b2fc19b2a04f590b5fe46d82fde11d417bafa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "webchat-agent-1.0.207.tgz",
+              "hashes": {
+                "sha1": "1bc729fec6e4d191c2cf3013c0ce056197239a1e",
+                "sha512_sri": "sha512-NQvg0lAfpLVY04nETfzUonPTr9GesswG+9wuK4PTQavEi1jxJfL7LUdQEEOAZ83OtOAOPYOB2Q3Pdmvr7vB3NA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.207"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016234",
+        "import_time": "2026-08-06T13:09:04.742393096Z",
+        "modified_time": "2026-08-06T12:51:23Z",
+        "sha256": "785085510a0bd84a564ce12ac5b08e6a1579f65342f048e09bafdefa86d929ac",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.207"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

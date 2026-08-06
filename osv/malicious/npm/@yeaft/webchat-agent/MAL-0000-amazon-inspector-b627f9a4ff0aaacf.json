@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:33:50Z",
+  "modified": "2026-08-06T12:33:50Z",
+  "summary": "Remote-controlled PTY shell and self-upgrade over WebSocket give the configured server full RCE on the installer's host",
+  "details": "The package installs itself as a user-level service (systemd on Linux via service/linux.js, with launchd/PM2 siblings) and, at agent startup, opens a WebSocket to a configured serverUrl (default ws://localhost:3456, overridable via SERVER_URL/config). The WebSocket message router in connection/message-router.js dispatches server-sent frames: `terminal_create` spawns the user's login shell via node-pty (terminal.js: `pty.spawn(shell,...)`) in the agent's workDir, and `terminal_input` writes the server's `msg.data` bytes directly into that PTY, giving whoever controls the server (or an attacker holding AGENT_SECRET / positioned to MITM the WebSocket) an interactive shell as the installing user. An `upgrade_agent` message handled by connection/upgrade.js runs `npm install @yeaft/webchat-agent@latest --registry=https://pkg.yeaft.com/` and spawns a detached script that stops the service, installs the new version, and restarts it, so the remote party can also swap the agent's own code on demand from a publisher-controlled registry. On every startup, index.js additionally git-clones https://github.com/yeaft/yeaft-skills.git from the mutable `main` branch into ~/.claude/plugins/marketplaces/yeaft-skills-dev, chmod 0755 the hook scripts, and writes the plugin as enabled into ~/.claude/settings.json, giving whoever controls that repo the ability to land executable Claude plugin hooks on the next agent boot. The service/linux.js unit also prepends ~/.local/bin and ~/.npm-global/bin to PATH in the service environment. The remote-shell and self-upgrade paths are the package's advertised remote-agent purpose, but by threat-model definition a network-source-to-spawned-PTY dataflow on the installer's host is a backdoor, and the blast radius is full-host code execution as the installing user.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.347"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "terminal.js",
+              "sha256": "19f34f860687ef903420c50d6f7d1be5f1f4c0370efb350e19767de8c99523f8",
+              "tlsh": "43f141670dba033545b360365a5b2251b362a0333f84fd88bfec4762af9657c91a2bc4"
+            },
+            {
+              "path": "connection/upgrade.js",
+              "sha256": "887614b9890f4a8ef94ae5abc26ae8493998ff132917e5d923615dad176ef056",
+              "tlsh": "2492085522b30175153502a9cb6f50133b2ac2a72b04f8a4f6fe47482fde16e5277efa"
+            },
+            {
+              "path": "index.js",
+              "sha256": "706894558b684ca064bfc910ffc9df7d25cd6abdeb6346fc53571231bb5d5bca",
+              "tlsh": "8d72d75a05fa49354e6323adbb1f11137662a6433204f870b7ad0b557f8a42c86b37ef"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "webchat-agent-1.0.347.tgz",
+              "hashes": {
+                "sha1": "4edce10b3e62c0d6ce811bde67c39fe5142a9fcd",
+                "sha512_sri": "sha512-98wIsBvz0P22mi0VHCyAx40E9WHXp9X/WMcfA2DAzGfMKe3uDQx5v56D0gnFgNJAEDG6DYmY+erobFcAnJX6fA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.347"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016116",
+        "import_time": "2026-08-06T13:08:51.040706146Z",
+        "modified_time": "2026-08-06T12:33:50Z",
+        "sha256": "b627f9a4ff0aaacfcd612224f76fe679e9d0a04578519d75516136e7496aad43",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.347"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

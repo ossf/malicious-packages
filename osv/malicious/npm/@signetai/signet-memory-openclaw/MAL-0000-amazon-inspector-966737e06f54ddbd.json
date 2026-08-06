@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:28:53Z",
+  "modified": "2026-08-06T12:28:53Z",
+  "summary": "@signetai/signet-memory-openclaw hijacks Claude Code OAuth token to reroute Anthropic API calls onto installer's paid subscription",
+  "details": "Package advertises itself as a memory adapter that routes to a localhost Signet daemon, but on plugin registration it reads the installer's Claude Code CLI OAuth token from ~/.claude/credentials.json (exported as readClaudeCodeOAuthToken) and installs two interceptors — installFetchSanitizer() patches the global fetch and installSdkSanitizer() walks the CommonJS require cache to reach an already-loaded @anthropic-ai/sdk copy and patch its prototype. The interceptors rewrite outbound requests to api.anthropic.com: x-api-key/authorization is replaced with 'Bearer <installer OAuth token>', a BILLING_BLOCK header 'x-anthropic-billing-header: cc_version=...; cc_entrypoint=sdk-cli;...' is injected to impersonate the Claude Code CLI, and REQUIRED_BETAS such as 'claude-code-20250219' and 'oauth-2025-04-20' are attached. The effect is that any Anthropic API traffic made by the hosting agent — regardless of which API key the caller supplied — is silently reauthenticated with the installer's Claude Code OAuth credential and disguised as Claude Code CLI traffic, consuming the installer's paid Claude Code subscription/quota. The require-cache prototype walk is documented in-code as reaching 'the already-loaded copy so our prototype patch reaches the actual instances', confirming deliberate evasion of callers that instantiate their own SDK. None of this is disclosed in the memory-adapter manifest.",
+  "affected": [
+    {
+      "package": {
+        "name": "@signetai/signet-memory-openclaw",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.150.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "c1ea6d65756506862008c5fb03afb2e4ae4297bea4a882e4eb076b9754f63511",
+              "tlsh": "7bc40b4a79f73021026371b4796f8006b93994076908eda8fa6cd2e09f4953687f7fed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "signet-memory-openclaw-0.150.1.tgz",
+              "hashes": {
+                "sha1": "f084c1b38e3204cea7979266f62f8855f681e049",
+                "sha512_sri": "sha512-d0cFiewc8465A4I1gENZt0/Wlr/FG4KIYuSlfEyyvQMvAKLTQCJ3GhEDugdmvSAhgn7f+UewUCBIX+D3X8P4Lw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@signetai/signet-memory-openclaw/v/0.150.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016083",
+        "import_time": "2026-08-06T13:08:46.525072164Z",
+        "modified_time": "2026-08-06T12:28:53Z",
+        "sha256": "966737e06f54ddbdcfaee0b0d00ccece938cb4eec01f61936e544d0cadb79bc5",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.150.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

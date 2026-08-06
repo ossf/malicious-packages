@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:30:09Z",
+  "modified": "2026-08-06T12:30:09Z",
+  "summary": "llm-interceptor exfiltrates AI assistant transcripts to anonymous Cloudflare tunnel, installs persistent Windows watchdog, and self-updates from a remote-controlled endpoint",
+  "details": "On npm install, postinstall.js unconditionally runs runSetup() which wires the package into the installer's AI tooling and stands up long-lived collection infrastructure before any consent dialog is shown. A baked defaults.json sets egressUrl to a hardcoded ephemeral Cloudflare Quick Tunnel (mime-bind-border-using.trycloudflare.com). CursorTailer, ClaudeTailer, and CodexTailer walk ~/.cursor/projects/*/agent-transcripts and Claude transcript paths, parse user and assistant turns, and POST the prompt/response content to /v1/raw at that tunnel; a Claude SessionEnd hook and a baseline proxy do the same. reportHeartbeat POSTs {deviceId, tenantId, username, hostname, version, consent, proxyUp, egressUrl} to /v1/agents/heartbeat every 15 minutes regardless of consent, and default identifiers ('friend-token', 'friend-laptop') indicate the collection is aimed at the installer. registerAutostart drops a hidden PowerShell watchdog under ~/.llm-interceptor and installs three redundant Windows persistence mechanisms (a Scheduled Task with ONLOGON trigger, 5-minute pulse, and RestartOnFailure; an HKCU\\...\\Run key; and a shortcut in the Startup folder) so the collector respawns across reboots. maybeSelfUpdate() polls the same collector for a bundleVersion field and, when the remote value parses as newer, executes `npm install -g llm-interceptor@<tag>` (tag sourced from env, default 'latest') and restarts the watchdog, giving the operator of the tunnel arbitrary code execution on the installer's host at any later time. Declining the post-install consent prompt does not remove the MCP integrations (~/.cursor/mcp.json, `claude mcp add`, ~/.claude/settings.json SessionEnd hook), autostart entries, or heartbeat.",
+  "affected": [
+    {
+      "package": {
+        "name": "llm-interceptor",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.4.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "defaults.json",
+              "sha256": "72822040173aa9b6fbc15863075238acf3482b1cfc98dc3c5a2d43e68582be5e",
+              "tlsh": "3cd0c267a28541330e304cc1a1a7209b19220f0d06751c2f77f3e1121694b937602358"
+            },
+            {
+              "path": "dist/collect/cursor-tail.js",
+              "sha256": "ccac0e96d382b2b1e2d4c7dde8718eb5c8a89eb0b826551397e8b0addecc0d68",
+              "tlsh": "fbe124691cfb10268697a0ad4b5f20169321e107340dcd9cbb5cc3a4af855789ee5bbc"
+            },
+            {
+              "path": "dist/self-update.js",
+              "sha256": "26972c7fd861e9fcc1a79929d8e012ff76e302b313955caf50b07efe0cba15ff",
+              "tlsh": "0b9173e628fb8e324a73159c431f902253baa34b314dc468fa5dd754bf47528c262add"
+            },
+            {
+              "path": "dist/cli/autostart.js",
+              "sha256": "b8684f960198c549bcc8cc47f757015e6d45cf9b0163887948be46bd2669a442",
+              "tlsh": "c242e747b9f353268bf3d578934bd302dd7a5123a106d958f69c82612fa103dc3a3b9a"
+            },
+            {
+              "path": "dist/heartbeat.js",
+              "sha256": "b246a2722cd03d815a95437741757e6af7f776ad931110f47aa258e71b88693a",
+              "tlsh": "d55174ea5cf7567205bb6819be0f0041ab7263833a49dc58f66d17147fc642ca1f06dc"
+            },
+            {
+              "path": "dist/cli/postinstall.js",
+              "sha256": "e0666e1c364b599593b75628d37cd34ca198866e6568baffa4b533cd64ba9244",
+              "tlsh": "1b81206918bf07324da7016c2a2b00235bb29d171249fc38fa9e87246f56219dea77dd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "llm-interceptor-0.4.1.tgz",
+              "hashes": {
+                "sha1": "17ff1045a11a12d37510a17a9503133306a95149",
+                "sha512_sri": "sha512-Qhmp0yEb158ttcQvPNu7mM5vqsi0ntuCVO10qm7ewtqBT5dEUzOJNH6rh1JXSgocJkexvMf/r4XA2p14qpH0Rw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/llm-interceptor/v/0.4.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016092",
+        "import_time": "2026-08-06T13:08:48.487807204Z",
+        "modified_time": "2026-08-06T12:30:09Z",
+        "sha256": "46cc7f305d00b175d42babae0198faea6951f846bcdeda2e3d6754fd9ceba2d7",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T12:39:52Z",
+  "modified": "2026-08-06T12:39:52Z",
+  "summary": "Remote WebSocket agent grants shell, filesystem, and self-upgrade control over the installer host",
+  "details": "@yeaft/webchat-agent is a self-executing Node agent that, on startup, opens a WebSocket to a configurable server (default ws://localhost:3456, overridable via SERVER_URL/config) and dispatches server-sent messages to handlers that give the remote peer full control of the host. terminal.js handles `terminal_create` by spawning a real login shell via node-pty (bash / process.env.SHELL on Unix, PowerShell/cmd on Windows) and handles `terminal_input` by piping the peer's bytes directly into pty.write, with output streamed back over the socket as `terminal_output` — a network-driven interactive shell running as the invoking user. connection/message-router.js additionally routes messages such as `read_file`, `write_file`, `create_file`, `delete_files`, `move_files`, `copy_files`, `git_add`/`git_reset`/`git_commit`/`git_push`, and `proxy_request`/`proxy_ws_open` to workbench/proxy handlers that perform arbitrary filesystem reads/writes, arbitrary git operations (including pushes to attacker-supplied remotes), and outbound HTTP proxied through the host's network identity. connection/upgrade.js exposes an `upgrade_agent` message that writes a detached upgrade.sh/upgrade.bat running `npm install @yeaft/webchat-agent@latest` (unpinned) and restarts the service via systemd/launchd/pm2, so the remote peer can also force the host to pull and execute whatever the package's next published version contains. Access is gated only by a shared agentSecret; anyone who reaches the socket and presents that value obtains full-host RCE, arbitrary file/git access, HTTP proxying, and a persistent auto-updated foothold. service/linux.js additionally modifies PATH under ~/.local/bin and ~/.npm-global/bin as part of its systemd installer.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.269"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "terminal.js",
+              "sha256": "19f34f860687ef903420c50d6f7d1be5f1f4c0370efb350e19767de8c99523f8",
+              "tlsh": "43f141670dba033545b360365a5b2251b362a0333f84fd88bfec4762af9657c91a2bc4"
+            },
+            {
+              "path": "connection/upgrade.js",
+              "sha256": "1f7f392baf95a464d03ef24e112f20fc836f440cd9554212dc532c3f81a77282",
+              "tlsh": "77a21b6823b301351675026ac72f50127b2fc1ab2a08f994b5fe069c2fde15d41bbbf6"
+            },
+            {
+              "path": "connection/message-router.js",
+              "sha256": "2a7f6e40840e486a01c3deb1c2e49c03bc2b30106e5bbb5b0df357795718bd60",
+              "tlsh": "65b250a3d8bf4d3a492b54a8e3bfb0526f17969751009ee979dcc304df688cd81432e6"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "webchat-agent-1.0.269.tgz",
+              "hashes": {
+                "sha1": "3afd866e831f8b53f03de5749e5641a41e381107",
+                "sha512_sri": "sha512-72EUm+k7dERs4tRccPOwB5VT3bJt6qU/Z/I2ZpPxNiATFCNzE5CETVLv/WhVhAR2+yVG8wotzsS5rP6dO0mDfA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.269"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016156",
+        "import_time": "2026-08-06T13:08:55.817007453Z",
+        "modified_time": "2026-08-06T12:39:52Z",
+        "sha256": "f4ba1e34c7c370d33c6098ec48c82d59878b9d83de797cc6f5fe8c666d542afe",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.269"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
