@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11661",
+  "published": "2026-08-04T15:22:32Z",
+  "modified": "2026-08-05T08:24:51.365573401Z",
+  "aliases": [
+    "GHSA-h7hr-x4ww-6gfm"
+  ],
+  "summary": "Malicious code in @onereach/ui-components-common (npm)",
+  "details": "npm/@onereach/ui-components-common is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4764bd2f6c0606075eb4bf66de2b4f957c5e43e4241760ae012e7c6f0fdd0bf1)\nThe package declares a preinstall hook (`node setup.mjs`) that runs on `npm install`. setup.mjs is obfuscated with obfuscator.io-style `_0xNNNN` identifier mangling and per-function string dictionaries containing tokens like `ldd`, `/etc/os-release`, `Alpine`, `powershell`, `-ExecutionPolicy`, and `Expand-Archive` — indicating cross-platform (Linux/Alpine/Windows) environment detection. It downloads the Bun runtime from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...`, extracts it to a temp directory, chmods it executable, and then `execFileSync`s Bun against a sibling file `math_init.js`. `math_init.js` is a 727 KB single-line Bun-compiled bundle (`// @bun @bun-cjs`) with a scrambled string-array constant pool, a rotation function that permutes the array, and a custom alphabet-remap decoder — its behavior cannot be inspected without executing the decoder. `math_init.js` is not listed in package.json `files` (`[\"dist\",\"src\",\"./shims.d.ts\",\"./tsconfig.components.json\"]`) yet ships in the tarball root. The advertised purpose is a Vue UI-components library, which has no legitimate need to fetch a second language runtime at install time solely to execute a bundled opaque script. The alternate-runtime choice bypasses Node-based install-time scanners; the obfuscation on both the loader and the payload conceals the ultimate behavior. This is the alternate-runtime-dropper pattern executing arbitrary attacker-controlled code on the installer's machine at `npm install` time.\n\n## Source: ghsa-malware (4b3576e31e555b1c6041420892c31f003a73028e5d011e1cb6c01cee020977dd)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@onereach/ui-components-common",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "27.0.2",
+        "27.0.3",
+        "27.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "474a15794f513db49d1a18d1e56c5ab7192057fa3f2a22a90962b61408d0284f",
+              "tlsh": "7c319309d0e44d6322d436f0a86b196aa6b104471a187f2436dd42bd4f8c3df42ff7ae"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ui-components-common-27.0.3.tgz",
+              "hashes": {
+                "sha1": "f75929cf29e91d78436ee7a2e7b11f8d6957a8d4",
+                "sha512_sri": "sha512-WEe0dDHDyZXP0rfhVJnX/ElXLzp2Sza3HQJ7PLtKllsT8Rv5wVsFd+oCgD93IASrtWh5rI9+Geiq/z2rcxoMSQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/ui-components-common"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-h7hr-x4ww-6gfm"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/ui-components-common/v/27.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/ui-components-common/v/27.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/ui-components-common/v/27.0.4"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-h7hr-x4ww-6gfm",
+        "import_time": "2026-08-05T00:10:18.088918368Z",
+        "modified_time": "2026-08-04T16:28:24Z",
+        "sha256": "4b3576e31e555b1c6041420892c31f003a73028e5d011e1cb6c01cee020977dd",
+        "source": "ghsa-malware",
+        "versions": [
+          "27.0.4",
+          "27.0.3",
+          "27.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013693",
+        "import_time": "2026-08-05T07:06:59.720333374Z",
+        "modified_time": "2026-08-05T07:00:48Z",
+        "sha256": "b73f747b1e5604cf307dd99421dd1471069dadcce6bf3ad8a9521c7ab1ed3482",
+        "source": "amazon-inspector",
+        "versions": [
+          "27.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014116",
+        "import_time": "2026-08-05T08:22:29.796530617Z",
+        "modified_time": "2026-08-05T08:03:31Z",
+        "sha256": "4764bd2f6c0606075eb4bf66de2b4f957c5e43e4241760ae012e7c6f0fdd0bf1",
+        "source": "amazon-inspector",
+        "versions": [
+          "27.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013782",
+        "import_time": "2026-08-05T08:22:06.013859658Z",
+        "modified_time": "2026-08-05T07:14:16Z",
+        "sha256": "7c5c8e4463451ce280e0b3415e09d2cf6fe22f3761752004bd366deb3f5df3db",
+        "source": "amazon-inspector",
+        "versions": [
+          "27.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

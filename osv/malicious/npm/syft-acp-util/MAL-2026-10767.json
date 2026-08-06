@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-16T00:00:00Z",
-  "published": "2026-07-16T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10767",
+  "published": "2026-07-16T00:00:00Z",
+  "modified": "2026-08-04T22:32:06.409706873Z",
   "summary": "Malicious code in syft-acp-util (npm)",
-  "details": "The syft-acp-util package was published to the npm registry by user 'ada8877' (maintainer email k3mlol@proton.me) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the 'syft-acp' internal/private package naming convention (an ACP component library) of a target organization, so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical to the earlier 'click2ai' campaign, sharing the same Sentry organization (o4510485815754752) and a related ProtonMail maintainer identity, and differs only in the package name and target DSN. This package's beacon targets Sentry project 4511744089718784.",
+  "details": "The syft-acp-util package was published to the npm registry by user 'ada8877' (maintainer email k3mlol@proton.me) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the 'syft-acp' internal/private package naming convention (an ACP component library) of a target organization, so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node && node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical to the earlier 'click2ai' campaign, sharing the same Sentry organization (o4510485815754752) and a related ProtonMail maintainer identity, and differs only in the package name and target DSN. This package's beacon targets Sentry project 4511744089718784.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ce769ca061fa185c98690c83ff80f642ed7eb2e94e4c6ed4a3f6e042065af40f)\npackage.json declares a preinstall script that runs examples/verify.js. That script calls init() with a hardcoded DEFAULT_DSN pointing at o4510485815754752.ingest.us.sentry.io/4511744089718784 and sendDefaultPii:true, fetches the installer's public IP from Cloudflare's cdn-cgi/trace endpoint, sets it as the Sentry user ip_address, then deliberately triggers a TypeError so an event containing the installer's public IP, hostname, and stack context is uploaded to the author-controlled Sentry project on every `npm install`. Separately, src/index.js exposes an init() whose dsn resolution falls back to the same hardcoded DEFAULT_DSN when no dsn option or SENTRY_DSN env var is supplied, so consumer applications that call the advertised init() without an explicit DSN will route their captured exceptions and default PII to the author's Sentry project.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "syft-acp-util"
+        "name": "syft-acp-util",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -21,14 +21,40 @@
           ]
         }
       ],
+      "versions": [
+        "17.0.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
         ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/index.js",
+              "sha256": "63bcee759e5cda88b1e73044110290e44541f91ae2ba3e00212fa28e53287c5c",
+              "tlsh": "7312959a34f7632301e250f0025f90d97365d67a3379a9e071598be92fc90b8d6b3ec9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "syft-acp-util-17.0.0.tgz",
+              "hashes": {
+                "sha1": "fd6b37ca5003ef58fc428d94baee34c22bd71721",
+                "sha512_sri": "sha512-3yeGWhk2XxtXA7f7FNlCzI5hZctz9F3JXWqAkEAga96K1wZ0MoeDPYdU7yS+gvc22DDQn/K7o3atFCYwVu1qPg=="
+              }
+            }
+          ]
+        },
         "iocs": {
           "domains": [
             "o4510485815754752.ingest.us.sentry.io"
@@ -44,18 +70,40 @@
     {
       "type": "WEB",
       "url": "https://www.npmjs.com/package/syft-acp-util"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "SafeDep",
-      "type": "FINDER",
-      "contact": [
-        "https://safedep.io"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/syft-acp-util/v/17.0.0"
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
-  }
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011275",
+        "import_time": "2026-08-04T22:30:08.493287942Z",
+        "modified_time": "2026-08-04T21:57:52Z",
+        "sha256": "ce769ca061fa185c98690c83ff80f642ed7eb2e94e4c6ed4a3f6e042065af40f",
+        "source": "amazon-inspector",
+        "versions": [
+          "17.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

@@ -1,21 +1,64 @@
 {
-  "modified": "2026-07-20T17:03:40Z",
-  "published": "2026-07-18T14:14:02Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10917",
+  "published": "2026-07-18T14:14:02Z",
+  "modified": "2026-08-05T06:02:58.825406705Z",
   "summary": "Malicious code in tinkoff-cloud-apis-internal (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (30caca1d5e67322644a0eb6cf8098151d975415baab826d14a0bba75117ae95e)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form \u003c0...n\u003e.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (421b85b858849bbf116303f2dc2740180df602dfc162f7ce7fa109e4c39b07ff)\nThe package installs a telemetry.pth file into site-packages via a custom install cmdclass; the.pth line imports _telemetry_init, causing every subsequent Python interpreter startup on the host to spawn a background thread that fetches and executes attacker-controlled binaries. The bootstrap resolves platform-specific payload paths (/pkg/package, /pkg/package-arm64, /pkg/loader_mac, /pkg/package.exe) from a rotating set of anonymous Cloudflare Workers mirrors (package-proxy.cf5oobworker.workers.dev, cf8oobworker, cf12oobworker, cf17-ddb, cf25-6eb.workers.dev) with a DNS-over-UDP TXT covert-channel fallback (tin.dl.well1.site, tina.dl.well1.site, ldr.dl.well1.site, win.dl.well1.site queried against 8.8.8.8/1.1.1.1, base64-reassembled from chunked TXT records). Downloaded bytes are chmod 0o755 and executed on Unix, or launched via ctypes.windll.kernel32.CreateProcess with hand-built STARTUPINFO/PROCESS_INFORMATION structs on Windows, with no signature or hash verification. The module mimics the Sentry Python SDK surface (DSN, Envelope, Hub, Scope, BreadcrumbRecorder, capture_message, capture_exception) and self-describes as a 'Platform analytics SDK' with a DISABLE_TELEMETRY opt-out; the package name tinkoff-cloud-apis-internal and generic 'Platform Engineering' author metadata impersonate internal infrastructure of a well-known Russian financial-services provider.\n\n## Source: kam193 (30caca1d5e67322644a0eb6cf8098151d975415baab826d14a0bba75117ae95e)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form <0...n>.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "tinkoff-cloud-apis-internal"
+        "name": "tinkoff-cloud-apis-internal",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.0.1",
         "8.5.3",
         "8.5.4"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_telemetry_init.py",
+              "sha256": "ddf96bf8164a309c67582378dc63c35c042c37edddd8e20986529696ca60a2d4",
+              "tlsh": "73d19526ec151d76c547e3a6a8a6d1a1e32759132e906078bddcc31c1f8822782ff5bd"
+            },
+            {
+              "path": "_telemetry_transport.py",
+              "sha256": "d93b3cc1b6425b5af5d7d3820010fc1672c6dc25958f7394ebb2827863ad7b2f",
+              "tlsh": "7ab351a6e42a6c62c247d82a4c97f143772f6c53160c64787dfc825c2f59729c2f6ee8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tinkoff_cloud_apis_internal-8.5.4.tar.gz",
+              "hashes": {
+                "blake2b_256": "d511cddc97c18babda826b6a12b4265fd8e63a30e6b1af1ebe8e70d280fa1da9",
+                "md5": "f72b7e4b64f71e18bc68b593a028edeb",
+                "sha256": "fea22336694d6febcb20265f54c79c79fd933832b4d55639d137f8544a4d8c2d"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -42,24 +85,18 @@
     {
       "type": "EVIDENCE",
       "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "ANALYST",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
     },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tinkoff-cloud-apis-internal/8.5.4/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tinkoff-cloud-apis-internal/8.5.3/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tinkoff-cloud-apis-internal/0.0.1/"
     }
   ],
   "database_specific": {
@@ -77,11 +114,11 @@
     },
     "malicious-packages-origins": [
       {
-        "source": "kam193",
-        "sha256": "b21d348a58a9c27b05aa66e8571b6a1ca17a36362868886d68e96d69f0c90aec",
-        "import_time": "2026-07-20T16:06:06.878366037Z",
         "id": "pypi/2026-07-andreiiiiiii_i/tinkoff-cloud-apis-internal",
+        "import_time": "2026-07-20T16:06:06.878366037Z",
         "modified_time": "2026-07-20T14:10:25.659177Z",
+        "sha256": "b21d348a58a9c27b05aa66e8571b6a1ca17a36362868886d68e96d69f0c90aec",
+        "source": "kam193",
         "versions": [
           "0.0.1",
           "8.5.3",
@@ -89,17 +126,72 @@
         ]
       },
       {
-        "source": "kam193",
-        "sha256": "30caca1d5e67322644a0eb6cf8098151d975415baab826d14a0bba75117ae95e",
-        "import_time": "2026-07-20T17:01:49.035929708Z",
         "id": "pypi/2026-07-andreiiiiiii_i/tinkoff-cloud-apis-internal",
+        "import_time": "2026-07-20T17:01:49.035929708Z",
         "modified_time": "2026-07-20T14:10:25.659177Z",
+        "sha256": "30caca1d5e67322644a0eb6cf8098151d975415baab826d14a0bba75117ae95e",
+        "source": "kam193",
         "versions": [
           "0.0.1",
           "8.5.3",
           "8.5.4"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-011029",
+        "import_time": "2026-08-04T21:33:14.383393162Z",
+        "modified_time": "2026-08-04T21:22:04Z",
+        "sha256": "421b85b858849bbf116303f2dc2740180df602dfc162f7ce7fa109e4c39b07ff",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.5.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011028",
+        "import_time": "2026-08-04T21:33:14.356661937Z",
+        "modified_time": "2026-08-04T21:21:54Z",
+        "sha256": "8f8e59152713cec1f0fac7905f685092e0ca5c0034edfe45af488e3455b74934",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.5.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012880",
+        "import_time": "2026-08-05T06:00:15.280379531Z",
+        "modified_time": "2026-08-05T05:02:36Z",
+        "sha256": "466e0e181c85abb2ef68b04bc6d00946dee32ee85d6d3cb722283d504ff16955",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "ANALYST"
+    }
+  ]
 }
