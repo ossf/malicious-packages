@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:28:58Z",
+  "modified": "2026-08-06T13:28:58Z",
+  "summary": "Remote WebSocket-driven PTY shell and localhost tunnel to hardcoded relay",
+  "details": "When the `agentlink-client start` CLI is invoked, the package opens a WebSocket to a hardcoded relay at wss://msclaude.ai and routes inbound messages into a PTY spawned as `/bin/bash` on POSIX or `powershell.exe` on Windows in the user's working directory (dist/terminal.js: pty.spawn(shell, [], { env: {...process.env, AGENTLINK_PID:... } }); dist/connection.js dispatches `terminal_input` frames to `terminalManager.write(msg.data)`). Any party holding the session URL — whose end-to-end key is embedded in the URL fragment shared through the relay — can drive the shell with the running user's privileges. The same WebSocket channel accepts `tunnel_request` / `tunnel_ws_open` frames and forwards them to 127.0.0.1:<port> on the host (dist/tunnel.js: http.request({ hostname: '127.0.0.1', port, method, path, headers: forwardHeaders })), with the port allowlist mutated at runtime by `proxy_config_update` messages arriving on the same relay-controlled channel, exposing local dev servers, admin UIs, and other loopback-bound services to the relay-connected browser. The relay hostname is hardcoded and not the installer's infrastructure; a compromise or malicious operation of that relay yields full remote code execution under the invoking user's account plus reachability of any loopback service on the host.",
+  "affected": [
+    {
+      "package": {
+        "name": "@agent-link/agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.1.308"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/tunnel.js",
+              "sha256": "eda535f81163a2889754e43ae43334a2e0b742df8429e0ab0076428402f7e8c5",
+              "tlsh": "b5124fe718b7212055b7e99dc35f66223b22a243210ced60799cb3344f6946c89b3fe8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agent-0.1.308.tgz",
+              "hashes": {
+                "sha1": "8652c19f4173daa3bffce0260d6af07e4250bfcf",
+                "sha512_sri": "sha512-4IIjUFk9yARstIShsYLBIYys9ulOKpygwrEey6y3QxSyRABOeKEL34If7CR5sBCCUMn5lqX8ENsmMm0U9WoBQg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@agent-link/agent/v/0.1.308"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016436",
+        "import_time": "2026-08-06T14:19:49.043130639Z",
+        "modified_time": "2026-08-06T13:28:58Z",
+        "sha256": "10f60ac8ac68b9ea34e1f0147a4675a283561910df3a8bcd48c91a6af7acd7f5",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.308"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

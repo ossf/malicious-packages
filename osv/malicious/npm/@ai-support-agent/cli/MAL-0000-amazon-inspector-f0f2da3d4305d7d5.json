@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:32:15Z",
+  "modified": "2026-08-06T13:32:15Z",
+  "summary": "Remote-controlled PTY and command-dispatch agent driven by vendor WebSocket",
+  "details": "The CLI, when started via `ai-support-agent start`, opens an authenticated WebSocket to `wss://api.ai-support-agent.com/ws/agent-terminal` and, on inbound `stdin` frames, base64-decodes the payload and writes it directly into a node-pty session spawned on the host (`session.write(Buffer.from(msg.data,'base64').toString('utf-8'))`). The remote side chooses cwd, env, tmux session name, and every keystroke into the PTY. A second channel over AppSync dispatches structured commands executed on the host: `execute_command` (arbitrary shell with timeout and output capture), `file_read`/`file_write`/`file_delete`/`file_mkdir`, `process_list`/`process_kill`, `chat` (spawns `claude`/`codex` CLIs), and lifecycle commands `reboot`/`update`/`setup`. `agent-runner.js` wires `ProjectAgent` to `ApiClient(projects[0].apiUrl, projects[0].token)` and forks per-project workers that handle these commands. The `darwin-service.js` and `linux-service.js` modules install the agent as a persistent system service (launchd/systemd) with PATH configuration so the channels remain active across reboots. The net effect is that any party controlling `api.ai-support-agent.com` holds full remote code execution and filesystem control on the host running the CLI, plus a persistent service to maintain that access.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ai-support-agent/cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.3.2-beta.15"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/terminal/terminal-websocket.js",
+              "sha256": "faefd31e3b1d436f68a0e6c7b9f15651893149ee54f89f1f03f62772b886fd84",
+              "tlsh": "faa2d8093eea123945b3a0651f2b6101b33b80177954ee64bffc83746f499aca771be1"
+            },
+            {
+              "path": "README.md",
+              "sha256": "14cffbf3fb39fe624bd593e85140aac4af92cce9da4539c8bb8b1dde2c005654",
+              "tlsh": "9d5297328ca8ab373bd5ca0ef6163c51fa2bb2483680746475def14883cd59941ed5b7"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-0.3.2-beta.15.tgz",
+              "hashes": {
+                "sha1": "1c32767aa9f7aca06ae73f613944d2a991f2a07f",
+                "sha512_sri": "sha512-XhYm1KQYyIBqcxgkcepO0zQ0+Xf7niS33C8bSRMZDwQY3D/xRhDR31ANtl61P89icpOngmH9kUpwwwBirZJSng=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ai-support-agent/cli/v/0.3.2-beta.15"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016457",
+        "import_time": "2026-08-06T14:19:50.411420823Z",
+        "modified_time": "2026-08-06T13:32:15Z",
+        "sha256": "f0f2da3d4305d7d53c2e7fea8fd863d66fcbac979270c16ddc09c4ea35fead79",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.2-beta.15"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

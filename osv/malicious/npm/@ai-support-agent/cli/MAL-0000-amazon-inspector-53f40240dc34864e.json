@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:34:54Z",
+  "modified": "2026-08-06T13:34:54Z",
+  "summary": "Remote-controlled shell/PTY daemon accepts commands from vendor API endpoint",
+  "details": "When invoked (e.g. `ai-support-agent start`), the CLI runs as a long-lived agent that opens a WebSocket to `wss://api.ai-support-agent.com/ws/agent-terminal` and writes base64-decoded inbound `stdin` messages into a node-pty session on the host, with `resize`/`open`/`resume` messages controlling PTY lifecycle (dist/vscode/vscode-server.js and related terminal modules). Separately, the agent subscribes to AppSync notifications and, on an `AGENT_COMMAND` action, fetches the command payload from the API and dispatches it through an `executeCommand` handler supporting `execute_command` (shell), `file_read`/`file_write`/`file_delete`/`file_rename`/`mkdir`, `process_kill`, `chat` (spawns the Claude Code CLI), and `setup`/`reboot`/`update` lifecycle actions. All command content originates from the remote server; a compromise of the vendor API or theft of an agent token yields interactive shell and arbitrary file/process control on every host running the daemon. The package also installs itself as a persistent OS service (darwin/linux service definitions modifying PATH) so the agent runs unattended after setup. This is the documented purpose of the product, but the network-sourced shell/PTY sink is functionally a backdoor by construction: whoever controls the configured API server controls the installer's host.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ai-support-agent/cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.4.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/terminal/terminal-websocket.js",
+              "sha256": "faefd31e3b1d436f68a0e6c7b9f15651893149ee54f89f1f03f62772b886fd84",
+              "tlsh": "faa2d8093eea123945b3a0651f2b6101b33b80177954ee64bffc83746f499aca771be1"
+            },
+            {
+              "path": "dist/agent-transport.js",
+              "sha256": "07aef75bbe87d1796bbe77a73fda416183ef720aa863e9a17ffb3ef5bc30c9e7",
+              "tlsh": "c882b66f56bf14360aa70461a71b57413a86ab47f706a87072edef04bf8424ce319b63"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-0.4.0.tgz",
+              "hashes": {
+                "sha1": "e93bd1c5fde73aa33ec5e6ed96b55fbf814ee3d1",
+                "sha512_sri": "sha512-Xpj6QiGoXQjBnASsX+GZI6lzZaRtEv3VyYQ/pKxHWbj3sY37RhY9vccmxTYwVw0JGfIsNrR7HS3BC9mA9BX3CA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ai-support-agent/cli/v/0.4.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016474",
+        "import_time": "2026-08-06T14:19:51.272520352Z",
+        "modified_time": "2026-08-06T13:34:54Z",
+        "sha256": "53f40240dc34864e9971de5522fa856b98c0fdbaf3ea7c7e4da5a95a99363549",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

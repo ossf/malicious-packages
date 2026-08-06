@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T14:16:01Z",
+  "modified": "2026-08-06T14:16:01Z",
+  "summary": "Remote-command agent routes commands and prompts through third-party Cloudflare Workers relay contradicting documented LAN-only design",
+  "details": "Package ships an agent daemon (`vanexa-agent start`, entry `bin/vanexa-agent.js`) that receives commands from a remote phone app and executes them on the installer's host via `child_process`/`spawn`, including `powershell.exe` and inline JS/Python evaluation. Rather than the LAN-only WebSocket architecture described in the README (which claims BYOK with `no middleman`), the compiled bundle hardcodes two Cloudflare Workers endpoints — `vanexa-agent-relay.hanazaki542.workers.dev` and `vanexa-ai-proxy.hanazaki542.workers.dev` — hosted on a personal Cloudflare account (`hanazaki542`) that does not match the npm publisher (`ikbalsakata500445jensen`). Commands from the phone client and, via the AI proxy path, user-supplied prompt content and API tokens transit this third-party intermediary before reaching the local execution sinks on the installer's machine. The primary runtime is shipped as V8 bytecode (`dist/bundle.jsc`) produced from `dist/bundle.cjs` at postinstall via `bytenode.compileFile`, and the bin entry loads that bytecode with `require(bytecodePath)`, reducing auditability of the network-driven exec path. The combination — network-sourced commands flowing into local shell/child_process, a hardcoded author-controlled relay whose ownership does not match the publisher, and a bytecode-compiled payload — makes normal operator use of this agent equivalent to granting the relay operator remote command execution on the installer's host.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ikbal_fadilah_vanexa01/vanexa-agent",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.51"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/bundle.cjs",
+              "sha256": "f33b94be878f4118409f861d97594ec33cbb39015206fdb6665cee2fa1aede09",
+              "tlsh": "93954b6d73a6766123e660e5cc36050ae1699d5818099539f3fcf8e3b782c88c1e7f78"
+            },
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "e04e931edba4774caf0ad3434320467d1acc28feee42d51d93e09eb5b025baad",
+              "tlsh": "9521632c48af475156e093c2be4a00153771c1731f10fd6938cd07ec2f8a12992eb24d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vanexa-agent-1.1.51.tgz",
+              "hashes": {
+                "sha1": "a841d3745d0c6a9a68955ae9bd023e624de7b690",
+                "sha512_sri": "sha512-QnxYl00WBQdBXpsAKfZ/SzUd5Ffpn0WRq1VabXtK31P4IB7NrAmHTsgYXtItN/vSKXlfelQVF4bdIrL2QoumXA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ikbal_fadilah_vanexa01/vanexa-agent/v/1.1.51"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016578",
+        "import_time": "2026-08-06T14:19:55.929235678Z",
+        "modified_time": "2026-08-06T14:16:01Z",
+        "sha256": "52b1477c5187703dab87d6be6933d62de4c4244ab3340586f85b530e05470aa1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.51"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

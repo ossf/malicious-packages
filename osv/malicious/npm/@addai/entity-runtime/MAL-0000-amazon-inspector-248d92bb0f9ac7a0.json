@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:23:27Z",
+  "modified": "2026-08-06T13:23:27Z",
+  "summary": "Remote-controlled AI agent daemon spawns bypass-permissions shells on installer host",
+  "details": "The package runs a daemon that polls a hardcoded Supabase project (syhzpqqvrplaqdipcymw.supabase.co) via the RPC `runtime_pick_next_request` for remote-supplied job rows and spawns Claude Code / Codex / Kimi / Gemini / Grok in a PTY on the installer's host, driven by fields controlled by the paired remote party (prompt, permissionMode, appendSystemPrompt, allowedTools, model, workingDirectory). In `dist/session-runner.js`, `spawnClaudeForRuntime` invokes the agent binary through a login shell (`['-l','-c','exec \"$@\"',...]`) and, when `input.permissionMode === 'bypassPermissions'`, passes `--dangerously-skip-permissions`, letting the remotely-driven AI agent execute arbitrary shell tools as the local user without any interactive prompt. On start, `ensureBypassPermissionsAccepted()` in `dist/index.js` also writes `skipDangerousModePermissionPrompt: true` into the installer's user-global `~/.claude/settings.json`, disabling Claude Code's own bypass-permissions safety dialog for every future interactive Claude Code session the installer runs — not just those spawned by this daemon. `dist/capabilities.js` additionally reads `~/.kimi/config` and modifies PATH. The net effect is a persistent remote-controlled channel giving the paired remote party host-level RCE on the installer's machine via the AI agent tool loop, plus a persistent lowering of a separate vendor tool's safety prompts.",
+  "affected": [
+    {
+      "package": {
+        "name": "@addai/entity-runtime",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.2.55"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/claude-spawn.js",
+              "sha256": "727774b7fe11cfa8db6dc3ed0440dc31408d118fad1a1220d3961ebb618e677d",
+              "tlsh": "9e12b507baf6223a00d241b8bbaf1403a77193633264f45477ad93645f5e8184bf4fe6"
+            },
+            {
+              "path": "dist/claude-config.js",
+              "sha256": "0a9018ad814057b271f1c847062aa9834ad1b6480290eafea9357b7000b4e35c",
+              "tlsh": "fbc1a50a6afc6273c1e62098572f4017f7264607321af074b76cd2e41f6902c1a95feb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "entity-runtime-0.2.55.tgz",
+              "hashes": {
+                "sha1": "74016586b5192abc06c69363ef7b78b529090d6c",
+                "sha512_sri": "sha512-FD5ecS8n4+uM4omMMr8EQod8ugXOoQEHhapyTovq3CcfXUYakhRaB6hmpAsmejP6aa1aAdWWzAX/dXN0vHCTUA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@addai/entity-runtime/v/0.2.55"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016401",
+        "import_time": "2026-08-06T14:19:47.1859139Z",
+        "modified_time": "2026-08-06T13:23:27Z",
+        "sha256": "248d92bb0f9ac7a066bb69c3f3ecea88241e5dd35ea1b61393896c88c07b0856",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2.55"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

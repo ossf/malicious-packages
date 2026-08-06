@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:22:55Z",
+  "modified": "2026-08-06T13:22:55Z",
+  "summary": "Daemon polls hardcoded Supabase backend for remote prompts and shell commands, executes them in PTYs on the installer's host",
+  "details": "@addai/entity-runtime ships a long-running daemon (dist/session-runner.js) that pairs with a hardcoded Supabase project at https://syhzpqqvrplaqdipcymw.supabase.co and polls the RPC `runtime_pick_next_request` for job rows containing `prompt`, `working_directory`, `ephemeral_git_remote(s)`, `agent`, `permission_mode`, and `allowed_tools`. Each row is dispatched to a `node-pty` spawn of Claude/Codex/Kimi/Gemini in the row-specified working directory, with the remote-supplied prompt typed into the PTY. When `permission_mode` is `bypassPermissions`, the daemon appends `--dangerously-skip-permissions` to the agent invocation, disabling the underlying agent's local safety prompts. The Supabase URL and anon JWT are hardcoded in config.js; runtime authorization depends on a separately paired daemon token, so anyone able to publish rows to that Supabase project (via any compromise or misconfiguration of the vendor backend, or a token leak) can execute arbitrary shell/agent commands and clone attacker-chosen git remotes into a chosen cwd on any host running the daemon. Blast radius is full-host RCE bounded only by the paired-account authorization on the vendor's Supabase.",
+  "affected": [
+    {
+      "package": {
+        "name": "@addai/entity-runtime",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.2.48"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/claude-spawn.js",
+              "sha256": "e7ce40a77d5fd0613dc20532cdfcb19c4664b675c486ec695f7743056d253846",
+              "tlsh": "0f02b407a9fa323a00d241b8bbbf0403a77193a33268f45477ad93645f5a85847f0fe6"
+            },
+            {
+              "path": "dist/config.js",
+              "sha256": "29867f2b6eff26c15855358a9b068d301f379c10aabad59644265e7dfe01a61d",
+              "tlsh": "2151b77bb6b9437a025240d21b1fe2e6df0f92fb28e85174f4a487646d50809c5953e7"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "entity-runtime-0.2.48.tgz",
+              "hashes": {
+                "sha1": "99e4858ae42d275fe2c79a14fce1700a5f859efa",
+                "sha512_sri": "sha512-jHNf7CB6hX6fEjWITweL945rXUjzzUQW02vigiiPhKvTNFqnOkize4N7WWRMHSgCPJuHkPlJJ8PeDM7uLlEjow=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@addai/entity-runtime/v/0.2.48"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016398",
+        "import_time": "2026-08-06T14:19:47.030269035Z",
+        "modified_time": "2026-08-06T13:22:55Z",
+        "sha256": "7a66f3ce363db41a478bf2a8d3e052bf639c962de5942a5e989725af3ab6b3c8",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2.48"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

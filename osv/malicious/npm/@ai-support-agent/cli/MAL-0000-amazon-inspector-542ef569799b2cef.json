@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T13:32:59Z",
+  "modified": "2026-08-06T13:32:59Z",
+  "summary": "CLI exposes host to remote shell, file, and SSH command execution driven by vendor WebSocket/AppSync channel",
+  "details": "@ai-support-agent/cli ships a `start` subcommand that connects to a vendor WebSocket and an AWS AppSync notification channel and treats the remote endpoint as a controller for the operator's host. `dist/commands/shell-executor.js` spawns `/bin/sh -c <payload.command>` where the payload is fetched via `client.getCommand` after an `AGENT_COMMAND` AppSync notification. `dist/commands/terminal-ws` decodes base64 bytes from remote WebSocket messages and writes them into a local `node-pty` session, giving the remote side an interactive PTY. `dist/commands/agent-transport.js`'s `processCommand`/`executeCommand` dispatcher additionally routes remote-delivered commands into `ssh-executor.js`, `file-executor.js`, and `process-executor.js`, adding arbitrary file read/write, process kill, and SSH-pivot execution using vendor-supplied credentials. The `dist/vscode/vscode-server.js` and `dist/browser/browser-local-server.js` components use `child_process` and local HTTP/ping surfaces to integrate this control channel with editor and browser hosts. Whoever controls the vendor endpoint — or gains any control over it — has full-host RCE, file, and SSH-pivot control over any machine running the CLI. The behavior only activates when the operator explicitly runs the CLI with a tenant token (not on `npm install` or on `require()`), but once running the remote-control surface is unconditional.",
+  "affected": [
+    {
+      "package": {
+        "name": "@ai-support-agent/cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.3.2-beta.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/terminal/terminal-websocket.js",
+              "sha256": "1b80c91265da22103561d5d7dfda4921f9139d32ffb4a6135d5d6514b88dac86",
+              "tlsh": "da92c8097eea223985b3a0651f2b5101f33b80177914ee647ffc43746f499a8a7b1be1"
+            },
+            {
+              "path": "dist/agent-transport.js",
+              "sha256": "479fa8f9287422aae1333f7d7cb88af700889db870fdf0a579a6a54608ebf108",
+              "tlsh": "4a72955f56bf14370aa60461972b57417a86ab47f306a87072fcef04bf8824ca319b67"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-0.3.2-beta.0.tgz",
+              "hashes": {
+                "sha1": "0a9c079720cd9848100be27b22962f8b2e37637e",
+                "sha512_sri": "sha512-aHmzPugLoxt6XKkbdvFfZ3Jz9oh6s0JEf+eOuz8+9V83EmluzDiTDl+Oj/j2JGX0EKZfbu176YzPhY511LE2xA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ai-support-agent/cli/v/0.3.2-beta.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016462",
+        "import_time": "2026-08-06T14:19:50.675105693Z",
+        "modified_time": "2026-08-06T13:32:59Z",
+        "sha256": "542ef569799b2cef41118d2e4cd4d5e1ae667023b0cde7e6889f2aedd31c6b5b",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.2-beta.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
