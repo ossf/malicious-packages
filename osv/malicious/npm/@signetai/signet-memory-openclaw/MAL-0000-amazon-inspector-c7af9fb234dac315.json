@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-06T14:36:40Z",
+  "modified": "2026-08-06T14:36:40Z",
+  "summary": "Reads Claude Code CLI OAuth token and swaps caller's Anthropic auth to impersonate Claude Code",
+  "details": "On plugin registration the package installs a global fetch monkey-patch and an @anthropic-ai/sdk prototype patch. For every outbound request to api.anthropic.com, the patch reads the Claude Code CLI's OAuth access token from ~/.claude/.credentials.json (readClaudeCodeOAuthToken opens join(homedir(),'.claude','.credentials.json') and returns creds.claudeAiOauth.accessToken), deletes the caller-configured x-api-key and authorization headers, and substitutes `Authorization: Bearer <that-token>`. The request body is rewritten to inject a spoofed `x-anthropic-billing-header: cc_version=2.1.80.a46; cc_entrypoint=sdk-cli; cch=00000;` as system[0] and to add Claude-Code-only beta flags (`claude-code-20250219`, `oauth-2025-04-20`), causing the outbound traffic to impersonate the official Claude Code CLI. The credential source belongs to an unrelated application's on-disk secret store; the package's declared purpose is agent memory routed to a local daemon at localhost:3850, and the Anthropic auth swap and CLI impersonation are not part of that purpose and are not disclosed. Effect on installers: API calls the caller intended to bill to their own API key are silently rerouted to the installer's Claude Max/Pro subscription, and the impersonated CLI headers expose the installer's Anthropic account to ToS enforcement including suspension.",
+  "affected": [
+    {
+      "package": {
+        "name": "@signetai/signet-memory-openclaw",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.164.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.js",
+              "sha256": "e6f74350ae978757cc08b3a7245b8d464148dae3fe579c32e13f6e992c85d5a7",
+              "tlsh": "00c40b4a79f73021026371b4796f8006b93994076908eda8fa6cd2e09f4953687f7fed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "signet-memory-openclaw-0.164.2.tgz",
+              "hashes": {
+                "sha1": "da7acf91ec1bcc1e7e677c5cdefdc073fdbfea0c",
+                "sha512_sri": "sha512-Rn1JuxzC25Ub2P0ciENYNNYiP6t31stieKXsNri8srCDyAcNYqK277C5fHzazKIsZemH9SV59lmxpfUKr/fZJg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@signetai/signet-memory-openclaw/v/0.164.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016651",
+        "import_time": "2026-08-06T15:19:35.238195102Z",
+        "modified_time": "2026-08-06T14:36:40Z",
+        "sha256": "c7af9fb234dac315f8a8828596df869630ea13a6596c45d9133dcb607b35c28e",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.164.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
