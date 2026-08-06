@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-10767",
   "published": "2026-07-16T00:00:00Z",
-  "modified": "2026-08-04T22:32:06.409706873Z",
+  "modified": "2026-08-06T14:21:56.303168437Z",
   "summary": "Malicious code in syft-acp-util (npm)",
   "details": "The syft-acp-util package was published to the npm registry by user 'ada8877' (maintainer email k3mlol@proton.me) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the 'syft-acp' internal/private package naming convention (an ACP component library) of a target organization, so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node && node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical to the earlier 'click2ai' campaign, sharing the same Sentry organization (o4510485815754752) and a related ProtonMail maintainer identity, and differs only in the package name and target DSN. This package's beacon targets Sentry project 4511744089718784.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ce769ca061fa185c98690c83ff80f642ed7eb2e94e4c6ed4a3f6e042065af40f)\npackage.json declares a preinstall script that runs examples/verify.js. That script calls init() with a hardcoded DEFAULT_DSN pointing at o4510485815754752.ingest.us.sentry.io/4511744089718784 and sendDefaultPii:true, fetches the installer's public IP from Cloudflare's cdn-cgi/trace endpoint, sets it as the Sentry user ip_address, then deliberately triggers a TypeError so an event containing the installer's public IP, hostname, and stack context is uploaded to the author-controlled Sentry project on every `npm install`. Separately, src/index.js exposes an init() whose dsn resolution falls back to the same hardcoded DEFAULT_DSN when no dsn option or SENTRY_DSN env var is supplied, so consumer applications that call the advertised init() without an explicit DSN will route their captured exceptions and default PII to the author's Sentry project.\n",
   "affected": [
@@ -22,10 +22,16 @@
         }
       ],
       "versions": [
-        "17.0.0"
+        "17.0.0",
+        "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -74,6 +80,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/syft-acp-util/v/17.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/syft-acp-util/v/1.0.0"
     }
   ],
   "database_specific": {
@@ -86,6 +96,16 @@
         "source": "amazon-inspector",
         "versions": [
           "17.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016548",
+        "import_time": "2026-08-06T14:19:54.929921164Z",
+        "modified_time": "2026-08-06T13:56:49Z",
+        "sha256": "790f0a604f028e9959147a8068d6c1cbcb33d49788ba0285541eb029d2cde008",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
         ]
       }
     ]

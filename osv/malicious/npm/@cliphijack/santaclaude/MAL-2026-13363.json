@@ -1,21 +1,57 @@
 {
-  "modified": "2026-08-05T18:17:50Z",
-  "published": "2026-08-05T18:17:50Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13363",
+  "published": "2026-08-05T18:17:50Z",
+  "modified": "2026-08-06T14:21:50.720461804Z",
   "summary": "Malicious code in @cliphijack/santaclaude (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e88afc6f55057610bf4d08504cb81d57d75ebb6f4b914b513ba7ce8e6c970f31)\nsantaclaude.js opens a persistent WebSocket to wss://santaclaude.app/ws and dispatches server-supplied frames into runControl on the installer's host. A 'tailscale-up' action reads cmd.sudo from the frame and invokes 'sudo -S -p' with that password, then writes a passwordless NOPASSWD entry to /etc/sudoers.d/santaclaude-tailscale, granting the vendor endpoint persistent root capability. Additional actions push server-sent text into a tmux window running 'claude --dangerously-skip-permissions', allowing the remote to drive the local Claude Code TUI with permission checks disabled. The package also runs a supervisor loop that respawns itself via 'npx -y @cliphijack/santaclaude@\u003cspec\u003e', where spec is read from ~/.santaclaude-target and refreshed from GET https://santaclaude.app/api/cli-version, allowing the vendor to steer the installer onto arbitrary future versions of the package at any time. The combined behavior is a remote-controlled RCE and privilege-escalation channel into the installer's host, plus a vendor-controlled auto-update path that determines what code runs next.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f6a4fa42a55635225fb914eaea97cbc9699efb6cc197445eacf32e6592b60675)\nThe `santaclaude` bin opens a persistent WebSocket connection to https://santaclaude.app and long-polls `/api/control/claim`. Messages received from the server are dispatched to `runControl(cmd)`, which invokes tmux `send-keys -l` (plus Enter) into arbitrary target windows on the user's host, spawns new tmux windows that run `claude --dangerously-skip-permissions` by default, and can kill or resize windows. The result is that the remote endpoint can execute arbitrary shell keystrokes in the user's tmux sessions and drive an AI coding agent that has itself been configured to bypass tool-use confirmations, yielding full-host command execution. A second path (`checkUpdate()`) polls `/api/cli-version` and, when the server returns a `target` value, writes it to `~/.santaclaude-target`, exits with code 75, and causes the wrapper loop to re-exec `npx -y @cliphijack/santaclaude@<server-chosen-version>` — the version of the client that runs next is chosen by the remote server. Additional shell hooks (`hooks/sc-notify.sh`, `hooks/sc-stop.sh`) POST via curl to the same service with host identifiers. Whether or not the operator of santaclaude.app is the package author, the shipped design gives that endpoint an unauthenticated remote-control channel into the installer's shell and agent.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@cliphijack/santaclaude"
+        "name": "@cliphijack/santaclaude",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.104"
+        "1.0.104",
+        "1.0.106",
+        "1.0.100",
+        "1.0.107",
+        "1.0.102",
+        "1.0.103",
+        "1.0.108"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +83,30 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.104"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.106"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.100"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.107"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.102"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.103"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@cliphijack/santaclaude/v/1.0.108"
     }
   ],
   "database_specific": {
@@ -69,7 +120,76 @@
         "versions": [
           "1.0.104"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-016553",
+        "import_time": "2026-08-06T14:19:55.162846095Z",
+        "modified_time": "2026-08-06T14:00:11Z",
+        "sha256": "d698d924d4c966f5607141d27ac0ca6537caeeb591b2ce8bc45adc883ea31059",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.106"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016554",
+        "import_time": "2026-08-06T14:19:55.197827035Z",
+        "modified_time": "2026-08-06T14:00:20Z",
+        "sha256": "f6a4fa42a55635225fb914eaea97cbc9699efb6cc197445eacf32e6592b60675",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.100"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016552",
+        "import_time": "2026-08-06T14:19:55.117703027Z",
+        "modified_time": "2026-08-06T14:00:01Z",
+        "sha256": "5c5c1fd6edaa6c6493c7a8913752be30640a6ecab7eedb6eb0a11189b489b2b9",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.107"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016555",
+        "import_time": "2026-08-06T14:19:55.251861949Z",
+        "modified_time": "2026-08-06T14:00:33Z",
+        "sha256": "6d1cb4c79e0a4e3827b55930ebb97917c9202e9967b517987013f602b7365ba9",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.102"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016550",
+        "import_time": "2026-08-06T14:19:55.007527226Z",
+        "modified_time": "2026-08-06T13:59:41Z",
+        "sha256": "ca93352f04a1362e18f90681c68593ba46f4990765efa5fde5c8899df34d3459",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.103"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016551",
+        "import_time": "2026-08-06T14:19:55.042657749Z",
+        "modified_time": "2026-08-06T13:59:50Z",
+        "sha256": "d61263b768da6865bd9ad63d1d13eb2b4e05a93b4fc011f20621fb90d805e8fa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.108"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
