@@ -1,24 +1,42 @@
 {
-  "modified": "2026-08-05T19:07:45Z",
-  "published": "2026-08-05T18:29:35Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13370",
+  "published": "2026-08-05T18:29:35Z",
+  "modified": "2026-08-06T13:11:09.616554246Z",
   "summary": "Malicious code in llm-interceptor (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8082d7a19c6789008fa42546002af8cdfdb03ad15197441dcc1fdd6afe0fdd32)\nOn `npm install`, the package's postinstall runs `dist/cli/setup.js`, which registers an MCP server entry in `~/.cursor/mcp.json`, invokes `claude mcp add llm-interceptor`, installs a Claude Code `SessionEnd` hook in `~/.claude/settings.json`, and on Windows creates a per-user `schtasks /Create /SC ONLOGON` task that auto-starts the proxy at every logon. `defaults.json` hardcodes an egress destination `https://processes-books-delight-pre.trycloudflare.com/v1/tasks` (an anonymous Cloudflare Quick Tunnel) with a static bearer `friend-token` and tenant label `friend-laptop`. Once running, `ClaudeTailer`, `CodexTailer`, and `CursorTailer` recursively read `~/.claude/projects/**/*.jsonl` and `~/.codex/sessions/**/*.jsonl` — the installer's saved AI-coding conversations including prompts, generated code, and assistant answers — and POST them to that hardcoded endpoint via `EgressQueue`; `hook.js` `shipRawTurns` additionally POSTs raw user+assistant text to `/v1/turns` for server-side synthesis. `self-update.js` polls `/v1/config` on the same endpoint and, when the returned `bundleVersion` differs from the installed one, spawns a detached `npm install -g llm-interceptor@\u003ctag\u003e` — giving the tunnel operator a live push channel to swap the installed package to any tag on demand. Redaction of the exfiltrated transcripts is best-effort regex only, and configuration artifacts persist regardless of the consent prompt outcome.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (46cc7f305d00b175d42babae0198faea6951f846bcdeda2e3d6754fd9ceba2d7)\nOn npm install, postinstall.js unconditionally runs runSetup() which wires the package into the installer's AI tooling and stands up long-lived collection infrastructure before any consent dialog is shown. A baked defaults.json sets egressUrl to a hardcoded ephemeral Cloudflare Quick Tunnel (mime-bind-border-using.trycloudflare.com). CursorTailer, ClaudeTailer, and CodexTailer walk ~/.cursor/projects/*/agent-transcripts and Claude transcript paths, parse user and assistant turns, and POST the prompt/response content to /v1/raw at that tunnel; a Claude SessionEnd hook and a baseline proxy do the same. reportHeartbeat POSTs {deviceId, tenantId, username, hostname, version, consent, proxyUp, egressUrl} to /v1/agents/heartbeat every 15 minutes regardless of consent, and default identifiers ('friend-token', 'friend-laptop') indicate the collection is aimed at the installer. registerAutostart drops a hidden PowerShell watchdog under ~/.llm-interceptor and installs three redundant Windows persistence mechanisms (a Scheduled Task with ONLOGON trigger, 5-minute pulse, and RestartOnFailure; an HKCU\\...\\Run key; and a shortcut in the Startup folder) so the collector respawns across reboots. maybeSelfUpdate() polls the same collector for a bundleVersion field and, when the remote value parses as newer, executes `npm install -g llm-interceptor@<tag>` (tag sourced from env, default 'latest') and restarts the watchdog, giving the operator of the tunnel arbitrary code execution on the installer's host at any later time. Declining the post-install consent prompt does not remove the MCP integrations (~/.cursor/mcp.json, `claude mcp add`, ~/.claude/settings.json SessionEnd hook), autostart entries, or heartbeat.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "llm-interceptor"
+        "name": "llm-interceptor",
+        "ecosystem": "npm"
       },
       "versions": [
         "0.3.0",
         "0.3.1",
         "0.3.4",
-        "0.3.3"
+        "0.3.3",
+        "0.4.0",
+        "0.4.1",
+        "0.3.8"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -97,15 +115,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/llm-interceptor/v/0.3.3"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/llm-interceptor/v/0.4.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/llm-interceptor/v/0.4.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/llm-interceptor/v/0.3.8"
     }
   ],
   "database_specific": {
@@ -149,7 +170,46 @@
         "versions": [
           "0.3.3"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-016094",
+        "import_time": "2026-08-06T13:08:48.689244917Z",
+        "modified_time": "2026-08-06T12:30:28Z",
+        "sha256": "09851a3bc35c923b501ed144d384cdfe005fd6c0502a30d1c5a132a9517b7fa6",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016092",
+        "import_time": "2026-08-06T13:08:48.487807204Z",
+        "modified_time": "2026-08-06T12:30:09Z",
+        "sha256": "46cc7f305d00b175d42babae0198faea6951f846bcdeda2e3d6754fd9ceba2d7",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016091",
+        "import_time": "2026-08-06T13:08:48.338701062Z",
+        "modified_time": "2026-08-06T12:30:02Z",
+        "sha256": "bf461deee8097a09a6fd780c8ddd469024e6499a4440fd8346c56fcc678abf13",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.8"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

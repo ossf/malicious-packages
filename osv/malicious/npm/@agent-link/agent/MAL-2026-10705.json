@@ -1,21 +1,27 @@
 {
-  "modified": "2026-07-16T18:41:12Z",
-  "published": "2026-07-16T18:41:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10705",
+  "published": "2026-07-16T18:41:12Z",
+  "modified": "2026-08-06T13:11:06.103468601Z",
   "summary": "Malicious code in @agent-link/agent (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b3a178213d6597e731a313e9ec92f5b2afb8b955e3205500fa67ff6dc1ca989c)\nThe package spawns a local PTY (/bin/bash on POSIX, powershell.exe on Windows) via node-pty and wires it to a WebSocket connection that defaults to wss://msclaude.ai. In dist/connection.js, frames of type 'terminal_input' received from the relay are forwarded to terminalManager.write(data), which calls ptyProcess.write(data) in dist/terminal.js. Any party holding the session URL — including the relay operator at msclaude.ai — can send terminal_input frames that execute as arbitrary shell commands on the installer's host with the user's privileges. dist/service.js also prepends ~/.local/bin and ~/.npm-global/bin to PATH, and dist/tunnel.js issues outbound http.request calls alongside ping-based reachability checks.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d482435ee79a0a7d632e1059787cde8173eab9c01ce75854e786a4da31d125db)\nWhen the user runs the `agentlink-client start` CLI, the package opens a WebSocket to a relay server (default `wss://msclaude.ai`) and exposes two remote-driven capabilities on the installer's host. First, incoming relay messages are dispatched to a terminal manager that spawns a real PTY via `pty.spawn('/bin/bash')` or `pty.spawn('powershell.exe')` and writes network-supplied bytes into the shell, streaming shell output back over the WebSocket (see `terminal.js` `ptyProcess = pty.spawn(shell,...)` / `write(data) { ptyProcess?.write(data); }` and `connection.js` wiring `createTerminalManager(send)` to the WebSocket handler). Second, `tunnel.js` forwards inbound relay messages to `http.request({ hostname: '127.0.0.1', port,... })`, proxying arbitrary requests to services listening on the installer's loopback interface and base64-encoding the responses back to the relay. The port allow-list at `~/.agentlink/tools/proxy-config.json` is itself mutable from the network side via a `proxy_config_update` message (`handleProxyConfigUpdate`), though ports must additionally be marked enabled by the operator. A party who reaches the relay or holds the session URL can execute arbitrary shell commands on the installer's machine and pivot to any localhost service exposed through the tunnel. The remote-development capability is the package's advertised purpose, but the mechanism is a live remote-shell and localhost-tunnel channel to a hardcoded third-party endpoint.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@agent-link/agent"
+        "name": "@agent-link/agent",
+        "ecosystem": "npm"
       },
       "versions": [
-        "0.1.269"
+        "0.1.269",
+        "0.1.325"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +53,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@agent-link/agent/v/0.1.269"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@agent-link/agent/v/0.1.325"
     }
   ],
   "database_specific": {
@@ -69,7 +70,26 @@
         "versions": [
           "0.1.269"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-016050",
+        "import_time": "2026-08-06T13:08:42.374770949Z",
+        "modified_time": "2026-08-06T12:24:19Z",
+        "sha256": "d482435ee79a0a7d632e1059787cde8173eab9c01ce75854e786a4da31d125db",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.325"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

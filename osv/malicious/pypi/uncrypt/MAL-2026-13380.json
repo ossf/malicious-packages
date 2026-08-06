@@ -1,21 +1,67 @@
 {
-  "modified": "2026-08-05T22:07:27Z",
-  "published": "2026-08-05T22:07:27Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13380",
+  "published": "2026-08-05T22:07:27Z",
+  "modified": "2026-08-06T13:11:13.192938791Z",
   "summary": "Malicious code in uncrypt (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (f391bbd6f86e9108de1a5de9d0131658bf5a637b768f724f536976e125d5b0c2)\nDuring import, the package silently starts the embedded executable which existence is not disclosed to the user. Dynamic analysis suggests the code harvests browser data and communicates with an external domain.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-uncrypt\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (61fc5c3033efaa35a8eae7781fa0fc4b300f753c5b0d56e07adcc0557e9b648f)\nThe package presents itself as a trivial Python XOR/hex helper, but `uncrypt/__init__.py` executes `_run_security_launcher()` at module top level, which platform-branches to Windows or Linux and silently `subprocess.Popen`s a bundled native binary from `uncrypt/assets/` (`uncrypt.exe` on Windows, `uncrypt` ELF on Linux) with `close_fds=True` and, on Windows, `CREATE_NO_WINDOW`; exceptions from the launch are swallowed. The shipped Linux ELF (SHA256 d1fbef0e9364f498b25ecd3e5c6adc34ac5d643ec3180753efc48379f4cc5a1f) dynamically links libcurl (`curl_easy_init/setopt/perform`) and libX11 (`XOpenDisplay`, `XGetImage`) and imports host/user/network enumeration primitives (`gethostname`, `getifaddrs`, `getpwuid`, `getuid`, `getenv`, `statvfs`) together with C++ `filesystem::directory_iterator`, `read_symlink`, and `copy_file`. None of this is required by the advertised XOR/hex functionality in `core.py`; the combination of screen capture, host and interface enumeration, filesystem walking, and libcurl-based network I/O, invoked covertly on every `import uncrypt`, matches a host stealer/spyware payload wrapped behind a benign Python facade.\n\n## Source: kam193 (f391bbd6f86e9108de1a5de9d0131658bf5a637b768f724f536976e125d5b0c2)\nDuring import, the package silently starts the embedded executable which existence is not disclosed to the user. Dynamic analysis suggests the code harvests browser data and communicates with an external domain.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-uncrypt\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - obfuscation\n\n\n - exfiltration-browser-data\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "uncrypt"
+        "name": "uncrypt",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1.0",
         "0.1.1",
         "0.1.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "uncrypt/__init__.py",
+              "sha256": "f618c3b3a79897899fb2d102433a1415153e16c1c0c6ce85d3f83a842041847f",
+              "tlsh": "0731d64ced34781a53a28f559938c683159d7d136942e57cb5df83003f8d58f987a4dc"
+            },
+            {
+              "path": "uncrypt/assets/uncrypt",
+              "sha256": "d1fbef0e9364f498b25ecd3e5c6adc34ac5d643ec3180753efc48379f4cc5a1f",
+              "tlsh": "5a643a47e5530cb8c4deda741687a427e4317c6882386a6f6bc8de312b12b38e73d716"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "uncrypt-0.1.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "a98ad1739e72cb32c681b158b34bef9bcea888de20aca416944fda60e9d04e6f",
+                "md5": "01c06551457cc56adbff161ddb43b806",
+                "sha256": "951f57240b1d5f0cecfbb28fb4eb8e097177673912d689a5d676b9d482219740"
+              }
+            },
+            {
+              "filename": "uncrypt-0.1.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "e6dc9daede964385bf410219d793cb00092b454d6e8e86259c9ea0f78cec7fc6",
+                "md5": "35ba0380e19edaee8eaddd1b9373dd9a",
+                "sha256": "a80f0323d405a16f61c0a2a293165da561a16610f20f7224b4d2ae0980eaccaa"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -34,16 +80,14 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/uncrypt"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/uncrypt/0.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/uncrypt/0.1.0/"
     }
   ],
   "database_specific": {
@@ -64,7 +108,44 @@
           "0.1.1",
           "0.1.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-015996",
+        "import_time": "2026-08-06T13:08:36.036559675Z",
+        "modified_time": "2026-08-06T12:16:19Z",
+        "sha256": "61fc5c3033efaa35a8eae7781fa0fc4b300f753c5b0d56e07adcc0557e9b648f",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-015999",
+        "import_time": "2026-08-06T13:08:36.417835911Z",
+        "modified_time": "2026-08-06T12:16:42Z",
+        "sha256": "70b0ea5ba5e9df2d4255efaf5ea21d5e2f9aae9ddd9067695d8a06afc1d5ee20",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }

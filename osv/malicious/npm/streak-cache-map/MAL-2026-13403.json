@@ -1,0 +1,80 @@
+{
+  "modified": "2026-08-06T12:30:40Z",
+  "published": "2026-08-06T12:30:40Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13403",
+  "summary": "Malicious code in streak-cache-map (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (59c390b9379b870b37038a8ad8f52b179d2fce3aa38fc15e5d1c9dc3f0ece135)\nThe package advertises itself as a dependency-free calendar-day bucketing / streak math library, but its main module dist/index.mjs contains a top-level IIFE that chmod +x's a shipped Linux ELF at dist/internal/calc-cache.bin, verifies its sha256, and spawns it detached via child_process.spawn on any require()/import of the package. The binary is a remote-shell implant (strings include \"REDSHELL\", \"SECURE_BEACON\", \"RedShell commands:\", \"/redshell socks start \u003cport\u003e\") that connects to a hardcoded C2 at 217.60.77.63 and awaits operator commands. Once running, the implant exposes commands to (a) download and execute additional ELF binaries and raw shellcode fetched from http://\u003cc2\u003e/Others/... and http://\u003cc2\u003e/SC/... into /tmp or via memfd_create (syscall 319), (b) harvest SSH keys, credentials, database files, clipboard contents, and arbitrary files, exfiltrating them over a chunked HTTP POST channel to /api/extract-receive with BIGEXTRACT_START/END framing, and (c) install systemd user-unit persistence by writing ~/.config/systemd/user/svc-update.service (Description=\"System Update Service\", Restart=always, ExecStart=/proc/self/exe) and running systemctl --user daemon-reload \u0026\u0026 enable --now. The ELF is labeled a \"Native math accelerator\" in the loader, but contains no math functionality — its entire string table is red-team beacon / SOCKS5 proxy / port-forward / shellcode-injection tooling. Importing this package hands remote command execution, credential access, and reboot-persistent access on the installer's host to the C2 operator.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "streak-cache-map"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.mjs",
+              "sha256": "0b9aef51d5ec55d69fb52ada41377ced07c6cff0cad09174390f49081d439b14",
+              "tlsh": "de413466afbd672897fc07828e38b193252d84431f96dd95e94e473861c0b58d3c096a"
+            },
+            {
+              "path": "dist/internal/calc-cache.bin",
+              "sha256": "4537b1189ce419f1a595cf47216c03f80e9170ce80dad8d9227a1e52f9cb3466",
+              "tlsh": "83531a2bbdc28e3fc084d53087dfd42269b5705aaa33712f26111f293d59a69473f72a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "streak-cache-map-1.0.0.tgz",
+              "hashes": {
+                "sha1": "0bdcabcccc7693e75ab236e7cfce8ebf8868f2e0",
+                "sha512_sri": "sha512-3rRIeBp7DdYYx0ZwMSNczqqOiB4f+EDJQqMaITytLRCS2deZUibwq5a9t4ItddU/ovmRnICcOXICSAFj6kpWVA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/streak-cache-map/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016095",
+        "import_time": "2026-08-06T13:08:48.801419775Z",
+        "modified_time": "2026-08-06T12:30:40Z",
+        "sha256": "59c390b9379b870b37038a8ad8f52b179d2fce3aa38fc15e5d1c9dc3f0ece135",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
