@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11798",
+  "published": "2026-08-04T15:56:19Z",
+  "modified": "2026-08-05T07:08:50.579817307Z",
+  "aliases": [
+    "GHSA-qgqm-m8rp-5q25"
+  ],
+  "summary": "Malicious code in @qlik/nebula-table-utils (npm)",
+  "details": "npm/@qlik/nebula-table-utils is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6f5bdccf43a62196bac30970b3efec35b375f04eaf5e8b576681c26d53a8cf2d)\nThe package.json declares a preinstall hook `node setup.mjs`. setup.mjs downloads the Bun runtime from github.com/oven-sh/bun releases, extracts it to a temporary directory, marks it executable, and then invokes it via `execFileSync` against a sibling file `math_init.js` — a 727KB single-line JavaScript file obfuscated with a rotating string-array cipher (WV8StW/n7gIxM) and hex-mangled identifiers. setup.mjs itself is obfuscator.io-style hex-mangled. The package's declared purpose is a React table-utility library (lib/index.js); math_init.js and setup.mjs are top-level and unrelated to that library surface. The preinstall dropper executes automatically on `npm install` and runs an opaque, obfuscated payload under an alternate JavaScript runtime, evading Node-based inspection. Prior legitimate releases in the @qlik scope do not ship these files or declare a preinstall script, consistent with a compromised or impersonating publish that grafted an install-time loader onto an otherwise-normal library tree.\n\n## Source: ghsa-malware (51f6db7a435cf759af98fe9b9312308008309d9ceed04135deede5197f31c8c3)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@qlik/nebula-table-utils",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.6.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "a66eb022f46bdf6d3004474eac536cd634e6491c57af8835cfbb7ee3a6e0a091",
+              "tlsh": "7e51aa15c7684de30dc806e8a0352292806d468b1d13fc9c33f2916d8f5e7ef71b6a2d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "nebula-table-utils-2.6.9.tgz",
+              "hashes": {
+                "sha1": "484ced069ad03abb121c29b247afe339c98d5c6a",
+                "sha512_sri": "sha512-PT6cacCDKPkZwZ+CYQfIyhcARPJejz506heh86i/LmcPfIiSmiclz57+8emzX02JoW43sfM6pOJHX6JgcR2XmA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/nebula-table-utils"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-qgqm-m8rp-5q25"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/nebula-table-utils/v/2.6.9"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-qgqm-m8rp-5q25",
+        "import_time": "2026-08-05T00:10:18.200362823Z",
+        "modified_time": "2026-08-04T15:56:19Z",
+        "sha256": "51f6db7a435cf759af98fe9b9312308008309d9ceed04135deede5197f31c8c3",
+        "source": "ghsa-malware",
+        "versions": [
+          "2.6.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013685",
+        "import_time": "2026-08-05T07:06:59.371494827Z",
+        "modified_time": "2026-08-05T06:59:36Z",
+        "sha256": "6f5bdccf43a62196bac30970b3efec35b375f04eaf5e8b576681c26d53a8cf2d",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.6.9"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

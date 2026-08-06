@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-28T07:58:22Z",
-  "published": "2026-07-09T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10028",
+  "published": "2026-07-09T00:00:00Z",
+  "modified": "2026-08-05T06:02:51.852840014Z",
   "summary": "Malicious code in @wagni_bot/metemask-sdk (npm)",
-  "details": "The npm package `@wagni_bot/metemask-sdk` is a supply-chain credential stealer disguised as a **MetaMask (misspelled 'metemask')** SDK. It is one member of a coordinated campaign of 25 crypto/web3 typosquat packages published under the single npm scope `@wagni_bot` on 2026-07-09.\n\nEach package declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host and user (`os.hostname()`, `os.userInfo()`, `os.platform()`), walks the user's home directory (`readdirSync`/`readFileSync`) and reads high-value secrets — SSH private keys (`~/.ssh/id_rsa`), cryptocurrency wallet files, and `.env` files (API keys, tokens, seed phrases). It then JSON-encodes the collected data and exfiltrates it to a hardcoded Telegram bot via the Telegram Bot API `sendMessage` endpoint (https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage). All error paths are swallowed so the install appears normal.\n\ncodelake Research proved the packages belong to one campaign deterministically: the payload file is byte-identical across all 25 packages at each published version (version-lockstep), and every package exfiltrates to the same Telegram bot token — a single automated actor. Detected and classified independently from the live npm feed on 2026-07-09; at the time of reporting the packages were still live on npm and none of the 25 were present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cb3278c8cf58eb66a4a0b385f9e36f59b1ad9bca93baf2c6de84e40d550d73ba)\n`@wagni_bot/metemask-sdk` is a single-character typosquat of the legitimate `metamask-sdk` package (\"metemask\" vs \"metamask\"). `index.js` is an empty stub (`module.exports = {}`); the package has no functional library code. Its sole effect is a `postinstall` hook (`postinstall.js`) that runs at `npm install` time and performs credential theft against the installer:\n\n- Recursively walks `process.cwd()`, `os.homedir()`, and `~/.ssh`, reading files whose names match `.env`, `.cred`, `.pem`, `.key`, `mnemonic`, `seed`, `wallet`, `secret`, `id_rsa`, `id_ed25519`. This captures SSH private keys, crypto-wallet seed phrases/keystores, and dotenv secrets.\n- Enumerates `process.env` and filters keys containing `PRIVATE`, `SECRET`, `TOKEN`, `API_KEY`, `PASSWORD`, `MNEMONIC`, `SEED`, `WALLET`, `AWS`, capturing their values.\n- Collects host identifiers via `os.hostname()`, `os.userInfo()`, platform, and cwd.\n- POSTs the harvested content (chunked) to `https://api.telegram.org/bot\u003chardcoded-token\u003e/sendMessage` targeting attacker chat_id `892359416`.\n\nThis satisfies the attacker-benefit gate (bulk exfiltration of installer-owned SSH keys, wallet seeds, and credential env vars to an attacker-controlled Telegram channel) and auto-executes on default `npm install` via the `postinstall` lifecycle. The typosquat name targets developers intending to install MetaMask's SDK.\n",
+  "details": "The npm package `@wagni_bot/metemask-sdk` is a supply-chain credential stealer disguised as a **MetaMask (misspelled 'metemask')** SDK. It is one member of a coordinated campaign of 25 crypto/web3 typosquat packages published under the single npm scope `@wagni_bot` on 2026-07-09.\n\nEach package declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host and user (`os.hostname()`, `os.userInfo()`, `os.platform()`), walks the user's home directory (`readdirSync`/`readFileSync`) and reads high-value secrets — SSH private keys (`~/.ssh/id_rsa`), cryptocurrency wallet files, and `.env` files (API keys, tokens, seed phrases). It then JSON-encodes the collected data and exfiltrates it to a hardcoded Telegram bot via the Telegram Bot API `sendMessage` endpoint (https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage). All error paths are swallowed so the install appears normal.\n\ncodelake Research proved the packages belong to one campaign deterministically: the payload file is byte-identical across all 25 packages at each published version (version-lockstep), and every package exfiltrates to the same Telegram bot token — a single automated actor. Detected and classified independently from the live npm feed on 2026-07-09; at the time of reporting the packages were still live on npm and none of the 25 were present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cb3278c8cf58eb66a4a0b385f9e36f59b1ad9bca93baf2c6de84e40d550d73ba)\n`@wagni_bot/metemask-sdk` is a single-character typosquat of the legitimate `metamask-sdk` package (\"metemask\" vs \"metamask\"). `index.js` is an empty stub (`module.exports = {}`); the package has no functional library code. Its sole effect is a `postinstall` hook (`postinstall.js`) that runs at `npm install` time and performs credential theft against the installer:\n\n- Recursively walks `process.cwd()`, `os.homedir()`, and `~/.ssh`, reading files whose names match `.env`, `.cred`, `.pem`, `.key`, `mnemonic`, `seed`, `wallet`, `secret`, `id_rsa`, `id_ed25519`. This captures SSH private keys, crypto-wallet seed phrases/keystores, and dotenv secrets.\n- Enumerates `process.env` and filters keys containing `PRIVATE`, `SECRET`, `TOKEN`, `API_KEY`, `PASSWORD`, `MNEMONIC`, `SEED`, `WALLET`, `AWS`, capturing their values.\n- Collects host identifiers via `os.hostname()`, `os.userInfo()`, platform, and cwd.\n- POSTs the harvested content (chunked) to `https://api.telegram.org/bot<hardcoded-token>/sendMessage` targeting attacker chat_id `892359416`.\n\nThis satisfies the attacker-benefit gate (bulk exfiltration of installer-owned SSH keys, wallet seeds, and credential env vars to an attacker-controlled Telegram channel) and auto-executes on default `npm install` via the `postinstall` lifecycle. The typosquat name targets developers intending to install MetaMask's SDK.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@wagni_bot/metemask-sdk"
+        "name": "@wagni_bot/metemask-sdk",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.1.5",
@@ -23,6 +23,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -112,22 +117,10 @@
     {
       "type": "ADVISORY",
       "url": "https://research.codelake.dev/advisories/clr-2026-3000-wagni-metemask-sdk"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
     },
     {
-      "name": "codelake Research",
-      "type": "FINDER",
-      "contact": [
-        "https://research.codelake.dev/advisories/clr-2026-3000-wagni-metemask-sdk"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@wagni_bot/metemask-sdk/v/1.1.2"
     }
   ],
   "database_specific": {
@@ -141,75 +134,101 @@
     },
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "0970ff01982fabbf6fe10079a50e89ec0847d3edad5f643b17dbecd70321ae10",
-        "import_time": "2026-07-09T16:20:38.872477506Z",
         "id": "IN-MAL-2026-009078",
+        "import_time": "2026-07-09T16:20:38.872477506Z",
         "modified_time": "2026-07-09T15:24:51Z",
+        "sha256": "0970ff01982fabbf6fe10079a50e89ec0847d3edad5f643b17dbecd70321ae10",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.5"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "c734022f34f31176059d3fc16b4750750d6b5f1dbef1662bbd151d29c38d657c",
-        "import_time": "2026-07-09T16:20:35.228102701Z",
         "id": "IN-MAL-2026-009039",
+        "import_time": "2026-07-09T16:20:35.228102701Z",
         "modified_time": "2026-07-09T15:18:36Z",
+        "sha256": "c734022f34f31176059d3fc16b4750750d6b5f1dbef1662bbd151d29c38d657c",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.1"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "cb3278c8cf58eb66a4a0b385f9e36f59b1ad9bca93baf2c6de84e40d550d73ba",
-        "import_time": "2026-07-09T16:20:33.409512406Z",
         "id": "IN-MAL-2026-009024",
+        "import_time": "2026-07-09T16:20:33.409512406Z",
         "modified_time": "2026-07-09T15:16:12Z",
+        "sha256": "cb3278c8cf58eb66a4a0b385f9e36f59b1ad9bca93baf2c6de84e40d550d73ba",
+        "source": "amazon-inspector",
         "versions": [
           "1.0.0"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "f02eb354580eaed07d89cb6015f54f3e97d47891a69f8e420bbd42203e4ea3c3",
-        "import_time": "2026-07-09T16:20:32.881751701Z",
         "id": "IN-MAL-2026-009016",
+        "import_time": "2026-07-09T16:20:32.881751701Z",
         "modified_time": "2026-07-09T15:14:53Z",
+        "sha256": "f02eb354580eaed07d89cb6015f54f3e97d47891a69f8e420bbd42203e4ea3c3",
+        "source": "amazon-inspector",
         "versions": [
           "1.2.0"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "2f1619378d1a86aeccaa082b41b58319d72fae1a8dea02d8f5ba60e1284338c2",
-        "import_time": "2026-07-09T16:20:36.688386301Z",
         "id": "IN-MAL-2026-009053",
+        "import_time": "2026-07-09T16:20:36.688386301Z",
         "modified_time": "2026-07-09T15:20:49Z",
+        "sha256": "2f1619378d1a86aeccaa082b41b58319d72fae1a8dea02d8f5ba60e1284338c2",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.4"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "6772612dd322662e3f6daab985ad1378d380dc8d0e59e10406ebab4de146aa1d",
-        "import_time": "2026-07-09T16:20:34.07294792Z",
         "id": "IN-MAL-2026-009033",
+        "import_time": "2026-07-09T16:20:34.07294792Z",
         "modified_time": "2026-07-09T15:17:39Z",
+        "sha256": "6772612dd322662e3f6daab985ad1378d380dc8d0e59e10406ebab4de146aa1d",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.3"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "b33bbb63be9b14ef0ee3f0041fc8225e2d272c24a1651ffa1b27a8f4876e1975",
-        "import_time": "2026-07-09T16:20:38.027527392Z",
         "id": "IN-MAL-2026-009069",
+        "import_time": "2026-07-09T16:20:38.027527392Z",
         "modified_time": "2026-07-09T15:23:25Z",
+        "sha256": "b33bbb63be9b14ef0ee3f0041fc8225e2d272c24a1651ffa1b27a8f4876e1975",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-012952",
+        "import_time": "2026-08-05T06:00:23.675751458Z",
+        "modified_time": "2026-08-05T05:12:40Z",
+        "sha256": "7593ac939532972b2db1618d0ff347cf68b286638ffc8dcfd1bde3f5f9855e49",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3000-wagni-metemask-sdk"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

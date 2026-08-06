@@ -15,6 +15,7 @@
 package config
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -112,4 +113,19 @@ func ReadYAML(r io.Reader) (*Config, error) {
 		return nil, fmt.Errorf("failed decoding config yaml: %w", err)
 	}
 	return c, nil
+}
+
+type contextKeyType struct{}
+
+var contextKey contextKeyType
+
+func (c *Config) NewContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, contextKey, c)
+}
+
+func FromContext(ctx context.Context) *Config {
+	if c, ok := ctx.Value(contextKey).(*Config); ok {
+		return c
+	}
+	return nil
 }

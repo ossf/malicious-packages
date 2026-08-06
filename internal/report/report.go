@@ -33,6 +33,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/ossf/malicious-packages/internal/gitname"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
@@ -286,6 +287,24 @@ func (r *Report) FilterSelf() {
 // IsWithdrawn returns whether or not the report has been withdrawn.
 func (r *Report) IsWithdrawn() bool {
 	return r.raw.Withdrawn != nil && r.raw.Withdrawn.IsValid() && !r.raw.Withdrawn.AsTime().IsZero()
+}
+
+// Withdraw marks the report as withdrawn at the given time.
+// It also updates the modified time to the same time.
+func (r *Report) Withdraw(t time.Time) {
+	r.raw.Withdrawn = timestamppb.New(t)
+	r.raw.Modified = timestamppb.New(t)
+}
+
+// Unwithdraw marks the report as unwithdrawn.
+func (r *Report) Unwithdraw() {
+	r.raw.Withdrawn = nil
+	r.UpdateModified()
+}
+
+// UpdateModified sets the modified time to the current time.
+func (r *Report) UpdateModified() {
+	r.raw.Modified = timestamppb.New(time.Now().UTC())
 }
 
 // Published returns the published time for the report.
