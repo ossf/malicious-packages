@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-07T00:00:13Z",
+  "modified": "2026-08-07T00:00:13Z",
+  "summary": "wormgpt-cli ships a full-featured C2 implant with postinstall persistence, credential theft, and reverse shell",
+  "details": "Package declares a postinstall hook (`node -e \"require('./src/postinstall.js')\"`) that reads a baked `.implant.env` and spawns `src/implant/loader.js` as a detached, stdio-ignored, windowsHide child with `WORMGPT_DAEMON=1`, launching a persistent implant daemon on any `npm install`. `bin/victim.js` — mapped to the `wormgpt-cli`, `wormgpt`, `deepholegpt`, and `wgpt` commands — additionally calls `require('.../src/implant/loader.js').boot({silent:true})` before any CLI subcommand runs, providing a redundant activation path that survives `--ignore-scripts`. `src/protocol.js` hardcodes the C2 base `http://13.60.13.215:7771` with a rotating C2 pool and a DNS TXT dead-drop update channel (`WORMGPT_DNS_DEADROP`), wraps traffic in AES-256-GCM+HMAC envelopes, and dispatches opcodes including OP_SHELL, OP_PYEXEC, OP_PTY_START/STOP, OP_DOWNLOAD, OP_UPLOAD, OP_UPDATE, and OP_PERSIST — a full reverse-shell/PTY channel executing remote-operator commands on the installer host. `src/implant/loader.js` runs a watchdog that respawns the implant up to 50 times per session and persists state under `<tmpdir>/.sc_cache/`. `src/implant/stealers/clipboard.js` polls the clipboard every 2 seconds via `powershell Get-Clipboard`/`pbpaste`/`xclip` and matches content against regexes for RSA/EC/OpenSSH private keys, BIP-39 12–24 word mnemonics, Discord tokens, AWS AKIA keys, GitHub `gh[opusr]_` tokens, JWTs, credit card numbers, BTC/ETH addresses, and password/api-key fields, flushing hits to the C2. Additional modules implement keylogging (PowerShell `GetAsyncKeyState` with an AMSI bypass loaded via `-EncodedCommand`), screenshot capture, browser credential extraction, filesystem loot collection, LAN lateral scanning, privilege-escalation checks, and anti-forensics/evidence wiping — all beaconed through the encrypted envelope channel to `http://13.60.13.215:7771`.",
+  "affected": [
+    {
+      "package": {
+        "name": "wormgpt-cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "8bfc2c93f8f6c8f7a47b061f74f62559eab8d40b557704ce4d0c1d2c2e3a0448",
+              "tlsh": "e5219e65ce69dd2339d41ad0bc2a0109a2206403de44bc3d33b6471c8f4e67f60f9b6c"
+            },
+            {
+              "path": "src/protocol.js",
+              "sha256": "181d064b60d4607595b474417dbb0c22c964543148b506f58bbfec628e7c0ff5",
+              "tlsh": "0512e7683ce5642401a2e8d956bb909bf61260033415e1b0ff4d4790afee93ca23fadd"
+            },
+            {
+              "path": "src/implant/stealers/clipboard.js",
+              "sha256": "eb13c4e8c61c4a10dd91b589ef65714751556a5e02224e279b04e467f28869e1",
+              "tlsh": "146177c28ffbf4b08aa2dcb54803085ae97510724556da95765e449cef0fa3091fcf89"
+            },
+            {
+              "path": "src/implant/implant.js",
+              "sha256": "f43c7c2eb90ce5ce4e1985e940b8da0dede7eda683f1d4f83237e37e0bfe4b65",
+              "tlsh": "ec82958a7efb64344162f16216270019faaad0271709cdf47eac5794ff6433481feae9"
+            },
+            {
+              "path": "src/implant/loader.js",
+              "sha256": "55ee3e2547678cc5d22c9d2c46ed97792b436c5fa823cc72c3173f63d4be95a9",
+              "tlsh": "2ca152922eea272c5179d1b29a0f5033eae7d2631641f5a0f58dc0543f5123c46bf9de"
+            },
+            {
+              "path": "bin/victim.js",
+              "sha256": "3cc654feaba9c629b673ce7360d7de47263cd80a375377239d8554d209aba2dc",
+              "tlsh": "0d512f32defb56207276f09d8e0f191a2953b2077244da9039fc72559fcdaf04aa26b4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "wormgpt-cli-1.0.1.tgz",
+              "hashes": {
+                "sha1": "2eb543fcc8f4b010db6f51a446dd416cdecb4eb2",
+                "sha512_sri": "sha512-DMRuq/wGnBcQh99I0rSrj0IqEXUP7G3Fm/W8nro3v3X2J9DOEabTXXxFrSFZGJtVjwjXYj00VNMJKm8kwl8QXw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/wormgpt-cli/v/1.0.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-016868",
+        "import_time": "2026-08-07T00:59:23.467747845Z",
+        "modified_time": "2026-08-07T00:00:13Z",
+        "sha256": "8b03000b5f21aa6e61de1a5bf5149d0059372d0663ffda561d2ea8df59062630",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
