@@ -1,0 +1,80 @@
+{
+  "modified": "2026-08-07T18:16:00Z",
+  "published": "2026-08-07T18:16:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13628",
+  "summary": "Malicious code in streak-map-kit (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2790159028b31b656c9e704c3a0e4b1a5d114042e0d92c601d133057f760b537)\nstreak-map-kit is advertised as a dependency-free calendar-day/streak math library but ships a Linux ELF at dist/internal/calc-mapping.bin framed as a 'native math accelerator'. The main entry's top-level async IIFE chmods the ELF to 0755 and spawns it as a detached child process whenever the module is imported, so any consumer that requires the package on Linux drops the binary as a running process. The ELF (internally named REDSHELL) beacons to a hardcoded C2 at http://217.60.77.63 and implements a full remote-shell command surface: /sysinfo, /ps, /env, /ls, /cat, /download, /upload, /ssh_keys, /creds, /dbfind, /clipboard, /kill, /spawn, /adduser, /enableuser, /sessions, with unmatched input executed via /bin/sh or /bin/bash. It exfiltrates arbitrary filesystem paths and harvested SSH keys and stored credentials via chunked POSTs to http://217.60.77.63/api/extract-receive (BIGEXTRACT_START, Loot_%s_%s_%s tagging). Second-stage payloads are fetched from http://217.60.77.63/Others/ and http://217.60.77.63/SC/ over plaintext HTTP with no verification, staged in /tmp, and executed; a memfd_create-based fileless-exec path via a python3 syscall(319) trampoline and /dlopen and /stage commands provide arbitrary further code loading. Persistence is installed by writing ~/.config/systemd/user/svc-update.service (Description='System Update Service', ExecStart=/proc/self/exe, Restart=always) and enabling it via systemctl --user, with cron, bashrc, and xdg autostart alternatives. The beacon also offers a SOCKS5 proxy, arbitrary TCP port-forwarding, and an RC2TUN tunneling protocol that spawns /bin/bash, turning the host into a pivot into reachable internal networks. Cover-story framing (comments describing a 'high-performance streak computation engine', a hardcoded sha256 'integrity verification — critical security gate', a 'Native accelerator loaded and verified' log line, and a README claim that the module performs no side effects on import) is inconsistent with the shipped ELF and the import-time spawn.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "streak-map-kit"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.mjs",
+              "sha256": "1c5b97ad2212de1046eab1ef66ff5e7e21ca93c918f54f3369c06c64271f2d82",
+              "tlsh": "47413466affd532897fc07828e38b193252d84431f96d895e94e473861c4b58d3c0979"
+            },
+            {
+              "path": "dist/internal/calc-mapping.bin",
+              "sha256": "4537b1189ce419f1a595cf47216c03f80e9170ce80dad8d9227a1e52f9cb3466",
+              "tlsh": "83531a2bbdc28e3fc084d53087dfd42269b5705aaa33712f26111f293d59a69473f72a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "streak-map-kit-1.0.0.tgz",
+              "hashes": {
+                "sha1": "a5b063fb04f16d7a045273bf54de8b8c46b2aa54",
+                "sha512_sri": "sha512-ILAkvf6Czw8fI+slG9u8wIrkjeNtEa9E7gdnqiK69Kb1bsqkgkE33AmrMx8glL5NGqzHEXnP3tbcYQFYt5UMQQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/streak-map-kit/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017137",
+        "import_time": "2026-08-07T18:23:03.491510638Z",
+        "modified_time": "2026-08-07T18:16:00Z",
+        "sha256": "2790159028b31b656c9e704c3a0e4b1a5d114042e0d92c601d133057f760b537",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
