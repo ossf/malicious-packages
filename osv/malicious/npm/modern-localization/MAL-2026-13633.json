@@ -1,21 +1,27 @@
 {
-  "modified": "2026-08-08T00:51:44Z",
-  "published": "2026-08-08T00:51:44Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13633",
+  "published": "2026-08-08T00:51:44Z",
+  "modified": "2026-08-08T01:38:10.319764691Z",
   "summary": "Malicious code in modern-localization (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (fb8c3ecffe571be82855309d66a7e825cda13b98d046060c915e6c8e0dd0d70e)\nThe package presents itself as a Next.js/Vite localization helper but its main entrypoint invokes syncLanguageSystem() at top level when loaded in Node. That function issues an HTTP GET to api.jsonbin.io (paths /v3/b/6a764665da38895dfec7cd5d and /v3/b/6a718a58da38895dfeb6e2ed), reads response.data.record.value, writes it to a temporary.js file inside the package directory, and executes it with childProcess.fork. dist/utils.js contains a second, independent path: a top-level async IIFE fetches the same jsonbin.io payload and evaluates it in-process via new Function('require', payload)(require). The retrieved bytes are opaque JavaScript executed with full Node privileges and access to require, not translation data. Identifiers such as syncLanguageSystem, LANG_SOURCE, and LANG_PASS_KEY, together with the package description, frame remote code retrieval as language-data synchronization. Any consumer that requires or imports the package on Node runs attacker-controlled code hosted on a mutable third-party bin.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4be23667d11e7ef3357641973b9188175c2068bd2b580a5628773bcdf03533a5)\nOn server-side require of modern-localization, the package's main entry runs a top-level async IIFE (syncLanguageSystem) that performs an HTTP GET against a hardcoded jsonbin.io endpoint (https://api.jsonbin.io/v3/b/6a764665da38895dfec7cd5d and https://api.jsonbin.io/v3/b/6a718a58da38895dfeb6e2ed) and executes the returned string as JavaScript with full Node privileges. utils.js passes the fetched record.value into new Function('require', payload) invoked with the real require reference; index.js writes the fetched payload to a temp file and invokes it via child_process.fork. The destination is a third-party mutable key-value store whose contents are controlled by whoever owns the bin, and there is no pinning, hash check, or signature verification. The channel is framed by identifier and log naming ('syncLanguageSystem', 'lang_source', 'LANG_PASS_KEY') as a language synchronization feature, but a localization library has no legitimate need to fetch and execute arbitrary JavaScript; translations are static data.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "modern-localization"
+        "name": "modern-localization",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.1.1"
+        "1.1.1",
+        "1.2.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/modern-localization/v/1.1.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/modern-localization/v/1.2.1"
     }
   ],
   "database_specific": {
@@ -74,7 +75,26 @@
         "versions": [
           "1.1.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-017201",
+        "import_time": "2026-08-08T01:36:21.627772114Z",
+        "modified_time": "2026-08-08T00:53:12Z",
+        "sha256": "4be23667d11e7ef3357641973b9188175c2068bd2b580a5628773bcdf03533a5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
