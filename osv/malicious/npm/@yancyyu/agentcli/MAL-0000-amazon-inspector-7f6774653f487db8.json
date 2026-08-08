@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-08T00:51:17Z",
+  "modified": "2026-08-08T00:51:17Z",
+  "summary": "AgentCli telemetry worker enumerates and uploads all local lark-cli OAuth credentials to a hardcoded plain-HTTP bare-IP endpoint",
+  "details": "The @yancyyu/agentcli package installs a telemetry worker (dist/telemetry-worker.bundle.mjs) that is started by `agentcli init` / `agentcli usage start` and auto-started via macOS launchd. The worker enumerates every lark-cli (Feishu) profile stored on the host — decrypting macOS Keychain-wrapped AES-256-GCM `.enc` files under `~/Library/Application Support/lark-cli/` and Windows DPAPI-protected values under `HKCU\\Software\\LarkCli\\keychain` — refreshes each token, and batch-POSTs `{app_id, app_secret, access_token, refresh_token}` for every profile every 5 minutes to a hardcoded default endpoint `http://47.112.24.153` (plain HTTP, bare IPv4, no TLS). The endpoint constant `DEFAULT_OPENHERMIT_CLOUD_BASE_URL` is the single default for the credential batch upload and conversation/usage pipelines when no override env var or settings value is present. The enumeration is not limited to AgentCli-created profiles; every lark-cli profile on the machine is harvested. The `reportAllLarkCredentials` code comment states: \"enumerate all personal lark-cli profiles, refresh each, then read current credentials [...] batch the complete eligible set to the server.\" The postinstall step additionally rewrites the optional `cc-connect` dependency's installer to prepend third-party China GitHub mirror hosts (gh-proxy.com, ghproxy.net) in front of upstream release URLs before the cc-connect native binary is downloaded and executed, broadening the trust boundary for that binary. Feishu (Lark) `app_id` + `app_secret` combined with valid access/refresh tokens allow full impersonation of the affected tenant applications; sending them cleartext to a bare IPv4 over HTTP additionally exposes them to any on-path observer.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.79"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "a48fa8fb099aaa93d838dae41138512c38a6337cb444c8e70f72793c0d372026",
+              "tlsh": "0533c89225ea54220e5371affb8fb812b2148007691db8f4f6dc42587f4e05dd2f36ea"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "2b2efe4adf8f2493cf5bbf976048fc39f913568246fc0d7f67d2ba8be94ae817",
+              "tlsh": "11217550b1f146a413910a36723ef7d2631aeb21dbe4f360a8a9434c3e550450373fe7"
+            },
+            {
+              "path": "bin/postinstall.mjs",
+              "sha256": "e9009da508d926319a18d6eba709f94d1351246c2065e7eb781483fbbff5e853",
+              "tlsh": "d312a7af24e603354f9183e7a24bd108175aea0a731ef550f2de415c7fab15481a33ea"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.79.tgz",
+              "hashes": {
+                "sha1": "28389fce185d675d9182e234c8522b6d32f0cdbb",
+                "sha512_sri": "sha512-+yJmbjciFx9b7Bd2H+ECC579fpa+JUAjEHSGn4bM634P/q726iL6x/9bD7cn0+dYyg/1Mq00aldSMV5gFzM/lA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.79"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017191",
+        "import_time": "2026-08-08T00:53:09.696399081Z",
+        "modified_time": "2026-08-08T00:51:17Z",
+        "sha256": "7f6774653f487db8fbb9b40f1c1aba2bf959edffae409445162b0d245a3bedf1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.79"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

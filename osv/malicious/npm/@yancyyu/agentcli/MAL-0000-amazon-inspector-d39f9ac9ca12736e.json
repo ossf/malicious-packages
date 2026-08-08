@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-08T00:50:08Z",
+  "modified": "2026-08-08T00:50:08Z",
+  "summary": "Harvests third-party Feishu/Lark CLI OAuth tokens and exfiltrates them to a hardcoded bare-IP endpoint with launchd persistence",
+  "details": "The package extracts credentials belonging to an unrelated tool (@larksuite/cli / lark-cli): on macOS it invokes `security find-generic-password -s lark-cli -a master.key` against the user Keychain, and on Windows it reads DPAPI-protected registry values under `HKCU\\Software\\LarkCli\\keychain` and calls `ProtectedData::Unprotect`. The decrypted per-profile `app_id`, `app_secret`, `access_token`, and `refresh_token` values are batched (`LarkBatchItem`) and POSTed to a hardcoded plain-HTTP bare-IP endpoint at `http://47.112.24.153:8080` (with legacy defaults `https://agentbus.skg.com` and `http://159.75.231.98:8088` auto-migrated to this host). The telemetry worker at `src/main/telemetry/worker.ts` schedules `scanLarkCredentialsOnce` on a 5-minute fixed-rate interval, and `autostart.ts` installs a launchd agent `~/Library/LaunchAgents/com.openhermit.telemetry.plist` with `RunAtLoad=true` and `KeepAlive` that re-invokes `bin/hermit.mjs __telemetry-worker`, so the credential upload continues across reboots. Publisher metadata is also inconsistent: the npm `author` is `yancyyu <yancyyu.ok@gmail.com>` while the AGPL-3.0 LICENSE credits `quantjumppro@gmail.com`.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.28"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "5a52412c69551bebfb8047d0f2fedc387630c01a3f670751eca0519bf6a1ff04",
+              "tlsh": "0823b79225ea14224d5371affa8fb812b21080076a5db8f5f6dc42587f4f06dd3f26da"
+            },
+            {
+              "path": "src/main/telemetry/worker.ts",
+              "sha256": "a9f32eb054744fb6f9c1abb831e006c9c88620fdc14911dfeb1057ff3bb49ca8",
+              "tlsh": "1dc2834310f6252849a753e7e56b9351af18ce132b0ab8a0f29d57251f1e88cf1f37e9"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "5f81158cb482dfe2d42f8f44efa91f72c1d4f3f73fc760c4b650c9b909abbcd4",
+              "tlsh": "3b217550b1f146a413914a36723ef7d2671aeb21dbe4f360a8a9435c3e550450373fe7"
+            },
+            {
+              "path": "LICENSE",
+              "sha256": "cc37029b4400cf3a6c585d42406d020da105987360d2c787b7b36f18876409f7",
+              "tlsh": "aee2745fb74413b2028206626a9b68dee31dd039776640a9785dc15c27f3e3483bfaed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.28.tgz",
+              "hashes": {
+                "sha1": "a0d81387e51db6acd4b205455e8298123ea8ff5e",
+                "sha512_sri": "sha512-o8odotXUPTioGzKzOZald6xR+IPdpg72P/iE8zBeUgOIpSrIP9YnspItijdhu0yigfYtgwN8KLGm8+AMXrkxYg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.28"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017183",
+        "import_time": "2026-08-08T00:53:09.189059244Z",
+        "modified_time": "2026-08-08T00:50:08Z",
+        "sha256": "d39f9ac9ca12736eaae21f8ec2a8a5b845ecdea82ef356b80521d1df95677d9a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.28"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

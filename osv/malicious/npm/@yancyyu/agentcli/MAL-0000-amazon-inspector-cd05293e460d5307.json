@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-08T00:48:17Z",
+  "modified": "2026-08-08T00:48:17Z",
+  "summary": "Harvests and exfiltrates @larksuite/cli credentials to hardcoded author endpoint",
+  "details": "The package ships a telemetry worker (bin/lib/larkSecrets.mjs, invoked by the worker's scheduled `scanLark` task on a 5-minute cadence) that reads a separate tool's local secret store — @larksuite/cli — by shelling out to `security find-generic-password -s lark-cli` on macOS and reading the corresponding DPAPI-protected entries under HKCU\\Software\\LarkCli\\keychain on Windows. For every stored profile it decrypts appId, appSecret, accessToken, refreshToken, and userOpenId, packages them as a LarkBatchReport, and POSTs the batch to a hardcoded author-controlled endpoint. The default destination is `http://47.112.24.153` (bare IP, plain HTTP); a `migrateLegacyCloudBaseUrl` routine silently rewrites previously-configured values such as `https://agentbus.skg.com` and `http://159.75.231.98:8088` to that bare-IP default. A second entry point, `scripts/report-lark-credentials-once.mjs` (published in `files` and wired as the `pnpm lark:report-once` script), triggers the same enumerate-refresh-upload flow on demand. An `enableUsageTelemetryAutostart` path also installs `~/Library/LaunchAgents/com.openhermit.telemetry.plist` with `RunAtLoad=true` and boots it via `launchctl bootstrap`/`kickstart`, giving the credential-collection worker reboot persistence. The credentials belong to a distinct tool the installer authenticated with; the package reads files it did not write and forwards decrypted tokens and secrets to a destination the installer did not configure, granting the receiver full Lark/Feishu impersonation of the installer.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.53"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "eb0acb98635dd82a39eefa5359b79a2c0684aa401afbc23603ce9106a4d2d32b",
+              "tlsh": "2223c79225ea54220e5371affa8fb812b2148007691db8f5f6dc42583f4e05dd3f36ea"
+            },
+            {
+              "path": "scripts/report-lark-credentials-once.mjs",
+              "sha256": "d1b5dfd8ecd84b1aa21d738ceb856ca74ada817b2a8d921c268faeebbf3f9080",
+              "tlsh": "27f0e481d8de0b2826ba04b7f020c083ea1c6c282a083460210e4f4aff828e4f0862ca"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "2b2efe4adf8f2493cf5bbf976048fc39f913568246fc0d7f67d2ba8be94ae817",
+              "tlsh": "11217550b1f146a413910a36723ef7d2631aeb21dbe4f360a8a9434c3e550450373fe7"
+            },
+            {
+              "path": "src/main/telemetry/autostart.ts",
+              "sha256": "c64afde890b15a38a1f74b77fe34da84257fa602395b65d6ba8c9851ac4a85e2",
+              "tlsh": "87d1b74aa1a6161e89e25363717f962657dcc5a23b34f874fcac4b491b0dc1cb063fc9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.53.tgz",
+              "hashes": {
+                "sha1": "329773caa71383b26b90f9993687dbf1263c0500",
+                "sha512_sri": "sha512-4hi5MGgiCNT7yAFk2d80H4AFrgPZXYxdLS6LqLoVRvbsP3DO9auqbbWY753YWgjvCxLvjgFkXxxli6ZjsW0QRw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.53"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017171",
+        "import_time": "2026-08-08T00:53:08.449076803Z",
+        "modified_time": "2026-08-08T00:48:17Z",
+        "sha256": "cd05293e460d530740baac9ed76214c8aebae2c1ec3e62a773f6d18201f23457",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.53"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

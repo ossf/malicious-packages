@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-08T00:49:14Z",
+  "modified": "2026-08-08T00:49:14Z",
+  "summary": "agentcli decrypts and exfiltrates third-party Feishu (lark-cli) OAuth tokens to a hardcoded bare-IP endpoint",
+  "details": "The package harvests OAuth credentials belonging to a separate ByteDance product (lark-cli / Feishu) and uploads them to an author-controlled endpoint. On macOS the code reads the lark-cli Keychain master key via `security find-generic-password -s lark-cli -a master.key`, decrypts the AES-256-GCM `.enc` files under `~/Library/Application Support/lark-cli/`, and extracts `appId`, `appSecret`, `access_token`, and `refresh_token` for every stored profile; on Windows it reads `HKCU\\Software\\LarkCli\\keychain` and performs the equivalent DPAPI unprotect. Comments in the module document that the storage scheme was reverse-engineered from lark-cli's source because lark-cli deliberately never surfaces raw tokens. The decrypted four-tuples are POSTed to `http://47.112.24.153` (a bare Alibaba Cloud IP over plaintext HTTP), declared as the single source of truth for the AgentBus / telemetry / conversation-upload / auth / lark-reporting destination. Persistence is installed via a macOS LaunchAgent (`com.openhermit.telemetry.plist`, `RunAtLoad=true`, `KeepAlive`) that runs a telemetry worker whose 5-minute scheduler calls `scanLarkCredentialsOnce`, so fresh Feishu access and refresh tokens are re-exfiltrated every 5 minutes for as long as the agent is enabled. The module frames this as generic \"telemetry\" and \"lark credentials reporting,\" but the behavior is unambiguously credential theft against an unrelated third-party product.",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.30"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "5a52412c69551bebfb8047d0f2fedc387630c01a3f670751eca0519bf6a1ff04",
+              "tlsh": "0823b79225ea14224d5371affa8fb812b21080076a5db8f5f6dc42587f4f06dd3f26da"
+            },
+            {
+              "path": "src/shared/constants/cloudConfig.mjs",
+              "sha256": "2b2efe4adf8f2493cf5bbf976048fc39f913568246fc0d7f67d2ba8be94ae817",
+              "tlsh": "11217550b1f146a413910a36723ef7d2631aeb21dbe4f360a8a9434c3e550450373fe7"
+            },
+            {
+              "path": "src/main/telemetry/autostart.ts",
+              "sha256": "c64afde890b15a38a1f74b77fe34da84257fa602395b65d6ba8c9851ac4a85e2",
+              "tlsh": "87d1b74aa1a6161e89e25363717f962657dcc5a23b34f874fcac4b491b0dc1cb063fc9"
+            },
+            {
+              "path": "bin/lib/larkSecrets.mjs",
+              "sha256": "2eb47cf8a23d796640ce11ac914a1671d58c8e339ccbd8670816a1a7864f1481",
+              "tlsh": "1081b7932293172708b751abf66fe943a371500ad34ca9b4f1cd839cbf8601974c3ad2"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.30.tgz",
+              "hashes": {
+                "sha1": "3b77cdc48e3095e896204cbca3b8afdd0850acb4",
+                "sha512_sri": "sha512-/Qs9KoL2XEZ0yKCedGR+Nlm5feABSrMxpgys05Ul+vX8x3P07KHD286yrx+VVtW1JgRz70hnzSTqv7GuJcrBvA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.30"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017177",
+        "import_time": "2026-08-08T00:53:08.826506434Z",
+        "modified_time": "2026-08-08T00:49:14Z",
+        "sha256": "87e50624a116710c2841131b9d46d28093c452498a2b58b4330e62a316e33fb4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.30"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
