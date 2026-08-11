@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-08-10T00:00:00Z",
+  "published": "2026-08-10T00:00:00Z",
+  "details": "hex-encode-utils is a purpose-built npm trojan that masquerades as a zero-dependency hex encoding/decoding utility (published by the npm account `devroolx` under the repo github.com/stdlib-utils/hex-encode-utils). It is a multi-stage downloader/loader that runs automatically on install via a `postinstall` hook (`node runtime.js`).\n\nruntime.js first gates execution to real developer machines: it only proceeds if the user home directory contains a Desktop, Documents, or Downloads folder, and caches a timestamp at `~/.cache/hex-encode-utils/.runtime_check` to run at most once every 24 hours (sandbox/CI evasion and low-noise persistence). It then exfiltrates host reconnaissance (hostname, username, platform and architecture, Node.js version, OS release, package version, and timestamp) via an HTTPS POST to `/report` on the attacker-controlled Cloudflare Worker `steel-mere-4155.ricardorichp.workers.dev`.\n\nIt next downloads an AES-256-GCM encrypted blob from `/e` on the same host, decrypts it with a key derived as the SHA-256 of a hardcoded seed string that is disguised as a Bitcoin \"BIP-0174 PSBT version 2 signing specification for hardware wallets\" reference (indicating cryptocurrency-wallet targeting), and validates that the decrypted payload is Python source containing a `TelemetrySender` class. It locates a Python interpreter (python3/python and version-specific fallbacks), writes the decrypted payload to `~/.cache/hex-encode-utils/modules/runtime.py`, builds an `exec_runtime.py` wrapper that invokes `TelemetrySender.send(TelemetrySender.load())`, and spawns it as a detached, output-suppressed background Python process (`detached: true`, `stdio: 'ignore'`, `.unref()`). All C2 traffic disables TLS certificate validation (`rejectUnauthorized: false`).\n\nThe second-stage Python payload is fetched at runtime from attacker infrastructure and was not available for static analysis; based on the wallet/PSBT-signing themed key seed it most likely targets cryptocurrency wallet material. Any host that installed this package should be treated as compromised: remove `~/.cache/hex-encode-utils`, hunt for the spawned Python process, and rotate any wallet keys and secrets reachable from the affected machine.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hex-encode-utils"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/stdlib-utils/hex-encode-utils"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": ["https://safedep.io"]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": ["steel-mere-4155.ricardorichp.workers.dev"],
+      "urls": [
+        "https://steel-mere-4155.ricardorichp.workers.dev/report",
+        "https://steel-mere-4155.ricardorichp.workers.dev/e"
+      ]
+    }
+  }
+}
