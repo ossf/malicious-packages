@@ -1,16 +1,26 @@
 {
-  "modified": "2026-08-10T12:26:47Z",
-  "published": "2026-08-10T11:55:59Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13695",
+  "published": "2026-08-10T00:00:00Z",
+  "modified": "2026-08-11T02:49:07.991003067Z",
   "summary": "Malicious code in hex-encode-utils (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (999c0a7bda643ce11c335436392aac35c2eca53dc92225dd86cbc01cc9015f8c)\nOn npm install, scripts/compat.js runs as a postinstall hook and fetches an AES-256-GCM-encrypted blob over HTTPS from two hardcoded Cloudflare Workers hosts (steel-mere-4155.ricardorichp.workers.dev, cold-peak-7969.0x0gnx0.workers.dev) with TLS verification disabled (rejectUnauthorized: false), decrypts it with a hardcoded key derived from a 'BIP-0174' decoy string, writes the plaintext to ~/.cache/hex-encode-utils/modules/exec_runtime.py, and spawns a detached, stdio-ignored Python process to execute it. Before dropping the payload the script POSTs an install beacon to /r on the same Workers host carrying the installer's hostname (os.hostname()), username (os.userInfo()), platform/arch (os.platform()), Node version, and package version, formatted as an HTML Telegram message with chat_id 6087129674 for relay to a Telegram bot. Execution is gated by sandbox-evasion checks that abort in CI/container environments (CI, GITHUB_ACTIONS, DOCKER_CONTAINER, KUBERNETES_SERVICE_HOST) and require Desktop/Documents/Downloads directories under $HOME to confirm a developer workstation. Comments frame the code as a next.js/nuxt-style compatibility shim. The package's stated purpose (hex encode/decode) has no legitimate need for postinstall network I/O, encrypted-payload fetch, Python execution, or host reconnaissance to a Telegram relay.\n",
+  "details": "hex-encode-utils is a purpose-built npm trojan that masquerades as a zero-dependency hex encoding/decoding utility (published by the npm account `devroolx` under the repo github.com/stdlib-utils/hex-encode-utils). It is a multi-stage downloader/loader that runs automatically on install via a `postinstall` hook (`node runtime.js`).\n\nruntime.js first gates execution to real developer machines: it only proceeds if the user home directory contains a Desktop, Documents, or Downloads folder, and caches a timestamp at `~/.cache/hex-encode-utils/.runtime_check` to run at most once every 24 hours (sandbox/CI evasion and low-noise persistence). It then exfiltrates host reconnaissance (hostname, username, platform and architecture, Node.js version, OS release, package version, and timestamp) via an HTTPS POST to `/report` on the attacker-controlled Cloudflare Worker `steel-mere-4155.ricardorichp.workers.dev`.\n\nIt next downloads an AES-256-GCM encrypted blob from `/e` on the same host, decrypts it with a key derived as the SHA-256 of a hardcoded seed string that is disguised as a Bitcoin \"BIP-0174 PSBT version 2 signing specification for hardware wallets\" reference (indicating cryptocurrency-wallet targeting), and validates that the decrypted payload is Python source containing a `TelemetrySender` class. It locates a Python interpreter (python3/python and version-specific fallbacks), writes the decrypted payload to `~/.cache/hex-encode-utils/modules/runtime.py`, builds an `exec_runtime.py` wrapper that invokes `TelemetrySender.send(TelemetrySender.load())`, and spawns it as a detached, output-suppressed background Python process (`detached: true`, `stdio: 'ignore'`, `.unref()`). All C2 traffic disables TLS certificate validation (`rejectUnauthorized: false`).\n\nThe second-stage Python payload is fetched at runtime from attacker infrastructure and was not available for static analysis; based on the wallet/PSBT-signing themed key seed it most likely targets cryptocurrency wallet material. Any host that installed this package should be treated as compromised: remove `~/.cache/hex-encode-utils`, hunt for the spawned Python process, and rotate any wallet keys and secrets reachable from the affected machine.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (999c0a7bda643ce11c335436392aac35c2eca53dc92225dd86cbc01cc9015f8c)\nOn npm install, scripts/compat.js runs as a postinstall hook and fetches an AES-256-GCM-encrypted blob over HTTPS from two hardcoded Cloudflare Workers hosts (steel-mere-4155.ricardorichp.workers.dev, cold-peak-7969.0x0gnx0.workers.dev) with TLS verification disabled (rejectUnauthorized: false), decrypts it with a hardcoded key derived from a 'BIP-0174' decoy string, writes the plaintext to ~/.cache/hex-encode-utils/modules/exec_runtime.py, and spawns a detached, stdio-ignored Python process to execute it. Before dropping the payload the script POSTs an install beacon to /r on the same Workers host carrying the installer's hostname (os.hostname()), username (os.userInfo()), platform/arch (os.platform()), Node version, and package version, formatted as an HTML Telegram message with chat_id 6087129674 for relay to a Telegram bot. Execution is gated by sandbox-evasion checks that abort in CI/container environments (CI, GITHUB_ACTIONS, DOCKER_CONTAINER, KUBERNETES_SERVICE_HOST) and require Desktop/Documents/Downloads directories under $HOME to confirm a developer workstation. Comments frame the code as a next.js/nuxt-style compatibility shim. The package's stated purpose (hex encode/decode) has no legitimate need for postinstall network I/O, encrypted-payload fetch, Python execution, or host reconnaissance to a Telegram relay.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "hex-encode-utils"
+        "name": "hex-encode-utils",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.5",
         "1.0.1",
@@ -21,6 +31,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -97,18 +112,26 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.4"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/stdlib-utils/hex-encode-utils"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "steel-mere-4155.ricardorichp.workers.dev"
+      ],
+      "urls": [
+        "https://steel-mere-4155.ricardorichp.workers.dev/report",
+        "https://steel-mere-4155.ricardorichp.workers.dev/e"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-017248",
@@ -171,5 +194,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
