@@ -2,16 +2,13 @@
   "schema_version": "1.7.4",
   "modified": "2026-08-11T00:00:00Z",
   "published": "2026-08-11T00:00:00Z",
-  "details": "ethereum-vault-connector is a namesquat on Euler's real Ethereum Vault Connector (EVC) protocol, published as a brand-new npm package (first release under this maintainer account) with no relation to Euler's actual EVC contracts, which are not distributed as this npm package. Version 1.0.0 ships a `preinstall`/`postinstall` hook (`node index.js || true`) that runs automatically on `npm install`.\n\nindex.js scans `process.env` for any variable whose name matches a broad credential regex (KEY, TOKEN, SECRET, PASS, PRIVATE, MNEMONIC, RPC, AWS, GITHUB, NPM, KUBE, VAULT, AUTH, PGP, GPG, SEED, WALLET), reads `~/.npmrc` and `~/.gitconfig`, and lists the contents of `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud` — directories that hold SSH keys, Foundry/Hardhat wallet keystores, and GCP credentials respectively. It bundles the harvested data (hostname, username, cwd, platform, env vars, file contents, directory listings) into a single JSON payload and POSTs it over HTTPS to an attacker-controlled webhook.site endpoint. The install script is wrapped in a bare try/catch so it never breaks the install regardless of outcome, keeping the exfiltration silent.\n\nThis package is one of six published from the same npm account within a ~20 second window on 2026-08-11 (05:41-06:08 UTC), all namesquatting real DeFi protocols (Euler's EVC, Aerodrome Finance, Camelot AMM, and the boring-vault pattern) and all shipping a byte-identical credential-harvesting template that differs only in the `pkg` field logged in the exfiltrated JSON and the destination `raw TCP connect` IP for the same webhook.site host. Two further packages from the same actor and same webhook.site path (PyPI `dlmm` and `dlmm-sdk`, namesquatting Meteora's DLMM SDK) were also sandbox-confirmed running the equivalent harvester but have since been removed from PyPI; those are already tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment where this package was installed should be treated as having had its environment variables, `.npmrc`, `.gitconfig`, and any present SSH/Foundry/Hardhat/gcloud credentials exposed to the attacker; rotate all reachable secrets, especially npm publish tokens and any wallet/RPC keys.",
+  "details": "ethereum-vault-connector namesquats Euler's real Ethereum Vault Connector (EVC) protocol, published as a brand-new npm package with no relation to any real distribution under this name. Version 1.0.0 (published 2026-08-11 ~05:41-06:08 UTC) shipped a `preinstall`/`postinstall` hook (`node index.js || true`) that scans `process.env` for variable names matching a credential regex (KEY, TOKEN, SECRET, PASS, PRIVATE, MNEMONIC, RPC, AWS, GITHUB, NPM, KUBE, VAULT, AUTH, PGP, GPG, SEED, WALLET), reads `~/.npmrc` and `~/.gitconfig`, and lists `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud`, POSTing the harvested data to a webhook.site endpoint. The 1.0.0 payload's header comment falsely self-identified as `@plumenetwork/nest-artifacts`, an install-time shim for an unrelated project — a copy-paste artifact from whatever template the actor reused across this batch.\n\nA 1.1.0 release published roughly 3 hours later (~09:00-09:01 UTC) meaningfully escalates the payload: the credential regex gained BEARER, API, INFURA, ALCHEMY, HELIUS, QUICKNODE, and ANKR (RPC/API provider key patterns); directory listings were replaced with full file-content reads (first ~4000 bytes) of `.aws/credentials`, `.aws/config`, `.ssh/id_rsa`, `.ssh/id_ed25519`, `.ssh/config`, `.kube/config`, `.docker/config.json`, `.netrc`, `.pgpass`, `.npmrc`, `.pypirc`, `.gitconfig`, `.git-credentials`, and GCP application-default credentials; it now also reads local `.env`, `.env.local`, `.env.production`, `.env.development`, and `secrets.env` from the install working directory; and it adds direct cryptocurrency wallet keystore theft — reading file contents (not just listing) from Solana (`.config/solana/id.json`, `.solana/id.json`), Anchor (`.config/anchor/id.json`), NEAR (`.near-credentials`), and Sui (`.sui/sui.keystore`) wallet paths, plus the contents (not just names) of the first three files in `~/.foundry/keystores`. The false `@plumenetwork/nest-artifacts` header comment was removed in 1.1.0. Both versions exfiltrate to the same webhook.site path over HTTPS POST, wrapped in a bare try/catch so failures never surface.\n\nThis package is one of six published from the same npm account (`mssjeep843`) namesquatting real DeFi protocols (Euler's EVC, Aerodrome Finance, Camelot AMM, and the boring-vault pattern), all sharing the same webhook.site callback path and the same 1.0.0-to-1.1.0 escalation pattern. Two further packages from the same actor and same webhook.site path (PyPI `dlmm` and `dlmm-sdk`, namesquatting Meteora's DLMM SDK) were also sandbox-confirmed running an equivalent harvester but have since been removed from PyPI; those are tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment where either version was installed should be treated as having had its environment variables and any present SSH keys, cloud/Kubernetes/Docker credentials, `.env` files, and Solana/Anchor/NEAR/Sui/Foundry wallet keys exposed to the attacker; rotate all reachable secrets immediately, prioritizing wallet private keys and RPC/API provider tokens if 1.1.0 was installed.",
   "affected": [
     {
       "package": {
         "ecosystem": "npm",
         "name": "ethereum-vault-connector"
       },
-      "versions": [
-        "1.0.0"
-      ],
       "database_specific": {
         "cwes": [
           {
@@ -20,7 +17,17 @@
             "name": "Embedded Malicious Code"
           }
         ]
-      }
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ]
     }
   ],
   "references": [
@@ -52,10 +59,20 @@
           "paths": [
             "package/index.js"
           ],
-          "note": "install-time credential harvester (preinstall/postinstall hook)",
+          "note": "1.0.0 install-time credential harvester (preinstall/postinstall hook)",
           "source": "PACKAGE_ARCHIVE",
           "digests": {
             "sha256": "1f84c52510b2ce123049e95804a558ddf20ed5f1845c845d64f1ec09528be484"
+          }
+        },
+        {
+          "paths": [
+            "package/index.js"
+          ],
+          "note": "1.1.0 escalated payload: adds wallet keystore theft (Solana/Anchor/NEAR/Sui), local .env file reads, expanded RPC/API key regex, full credential-file-content reads",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "009a250478285559257d9c3f7e254aeb7edc09dbe130ca6e9140e6e23fc18452"
           }
         }
       ]
