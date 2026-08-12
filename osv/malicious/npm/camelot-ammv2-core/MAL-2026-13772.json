@@ -1,0 +1,90 @@
+{
+  "modified": "2026-08-12T06:00:00Z",
+  "published": "2026-08-11T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13772",
+  "summary": "Malicious code in camelot-ammv2-core (npm)",
+  "details": "camelot-ammv2-core is a malicious npm package that impersonates Camelot DEX's AMM v2 core contracts. It carries no legitimate functionality; the published tarball contains only a package.json and an install-time payload (index.js). Both `preinstall` and `postinstall` run `node index.js || true`, so the code executes automatically when the package is installed.\n\nVersion 1.0.0 harvests environment variables whose names match `KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET`, the contents of `~/.npmrc` and `~/.gitconfig`, and directory listings of `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud`, along with the hostname, username, working directory, and platform. The collected JSON is exfiltrated via an HTTPS POST to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`. Errors are swallowed so the install never visibly fails.\n\nVersion 1.1.0, published roughly 2.5 hours after 1.0.0 for all six packages within the same ~9-second window, reads full file contents (up to 4000 bytes) instead of just listing them. New targets include `.aws/credentials`, `.aws/config`, `.ssh/id_rsa`, `.ssh/id_ed25519`, `.ssh/config`, `.kube/config`, `.docker/config.json`, `.netrc`, `.pgpass`, `.pypirc`, `.git-credentials`, and two GCP credential files (`application_default_credentials.json` and `legacy_credentials`) — the `~/.config/gcloud` directory listing is still collected too. It also reads local `.env`, `.env.local`, `.env.production`, `.env.development`, and `secrets.env` files from the working directory, and adds cryptocurrency wallet theft: key files from Solana, Anchor, NEAR, and Sui wallet paths, plus the first three files under `~/.foundry/keystores`. The credential regex gains BEARER, API, INFURA, ALCHEMY, HELIUS, QUICKNODE, ANKR, and PRIVATE_KEY to catch RPC and API provider tokens. Both versions exfiltrate to the same webhook.site endpoint.\n\nIn 1.0.0, index.js opens with a fake comment claiming it is `@plumenetwork/nest-artifacts`, an unrelated install-time shim — `@plumenetwork/nest-artifacts` is not itself a malicious package, just a leftover label from whatever template the attacker reused across this batch, published by npm account `mssjeep843`. The fake comment was removed in 1.1.0. Five sibling packages from the same account impersonate Euler's EVC, Aerodrome Finance, Camelot AMM, and the BoringVault pattern, sharing this same webhook.site endpoint, byte-identical payload template, and 1.0.0-to-1.1.0 escalation. Two further packages from the same account (PyPI `dlmm` and `dlmm-sdk`, impersonating Meteora's DLMM SDK) ran an equivalent harvester and are tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment that installed either version should rotate the exposed secrets and treat harvested keys as compromised, prioritizing wallet private keys and RPC/API tokens if 1.1.0 was installed.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "camelot-ammv2-core"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/camelot-ammv2-core"
+    },
+    {
+      "type": "ARTICLE",
+      "url": "https://o3.security/blog/crypto-defi-npm-supply-chain-attack-npmrc-exfiltration"
+    }
+  ],
+  "credits": [
+    {
+      "name": "O3 Security",
+      "type": "FINDER",
+      "contact": [
+        "https://o3.security"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "39069163bf8691d2c37e56a0f303e227ff0b0a13b38446ebd7f9ee27f4dd08ca"
+          },
+          "note": "1.0.0 install-time credential harvester (preinstall/postinstall hook)",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "bd7eae53df9dcbce7b1f84b2e62b1e4aec3abeb4ba168baf3a2e8646d7b117bd"
+          },
+          "note": "1.1.0 escalated payload: adds wallet keystore theft (Solana/Anchor/NEAR/Sui), local .env file reads, expanded RPC/API key regex, full credential-file-content reads",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09"
+      ]
+    }
+  }
+}
