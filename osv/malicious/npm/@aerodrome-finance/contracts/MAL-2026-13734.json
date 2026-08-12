@@ -1,16 +1,26 @@
 {
-  "modified": "2026-08-11T15:28:28Z",
-  "published": "2026-08-11T15:17:27Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13734",
+  "published": "2026-08-11T00:00:00Z",
+  "modified": "2026-08-12T05:13:23.889891812Z",
   "summary": "Malicious code in @aerodrome-finance/contracts (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2c46806c21e6a0f5a5593eca11bbd822991f566dc05eb50c7ec56f88b649c3be)\nPackage name typosquats the legitimate @aerodrome-finance scope. Lifecycle hooks auto-execute index.js on npm install, which reads installer secrets from ~/.aws/, ~/.ssh/, ~/.kube/, ~/.docker/, ~/.netrc, ~/.npmrc, ~/.pypirc, ~/.git-credentials, gcloud/solana/anchor/sui key directories, Foundry keystores, and.env files, and scrapes process.env for keys matching KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|AWS|GITHUB|NPM|WALLET|SEED. The collected data is POSTed to a hardcoded webhook.site endpoint via https.request from a detached child process (spawn(process.execPath, ['-e', src], {detached:true, stdio:'ignore'})) that sleeps 60-240 seconds before sending, to outlive install and scan windows. Sandbox/honeypot evasion is present: host regex checks for scan-/detonation/sandbox/ubuntu-fc-uvm prefixes, non-root/sandbox user checks, canarytoken/honey env checks, and a check for npm mirror registries. Static evidence confirms co-use of child_process, https, os, and fs, with os.hostname() and a POST to https.request in index.js.\n",
+  "details": "@aerodrome-finance/contracts is a malicious npm package that impersonates Aerodrome Finance. It carries no legitimate functionality; the published tarball contains only a package.json and an install-time payload (index.js). Both `preinstall` and `postinstall` run `node index.js || true`, so the code executes automatically when the package is installed.\n\nVersion 1.0.0 harvests environment variables whose names match `KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET`, the contents of `~/.npmrc` and `~/.gitconfig`, and directory listings of `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud`, along with the hostname, username, working directory, and platform. The collected JSON is exfiltrated via an HTTPS POST to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`. Errors are swallowed so the install never visibly fails.\n\nVersion 1.1.0, published roughly 2.5 hours after 1.0.0 for all six packages within the same ~9-second window, reads full file contents (up to 4000 bytes) instead of just listing them. New targets include `.aws/credentials`, `.aws/config`, `.ssh/id_rsa`, `.ssh/id_ed25519`, `.ssh/config`, `.kube/config`, `.docker/config.json`, `.netrc`, `.pgpass`, `.pypirc`, `.git-credentials`, and two GCP credential files (`application_default_credentials.json` and `legacy_credentials`) — the `~/.config/gcloud` directory listing is still collected too. It also reads local `.env`, `.env.local`, `.env.production`, `.env.development`, and `secrets.env` files from the working directory, and adds cryptocurrency wallet theft: key files from Solana, Anchor, NEAR, and Sui wallet paths, plus the first three files under `~/.foundry/keystores`. The credential regex gains BEARER, API, INFURA, ALCHEMY, HELIUS, QUICKNODE, ANKR, and PRIVATE_KEY to catch RPC and API provider tokens. Both versions exfiltrate to the same webhook.site endpoint.\n\nIn 1.0.0, index.js opens with a fake comment claiming it is `@plumenetwork/nest-artifacts`, an unrelated install-time shim — `@plumenetwork/nest-artifacts` is not itself a malicious package, just a leftover label from whatever template the attacker reused across this batch, published by npm account `mssjeep843`. The fake comment was removed in 1.1.0. Five sibling packages from the same account impersonate Euler's EVC, Aerodrome Finance, Camelot AMM, and the BoringVault pattern, sharing this same webhook.site endpoint, byte-identical payload template, and 1.0.0-to-1.1.0 escalation. Two further packages from the same account (PyPI `dlmm` and `dlmm-sdk`, impersonating Meteora's DLMM SDK) ran an equivalent harvester and are tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment that installed either version should rotate the exposed secrets and treat harvested keys as compromised, prioritizing wallet private keys and RPC/API tokens if 1.1.0 was installed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (2c46806c21e6a0f5a5593eca11bbd822991f566dc05eb50c7ec56f88b649c3be)\nPackage name typosquats the legitimate @aerodrome-finance scope. Lifecycle hooks auto-execute index.js on npm install, which reads installer secrets from ~/.aws/, ~/.ssh/, ~/.kube/, ~/.docker/, ~/.netrc, ~/.npmrc, ~/.pypirc, ~/.git-credentials, gcloud/solana/anchor/sui key directories, Foundry keystores, and.env files, and scrapes process.env for keys matching KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|AWS|GITHUB|NPM|WALLET|SEED. The collected data is POSTed to a hardcoded webhook.site endpoint via https.request from a detached child process (spawn(process.execPath, ['-e', src], {detached:true, stdio:'ignore'})) that sleeps 60-240 seconds before sending, to outlive install and scan windows. Sandbox/honeypot evasion is present: host regex checks for scan-/detonation/sandbox/ubuntu-fc-uvm prefixes, non-root/sandbox user checks, canarytoken/honey env checks, and a check for npm mirror registries. Static evidence confirms co-use of child_process, https, os, and fs, with os.hostname() and a POST to https.request in index.js.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@aerodrome-finance/contracts"
+        "name": "@aerodrome-finance/contracts",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.1.0",
         "1.1.1",
@@ -18,6 +28,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,18 +87,44 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@aerodrome-finance/contracts/v/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@aerodrome-finance/contracts"
+    },
+    {
+      "type": "ARTICLE",
+      "url": "https://o3.security/blog/crypto-defi-npm-supply-chain-attack-npmrc-exfiltration"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "0920e8b2c878a9fc713abb47c1a334f289ab3dd4e308a0a29bcd4bc131053f4a"
+          },
+          "note": "1.0.0 install-time credential harvester (preinstall/postinstall hook)",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "d427d27a92b5c5339f2e57c82bcfa59c5511336861461098c5566b224bf0a8ca"
+          },
+          "note": "1.1.0 escalated payload: adds wallet keystore theft (Solana/Anchor/NEAR/Sui), local .env file reads, expanded RPC/API key regex, full credential-file-content reads",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-017365",
@@ -116,5 +157,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "O3 Security",
+      "contact": [
+        "https://o3.security"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
