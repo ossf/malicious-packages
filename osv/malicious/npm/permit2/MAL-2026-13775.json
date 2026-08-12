@@ -1,0 +1,51 @@
+{
+  "modified": "2026-08-11T00:00:00Z",
+  "published": "2026-08-11T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13775",
+  "summary": "Malicious code in permit2 (npm)",
+  "details": "permit2 is a malicious npm package that squats the bare name of Uniswap's Permit2 token-approval system (whose legitimate npm distribution is the scoped `@uniswap/permit2-sdk`), advertising itself as a \"smart contract development toolkit.\" The package contains no real functionality — the published tarball ships only a package.json and an install-time payload (index.js), which both `preinstall` and `postinstall` execute via `node index.js`, so it runs automatically on `npm install`.\n\nThe payload is a more aggressive variant of the infostealer used across the `mssjeep843` DeFi-impersonation campaign and exfiltrates to the same `webhook.site` endpoint. It collects environment variables whose names match a broadened secret pattern (`KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET|BEARER|API|INFURA|ALCHEMY|HELIUS|QUICKNODE|ANKR|PRIVATE_KEY`) and, rather than merely listing credential directories, reads and exfiltrates the full contents (up to 4000 bytes each) of a wide set of credential and key files: `~/.aws/credentials` and `~/.aws/config`, SSH private keys (`~/.ssh/id_rsa`, `~/.ssh/id_ed25519`) and `~/.ssh/config`, `~/.kube/config`, `~/.docker/config.json`, `~/.netrc`, `~/.pgpass`, `~/.npmrc`, `~/.pypirc`, `~/.gitconfig`, `~/.git-credentials`, GCP application-default and legacy credentials, Solana/Anchor keypairs (`id.json`), NEAR credentials, the Sui keystore, up to three Foundry keystore files, and `.env`/`.env.local`/`.env.production`/`.env.development`/`secrets.env` from the current working directory. It also captures the hostname, username, cwd and platform. The JSON is POSTed over HTTPS to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`, with errors swallowed so the install never visibly fails. Any host that installed this package should treat SSH keys, cloud credentials, wallet keystores and `.env` secrets as compromised and rotate them.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "permit2"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09"
+      ]
+    }
+  }
+}
