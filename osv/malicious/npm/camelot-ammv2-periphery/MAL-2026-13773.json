@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-13773",
   "published": "2026-08-11T00:00:00Z",
-  "modified": "2026-08-12T12:26:00.076901075Z",
+  "modified": "2026-08-12T12:53:36.201940198Z",
   "summary": "Malicious code in camelot-ammv2-periphery (npm)",
   "details": "camelot-ammv2-periphery is a malicious npm package that impersonates Camelot DEX's AMM v2 periphery contracts. It carries no legitimate functionality; the published tarball contains only a package.json and an install-time payload (index.js). Both `preinstall` and `postinstall` run `node index.js || true`, so the code executes automatically when the package is installed.\n\nVersion 1.0.0 harvests environment variables whose names match `KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET`, the contents of `~/.npmrc` and `~/.gitconfig`, and directory listings of `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud`, along with the hostname, username, working directory, and platform. The collected JSON is exfiltrated via an HTTPS POST to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`. Errors are swallowed so the install never visibly fails.\n\nVersion 1.1.0, published roughly 2.5 hours after 1.0.0 for all six packages within the same ~9-second window, reads full file contents (up to 4000 bytes) instead of just listing them. New targets include `.aws/credentials`, `.aws/config`, `.ssh/id_rsa`, `.ssh/id_ed25519`, `.ssh/config`, `.kube/config`, `.docker/config.json`, `.netrc`, `.pgpass`, `.pypirc`, `.git-credentials`, and two GCP credential files (`application_default_credentials.json` and `legacy_credentials`) — the `~/.config/gcloud` directory listing is still collected too. It also reads local `.env`, `.env.local`, `.env.production`, `.env.development`, and `secrets.env` files from the working directory, and adds cryptocurrency wallet theft: key files from Solana, Anchor, NEAR, and Sui wallet paths, plus the first three files under `~/.foundry/keystores`. The credential regex gains BEARER, API, INFURA, ALCHEMY, HELIUS, QUICKNODE, ANKR, and PRIVATE_KEY to catch RPC and API provider tokens. Both versions exfiltrate to the same webhook.site endpoint.\n\nIn 1.0.0, index.js opens with a fake comment claiming it is `@plumenetwork/nest-artifacts`, an unrelated install-time shim — `@plumenetwork/nest-artifacts` is not itself a malicious package, just a leftover label from whatever template the attacker reused across this batch, published by npm account `mssjeep843`. The fake comment was removed in 1.1.0. Five sibling packages from the same account impersonate Euler's EVC, Aerodrome Finance, Camelot AMM, and the BoringVault pattern, sharing this same webhook.site endpoint, byte-identical payload template, and 1.0.0-to-1.1.0 escalation. Two further packages from the same account (PyPI `dlmm` and `dlmm-sdk`, impersonating Meteora's DLMM SDK) ran an equivalent harvester and are tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment that installed either version should rotate the exposed secrets and treat harvested keys as compromised, prioritizing wallet private keys and RPC/API tokens if 1.1.0 was installed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (03a1781a084e6fad5552392169f445098b2c6c3ae5f776d47eca23269eabce73)\nThe package impersonates the Camelot AMM v2 periphery contracts but ships only a ~3KB Node stealer (index.js) that runs via preinstall/postinstall lifecycle hooks. On install, index.js reads well-known installer secret files (~/.aws/credentials, ~/.aws/config, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.kube/config, ~/.docker/config.json, ~/.netrc, ~/.npmrc, ~/.pypirc, ~/.gitconfig, ~/.git-credentials, gcloud/solana/anchor/sui/foundry keystores, and.env* files in cwd) and enumerates process.env, selecting variables whose names match /KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|.../i. The harvested payload is POSTed to https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09 from a detached child node process (spawn(process.execPath,['-e',src],{detached:true,stdio:'ignore'}); ch.unref()) after a randomized 60–240 second delay to outlive the install window. Execution is gated by anti-analysis checks that bail out on hostnames matching scan-/detonation/sandbox/ubuntu-fc-uvm, users scan/nonroot/sandbox, env markers honey/canarytokens/spoonfed, and mirror registries like npmmirror. No Solidity or AMM code is present; the package name and description are a lure targeting Camelot DEX integrators who hold wallet keys and RPC credentials.\n",
   "affected": [
@@ -23,10 +23,16 @@
       ],
       "versions": [
         "1.1.0",
-        "1.1.1"
+        "1.1.1",
+        "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -85,6 +91,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/camelot-ammv2-periphery/v/1.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/camelot-ammv2-periphery/v/1.0.0"
     }
   ],
   "database_specific": {
@@ -134,6 +144,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017454",
+        "import_time": "2026-08-12T12:51:42.973583075Z",
+        "modified_time": "2026-08-12T12:24:00Z",
+        "sha256": "c836be7f10db15ed9d94a06cc708ba000bd585d7b7464cd57ba042d4e10f6967",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
         ]
       }
     ]
