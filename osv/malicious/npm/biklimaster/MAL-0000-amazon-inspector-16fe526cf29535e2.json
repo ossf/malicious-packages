@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-12T12:23:06Z",
+  "modified": "2026-08-12T12:23:06Z",
+  "summary": "biklimaster postinstall creates a hidden Windows administrator with a hardcoded password and exposes the host over RDP",
+  "details": "The npm postinstall hook (`node bin/biklimaster.js install --postinstall`) prompts for UAC elevation and then reconfigures the installer's Windows host into a remotely reachable, attacker-accessible machine. `createRdpAdministrator` either enables the built-in Administrator (RID 500) or creates a local `admin` account via PowerShell `New-LocalUser`, sets its password to the value shipped in `config.json` (`administratorPassword: \"Hacker@1290\"`), adds it to Administrators and Remote Desktop Users, and hides it from the Windows sign-in user list by writing to `SpecialAccounts\\UserList`. `bikliwrapper.js` then applies registry settings enabling Remote Desktop (`fDenyTSConnections=0`), pinning `PortNumber=3389`, disabling Network Level Authentication (`UserAuthentication=0`), and enabling non-consensual session shadowing (`Shadow=2`), and adds inbound firewall Allow rules for TCP/UDP 3389 (`BikliWrapper-RDP-TCP/UDP`). The postinstall also silently executes bundled unsigned Windows binaries (`bikli-cli-installer.exe /S`, `RDPWInst.exe -i`, which patches `termsrv.dll` via RDP Wrapper). Because the credential is shipped in a package published publicly on npm, every installer receives the same admin password — the README even acknowledges it is 'visible to everyone if the package is published publicly' and that the bundled Windows executables are unsigned. The net effect of `npm install -g biklimaster` on Windows is a hidden local administrator account with a known password on an externally reachable RDP endpoint with NLA off and shadow-without-consent on.",
+  "affected": [
+    {
+      "package": {
+        "name": "biklimaster",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "bin/biklimaster.js",
+              "sha256": "9014eb10f15c2097527cd798a146c6f66a6d3c127b94109a8e70c7c57ce6527e",
+              "tlsh": "5382e6498ce637202ab355ada41b82367754de02704ae160b2fcc15d7fc640afabb5df"
+            },
+            {
+              "path": "lib/bikliwrapper.js",
+              "sha256": "148c9d6b8d4878d438f93881e7e124412d7c25625a94a5501eba87d17b251c98",
+              "tlsh": "0572b7855df673342aa353bf540b42226b38a611700ae16473ed46482fcf46de3b76ee"
+            },
+            {
+              "path": "config.json",
+              "sha256": "0bbfe0c4ddf6f068986294e93c106a7e2dec89f73e0070c7654a3ffd14d34f9b"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/biklimaster/v/1.1.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017448",
+        "import_time": "2026-08-12T12:24:14.75925119Z",
+        "modified_time": "2026-08-12T12:23:06Z",
+        "sha256": "16fe526cf29535e21a0d1c3206405e20d0447ca01f25ea46dc9569ab52066555",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
