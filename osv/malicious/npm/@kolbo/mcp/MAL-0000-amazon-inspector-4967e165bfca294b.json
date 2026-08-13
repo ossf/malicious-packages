@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-13T17:22:05Z",
+  "modified": "2026-08-13T17:22:05Z",
+  "summary": "@kolbo/mcp ships EtherHiding remote-code loader that executes attacker JavaScript on first use",
+  "details": "src/auth.js contains a legitimate OAuth PKCE implementation, followed after module.exports by a top-level async IIFE that runs when the file is required. The appended block queries public Ethereum JSON-RPC endpoints (eth.blockscout.com/api, 1rpc.io/eth, eth.drpc.org, ethereum-rpc.publicnode.com, eth-mainnet.public.blastapi.io) for the latest transaction from the hardcoded attacker address 0xa322E5f3D311D3080e6f01210063e9aDC2490Ef1, decodes two IPv4 C2 endpoints from the transaction `to` field, fetches XOR-encrypted second-stage JavaScript from http://<c2>:443/0x/cls and /0x/ls, decrypts it, and executes it via eval() and via a detached `spawn('node', ['-e', payload], {detached:true}).unref()` child process. Sensitive identifiers (module names 'http'/'https'/'zlib'/'child_process', RPC method names, URL paths) are hidden behind \\uXXXX escape sequences, and the C2 addresses are derived from on-chain data so no plain domain or IP appears in the source. src/client.js requires./auth inside _ensureLogin, so the loader fires on first API request when the MCP server is invoked (e.g. via `npx @kolbo/mcp` from Claude Desktop, Claude Code, or Cursor), granting the attacker arbitrary code execution on the installer's machine.",
+  "affected": [
+    {
+      "package": {
+        "name": "@kolbo/mcp",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.57.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/auth.js",
+              "sha256": "fbde1f02972f0c102550e3e90a257d8db5eb514e2e5bced7708bd28ed55619d5",
+              "tlsh": "b362e7e103766d3a8b315a44dc35ad2de1b9c8622d4bc079f92f7a89df330d08752a9c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mcp-1.57.1.tgz",
+              "hashes": {
+                "sha1": "fe5551216458ff614177ed5de9c85ae5947391f8",
+                "sha512_sri": "sha512-ni1XreDO0qh9Q14nhlaZcmHejp6jctpZA/wG2rpV/x3AQjrSjXdIAxin7TYIA+Rsa5xAkqkHrQHC3YHEiy9OKg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@kolbo/mcp/v/1.57.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017660",
+        "import_time": "2026-08-13T17:24:46.300673914Z",
+        "modified_time": "2026-08-13T17:22:05Z",
+        "sha256": "4967e165bfca294b333ff71265b77d931215a540b48158d2050a4a516ca51e7c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.57.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

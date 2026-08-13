@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-13T17:22:49Z",
+  "modified": "2026-08-13T17:22:49Z",
+  "summary": "Typosquat of @solana/web3.js drops and executes shellcode from catbox.moe on Windows install",
+  "details": "Package name @solana-js/web3 impersonates the legitimate @solana/web3.js SDK, and package.json falsely attributes authorship to 'Solana Labs' with a solana.com homepage. The exported API is a non-functional stub (Connection.getBalance returns 0, sendTransaction returns random bytes) — no real Solana client functionality is present. On install, scripts/postinstall.js detects Windows and spawns a hidden PowerShell (`-NoP -W Hidden -Exec Bypass`) with a base64-encoded command. The decoded PowerShell performs an AMSI bypass via reflection over System.Management.Automation.AmsiUtils, downloads a binary payload from https://files.catbox.moe/a3loxy.bin, and executes it in-process using VirtualAlloc/CreateThread. The postinstall script further hex-escapes API names ('child_process', 'powershell', 'platform', 'win32') and fragments the PowerShell payload to hinder review. The result is arbitrary remote code execution on any Windows host that runs `npm install` against this package, with the shellcode fetched from an anonymous, mutable file host (files.catbox.moe) — a known-bad-infrastructure dropper pattern.",
+  "affected": [
+    {
+      "package": {
+        "name": "@solana-js/web3",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.91.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "924c0025ffb6eff7bb08ac06107d0ff49b02df921d0af87c84538d321455e03c",
+              "tlsh": "7a41f98ab05aa01753cc05a3c0047cea83f9cdb5b9346b67634cb1cd082560bc5ff499"
+            },
+            {
+              "path": "package.json",
+              "sha256": "fa37110ccb79922fb6c358896b72b23df2cd55011cf4f35040b943e6d7cbecb4",
+              "tlsh": "81f0ac11ce908d632bc81bcf4c378081a441480b0950bc0d37c3602ccb4d76f24bea3d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "web3-1.91.3.tgz",
+              "hashes": {
+                "sha1": "965e4486eb0074c29c082fa07a72758a182d412d",
+                "sha512_sri": "sha512-sAkvC9WrANT8e1vjN4nsFHCWzmQqiHekF91NiYIiLx5SOreA6Q44qzydCAwg2+O9lZSMm+1XLi2AgXySb5FX3g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@solana-js/web3/v/1.91.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017665",
+        "import_time": "2026-08-13T17:24:46.477286859Z",
+        "modified_time": "2026-08-13T17:22:49Z",
+        "sha256": "9b539591552f3e960f65ceb70d946bc56f240f9bdb1400c501723aa32fd305ec",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.91.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
