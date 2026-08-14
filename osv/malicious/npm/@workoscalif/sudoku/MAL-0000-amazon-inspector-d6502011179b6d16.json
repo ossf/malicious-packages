@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-14T15:05:46Z",
+  "modified": "2026-08-14T15:05:46Z",
+  "summary": "@workoscalif/sudoku ships an opaque Linux-x64 Go binary executed at postinstall that does not match the advertised source",
+  "details": "package.json declares a postinstall script that spawns vendor/gridgen-linux-x64 during `npm install`. The README describes this file as a ~34 kB static ELF built from a ~150-line C sudoku generator (native/gridgen.c), but the shipped artifact is a ~33.6 MB Go runtime executable (strings include `runtime.`, `reflect.`, `GODEBUG`, `chacha8`, `godebugs.Info`) — roughly 1000x the advertised size and a different language/toolchain than the shipped source. The binary contains `/proc/self/cgroup` and `/proc/self/mountinfo` strings, which are container/CI environment fingerprints unrelated to generating sudoku puzzles. The postinstall short-circuits unless `process.platform === 'linux' && process.arch === 'x64'` and honors `SUDOKU_SKIP_POSTINSTALL=1`, so developer laptops (macOS/Windows) and reviewers using `--ignore-scripts` do not execute the binary. The npm scope `@workoscalif` visually resembles the WorkOS authentication vendor while the package is an unrelated personal project (author `anas cherni`, homepage github.com/anascherni/sudoku), increasing the likelihood a developer installs it believing it is vendor-endorsed. The combination of a documentation/contents mismatch, a large opaque binary from an unrelated toolchain, Linux-x64/CI gating, container fingerprinting strings, and a scope resembling a known vendor is the opaque-native-binary dropper shape rather than the advertised C sudoku helper.",
+  "affected": [
+    {
+      "package": {
+        "name": "@workoscalif/sudoku",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.mjs",
+              "sha256": "f96917a4cd6b06573c311eae4a99ba2975115abcf69fc250006f4372cdd7f1bd",
+              "tlsh": "1a71c7aac594697901f069b0970fa251e73994173319f8f0f4ee82023f4760d4197d9d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "cd453b3143fc35575efe5a1b94736a0efe35dbaeabda1d4e20505f62f914746b",
+              "tlsh": "4231df30caa14e7316c827e9ac6e0792a5b144478e547d0933db512c8f4d2ef52bf6be"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@workoscalif/sudoku/v/1.2.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017892",
+        "import_time": "2026-08-14T15:21:28.352691711Z",
+        "modified_time": "2026-08-14T15:05:46Z",
+        "sha256": "d6502011179b6d16c43f982d5d7bfb08feec7470444be52a5a3547cfafe0e217",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
