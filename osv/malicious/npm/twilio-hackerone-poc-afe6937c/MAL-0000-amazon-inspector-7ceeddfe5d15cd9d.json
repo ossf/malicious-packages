@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-15T15:57:09Z",
+  "modified": "2026-08-15T15:57:09Z",
+  "summary": "twilio-hackerone-poc-afe6937c exfiltrates host/process data and stages a persistent daemon at install",
+  "details": "package.json declares preinstall and postinstall hooks that execute probe.js. probe.js POSTs cwd, `id` output, ppid, parent process cmdline from /proc, AWS_LAMBDA_LOG_STREAM_NAME, and a listing of /var/task to a hardcoded webhook.site collector (https://webhook.site/b520829e-516a-45ff-980c-173aa54fc4bc, UUID stored in hook.txt). probe.js also copies daemon.js to /tmp/.h1poc-daemon.js and spawns it via process.execPath as a detached, unref'd background process, writing the PID to /tmp/.h1poc.pid and killing any prior instance, creating a persistent agent that survives beyond `npm install`. The daemon polls /tmp every 100ms for AC[0-9a-f]{32} tenant directories, enumerates their subdirectories and package names, and POSTs `seen`/`hb`/`daemon-start` events (including `id` output, HOME, AWS_LAMBDA_FUNCTION_NAME, /var/task listing, and log stream identifiers) to the same webhook. It additionally writes an `h1-poc-marker` package (index.js + package.json) into node_modules/ of neighboring AC* tenant build directories, a cross-tenant dependency-injection primitive on shared build hosts. The package name references a HackerOne PoC, but the shipped mechanism performs real installer-host reconnaissance, exfiltration to an anonymous webhook.site collector, install-time persistence, and cross-tenant node_modules writes.",
+  "affected": [
+    {
+      "package": {
+        "name": "twilio-hackerone-poc-afe6937c",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "probe.js",
+              "sha256": "09b9a9758086f4ef27e6910a17ff79986b48cee7d5196896eba73935a3cef5a2",
+              "tlsh": "353144d2a6b14354279204cab17b6341e6b7da113d8c98f0e5a8949f2fcb91496338fc"
+            },
+            {
+              "path": "daemon.js",
+              "sha256": "45ebd41c64b0495a6bb5beaae0cc6d6c85a7ec77c2f9a3dbd3218ea5133b52ae",
+              "tlsh": "766164c1c3b2738c0b95025a926f1780b473d11a35c289d471acb8cb6fc6a44639fdbc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "twilio-hackerone-poc-afe6937c-1.0.4.tgz",
+              "hashes": {
+                "sha1": "a4ce477609344000f34d866028b56f05376f5276",
+                "sha512_sri": "sha512-axGoYKb+yEersAJ8dTMS/SU5ps7UIlLBjOidCbVi3cVi5grw/Gizn9A+lDHjtoH/I3DtJvQfLQ/kdO18Zrp0Ug=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/twilio-hackerone-poc-afe6937c/v/1.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017956",
+        "import_time": "2026-08-15T16:07:56.367370475Z",
+        "modified_time": "2026-08-15T15:57:09Z",
+        "sha256": "7ceeddfe5d15cd9d4a4a688dafd12102fbf03e042123e741260bd35307885cac",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

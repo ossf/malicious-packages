@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-15T15:54:08Z",
+  "modified": "2026-08-15T15:54:08Z",
+  "summary": "tw-pkgprobe-7731 spawns persistent daemon that exfiltrates Twilio build data and injects code into co-tenant node_modules",
+  "details": "Package tw-pkgprobe-7731@1.0.4 declares preinstall and postinstall hooks that run probe.js, which copies daemon.js to /tmp/.npm-helper.js and spawns it as a detached, unref'd Node process that persists beyond `npm install`. Activation is gated to Twilio serverless build sandboxes (cwd matching /^\\/tmp\\/AC[0-9a-f]{32}\\//), and the daemon tracks itself via /tmp/.npm-helper.pid /.ver, SIGKILLing prior instances to upgrade in place. Once running, the daemon polls /tmp every 80ms enumerating co-tenant build directories matching /^AC[0-9a-f]{32}$/ and POSTs each discovered path and timestamps to the hardcoded anonymous collector https://webhook.site/dc26a1e3-921f-4f8a-950a-7f922c564fc8 over HTTPS. For directories on a hardcoded target list, the daemon writes a new package `injected-by-other-tenant` into their node_modules and appends a payload to the main file of `runtime-handler` that, on execution, reads process.env.ACCOUNT_SID and a prefix of process.env.AUTH_TOKEN (Twilio account credentials) and writes them to /tmp/xtenant-rce-proof.txt. This constitutes install-time persistence, cross-tenant code injection, and credential harvesting against Twilio build environments other than the one installing the package.",
+  "affected": [
+    {
+      "package": {
+        "name": "tw-pkgprobe-7731",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "probe.js",
+              "sha256": "35e1f5b6d8a5fe876256c414ca9e00c678bb4d71dca7d8ed99a5a2154b27cc07",
+              "tlsh": "8621dd9b36350768c2911acf906f62122eb3e722798494e5fedc646f5f870045a738f8"
+            },
+            {
+              "path": "daemon.js",
+              "sha256": "f44fa9d83fb8f9f940ae4d69a865631ca6a628c1dd18a45bf82b2aef152bf62a",
+              "tlsh": "b781a4c249b3a3580be5904fc3ae1300e177a15a758286d8b4ace5ce9f4365c439fbbc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tw-pkgprobe-7731-1.0.4.tgz",
+              "hashes": {
+                "sha1": "35b21553837b74e1fc5ac43efd839cdc28109fdf",
+                "sha512_sri": "sha512-L6Wh4DOwUFlAXEP3CoZYu56yjBJ4jLtRRS0f7ZaifFFruz8j4PSBn0+X2+72zX+RCgQ/FMr6pGY3EQeyFUeaUw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tw-pkgprobe-7731/v/1.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017940",
+        "import_time": "2026-08-15T16:07:55.186904909Z",
+        "modified_time": "2026-08-15T15:54:08Z",
+        "sha256": "854deb546cd78fcfcd08bd8980b461497717936fdf26b3034512644686e0acbf",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
