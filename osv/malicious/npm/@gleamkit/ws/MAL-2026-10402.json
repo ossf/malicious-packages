@@ -1,0 +1,80 @@
+{
+  "modified": "2026-07-13T06:00:14Z",
+  "published": "2026-07-13T06:00:14Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10402",
+  "summary": "Malicious code in @gleamkit/ws (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8fc9213fe9e786988b3fd882b571f03aeaa1487b8006badb837b4e804da66eee)\nThe package publishes under scope `@gleamkit/ws` while copying the `ws` package's description, homepage, repository, author, and README verbatim, and bundling the legitimate `ws` source so it appears functional. Appended to `lib/websocket.js` after the copied WebSocket implementation is a heavily obfuscated payload (base64+RC4 string decoder over a ~700-entry rotated string array, hex-named identifiers, duplicated as two sequential IIFEs) that reconstructs hostnames, paths, environment keys, and spawn arguments at runtime. On every load — `index.js` (main) and `wrapper.mjs` both pull in `./lib/websocket` — the payload issues an HTTPS request to fetch an external binary, AES-256-GCM decrypts it, writes it under `os.tmpdir()`, chmods it to 0o755, and spawns it as a detached, `unref()`ed child process with `windowsHide:true`, then calls `process.exit`. A marker env variable gate (`process.env[d]!== e`) is used to avoid re-entry. Because require/import is the trigger, any project that installs and loads `@gleamkit/ws` executes attacker-controlled bytes fetched from a remote host at load time.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@gleamkit/ws"
+      },
+      "versions": [
+        "8.21.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/websocket.js",
+              "sha256": "5a2e9dd3a8ebd3962d2b0b7d8d8624b6c6edc9501897006cd1d586ce8e4c916a",
+              "tlsh": "09d32b857efa31bf51a260b3121b6186f12d8c5ab308c458f41dddecbf9523cd2a669c"
+            },
+            {
+              "path": "package.json",
+              "sha256": "75d1cef9ab9f098c7c02d5f29ef180982409a87033e6705ca31b0876ced4978b",
+              "tlsh": "1b31dc76cc790ee30ee529a978a441927232485b5984bc0c7bd7431c8f4eaaf11fea5d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ws-8.21.3.tgz",
+              "hashes": {
+                "sha1": "4a0eb94017102e96ab7631acc994457d77a76b05",
+                "sha512_sri": "sha512-QYg4t0jQnnfF94HhUWGXuQ6ri94fwMLaNk0t5rijOdRmJOclSHS7cYJwlQbYVGs94AXZkDi/Ug0WfuX8NyNSEQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@gleamkit/ws/v/8.21.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-009803",
+        "import_time": "2026-07-13T07:40:09.832859247Z",
+        "modified_time": "2026-07-13T06:00:14Z",
+        "sha256": "8fc9213fe9e786988b3fd882b571f03aeaa1487b8006badb837b4e804da66eee",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.21.3"
+        ]
+      }
+    ]
+  }
+}

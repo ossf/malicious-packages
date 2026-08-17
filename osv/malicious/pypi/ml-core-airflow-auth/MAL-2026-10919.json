@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10919",
+  "published": "2026-07-20T16:00:49Z",
+  "modified": "2026-08-04T22:32:07.930298436Z",
+  "summary": "Malicious code in ml-core-airflow-auth (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0a543a55b463967fa7f6b3c1462ecb38735072a4f4f47bf5f9b732e089a64b8a)\nThe package advertises itself as an 'auth token handler' but its public API (src/ml_core_airflow_auth/__init__.py) exposes only a trivial in-memory TokenStore stub unrelated to the ~3300 LOC of hidden telemetry code shipped alongside. The setup.py custom install command copies telemetry.pth into site-packages; that.pth file contains `import _telemetry_init`, causing every subsequent Python interpreter start on the host to auto-load _telemetry_init._bootstrap, which spawns a daemon thread that constructs an analytics Client (Envelope, HttpTransport, ServiceDiscovery, DataScrubber, SessionTracker) and calls client.track('session_start') with the machine's hostname, OS, Python version, and cpu_count. The reporting endpoint is not a static URL; _telemetry_transport.py's ServiceDiscovery opens a raw UDP DNS socket with hardcoded fallback resolvers 8.8.8.8 and 1.1.1.1, queries TXT records under `0.<domain>`... `N.<domain>`, and reconstructs the destination via `base64.b64decode(''.join(segments))`, letting the operator change the exfiltration destination post-install without republishing. The name, generic 'Platform Engineering' author, and mismatch between the declared purpose and the hidden persistent telemetry framework are consistent with dependency-confusion targeting corporate ML/Airflow environments.\n\n## Source: kam193 (1b104d8446715fc7f59f0274ca3e655e6818b45edd837c24f78e857c917b2e6f)\nPackage presents little functionality, but excessive fake 'telemetry' module. This fake telemetry is used to download and run malicious executables. Code is designed to survive different blocks: first, there is an attempt to download the executable from one of five Cloudflare Workers. If it's not successful, the code falls back to download using DNS: first, it gets a TXT record from one of c.*.dl.well1[.]site domains, depending on the system. This record returns a number, which is then used to iterate over domains in the form <0...n>.*.dl.well1[.]site and reconstruct the encoded executable from their TXT records. The downloaded binary is then executed and removed afterward. Using a PTH file ensures persistence and runs on every Python start. In this campaign, versions 0.0.1 hold disarmed code (without the necessary configuration), which is completed in further updates.\n\nThis is a continuation of the 2026-07-haproxy-config-client campaign.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-07-andreiiiiiii_i\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to exfiltrate basic data from the system, like IP or username. It has a limited risk.\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - Downloads and executes a remote executable.\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - abuses-pth\n\n\n - data-stored-in-dns\n",
+  "affected": [
+    {
+      "package": {
+        "name": "ml-core-airflow-auth",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "b5f6817bd7c411b21c5b005a80c88429abb348854c582e5f369286844181bd26",
+              "tlsh": "ae21876b8c6a282059f5c5248d63c89af9615357b920d4cb7afc43043f742e1c74b15b"
+            },
+            {
+              "path": "_telemetry_transport.py",
+              "sha256": "3b2e157d9383b96d3591c354bd80acb2ac525529f18fb1522fe49f22520ea650",
+              "tlsh": "04b33cb6ed1bac228177c91e9c86e047f72a4753222c614779bc826c2f74715c2e4eed"
+            },
+            {
+              "path": "PKG-INFO",
+              "sha256": "57df06e44a2762f05e29fd8105372be946a028bc103228bbf894baa7aad0964e",
+              "tlsh": "b611ed6425879c7876e349061d12a2ebc531c35819c92088f8d207de95d4998d67e23d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ml_core_airflow_auth-0.0.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "84950c928e13857239a69985675db92389cf0edd2e0066f8ddfa690c00f8cb1b",
+                "md5": "ca3aeeb457809bbdd7896fb784cbd014",
+                "sha256": "10ee81367cc698ecc80d9b33119b233e063a39729cfa0e2e9122c48e69a0b0cb"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/06f1c2f0c66cf13ab6702414e8dce7c4115939f3e9cf95e9a8baade58961c016/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/230f81f18608800912def92e18999874e004cd9fb4a554f759f77e4dd2030081/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/c98444d6aebfd87f2f4412e1d7aafe8fe3fe080139ca1111049ea83fe828cd1d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/1360bb7437f5e7790747bc4e31eedcd19f88f23b20362a42368f4179b8b9e27d/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://tria.ge/260720-teqmlshs6y/behavioral1"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/ml-core-airflow-auth"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ml-core-airflow-auth/0.0.1/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "package-proxy.cf8oobworker.workers.dev",
+        "package-proxy.cf5oobworker.workers.dev",
+        "package-proxy.cf25-6eb.workers.dev",
+        "package-proxy.cf17-ddb.workers.dev",
+        "win.dl.well1.site",
+        "tina.dl.well1.site",
+        "tin.dl.well1.site",
+        "ldr.dl.well1.site"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "pypi/2026-07-andreiiiiiii_i/ml-core-airflow-auth",
+        "import_time": "2026-07-20T17:01:49.034402884Z",
+        "modified_time": "2026-07-20T16:00:50.041946Z",
+        "sha256": "1b104d8446715fc7f59f0274ca3e655e6818b45edd837c24f78e857c917b2e6f",
+        "source": "kam193",
+        "versions": [
+          "0.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011166",
+        "import_time": "2026-08-04T22:30:02.791393761Z",
+        "modified_time": "2026-08-04T21:42:09Z",
+        "sha256": "0a543a55b463967fa7f6b3c1462ecb38735072a4f4f47bf5f9b732e089a64b8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
+}

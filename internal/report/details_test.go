@@ -27,9 +27,9 @@ func reportWithDetail(details string) *Report {
 		SchemaVersion: "1.5.0",
 		Summary:       "test report",
 		Details:       details,
-		Affected: []osvschema.Affected{
+		Affected: []*osvschema.Affected{
 			{
-				Package: osvschema.Package{
+				Package: &osvschema.Package{
 					Ecosystem: "npm",
 					Name:      "example",
 				},
@@ -312,5 +312,53 @@ func TestSetAndParse(t *testing.T) {
 	}
 	if !reflect.DeepEqual(gotSources, wantSources) {
 		t.Errorf("ParseDetails() sources = %v; want %v", gotSources, wantSources)
+	}
+}
+
+func TestHasDetailsHeader(t *testing.T) {
+	tests := []struct {
+		name    string
+		details string
+		want    bool
+	}{
+		{
+			name:    "empty details",
+			details: "",
+			want:    false,
+		},
+		{
+			name:    "no header present",
+			details: "Some user contributed details without header.",
+			want:    false,
+		},
+		{
+			name:    "partial or corrupted header",
+			details: "\n---\n_-= Per source details. Do not edit below this line.=",
+			want:    false,
+		},
+		{
+			name:    "exact standard header",
+			details: "\n---\n_-= Per source details. Do not edit below this line.=-_\n",
+			want:    true,
+		},
+		{
+			name:    "header with surrounding text",
+			details: "User details\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test (deadbeef)\nsource details",
+			want:    true,
+		},
+		{
+			name:    "header with stripped whitespace",
+			details: "User details---\n_-= Per source details. Do not edit below this line.=-_Source details",
+			want:    true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			r := reportWithDetail(tc.details)
+			if got := r.HasDetailsHeader(); got != tc.want {
+				t.Errorf("HasDetailsHeader() = %v; want %v", got, tc.want)
+			}
+		})
 	}
 }

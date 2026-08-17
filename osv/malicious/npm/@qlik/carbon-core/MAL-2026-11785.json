@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11785",
+  "published": "2026-08-04T15:50:25Z",
+  "modified": "2026-08-05T07:08:50.569071638Z",
+  "aliases": [
+    "GHSA-5p47-xqh5-mx62"
+  ],
+  "summary": "Malicious code in @qlik/carbon-core (npm)",
+  "details": "npm/@qlik/carbon-core is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (33bb7f2fc2bf36b20055323f241bb08ebe8eb1aa4a0606771065d740f8bffcab)\npackage.json declares scripts.preinstall = \"node setup.mjs\". setup.mjs is obfuscated (hex-named identifiers, dictionary indirection) and downloads the Bun runtime from github.com/oven-sh/bun releases into a temp directory, extracts it, chmods 0o755, and invokes the shipped file math_init.js under Bun on npm install. Even when Bun is already present, setup.mjs still executes math_init.js under Bun. math_init.js is a 727KB heavily obfuscated Bun-CJS bundle (string-array shuffling via WV8StW, >700-element lookup table, encoded identifiers) that is never imported by src/index.js and is unrelated to the package's stated React Native rendering purpose. Executing the payload under an alternate runtime bypasses scanners that only trace Node-resolvable code. The package presents Qlik branding (name @qlik/carbon-core, author Qlik, repository qlik-trial/carbon-core) while shipping this dropper, consistent with either a namespace impersonation of the @qlik scope or compromise of a legitimate Qlik package.\n\n## Source: ghsa-malware (13e481aaca7faedc52ec01a910140749b2d0f8218b9ca5fdb56416e067a1f4d5)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@qlik/carbon-core",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "7e628d81d1d357a0b8b9ac90ec09d045a0d4ddb2c1a9262720974f5c4c04095e",
+              "tlsh": "17115661dd981ca343d842b9d86501c3512a9c8b4989fc0cb7f2658c8f5d7ef74ba8ae"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "carbon-core-2.1.1.tgz",
+              "hashes": {
+                "sha1": "8816520a665423003a468dc4f2e024acc9b9ae8d",
+                "sha512_sri": "sha512-aLBT6pU41h3F9D0BQXPYAJLCdvNm1/3rhmI2FCgvIfaIL+D4BBRCzJstAugR/ZQecTSIVfvNmzS/a6MaMMg1Fw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/carbon-core"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-5p47-xqh5-mx62"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/carbon-core/v/2.1.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-5p47-xqh5-mx62",
+        "import_time": "2026-08-05T00:10:17.916658564Z",
+        "modified_time": "2026-08-04T15:50:26Z",
+        "sha256": "13e481aaca7faedc52ec01a910140749b2d0f8218b9ca5fdb56416e067a1f4d5",
+        "source": "ghsa-malware",
+        "versions": [
+          "2.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013687",
+        "import_time": "2026-08-05T07:06:59.425955835Z",
+        "modified_time": "2026-08-05T06:59:51Z",
+        "sha256": "33bb7f2fc2bf36b20055323f241bb08ebe8eb1aa4a0606771065d740f8bffcab",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

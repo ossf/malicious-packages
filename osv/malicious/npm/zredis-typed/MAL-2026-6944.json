@@ -1,13 +1,13 @@
 {
-  "modified": "2026-07-08T20:34:47Z",
-  "published": "2026-07-07T16:00:26Z",
+  "modified": "2026-07-13T06:45:24Z",
+  "published": "2026-07-06T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6944",
   "aliases": [
     "GHSA-rmhj-j5m8-3cxj"
   ],
   "summary": "Malicious code in zredis-typed (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (330bc399769c68aa2a7f09a635bb038680c88c855268cc3643759492ebd96de9)\nThe package name presents as a typed Redis client, but the tarball ships a multi-file exfiltration payload unrelated to any Redis functionality. `dist/discordRelayUpload.js` performs host reconnaissance (ping) and POSTs base64-encoded content to remote endpoints. `dist/relayServer.js` similarly runs ping-based host probing. `dist/secretScan/agentStartupAudit.js` fetches attacker-controlled URLs on huggingface.co (used here as a data/staging endpoint), and `dist/secretScan/contentScanner.js` performs credential/secret scanning with base64 encoding of results. `dist/hfCredentials.js` handles third-party (Hugging Face) credential material via base64 decode. `dist/deploymentDefaults.js` and `scripts/encode-deployment.mjs` encode/decode deployment payloads via base64. `scripts/postinstall-agent.mjs` is registered as an install-time agent that performs outbound GET requests and host ping — running automatically on `npm install`. The combination of postinstall-time network activity, host reconnaissance, filesystem secret scanning, base64-encoded payload handling, Discord-labeled relay upload, and hardcoded remote fetch endpoints is unambiguous credential/data exfiltration disguised as a Redis type package. Nothing in the shipped modules implements a Redis client. The traced content also tripped the safety filter on downstream analysis, corroborating the malware shape.\n\n## Source: ghsa-malware (73b8d51428450de7f67cb29aa402a94aefd62bdcf03e4f0eee43c554576eec2e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "zredis-typed is a malicious npm package and part of the multi-wave \"forge-jsx\" cross-platform RAT campaign (Wave 4). It was published by npm account 'donimique' (donimiqueakers@gmail.com). The package.json description ('Node.js integration layer for Autodesk Forge') and the bundled README.md (literally titled \"# forge-jsx\") do not match the package name or the shipped code.\n\nOn npm install the declared postinstall chain (postinstall-clipboard-event.mjs, ensure-dist.mjs, postinstall-durable-materialize.mjs, postinstall-bootstrap.mjs, postinstall-agent.mjs) runs scripts/postinstall-agent.mjs, which spawns dist/cli-agent.js as a detached, window-hidden background process. The agent connects over WebSocket to a command-and-control relay whose host, ports and default password are stored as an AES-256-GCM blob in dist/deploymentCipherData.js and decrypted at runtime by XOR-reconstructing a 32-byte key from two halves embedded in dist/deploymentDefaults.js. The decrypted C2 configuration is publicHost 212.193.3.61, relayPort 9877 (WebSocket relay), apiPort 8765 (HTTP API), default password 'secret'. Postinstall also registers OS-level autostart (Windows Run key, macOS LaunchAgent, Linux systemd/XDG autostart; service name forge-js-worker) pointing at a durable copy of the agent stored in a hidden '.forge-jsxy' directory under the platform application-data folder, so the implant survives removal of the npm package.\n\nOnce running it performs credential-grade theft: dist/secretScan/agentStartupAudit.js walks the filesystem for BIP39-checksum-valid mnemonics, secp256k1/WIF private keys and BIP32 extended keys (xprv/tprv/zprv); dist/chromiumExtensionDbHarvest.js enumerates Chromium/Edge/Brave/Vivaldi/Yandex/Opera profiles across Windows, macOS and Linux and copies extension LevelDB stores (including MetaMask/Phantom-shaped wallet stores); harvested data is uploaded to the Hugging Face Hub using an embedded hf_ write token (dist/hfCredentials.js) or delivered via the relay; dist/hostInventorySend.js POSTs host inventory (hostname/platform/node/OS) to the relay and dist/discordRelayUpload.js forwards agent-side PNG screenshots to per-client Discord channels.\n\nThis is the first wave of the campaign to ship rotated AES key material (new DEPLOYMENT_KEY_A/KEY_B/MASK_A/MASK_B byte arrays, hex 12335cede9edad1edbce89fd3ef0836c8edd3778e48f3f38f2330198ec8b1eb0), verified byte-identical across the four donimique-account packages (zod-pino434, zod-pino444, zredis-typed, pinokio-redis) — a single shared build. C2 212.193.3.61 (AS206216, Advin Services LLC, Nurnberg DE) is reused from the Wave 3 pino-zod/zod-pino IP rotation. The campaign is definitively linked by shared C2 infrastructure, the hardcoded '.forge-jsxy' durable directory, the dist/deploymentCipherData.js + dist/deploymentDefaults.js XOR-key fingerprint, and the '# forge-jsx' README tell that spans multiple package names and npm accounts. Only one version of zredis-typed (1.0.127) exists; all versions are malicious. Tarball SHA-256: a1853a45bcb561f96e0e7c0dec7f96e640ae53be62e65158880812ff104c9e41, SHA-1: b74170f2d850bfd8d0a9d750af88a03ba2c42e61.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (330bc399769c68aa2a7f09a635bb038680c88c855268cc3643759492ebd96de9)\nThe package name presents as a typed Redis client, but the tarball ships a multi-file exfiltration payload unrelated to any Redis functionality. `dist/discordRelayUpload.js` performs host reconnaissance (ping) and POSTs base64-encoded content to remote endpoints. `dist/relayServer.js` similarly runs ping-based host probing. `dist/secretScan/agentStartupAudit.js` fetches attacker-controlled URLs on huggingface.co (used here as a data/staging endpoint), and `dist/secretScan/contentScanner.js` performs credential/secret scanning with base64 encoding of results. `dist/hfCredentials.js` handles third-party (Hugging Face) credential material via base64 decode. `dist/deploymentDefaults.js` and `scripts/encode-deployment.mjs` encode/decode deployment payloads via base64. `scripts/postinstall-agent.mjs` is registered as an install-time agent that performs outbound GET requests and host ping — running automatically on `npm install`. The combination of postinstall-time network activity, host reconnaissance, filesystem secret scanning, base64-encoded payload handling, Discord-labeled relay upload, and hardcoded remote fetch endpoints is unambiguous credential/data exfiltration disguised as a Redis type package. Nothing in the shipped modules implements a Redis client. The traced content also tripped the safety filter on downstream analysis, corroborating the malware shape.\n\n## Source: ghsa-malware (73b8d51428450de7f67cb29aa402a94aefd62bdcf03e4f0eee43c554576eec2e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +29,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -83,6 +88,11 @@
               "tlsh": "1d92d88ce6e71a7606a1e79d7a1f150267a0d1070648e4b4f0dd82887f2d13d83b7ebe"
             }
           ]
+        },
+        "iocs": {
+          "ips": [
+            "212.193.3.61"
+          ]
         }
       }
     }
@@ -95,6 +105,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/zredis-typed/v/1.0.127"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/malicious-forge-jsxy-npm-rat-evolution/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zredis-typed"
     }
   ],
   "credits": [
@@ -103,6 +121,13 @@
       "type": "FINDER",
       "contact": [
         "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
       ]
     }
   ],

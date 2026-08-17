@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10934",
+  "published": "2026-07-20T00:00:00Z",
+  "modified": "2026-08-05T07:08:56.351639527Z",
+  "summary": "Malicious code in twilio-internal (npm)",
+  "details": "The twilio-internal package is one of four byte-identical dependency-confusion squats of Twilio's npm namespace published by user 'yuva2210' (maintainer email charankumarj2004@gmail.com), all at the sentinel version 99.99.99 chosen to outrank any internal/private version and win resolution against a private registry. The npm description is empty and the package provides no legitimate functionality; the name mimics a plausible internal Twilio package so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a postinstall hook (\"node index.js\") that executes automatically on a bare npm install with no consent gate. The bundled index.js payload (1,185 bytes, sha256 prefix c324d579006df4c5, identical across all four packages) performs environment reconnaissance: it collects the npm package name and version, os.hostname(), the OS username (os.userInfo().username), the home directory path (os.homedir()), the current working directory, os.platform(), os.arch(), NODE_ENV, and the CI flag. It serializes this to JSON and exfiltrates it via HTTPS POST to a hardcoded anonymous dead-drop at https://webhook.site/42ce0f0e-a0a0-41b5-b157-1c0f918e064f (the same collector UUID across all four packages). On request error the payload falls back to a redundant out-of-band callback to 2b22ede784d5.oast.fun over HTTP, ensuring the beacon lands even where HTTPS egress to webhook.site is blocked; errors on that path are swallowed.\n\nThe collected cwd/homedir/username/CI/NODE_ENV set is reconnaissance targeting internal build environments and their filesystem layout. All four packages (twilio-serverless, twilio-assets, twilio-deploy, twilio-internal) were published by the same maintainer with an identical payload and the same collector endpoint.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (539f7f248130c1d45914d85f04e43508d482fbf5a3622a840191dbfa18086c19)\nThe package's postinstall script runs index.js on npm install and collects host reconnaissance data — os.hostname(), os.userInfo().username, os.homedir(), process.cwd(), os.platform(), architecture, and selected environment variables — then POSTs the collected data to a hardcoded collector at webhook.site/42ce0f0e-a0a0-41b5-b157-1c0f918e064f. On request failure the code triggers a DNS/HTTP callback to 2b22ede784d5.oast.fun (interactsh) as an out-of-band beacon. The package name 'twilio-internal' combined with version 99.99.99 and empty metadata is consistent with a dependency-confusion lure targeting a private Twilio internal package namespace; installing it results in exfiltration of installer host identifiers to attacker-controlled infrastructure at install time.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "twilio-internal",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "99.99.99",
+        "99.99.100"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "1e53f49081bcfa36cb83abaa9fcfdec5b1ef99d515f40a766b0de9e1e5d03f09",
+              "tlsh": "5f1148f553f5ad700bb59384b18aac1553b3f01473079cf099d851652bd827425f26f9"
+            },
+            {
+              "path": "package.json",
+              "sha256": "57eca8d6e2b8d92f28fdb4cb292a250368e8033aa6ef6e70994b48daf1a4d3e0",
+              "tlsh": "d8c08c701c229b7334c80b96087a944922e20d2f4104a80507832110a1d927388ff30d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "twilio-internal-99.99.99.tgz",
+              "hashes": {
+                "sha1": "0a6478629631416a2e5b00db93bc330b1785a693",
+                "sha512_sri": "sha512-gQ1CoSrr7e1l/f4RoO/UTFxxh9KtS6+hUnYa8f+gobX/1l93w1GrQ9scFqKUZBWW5RDtIGbPflVESX+Ma58V4w=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "webhook.site",
+            "2b22ede784d5.oast.fun"
+          ],
+          "urls": [
+            "https://webhook.site/42ce0f0e-a0a0-41b5-b157-1c0f918e064f"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/twilio-internal"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/twilio-internal/v/99.99.99"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/twilio-internal/v/99.99.100"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011023",
+        "import_time": "2026-08-04T21:33:14.086094081Z",
+        "modified_time": "2026-08-04T21:21:13Z",
+        "sha256": "539f7f248130c1d45914d85f04e43508d482fbf5a3622a840191dbfa18086c19",
+        "source": "amazon-inspector",
+        "versions": [
+          "99.99.99"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013304",
+        "import_time": "2026-08-05T07:06:40.463730899Z",
+        "modified_time": "2026-08-05T06:04:01Z",
+        "sha256": "eb471dee741de6675b4506a2c078bd4026468a8850da5448edd76acb756d6f1b",
+        "source": "amazon-inspector",
+        "versions": [
+          "99.99.100"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

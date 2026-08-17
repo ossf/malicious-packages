@@ -1,0 +1,224 @@
+{
+  "modified": "2026-07-20T13:00:06Z",
+  "published": "2026-07-11T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10187",
+  "aliases": [
+    "GHSA-v3g3-4x77-rw68"
+  ],
+  "summary": "Malicious code in jscrambler (npm)",
+  "details": "Supply-chain compromise of the official jscrambler npm client, a legitimate JavaScript obfuscation tool with roughly 60K downloads per month. Version 8.14.0 was published from the legitimate publisher account (jscrambler_ / info@jscrambler.com), which points to an account or CI compromise rather than a typosquat. Compared to the clean 8.13.0, version 8.14.0 adds a new preinstall hook (node dist/setup.js) and a new 7.5MB dist/intro.js file (entropy 8.00) that is a custom-packed, multi-platform binary container (magic bytes 1b435349 01); both are absent in 8.13.0. At install time, setup.js gunzips the platform-matched payload from intro.js, writes it to a randomly named file under the OS temp directory with the executable bit set (0o755, or a .exe extension on Windows built via String.fromCharCode), then spawns it detached with unref and windowsHide while swallowing all errors. The result is a silent, install-time native-binary dropper. Multiple releases are compromised (8.14.0, 8.16.0, 8.17.0, 8.18.0, 8.20.0); the mechanism above was analyzed on 8.14.0. Version 8.13.0 is clean.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (afb577cf150e98ebfe551df006c555204f327432baa3789473981888761a8677)\nThe package's main entry (dist/index.js) contains a top-level IIFE that runs on every require('jscrambler'). It reads a bundled 7.8 MB sibling file dist/intro.js, validates a custom container header (0x1b 0x43 0x53 0x49 0x01), selects a platform-specific gzip section (linux/win32/darwin), writes the decompressed bytes to os.tmpdir() under a hidden random dot-file name with mode 0755, and spawns the binary detached with stdio ignored and windowsHide, then unrefs the child. Errors are swallowed. The bundled payload dist/intro.js is not JavaScript: it uses a custom multi-platform container and contains strings characteristic of a cryptocurrency-wallet seed-phrase harvester and a browser-session stealer, including the BIP-39 English wordlist marker (bip39_english) and Chromium/BoringSSL TLS internals (ResumptionAttemptedWithVariedEms). Neither README nor CHANGELOG documents any native runtime component, and the CHANGELOG has no entries past 8.13.0. The wrapper's shape (custom magic header, hidden tmp filename, detached spawn, error-swallowed try/catch, undocumented payload) is inconsistent with the package's advertised CLI/API-client purpose and matches a malicious release / account-takeover pattern targeting installer wallets and browser sessions.\n\n## Source: ghsa-malware (dd1dd335cffe74c32587c873f4b6d5efd7bf80a5fcecb9bad030662e2a7498c0)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "jscrambler"
+      },
+      "versions": [
+        "8.16.0",
+        "8.14.0",
+        "8.20.0",
+        "8.18.0",
+        "8.17.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/setup.js",
+              "sha256": "a742de963f14a92d24ebcbc7b44ac867e23a20d31d1b0094a13a4f83287f4e60",
+              "tlsh": "5621f1e76e7b5540062191aa26c7a47143b270633b46d15cfb6dc7142fea014c9537ee"
+            },
+            {
+              "path": "dist/intro.js",
+              "sha256": "a41a523ef9517aab37ed6eea0ec881821bdcb7aefcb5c5f603adc7907f868c86",
+              "tlsh": "f88633b5d4d2060bc34ac3e5bb942ff4b74477ce0b426e19d6639963178b8f1e9031aa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "jscrambler-8.16.0.tgz",
+              "hashes": {
+                "sha1": "a59c35648644214332e384bb179e68f2cab1ee23",
+                "sha512_sri": "sha512-7stgx2AaZNMylWzsa7S3pbUtiQSAuHmiLwcrqbnrzvK0biRMoWTwC4AKLs1ERW81Kchn4Bz9/RsZjh29IXZrCQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/jscrambler/v/8.16.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/jscrambler/v/8.14.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/jscrambler/v/8.20.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/jscrambler/v/8.18.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/jscrambler-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://app.safedep.io/community/malysis/01KX8WKGMA8HVDBHBCHJQDVB2A"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/jscrambler/v/8.17.0"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-v3g3-4x77-rw68"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "4eb9f6bccdfcc1a1213b8e9d86149917ae76831117a5cb6b2ffb71fea91c1a8b",
+        "import_time": "2026-07-11T21:48:38.755189996Z",
+        "id": "IN-MAL-2026-009732",
+        "modified_time": "2026-07-11T21:31:35Z",
+        "versions": [
+          "8.16.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "78072900cd02c14e3b48ce7a6b832ddd0deedb1d9bb0e90be7716f2fe69b8dfc",
+        "import_time": "2026-07-11T21:48:38.891815151Z",
+        "id": "IN-MAL-2026-009733",
+        "modified_time": "2026-07-11T21:31:43Z",
+        "versions": [
+          "8.14.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "afb577cf150e98ebfe551df006c555204f327432baa3789473981888761a8677",
+        "import_time": "2026-07-11T21:48:38.635214386Z",
+        "id": "IN-MAL-2026-009731",
+        "modified_time": "2026-07-11T21:31:27Z",
+        "versions": [
+          "8.20.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "fadc9262ceebc6743d3fb34251fb64ab6872d49fcc023596a27ef537a7928a20",
+        "import_time": "2026-07-11T21:48:39.022226356Z",
+        "id": "IN-MAL-2026-009734",
+        "modified_time": "2026-07-11T21:31:49Z",
+        "versions": [
+          "8.18.0"
+        ]
+      },
+      {
+        "source": "amazon-inspector",
+        "sha256": "088a1bd1ecfed19d3fff9940c25aa93d81fdc9d1b0c8a686cc3c23ffdda91eb6",
+        "import_time": "2026-07-12T21:20:01.944143822Z",
+        "id": "IN-MAL-2026-009775",
+        "modified_time": "2026-07-12T21:12:57Z",
+        "versions": [
+          "8.17.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "dd1dd335cffe74c32587c873f4b6d5efd7bf80a5fcecb9bad030662e2a7498c0",
+        "import_time": "2026-07-13T07:24:22.639470468Z",
+        "id": "GHSA-v3g3-4x77-rw68",
+        "modified_time": "2026-07-13T06:28:17Z",
+        "versions": [
+          "8.20.0",
+          "8.17.0",
+          "8.16.0",
+          "8.14.0"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "7839e26b7f1c195001a71c889f1b8609be877179f5ef511ac1f9264610c77e8d",
+        "import_time": "2026-07-20T12:58:21.220304993Z",
+        "id": "GHSA-v3g3-4x77-rw68",
+        "modified_time": "2026-07-20T12:06:18Z",
+        "versions": [
+          "8.18.0",
+          "8.20.0",
+          "8.17.0",
+          "8.16.0",
+          "8.14.0"
+        ]
+      }
+    ]
+  }
+}

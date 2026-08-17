@@ -1,0 +1,143 @@
+{
+  "modified": "2026-07-14T03:23:26Z",
+  "published": "2026-07-13T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-10228",
+  "aliases": [
+    "GHSA-vw6g-629w-6hgx"
+  ],
+  "summary": "Malicious code in chat-adapter-zoom (npm)",
+  "details": "The chat-adapter-zoom package was published to the npm registry by user 'click2ai' (maintainer email privatek3m@protonmail.com) as part of a dependency-confusion / reconnaissance campaign. The package name mimics the internal/private package naming convention of a target organization (a Zoom chat-adapter integration namespace (Zoom-style naming)) so that a misconfigured resolver installs this public lookalike instead of the intended private dependency.\n\nThe package declares a preinstall hook (\"npm install @sentry/node \u0026\u0026 node examples/verify.js\") that executes automatically at npm install time, before any application code runs. The bundled examples/verify.js initializes the @sentry/node client against a hardcoded, attacker-controlled Sentry DSN with sendDefaultPii enabled, resolves the installing host's public egress IP address by requesting Cloudflare's /cdn-cgi/trace endpoint (using a spoofed desktop-browser User-Agent to bypass bot challenges), then deliberately triggers a runtime exception and captures it. Flushing the event beacons the collected host telemetry (public IP plus Sentry default PII such as hostname, OS username and runtime/environment metadata) to the attacker's Sentry ingest endpoint at o4510485815754752.ingest.us.sentry.io.\n\nEach impersonated namespace in the campaign beacons to a distinct Sentry project ID, letting the operator attribute successful installs to specific victim organizations — behaviour consistent with a dependency-confusion reconnaissance beacon rather than legitimate error monitoring. The install-time payload is byte-for-byte identical across all packages published by this account, differing only in the package name and the target DSN. This package's beacon targets Sentry project 4511709729914880.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f6308ea0d3fc30c63044a57022cf4b300f6625c458862499b01b8cb0f2847da4)\nPackage presents itself as a Zoom chat adapter but ships no Zoom or chat functionality; it is a thin wrapper over @sentry/node. The package.json preinstall script runs 'npm install @sentry/node \u0026\u0026 node examples/verify.js'. examples/verify.js initializes Sentry against a hardcoded DEFAULT_DSN pointing to o4510485815754752.ingest.us.sentry.io/4511709729914880, fetches the installer's public IP from Cloudflare via setUserFromPublicIp(), attaches it as user.ip_address, triggers an error, and calls Sentry.captureException + flush(5000), delivering the installer's public IP and event data to the author's Sentry project on every install with no user action or opt-in. The exported src/index.js init() also falls back to the same hardcoded DEFAULT_DSN with sendDefaultPii forced to true when callers do not supply their own DSN, silently routing consumer error data and PII to the author. The name/functionality mismatch (keywords target 'zoom'/'chat-adapter' while the code is a Sentry relay) indicates the package is designed to attract unrelated installs.\n\n## Source: ghsa-malware (7adceb241867aec530acce3037e7426a58d3fcd2475f2f8389d515e28292cd82)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "chat-adapter-zoom"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "12.1.31"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "06af87f00ad2e2769dd8f6fb11174b150ad2e7d5bd84da8ca3041ec07a068bab",
+              "tlsh": "81f07824cd342f2329d4b3a56c690056a7718e4742a83d1837cb033d4b4d36b25ff69d"
+            },
+            {
+              "path": "src/index.js",
+              "sha256": "dea289b5ee15370f5c956a4091937007db05f07dba3ab29240741c0895de5634",
+              "tlsh": "5f12859a34f6232211e650f0025f90d97366c67a3379e9a071598be91fcd0b8d6b3ec9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "chat-adapter-zoom-12.1.31.tgz",
+              "hashes": {
+                "sha1": "d8e57e5f4ce9959b73195e2b582e916bb2d84627",
+                "sha512_sri": "sha512-wZLEhrwrP+GyavADV5zBHmFxImef0Fyu//GvPIfFS60op6pRS5+HlnHg9uy9hHW1c2vHIso7nG93SE97UGihtg=="
+              }
+            }
+          ]
+        },
+        "iocs": {
+          "domains": [
+            "o4510485815754752.ingest.us.sentry.io"
+          ],
+          "urls": [
+            "https://ab3ba49fb61df1dca0cc496846baee89@o4510485815754752.ingest.us.sentry.io/4511709729914880"
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/chat-adapter-zoom"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/chat-adapter-zoom/v/12.1.31"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-vw6g-629w-6hgx"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "source": "amazon-inspector",
+        "sha256": "f6308ea0d3fc30c63044a57022cf4b300f6625c458862499b01b8cb0f2847da4",
+        "import_time": "2026-07-13T09:10:56.740185189Z",
+        "id": "IN-MAL-2026-009872",
+        "modified_time": "2026-07-13T08:19:02Z",
+        "versions": [
+          "12.1.31"
+        ]
+      },
+      {
+        "source": "ghsa-malware",
+        "sha256": "7adceb241867aec530acce3037e7426a58d3fcd2475f2f8389d515e28292cd82",
+        "import_time": "2026-07-14T03:21:41.981167445Z",
+        "id": "GHSA-vw6g-629w-6hgx",
+        "modified_time": "2026-07-14T01:04:59Z",
+        "ranges": [
+          {
+            "type": "SEMVER",
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
