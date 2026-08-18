@@ -1,21 +1,27 @@
 {
-  "modified": "2026-08-10T11:50:11Z",
-  "published": "2026-08-10T11:50:11Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13687",
+  "published": "2026-08-10T11:50:11Z",
+  "modified": "2026-08-15T18:47:27.437709768Z",
   "summary": "Malicious code in tokocrytodev (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (09fa98b6fd8313abbfeb250d10c12db28975f7bb12742f56dd5f1a3e1959d6d1)\nOn require of index.js, top-level code starts a polling loop that GETs commands from https://badai.run.place/cekapppiapi.php?uid=\u003chost-id\u003e, executes them via child_process.exec, and POSTs AES-256-ECB-encrypted stdout/stderr to /fallback.php, giving the remote operator arbitrary RCE on the installer host. A stealKeysAsync() routine shell-executes `find` over /root/.ssh, /home/*/.ssh, /opt/wallet-keys, /etc/ssl/private, $HOME/.ethereum/keystore, /var/lib/ethereum/keystore, and /mnt/crypto/wallets for *.pem, *.key, UTC--*, and keystore files containing PRIVATE KEY material, and exfiltrates the contents encrypted to the same C2. For each harvested 64-hex private key (and the ETH_PRIVATE_KEY env var), the package builds a web3 wallet against mainnet.infura.io and sends the full balance minus gas to the hardcoded attacker address 0x742d35Cc6634C0532925a3b844Bc454e4438f44e. Exfil payloads are AES-256-ECB encrypted with a hardcoded key and posted as text/plain; uncaughtException and unhandledRejection handlers silently swallow errors to reduce noise.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (88f51898e05da09842f561ce72f06378a6718f778fa0335b68bb4c0fda8cc5a6)\nOn module load, tokocrytodev instantiates a StealthC2 agent and starts a polling loop that fetches commands from https://badai.run.place/cekapppiapi.php?uid=<host-id>, passes each response body to child_process.exec, and POSTs AES-256-ECB-encrypted stdout/stderr back to https://badai.run.place/fallback.php — giving the operator of that endpoint arbitrary remote command execution on any host that require()'s the package. In parallel, stealKeysAsync shells out `find` over /root/.ssh, /home/*/.ssh, /opt/wallet-keys, /etc/ssl/private, ~/.ethereum/keystore, /var/lib/ethereum/keystore, and /mnt/crypto/wallets looking for *.pem, *.key, UTC--*, and keystore files, reads their contents plus the ETH_PRIVATE_KEY environment variable, AES-encrypts the results, and uploads them to the same C2. For any 64-hex string recovered from those files, drainEthFromPrivateKey imports it into web3, computes balance minus gas, and sends the remaining ETH balance in a signed transaction to the hardcoded address 0x742d35Cc6634C0532925a3b844Bc454e4438f44e. Stealth features include AES-256-ECB encryption of all C2 traffic with a hardcoded key, base64 wrapping, process-wide uncaughtException/unhandledRejection handlers that swallow all errors, and a randomized 2–10 minute startup delay. The payload auto-executes at import time with no CLI gate and no user consent.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "tokocrytodev"
+        "name": "tokocrytodev",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +53,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/tokocrytodev/v/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tokocrytodev/v/1.0.1"
     }
   ],
   "database_specific": {
@@ -69,7 +70,26 @@
         "versions": [
           "1.0.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-017974",
+        "import_time": "2026-08-15T18:45:40.258381663Z",
+        "modified_time": "2026-08-15T18:10:09Z",
+        "sha256": "88f51898e05da09842f561ce72f06378a6718f778fa0335b68bb4c0fda8cc5a6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
