@@ -1,22 +1,28 @@
 {
-  "modified": "2026-06-25T20:18:42Z",
-  "published": "2026-06-25T20:16:17Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6473",
+  "published": "2026-06-25T20:16:17Z",
+  "modified": "2026-08-18T23:11:30.448028089Z",
   "summary": "Malicious code in colorpicker-ui (npm)",
   "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (226e4e81049c5688a16a198fb9a90ab3d11d371b621e367da4590632f4e5e140)\nPackage presents itself as a minimal React color-picker but ships a postinstall hook (`\"postinstall\": \"node setup.js\"`) that performs targeted credential theft and code-injection staging on `npm install`. setup.js reads classic installer secrets — `/var/run/secrets/kubernetes.io/serviceaccount/token` (Kubernetes service-account token granting cluster API access), the AWS Instance Metadata Service at `http://169.254.169.254/latest/meta-data/` (cloud instance credentials), `/etc/passwd`, `/etc/resolv.conf`, `/etc/hosts`, the full `process.env`, and runs `id` / `uname -a` plus a recursive listing of `/app`. The harvested data is wrapped as `export default \"...\";` and written to multiple attacker-chosen paths including `/app/sandbox-data/workspace/frontend/_rce.ts`, `../frontend/_rce.ts`, and `/tmp/rce.json`. The `_rce.ts` filename and the targeting of adjacent frontend workspace directories are designed to land the file inside AI coding-agent / sandbox workspaces that auto-import files from the workspace tree, converting the postinstall into arbitrary code execution in the next agent run while also exfiltrating the secrets to whatever process consumes the file. The advertised color-picker API in index.js (ColorPicker, hexToHsl, hslToHex) is functional but exists solely as cover; a color-picker library has no need to read kubernetes tokens, IMDS, or /etc/passwd at install. The log message 'generating default theme cache' printed by setup.js is deliberately misleading.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "colorpicker-ui"
+        "name": "colorpicker-ui",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.2.4",
-        "1.2.5"
+        "1.2.5",
+        "1.2.6"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,15 +68,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/colorpicker-ui/v/1.2.5"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/colorpicker-ui/v/1.2.6"
     }
   ],
   "database_specific": {
@@ -94,7 +95,26 @@
         "versions": [
           "1.2.5"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-018177",
+        "import_time": "2026-08-18T23:09:41.942373519Z",
+        "modified_time": "2026-08-18T23:05:34Z",
+        "sha256": "49c9fbe0715f0c8a5d6ce136ead1b98ac2cbc51b1135a1a00ebb550a2a4d0f0e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.6"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
