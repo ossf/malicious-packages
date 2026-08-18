@@ -1,0 +1,214 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13695",
+  "published": "2026-08-10T00:00:00Z",
+  "modified": "2026-08-11T02:49:07.991003067Z",
+  "summary": "Malicious code in hex-encode-utils (npm)",
+  "details": "hex-encode-utils is a purpose-built npm trojan that masquerades as a zero-dependency hex encoding/decoding utility (published by the npm account `devroolx` under the repo github.com/stdlib-utils/hex-encode-utils). It is a multi-stage downloader/loader that runs automatically on install via a `postinstall` hook (`node runtime.js`).\n\nruntime.js first gates execution to real developer machines: it only proceeds if the user home directory contains a Desktop, Documents, or Downloads folder, and caches a timestamp at `~/.cache/hex-encode-utils/.runtime_check` to run at most once every 24 hours (sandbox/CI evasion and low-noise persistence). It then exfiltrates host reconnaissance (hostname, username, platform and architecture, Node.js version, OS release, package version, and timestamp) via an HTTPS POST to `/report` on the attacker-controlled Cloudflare Worker `steel-mere-4155.ricardorichp.workers.dev`.\n\nIt next downloads an AES-256-GCM encrypted blob from `/e` on the same host, decrypts it with a key derived as the SHA-256 of a hardcoded seed string that is disguised as a Bitcoin \"BIP-0174 PSBT version 2 signing specification for hardware wallets\" reference (indicating cryptocurrency-wallet targeting), and validates that the decrypted payload is Python source containing a `TelemetrySender` class. It locates a Python interpreter (python3/python and version-specific fallbacks), writes the decrypted payload to `~/.cache/hex-encode-utils/modules/runtime.py`, builds an `exec_runtime.py` wrapper that invokes `TelemetrySender.send(TelemetrySender.load())`, and spawns it as a detached, output-suppressed background Python process (`detached: true`, `stdio: 'ignore'`, `.unref()`). All C2 traffic disables TLS certificate validation (`rejectUnauthorized: false`).\n\nThe second-stage Python payload is fetched at runtime from attacker infrastructure and was not available for static analysis; based on the wallet/PSBT-signing themed key seed it most likely targets cryptocurrency wallet material. Any host that installed this package should be treated as compromised: remove `~/.cache/hex-encode-utils`, hunt for the spawned Python process, and rotate any wallet keys and secrets reachable from the affected machine.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (999c0a7bda643ce11c335436392aac35c2eca53dc92225dd86cbc01cc9015f8c)\nOn npm install, scripts/compat.js runs as a postinstall hook and fetches an AES-256-GCM-encrypted blob over HTTPS from two hardcoded Cloudflare Workers hosts (steel-mere-4155.ricardorichp.workers.dev, cold-peak-7969.0x0gnx0.workers.dev) with TLS verification disabled (rejectUnauthorized: false), decrypts it with a hardcoded key derived from a 'BIP-0174' decoy string, writes the plaintext to ~/.cache/hex-encode-utils/modules/exec_runtime.py, and spawns a detached, stdio-ignored Python process to execute it. Before dropping the payload the script POSTs an install beacon to /r on the same Workers host carrying the installer's hostname (os.hostname()), username (os.userInfo()), platform/arch (os.platform()), Node version, and package version, formatted as an HTML Telegram message with chat_id 6087129674 for relay to a Telegram bot. Execution is gated by sandbox-evasion checks that abort in CI/container environments (CI, GITHUB_ACTIONS, DOCKER_CONTAINER, KUBERNETES_SERVICE_HOST) and require Desktop/Documents/Downloads directories under $HOME to confirm a developer workstation. Comments frame the code as a next.js/nuxt-style compatibility shim. The package's stated purpose (hex encode/decode) has no legitimate need for postinstall network I/O, encrypted-payload fetch, Python execution, or host reconnaissance to a Telegram relay.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "hex-encode-utils",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.5",
+        "1.0.1",
+        "1.0.2",
+        "1.0.3",
+        "1.0.0",
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "runtime.js",
+              "sha256": "c2f7b2f01fe7ce17dbe92874742967a420968d1e6f6a15fff53682867acd89f8",
+              "tlsh": "18b120f669f2a2613673f29ec36fa046a267f0133109ea50f89d32511fdd06c0665ef8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hex-encode-utils-1.0.5.tgz",
+              "hashes": {
+                "sha1": "563618483b54c27e653a403ce8307e8bec1e6064",
+                "sha512_sri": "sha512-rL2F2KDKGs7J8WRoMNQsAJcR+m0UoHF3v7MGSyPFicKosCFctXxIfY54aikIrWyJj5b4a1/2+d1wtlBUAF237Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hex-encode-utils"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/stdlib-utils/hex-encode-utils"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "steel-mere-4155.ricardorichp.workers.dev"
+      ],
+      "urls": [
+        "https://steel-mere-4155.ricardorichp.workers.dev/report",
+        "https://steel-mere-4155.ricardorichp.workers.dev/e"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017248",
+        "import_time": "2026-08-10T12:24:46.385898527Z",
+        "modified_time": "2026-08-10T11:56:26Z",
+        "sha256": "5f2d407531e2365d184a55a8457451c8fe4e95a4181d5113fd6cb5f42a5eb2c8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017245",
+        "import_time": "2026-08-10T12:24:46.092656354Z",
+        "modified_time": "2026-08-10T11:55:59Z",
+        "sha256": "71be420849511d910d53e782914e7459aeb10ab2b918490bc4510bb826f8e591",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017250",
+        "import_time": "2026-08-10T12:24:46.557280935Z",
+        "modified_time": "2026-08-10T11:56:44Z",
+        "sha256": "999c0a7bda643ce11c335436392aac35c2eca53dc92225dd86cbc01cc9015f8c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017247",
+        "import_time": "2026-08-10T12:24:46.284065736Z",
+        "modified_time": "2026-08-10T11:56:16Z",
+        "sha256": "a5ee374bbc350a4ff5134187bf877eeb6eda711eaf637038879758660ba2a8eb",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017251",
+        "import_time": "2026-08-10T12:24:46.823893563Z",
+        "modified_time": "2026-08-10T11:56:54Z",
+        "sha256": "f6f08ac30311e76d83f9324c8b2bafa74dc2060723f2d61cf49a28fe3575066f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017249",
+        "import_time": "2026-08-10T12:24:46.469963658Z",
+        "modified_time": "2026-08-10T11:56:35Z",
+        "sha256": "6eacbd1bc6c316b9778956c576d93f7c0ec5a3f537c7a22c5d0eb260826478dc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

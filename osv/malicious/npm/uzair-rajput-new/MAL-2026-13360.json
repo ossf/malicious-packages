@@ -1,21 +1,39 @@
 {
-  "modified": "2026-08-05T17:38:18Z",
-  "published": "2026-08-05T17:38:18Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-13360",
+  "published": "2026-08-05T17:38:18Z",
+  "modified": "2026-08-06T23:29:22.011178231Z",
   "summary": "Malicious code in uzair-rajput-new (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (70070ac11c08aa4d23d214d9539b96f97c6bd6eaa56bb6561160d02bd6d52632)\nThe CJS entry (dist/index.cjs) assembles a scrypt password by XOR-deobfuscating three sibling byte arrays (_a.cjs, _b.cjs, _c.cjs) with distinct constants (17, 91, 53), uses that key with createDecipheriv('aes-256-cbc',...) to decrypt an embedded ~5KB ciphertext, and passes the plaintext to new Function('module','exports','require','__dirname','__filename',...)(...) — executing opaque code in the consumer's Node process on every require('uzair-rajput-new'). The parallel ESM build (dist/index.js) is a plain color-gradient library containing no such loader, so the obfuscated dynamic-code loader is not a legitimate transpilation artifact of the declared TypeScript source. The split-key layout, XOR obfuscation of key material, and AES-encrypted payload together constitute an anti-analysis packaging pattern whose only effect is to hide arbitrary code executed at module load.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b371d3a1e96e6e79066cf8f620a85867c73eb9ddbe68a81a33589e85146c4df6)\nThe package is published as a chalk/tinygradient color-gradient wrapper, and its ESM entrypoint dist/index.js matches that description. The CJS main dist/index.cjs diverges: at module load it reconstructs an AES-256-CBC key by reading byte arrays from sibling files dist/_a.cjs, dist/_b.cjs, and dist/_c.cjs, XORing them with the constants 17, 91, and 53, concatenating the results, and passing that through scryptSync alongside a hex IV literal. The derived key is used with createDecipheriv('aes-256-cbc',...) to decrypt a large embedded base64 blob, and the resulting source is executed via new Function('module','exports','require','__dirname','__filename', _x)(...). The stated purpose (color gradients) has no legitimate need for an encrypted payload with a key split across three sibling files and evaluated at require-time; the split-key + AES + new Function pattern conceals the payload from static inspection, and the divergence between the benign ESM twin and the obfuscated CJS entrypoint indicates deliberate concealment. Every require() of this package on the installer's host runs attacker-controlled code with the process's privileges.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "uzair-rajput-new"
+        "name": "uzair-rajput-new",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.1"
+        "1.0.1",
+        "1.1.0",
+        "1.3.0",
+        "1.2.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +65,18 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/uzair-rajput-new/v/1.0.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uzair-rajput-new/v/1.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uzair-rajput-new/v/1.3.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/uzair-rajput-new/v/1.2.0"
     }
   ],
   "database_specific": {
@@ -69,7 +90,46 @@
         "versions": [
           "1.0.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-016804",
+        "import_time": "2026-08-06T23:25:10.141195209Z",
+        "modified_time": "2026-08-06T19:41:15Z",
+        "sha256": "8707b4f666ee10edd27b372407eb544ae84ed9959c1a23b3558da9a0003009f4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016803",
+        "import_time": "2026-08-06T23:25:10.03191426Z",
+        "modified_time": "2026-08-06T19:41:08Z",
+        "sha256": "b31945523ba2cf6d4fac09347224887cc6dc87f1b145092bee98979ede432f2d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016806",
+        "import_time": "2026-08-06T23:25:10.267971952Z",
+        "modified_time": "2026-08-06T19:41:36Z",
+        "sha256": "b371d3a1e96e6e79066cf8f620a85867c73eb9ddbe68a81a33589e85146c4df6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

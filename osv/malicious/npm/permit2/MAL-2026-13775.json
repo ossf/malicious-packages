@@ -1,0 +1,127 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13775",
+  "published": "2026-08-11T00:00:00Z",
+  "modified": "2026-08-12T12:26:03.516795683Z",
+  "summary": "Malicious code in permit2 (npm)",
+  "details": "permit2 is a malicious npm package that squats the bare name of Uniswap's Permit2 token-approval system (whose legitimate npm distribution is the scoped `@uniswap/permit2-sdk`), advertising itself as a \"smart contract development toolkit.\" The package contains no real functionality — the published tarball ships only a package.json and an install-time payload (index.js), which both `preinstall` and `postinstall` execute via `node index.js`, so it runs automatically on `npm install`.\n\nThe payload is a more aggressive variant of the infostealer used across the `mssjeep843` DeFi-impersonation campaign and exfiltrates to the same `webhook.site` endpoint. It collects environment variables whose names match a broadened secret pattern (`KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET|BEARER|API|INFURA|ALCHEMY|HELIUS|QUICKNODE|ANKR|PRIVATE_KEY`) and, rather than merely listing credential directories, reads and exfiltrates the full contents (up to 4000 bytes each) of a wide set of credential and key files: `~/.aws/credentials` and `~/.aws/config`, SSH private keys (`~/.ssh/id_rsa`, `~/.ssh/id_ed25519`) and `~/.ssh/config`, `~/.kube/config`, `~/.docker/config.json`, `~/.netrc`, `~/.pgpass`, `~/.npmrc`, `~/.pypirc`, `~/.gitconfig`, `~/.git-credentials`, GCP application-default and legacy credentials, Solana/Anchor keypairs (`id.json`), NEAR credentials, the Sui keystore, up to three Foundry keystore files, and `.env`/`.env.local`/`.env.production`/`.env.development`/`secrets.env` from the current working directory. It also captures the hostname, username, cwd and platform. The JSON is POSTed over HTTPS to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`, with errors swallowed so the install never visibly fails. Any host that installed this package should treat SSH keys, cloud credentials, wallet keystores and `.env` secrets as compromised and rotate them.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (51baca54ac515b4ff006cc3c6b99645d5f38f8c0250a294b8abe75c9d3172f2b)\nThe npm package 'permit2' (a name-squat of Uniswap's Permit2) ships an index.js that is registered as both preinstall and postinstall in package.json. On install, index.js enumerates environment variables matching KEY/TOKEN/SECRET/PRIVATE/MNEMONIC/AWS/GITHUB/NPM and reads installer-owned credential files including ~/.aws/credentials, ~/.ssh/id_*, ~/.npmrc, ~/.kube, ~/.docker, ~/.netrc, ~/.gitconfig, gcloud/solana/sui/anchor credentials, foundry keystores, and local.env files. The collected data is POSTed via https.request to a hardcoded attacker endpoint at webhook.site (path /326b0891-2093-4800-a4c1-686ce3e07b09). The upload is deferred 60-240 seconds inside a detached child process (spawn with detached:true, stdio:'ignore') to outlive install/scanner windows, and the script early-exits if os.hostname()/user matches sandbox patterns (scan-, detonation, sandbox, ubuntu-fc-uvm) or if the npm registry points at a mirror. The package ships no functionality matching its self-description as a 'smart contract development toolkit'.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "permit2",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.1",
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "39229ee21c24c428d61cf5a538b6c25d77da76dcee8f87f8aa4e38f8ae86026c",
+              "tlsh": "9551b583a2fe55a9126393e6e6232235823bf280b016d4e4f2ac54401fdb164c9b35fc"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ade32d6a8bf8fef7fec77f3f36560fe55c79d640f895c8a5e8194c2310d0a9d3",
+              "tlsh": "41d05e204c25d63328d40aa839bb984961b30a2f514878282393629c92eeb7294bf70e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "permit2-1.0.1.tgz",
+              "hashes": {
+                "sha1": "5960b810a7ff9c0cbe377d24f62d3d9e23ef49cb",
+                "sha512_sri": "sha512-wjvQ+/Q5Lhmwhxxl5g9OwPY/Udj1O6ueWBOejC1BEReHa7X8kC6j47I7NU6JYzsS4dq2SDpHLW6+fL9dRGilJw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/permit2/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/permit2/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017433",
+        "import_time": "2026-08-12T12:24:13.296523893Z",
+        "modified_time": "2026-08-12T12:20:53Z",
+        "sha256": "51baca54ac515b4ff006cc3c6b99645d5f38f8c0250a294b8abe75c9d3172f2b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017442",
+        "import_time": "2026-08-12T12:24:14.149494668Z",
+        "modified_time": "2026-08-12T12:22:12Z",
+        "sha256": "57057e349a16d1c1de4619f660e9de63c638d6a9ea8915915424e98e8dcf6e64",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

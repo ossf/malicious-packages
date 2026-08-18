@@ -1,21 +1,27 @@
 {
-  "modified": "2026-07-28T14:22:04Z",
-  "published": "2026-07-20T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-11043",
+  "published": "2026-07-20T00:00:00Z",
+  "modified": "2026-08-15T16:10:05.743709138Z",
   "summary": "Malicious code in supplyhub (npm)",
-  "details": "The npm package `supplyhub` is a credential / SSH-key stealer. Its `package.json` declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported.\n\n`postinstall.js` uses `fs.readFileSync` to read the user's SSH private key (`~/.ssh/id_rsa`) and the process environment (`/proc/self/environ` — where CI/cloud tokens and npm tokens live), and gathers account/host identity via `os.userInfo()`; it also references `/etc/passwd`. The collected data is exfiltrated by HTTP POST to a hard-coded webhook.site dead-drop: `https://webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3`.\n\nOnly version 1.0.2 is malicious: version 1.0.0 (held in the codelake corpus) is clean — the exfiltration code was introduced in the 1.0.2 release (a trust-then-poison pattern). Any workstation or CI runner that installs supplyhub@1.0.2 (directly or transitively) hands its SSH key and environment secrets to the operator. Detected and classified independently by codelake Research from the live npm feed on 2026-07-20; not present in OSV or GHSA at the time of reporting (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5e2b4c51e7fa4bd04e5d26bc5b263e677a555626a1f346d4e9e1e0cd5041d494)\nThe package's postinstall script (postinstall.js) auto-executes on npm install and reads installer-owned secret files including ~/.ssh/id_rsa, ~/.npmrc, ~/.gitconfig, /etc/passwd, /etc/hostname, /proc/1/environ, /proc/self/environ, /proc/self/cmdline, together with hostname, username, cwd, pid, platform, arch, node version, and CI environment indicators. The collected data is POSTed via https.request to a hardcoded webhook.site collector (webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3). The behavior is a functional credential harvester and dependency-confusion beacon regardless of any PoC/bug-bounty framing in the package.\n",
+  "details": "The npm package `supplyhub` is a credential / SSH-key stealer. Its `package.json` declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported.\n\n`postinstall.js` uses `fs.readFileSync` to read the user's SSH private key (`~/.ssh/id_rsa`) and the process environment (`/proc/self/environ` — where CI/cloud tokens and npm tokens live), and gathers account/host identity via `os.userInfo()`; it also references `/etc/passwd`. The collected data is exfiltrated by HTTP POST to a hard-coded webhook.site dead-drop: `https://webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3`.\n\nOnly version 1.0.2 is malicious: version 1.0.0 (held in the codelake corpus) is clean — the exfiltration code was introduced in the 1.0.2 release (a trust-then-poison pattern). Any workstation or CI runner that installs supplyhub@1.0.2 (directly or transitively) hands its SSH key and environment secrets to the operator. Detected and classified independently by codelake Research from the live npm feed on 2026-07-20; not present in OSV or GHSA at the time of reporting (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e0d6286c7aa72597cf47fca7e9db99799909ceba09490f4a185b359e71f63590)\nsupplyhub@1.0.1 ships a postinstall.js that runs automatically on npm install and collects installer host identifiers (os.hostname(), os.userInfo().username, process.cwd(), pid, platform, arch, node version) along with CI-related environment variables (CI, RENOVATE_VERSION), then transmits them as query parameters to a hardcoded webhook.site endpoint (https://webhook.site/3c9418b3-cacd-403d-b42e-e9e4a9508fe3) using https.get with http and execSync('curl...' || wget...) fallbacks. The package.json description self-labels this as a dependency-confusion PoC targeting the 'Travix supplyhub' name, but the tarball is published to public npm and will execute the install-time beacon against any installer that resolves this name, including unrelated users who typo or whose internal builds dependency-confuse into it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "supplyhub"
+        "name": "supplyhub",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.2"
+        "1.0.2",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -51,22 +57,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/supplyhub/v/1.0.2"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
     },
     {
-      "name": "codelake Research",
-      "type": "FINDER",
-      "contact": [
-        "https://research.codelake.dev/advisories/clr-2026-3038-supplyhub"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/supplyhub/v/1.0.1"
     }
   ],
   "database_specific": {
@@ -80,15 +74,41 @@
     },
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "5e2b4c51e7fa4bd04e5d26bc5b263e677a555626a1f346d4e9e1e0cd5041d494",
-        "import_time": "2026-07-28T14:19:59.088898742Z",
         "id": "IN-MAL-2026-010919",
+        "import_time": "2026-07-28T14:19:59.088898742Z",
         "modified_time": "2026-07-28T13:36:22Z",
+        "sha256": "5e2b4c51e7fa4bd04e5d26bc5b263e677a555626a1f346d4e9e1e0cd5041d494",
+        "source": "amazon-inspector",
         "versions": [
           "1.0.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-017962",
+        "import_time": "2026-08-15T16:07:56.838356258Z",
+        "modified_time": "2026-08-15T15:58:05Z",
+        "sha256": "e0d6286c7aa72597cf47fca7e9db99799909ceba09490f4a185b359e71f63590",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3038-supplyhub"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
