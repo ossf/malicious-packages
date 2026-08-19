@@ -1,21 +1,27 @@
 {
-  "modified": "2026-07-15T07:55:37Z",
-  "published": "2026-07-15T07:55:37Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10669",
+  "published": "2026-07-15T07:55:37Z",
+  "modified": "2026-08-19T03:51:16.093185392Z",
   "summary": "Malicious code in dbconnectify (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e23c446b06120537793ebc07d748d8de5334ae4ec6779bda5368885c72216e81)\nThe package exposes a method queryDBConnect that performs an HTTP GET against a URL stored as a base64-encoded constant (HASH_KEY) decoded at runtime via atob(). The decoded endpoint is https://api.jsonsilo.com/public/bbc58e47-8c79-4653-ab75-d94e69230854, a third-party JSON-hosting service whose content is mutable by whoever controls the record. The fetched JavaScript source is passed to Node's internal Module._compile as \"errorcheck.js\", loading and executing attacker-controlled code in the installer's process. A database connector library has no functional need to load remote code, and hiding the endpoint behind base64 obfuscation is characteristic of evasion rather than legitimate configuration.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e6a41259fb0099de58bc669907fa6fb20331d794b13008df0afb42893808e4ab)\nThe package exposes a method `queryDBConnect` that base64-decodes a hardcoded URL (`HASH_KEY` → https://api.jsonbin.io/v3/b/6a609e63f5f4af5e29b05907), performs an HTTP GET against it, reads a string from the response field `data.record.cookie`, and passes that string to `Module._compile(..., 'errorcheck.js')`, executing it in-process as Node.js code. The destination is a third-party mutable key-value store whose contents the endpoint owner can change at any time, the URL is stored in base64 form rather than as a plain string, the payload is read from a field named `cookie` unrelated to its actual use, and execution errors are silently swallowed. The behavior does not match the package's stated purpose as a database connector and provides arbitrary remote code execution against any caller that invokes the method.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "dbconnectify"
+        "name": "dbconnectify",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.1"
+        "1.0.1",
+        "1.0.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +53,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/dbconnectify/v/1.0.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/dbconnectify/v/1.0.2"
     }
   ],
   "database_specific": {
@@ -69,7 +70,26 @@
         "versions": [
           "1.0.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-018336",
+        "import_time": "2026-08-19T03:49:30.959531609Z",
+        "modified_time": "2026-08-19T03:44:46Z",
+        "sha256": "e6a41259fb0099de58bc669907fa6fb20331d794b13008df0afb42893808e4ab",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
