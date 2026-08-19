@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-19T07:52:37Z",
+  "modified": "2026-08-19T07:52:37Z",
+  "summary": "mutex-plus ships hidden hash-gated AES-256-GCM decrypt-and-exec backdoor",
+  "details": "lib/Mutex.js contains a hidden branch inside runExclusive() that, when a callback object carries a meta.jobId whose sha256 equals a hardcoded value (6cdda0ba143b3bee5949d3d45d2145c53c02abfe0e742465cdce2c0393e94d7f), invokes decryptToFile() from an obfuscated helper lib/common.js to AES-256-GCM-decrypt the shipped lib/plusMutex.min.js using the caller-supplied jobId as the key, then spawns the decrypted file via `node` as a detached, stdio-ignored, windowsHide child process. lib/common.js is a string-array + index-rotation obfuscated module wrapping scryptSync + createDecipheriv + writeFileSync; it is required only from this hidden branch. lib/plusMutex.min.js (16.9 KB, sha256 903169c2602ad15ba2dbc3c1e791bd26561958508d7d8a7ce35fc7d53c6212e1) is the AES-256-GCM ciphertext; sibling files lib/plusMutex.min.d.js (862 KB) and lib/tryAcquireMutex.min.d.js use a fabricated `.d.js` extension (real TypeScript declarations are `.d.ts`) to disguise executable/binary content as declaration artifacts. A mutex primitive has no functional need for encrypted-at-rest sibling blobs, an obfuscated GCM decryptor, or a hash-gated detached node spawn. The construction gives whoever holds the correct jobId — the decryption key — remote code execution on any consumer of Mutex.runExclusive that receives a crafted callback object, with the payload undecryptable without that key.",
+  "affected": [
+    {
+      "package": {
+        "name": "mutex-plus",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "3.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Mutex.js",
+              "sha256": "232e696d868f104e6da2585cb611694a0606bf12d802d32f6680c56c20087a31",
+              "tlsh": "2c51ef8457f3a516627370dbc73b9015b07c8037124cc9a5fa4dc2eb5f6606887aabec"
+            },
+            {
+              "path": "lib/common.js",
+              "sha256": "89a1fdf903546b52f109958e3a9278a33f026500b06c5025a114d8fe07cf9a93",
+              "tlsh": "c321e1ed3ecc60aa63ba08decc75241be491fc44990a4601c109d7db3c267140097f7a"
+            },
+            {
+              "path": "lib/plusMutex.min.js",
+              "sha256": "903169c2602ad15ba2dbc3c1e791bd26561958508d7d8a7ce35fc7d53c6212e1",
+              "tlsh": "b572c00c1f326369af58dccd255f875aa0523aa1620796058b9eb48a3325d0fc45fbf3"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mutex-plus-3.0.2.tgz",
+              "hashes": {
+                "sha1": "93ea0b346b674ca4814e9a2b119f024a767b767a",
+                "sha512_sri": "sha512-cvNZ1opoY8PuM/XoqXTrP5d9O9sxA5oZjB5Urrk5nY3Yw3YbXJpQbAgKLKoQmqAxfHQpXc4oyP0qwEqBvZ3XOg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mutex-plus/v/3.0.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018396",
+        "import_time": "2026-08-19T08:15:31.934725756Z",
+        "modified_time": "2026-08-19T07:52:37Z",
+        "sha256": "a64e56572436d2ca889aa389887584bbeb3e67df09f30df6773cbfafc0188ca3",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

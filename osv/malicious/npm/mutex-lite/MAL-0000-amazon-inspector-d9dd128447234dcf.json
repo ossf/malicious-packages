@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-19T07:52:29Z",
+  "modified": "2026-08-19T07:52:29Z",
+  "summary": "mutex-lite ships an encrypted secondary payload decrypted and executed via a hidden trigger in the mutex API",
+  "details": "The package is named to resemble async-mutex and exports a Mutex API with the same surface, but lib/Mutex.js has been altered so that Mutex.prototype.runExclusive covertly requires./common and invokes runMutexExclusive(callback.meta.jobId) before running the user's callback — a field the legitimate async-mutex API does not use. lib/common.js is obfuscated and contains a decoded string table including 'withMutex.min.js', 'aes-256-gcm', and 'scrypt' plus a hardcoded SHA1 gate 'b7e54f...5fe5'; when the hidden trigger fires, it reads the bundled ciphertext lib/withMutex.min.js, decrypts it with AES-256-GCM using material derived from callback.meta.jobId, writes the plaintext to os.tmpdir(), and runs it with require('child_process').spawn('node', [tempFile,...], {detached:true, stdio:'ignore', windowsHide:true}). The sibling file lib/withMutex.min.d.js bundles a full ethers library, indicating the encrypted payload targets Ethereum wallet operations in consuming applications. Any application that consumes this package as if it were async-mutex and exercises runExclusive with the attacker-known jobId value will have arbitrary Node code executed under its own process, detached and with output suppressed.",
+  "affected": [
+    {
+      "package": {
+        "name": "mutex-lite",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.4.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/common.js",
+              "sha256": "ab1d7cc1dbc66eca782f6c1d7725ea0bf4a0de10addae5ea0cd12fe26689e364",
+              "tlsh": "1e51c85d2f4c87344bc458ceba961487c5e9dc46e525e7c6834dcecb34a6b80026bbf4"
+            },
+            {
+              "path": "lib/Mutex.js",
+              "sha256": "a644efbd07053dca68adaf0cda57d70cf01f1250d4ae033f05b742ba7b2b8d82",
+              "tlsh": "c9315e54a7f3e416537370eac73b9009f13c442b018cc865f84dd2ea6f6506847d9bad"
+            },
+            {
+              "path": "lib/withMutex.min.js",
+              "sha256": "fe353eb62aae6d33c0f8df6998beae23d4bdb975edb4679285f45e6c6db4c3ea",
+              "tlsh": "e572d059a8bf1ba66bf84458f61d7f708ce2562137fa4603d9cb3e9269107223306c67"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mutex-lite-1.4.2.tgz",
+              "hashes": {
+                "sha1": "a8ee3ddba1a5f0f5404f7bc8412bf5554c1426cf",
+                "sha512_sri": "sha512-qPOhuPYrHX9SGzR8G9n2e2Ps1Qa4VGLYJ1a5k5vffQ1uzRSicNzwHspRYda82ZN8I2JtAGTMNXRu2pyW1jfDFg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mutex-lite/v/1.4.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018395",
+        "import_time": "2026-08-19T08:15:31.898362751Z",
+        "modified_time": "2026-08-19T07:52:29Z",
+        "sha256": "d9dd128447234dcf0a624ed4128fc5135f11c4c0c4cd2b12b7b81614f50015c5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
