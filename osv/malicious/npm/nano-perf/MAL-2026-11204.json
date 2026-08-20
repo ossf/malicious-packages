@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11204",
   "published": "2026-06-17T19:01:25Z",
-  "modified": "2026-08-20T04:28:02.121335372Z",
+  "modified": "2026-08-20T06:17:49.374252986Z",
   "aliases": [
     "GHSA-4236-g67q-42fc"
   ],
   "summary": "Malicious code in nano-perf (npm)",
-  "details": "Version 2.2.0 of nano-perf declares a postinstall script that automatically launches daemon.js as a detached, unreferenced process with ignored standard streams, allowing it to survive completion of npm install. The launcher reconstructs an obfuscated Supabase endpoint from Base64 fragments and sends a persistent node identifier, CPU count, total memory, platform information, and an online heartbeat to a table named stealth_heartbeats.\n\nAfter a successful heartbeat the detached daemon polls a second table named stealth_tasks for pending work assigned to the victim node. The observed task handlers perform CPU benchmarking and system probing and upload the results. Although this version does not expose an arbitrary shell task, the hidden endpoint, automatic installation-time persistence, periodic beaconing, system fingerprint collection, and remote task polling are behavior of a covert C2 beacon and task agent rather than a performance utility.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (452f28d1cf87f232f40920b040da4821c6f618ef293a91162b8c8696c45764fe)\nOn `npm install`, package.json's postinstall hook (`node postinstall.js`) spawns daemon.js as a detached, unref'd background process (`cp.spawn(process.execPath,[daemonPath],{detached:true,stdio:'ignore'}); child.unref();`) that survives the install and beacons indefinitely. daemon.js generates a persistent node identifier in /tmp/.np-cache, then on a ~5 minute interval POSTs host fingerprint data (cpuCount, totalmem, platform, nodeId) to a Supabase REST endpoint and polls a sibling table for pending tasks keyed by node_id, executing returned commands via `executeAndReport` and PATCHing results back. The destination hostname (ojhkxcjvyfvtdsigwbxi.supabase.co/rest/v1/stealth_heartbeats /.../stealth_tasks) and the Supabase service_role JWT are obfuscated as base64 chunk arrays concatenated at runtime (daemon.js:24). The attacker-controlled tables are literally named `stealth_heartbeats` and `stealth_tasks`. Every machine that runs `npm install nano-perf` becomes a managed bot executing attacker-supplied commands.\n\n## Source: ghsa-malware (9cbd507bde0e4815e03d92f7114f130ce0eff929f3b79f74c08cc39474ff994f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "Version 2.2.0 of nano-perf declares a postinstall script that automatically launches daemon.js as a detached, unreferenced process with ignored standard streams, allowing it to survive completion of npm install. The launcher reconstructs an obfuscated Supabase endpoint from Base64 fragments and sends a persistent node identifier, CPU count, total memory, platform information, and an online heartbeat to a table named stealth_heartbeats.\n\nAfter a successful heartbeat the detached daemon polls a second table named stealth_tasks for pending work assigned to the victim node. The observed task handlers perform CPU benchmarking and system probing and upload the results. Although this version does not expose an arbitrary shell task, the hidden endpoint, automatic installation-time persistence, periodic beaconing, system fingerprint collection, and remote task polling are behavior of a covert C2 beacon and task agent rather than a performance utility.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (654460e27d19da08e0c343f90cc776d9a7e683bc7e2814dd751eb3bf4bebcada)\nOn require(), nano-perf (index.js line 131) instantiates a NanoPerf object and immediately starts an hourly beacon that POSTs an AES-256-GCM-encrypted payload to https://ly-distilled-node.vercel.app/api/heartbeat (hardcoded at index.js line 18 as BEACON_HOST). The payload includes a hostname-derived node_id, platform, arch, Node.js version, CPU usage, memory, uptime, and CPU count. The encryption key is derived from os.hostname() + 'nano-perf-v1' (index.js line 21), which the receiver can recompute from the node_id transmitted in the beacon — meaning the encryption protects the data flow from passive network/DLP inspection rather than from the receiver. The README advertises the package as 'Lightweight performance monitoring' and does not disclose the outbound beacon; an in-source comment self-describes the mechanism as a 'Sentinel: Anonymous health beacon → LY-TRINITY mesh', a purpose distinct from the advertised API. The behavior is enabled by default with no opt-in. Any application that does `require('nano-perf')` will silently exfiltrate host fingerprint and resource telemetry to the operator of ly-distilled-node.vercel.app hourly for the lifetime of the process.\n\n## Source: ghsa-malware (9cbd507bde0e4815e03d92f7114f130ce0eff929f3b79f74c08cc39474ff994f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -25,10 +25,34 @@
         }
       ],
       "versions": [
-        "2.2.0"
+        "2.2.0",
+        "2.0.1",
+        "2.1.0",
+        "2.0.0",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -97,6 +121,22 @@
     {
       "type": "ADVISORY",
       "url": "https://github.com/advisories/GHSA-4236-g67q-42fc"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/2.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/2.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/2.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/nano-perf/v/1.0.1"
     }
   ],
   "database_specific": {
@@ -127,6 +167,46 @@
         ],
         "sha256": "9cbd507bde0e4815e03d92f7114f130ce0eff929f3b79f74c08cc39474ff994f",
         "source": "ghsa-malware"
+      },
+      {
+        "id": "IN-MAL-2026-018449",
+        "import_time": "2026-08-20T06:16:09.544039193Z",
+        "modified_time": "2026-08-20T06:11:19Z",
+        "sha256": "03fb9ad9be49a421c63612442c98a07d03e70da394c17950bae6f89c5b946cac",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018452",
+        "import_time": "2026-08-20T06:16:09.653357998Z",
+        "modified_time": "2026-08-20T06:11:45Z",
+        "sha256": "575bbb86c20854f0549eb7d4bfad37f4a22769c1410df34ffca27a30dd57caf7",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018451",
+        "import_time": "2026-08-20T06:16:09.623222272Z",
+        "modified_time": "2026-08-20T06:11:37Z",
+        "sha256": "5a3f5df0fe4188679c12065b53260dba7edeeef0e938017c24153fcf2580d33a",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018450",
+        "import_time": "2026-08-20T06:16:09.595842648Z",
+        "modified_time": "2026-08-20T06:11:28Z",
+        "sha256": "654460e27d19da08e0c343f90cc776d9a7e683bc7e2814dd751eb3bf4bebcada",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
       }
     ]
   },
