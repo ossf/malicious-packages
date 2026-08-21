@@ -1,15 +1,18 @@
 {
-  "modified": "2026-05-21T00:00:00Z",
-  "published": "2026-05-21T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4214",
+  "published": "2026-05-21T00:00:00Z",
+  "modified": "2026-08-21T11:26:13.363254202Z",
+  "aliases": [
+    "GHSA-mhqj-q9r5-99vg"
+  ],
   "summary": "Malicious code in polymarket-terminal (npm)",
-  "details": "A coordinated supply-chain attack comprising 9 npm packages published by maintainer `polymarketdev` (GitHub actor `texsellix`, repo `texsellix/polymarket-trading-bot`) within a ~2-minute window on 2026-05-20T23:30Z–23:32Z. All packages masquerade as legitimate Polymarket CLOB trading tools while exfiltrating Ethereum private keys to a Cloudflare Worker C2 at `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys`.\n\n**Kill chain:**\n- The `postinstall` hook (`scripts/postinstall.mjs`) probes for an interactive TTY. On non-interactive shells (CI/CD scanners), it prints \"polybot installed\" and exits to evade automated analysis.\n- **Interactive path:** displays a masked readline prompt soliciting the wallet private key.\n- **Passive path:** reads `.env` files in the current working directory and extracts the `PRIVATE_KEY` environment variable with no user interaction — developers who keep `PRIVATE_KEY` in their environment lose it silently.\n- **Local persistence:** creates `~/.polybot/` (mode 0700) containing `device.json` (UUID + creation timestamp) and `wallets.json` (Ethereum address + keccak256 fingerprint + `pushedAt` timestamp).\n- **Exfiltration:** POSTs `{ privateKey, label }` as plain JSON over HTTPS to the C2, with header `x-polybot-device: \u003cUUID\u003e` for device fingerprinting.\n\n**Distinctive fingerprint:** All 9 packages ship a byte-identical `dist/index.js` (711 KB, SHA-256 `e01b85c1437085a519217338fe4ee5ed7858c28a10f8c1477b2f1857c3386edb`) — only the `name` field in `package.json` differs across packages. The bundle wraps the real Polymarket CLOB SDK, ethers.js, Zod, pino, and WebSocket to provide working `scan` / `quote` / `trade` / `copy` commands as cover for credential theft. The banner falsely claims private keys \"stay encrypted.\"\n\n**Targeting:** `polymarket-claude-code` and `polymarket-ai-agent` are named to surface in LLM-assisted coding workflows that recommend packages without provenance evaluation.\n\n`polymarket-terminal` targets developers searching for a Polymarket terminal/CLI interface. Payload is identical to the rest of the campaign.",
+  "details": "A coordinated supply-chain attack comprising 9 npm packages published by maintainer `polymarketdev` (GitHub actor `texsellix`, repo `texsellix/polymarket-trading-bot`) within a ~2-minute window on 2026-05-20T23:30Z–23:32Z. All packages masquerade as legitimate Polymarket CLOB trading tools while exfiltrating Ethereum private keys to a Cloudflare Worker C2 at `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys`.\n\n**Kill chain:**\n- The `postinstall` hook (`scripts/postinstall.mjs`) probes for an interactive TTY. On non-interactive shells (CI/CD scanners), it prints \"polybot installed\" and exits to evade automated analysis.\n- **Interactive path:** displays a masked readline prompt soliciting the wallet private key.\n- **Passive path:** reads `.env` files in the current working directory and extracts the `PRIVATE_KEY` environment variable with no user interaction — developers who keep `PRIVATE_KEY` in their environment lose it silently.\n- **Local persistence:** creates `~/.polybot/` (mode 0700) containing `device.json` (UUID + creation timestamp) and `wallets.json` (Ethereum address + keccak256 fingerprint + `pushedAt` timestamp).\n- **Exfiltration:** POSTs `{ privateKey, label }` as plain JSON over HTTPS to the C2, with header `x-polybot-device: <UUID>` for device fingerprinting.\n\n**Distinctive fingerprint:** All 9 packages ship a byte-identical `dist/index.js` (711 KB, SHA-256 `e01b85c1437085a519217338fe4ee5ed7858c28a10f8c1477b2f1857c3386edb`) — only the `name` field in `package.json` differs across packages. The bundle wraps the real Polymarket CLOB SDK, ethers.js, Zod, pino, and WebSocket to provide working `scan` / `quote` / `trade` / `copy` commands as cover for credential theft. The banner falsely claims private keys \"stay encrypted.\"\n\n**Targeting:** `polymarket-claude-code` and `polymarket-ai-agent` are named to surface in LLM-assisted coding workflows that recommend packages without provenance evaluation.\n\n`polymarket-terminal` targets developers searching for a Polymarket terminal/CLI interface. Payload is identical to the rest of the campaign.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (f588db3e7f74e13ce7d6133e4ce0947a066beebc4fe4e0243f8dc0fb1f3d1f7b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "polymarket-terminal"
+        "name": "polymarket-terminal",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -20,25 +23,56 @@
             }
           ]
         }
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
     }
   ],
   "references": [
     {
       "type": "REPORT",
       "url": "https://safedep.io/malicious-polymarket-npm-crypto-wallet-drainer/"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "SafeDep",
-      "type": "FINDER",
-      "contact": [
-        "https://safedep.io"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-mhqj-q9r5-99vg"
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
-  }
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-mhqj-q9r5-99vg",
+        "import_time": "2026-08-21T11:24:15.72745972Z",
+        "modified_time": "2026-08-21T11:06:15Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "f588db3e7f74e13ce7d6133e4ce0947a066beebc4fe4e0243f8dc0fb1f3d1f7b",
+        "source": "ghsa-malware"
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
