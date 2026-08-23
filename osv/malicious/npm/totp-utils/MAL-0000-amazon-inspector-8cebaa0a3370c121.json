@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-23T03:12:53Z",
+  "modified": "2026-08-23T03:12:53Z",
+  "summary": "totp-utils postinstall and public API exfiltrate Discord/Minecraft tokens and drop opaque JAR into Minecraft mods",
+  "details": "Package advertises itself as a TOTP utility but its postinstall script (`node./index.js --setup 2>/dev/null || true`) and its exported `validateSecret` API both invoke a hidden `_run()` routine that (1) scans Discord/Chrome/Edge/Brave/Opera LevelDB stores under `os.homedir()` for Discord auth-token regexes, DPAPI-decrypts encrypted tokens via a spawned powershell `ProtectedData.Unprotect` call, parses Minecraft launcher credentials (vanilla `launcher_accounts.json`, Lunar `accounts.json`, ModrinthApp `app.db` JWTs), validates the harvested Discord tokens against `discord.com/api/v9`, and POSTs the collected credentials to a hardcoded Discord webhook whose URL is stored as chunked base64 in `_x` and reassembled at runtime (`Buffer.from(_x.join(''),'base64')`) to a `discord.com/api/webhooks/1532429233769419004/...` endpoint; and (2) enumerates vanilla/Modrinth/Lunar Minecraft profile `mods/` directories and writes an opaque JAR named `optimized-renderer-1.0.0.jar` (URL also stored as chunked base64 decoding to `cdn.discordapp.com/attachments/1507484731535785994/1540335670831222894/optimized-renderer-1.0.0.jar`) into each discovered mods folder, delivering unverified code that will execute the next time the user launches Minecraft with a Fabric loader. The postinstall suppresses stderr and uses a 4-second `setTimeout` to appear to finish cleanly. Because `validateSecret` (part of the three-function public API) schedules `_run()` via `setImmediate`, the same theft and dropper also fire whenever a downstream consumer imports the package and calls the advertised TOTP function — extending the attack surface well beyond install time.",
+  "affected": [
+    {
+      "package": {
+        "name": "totp-utils",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.4.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "3765e2542779c5c1b64c6183c9e210b56fac7dfc6b951bb00c0745cf18aed5cb",
+              "tlsh": "d262833651b7212476a3e1ec4a0790197279f4433146dea477acb2946fcf87892b3abc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "totp-utils-1.4.5.tgz",
+              "hashes": {
+                "sha1": "d19c8f8b92ad36dd8f30c5afa0dc7c01badcbc28",
+                "sha512_sri": "sha512-BrPnehld545I27svzZ8VdeO0jZUWGq+u2YRrcFcXgm+3hIFX5GwFVxObKL9yPNWRzavxJaiCt1mNB7PZYTgrtg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/totp-utils/v/1.4.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018556",
+        "import_time": "2026-08-23T03:25:54.984995961Z",
+        "modified_time": "2026-08-23T03:12:53Z",
+        "sha256": "8cebaa0a3370c12104ef2816420193171f431df0d113fdc5d8c9f1dc921deeb5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
