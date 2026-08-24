@@ -40,3 +40,31 @@ jobs:
         go-version-file: 'go.mod'
     - name: golangci-lint
       uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+  run-generate:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version-file: 'go.mod'
+    - name: Install protoc
+      uses: arduino/setup-protoc@c65c819552d16ad3c9b72d9dfd5ba5237b9c906b # v3.0.0
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        version: "35.1"
+    - name: Generate all the things
+      run: make generate
+    - name: Verify no changes
+      run: |
+        # If there are modified or untracked files, git status will not be empty
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "::error::Generated files are out of sync."
+          echo "Please run `make generate` locally and commit the updated files."
+          git status
+          git diff
+          exit 1
+        else
+          echo "Generated files are up to date."
+        fi
