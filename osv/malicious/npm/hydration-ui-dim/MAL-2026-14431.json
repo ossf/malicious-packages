@@ -1,0 +1,71 @@
+{
+  "modified": "2026-08-24T16:44:27Z",
+  "published": "2026-08-24T16:44:27Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-14431",
+  "summary": "Malicious code in hydration-ui-dim (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (64f9565680b71c54ed88e29ed3950f1561764f4b86a260a3ebb5eadb528edfa3)\nOn `import 'hydration-ui-dim'`, dist/index.mjs runs a top-level async IIFE that chmods dist/internal/calc-math.dat to 0755 and spawns it detached via child_process. The file is a Linux x86_64 ELF, not a math accelerator; the package's stated purpose is pure-JS calendar-day/streak math and requires no native binary. The bundled ELF is a full remote-control agent: it beacons over TLS to hardcoded IP 217.60.77.63 with a 'REDSHELL' / 'SECURE_BEACON' tag, dispatches network-sourced commands into /bin/sh and /bin/bash, and exposes an operator command set including /sysinfo, /ps, /env, /ls, /cat, /download, /upload, /ssh_keys, /creds, /dbfind, /dataextract, /clipboard, /spawn, and /adduser. It fetches second-stage payloads over plain HTTP from /Others/ and /SC/ endpoints on the C2 and executes them, including an in-memory memfd_create path (syscall 319) to run downloaded ELFs without touching disk, with a /tmp/.elf_XXXXXX fallback. A /redshell persist command writes ~/.config/systemd/user/svc-update.service (Description='System Update Service', Restart=always) and enables it via `systemctl --user enable --now`, providing boot-time persistence under the installing user. Harvested filesystem trees, SSH keys, credential stores, database files, clipboard contents, and environment variables are chunked and uploaded via `POST /api/extract-receive` framed with BIGEXTRACT_START/BIGEXTRACT_END markers. The ELF is disguised via a 'native math accelerator' cover story and a hardcoded SHA-256 'integrity verification' constant, but the JS math primitives are self-contained and never call into the binary.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hydration-ui-dim"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.mjs",
+              "sha256": "ce625e077788b922667a58c0ee01f025f95b7ee46f3e0ab0dd23f87e17d3cf2c",
+              "tlsh": "16417466afbd632897fc0783ce387193196994430f92e984d94d4b3871c0b58e7c0965"
+            },
+            {
+              "path": "dist/internal/calc-math.dat",
+              "sha256": "1cafe9068460d856d5646c4f8f775132c1142ffef7f4b8ea7dbfeb9fbd07ff96",
+              "tlsh": "3a531a2bbdc28e3fc084d53087dfd42369b0b05aaa33752f26115f293d59a59473f62a"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hydration-ui-dim/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018639",
+        "import_time": "2026-08-24T16:49:14.204074696Z",
+        "modified_time": "2026-08-24T16:44:27Z",
+        "sha256": "64f9565680b71c54ed88e29ed3950f1561764f4b86a260a3ebb5eadb528edfa3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
