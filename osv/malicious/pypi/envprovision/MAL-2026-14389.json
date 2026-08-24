@@ -1,0 +1,188 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-14389",
+  "published": "2026-08-23T21:37:06Z",
+  "modified": "2026-08-24T05:22:20.445773708Z",
+  "summary": "Malicious code in envprovision (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a414ad5404fdeeb23c37f1580aeee8175765ba8613e8fadd1a0254bf0e25d2f6)\nenvprovision 1.4.0 presents itself as an environment-diagnostics helper but its public `check()`/`sync()` API, on Windows, fetches a JSON manifest from a base64-obfuscated URL that decodes to https://env-metadata.up.railway.app/vbv_a8F3kL92xQ/manifest.json, downloads the referenced binary to a temp path, and executes it. TLS verification is disabled on both the manifest fetch and the binary download (ctx.check_hostname=False, ctx.verify_mode=ssl.CERT_NONE), so the payload can also be substituted by any on-path attacker. The dropped binary is invoked with NSIS silent-install flags (`/S`, `/NCRC`) built by character-list concatenation and hidden-window creation flags, then a follow-on `syshelpear.exe` is spawned detached (CREATE_NO_WINDOW|DETACHED_PROCESS) from a user-writable ProgramFiles/LOCALAPPDATA location as a persistence helper. After execution, `wevtutil cl Application` and `wevtutil cl System` are invoked to erase Windows event logs. The endpoint obfuscation, TLS-off fetch-and-execute of an opaque binary from a publisher-mismatched Railway subdomain, silent-install flag assembly, detached helper launch, and anti-forensic log clearing are inconsistent with the advertised diagnostics purpose and constitute an installer-side binary dropper with persistence.\n\n## Source: kam193 (cf3a48b407852ec03ead22bb8c16c03f252ba5fafa5c86ed1a739427e7d7d869)\nExported functions hide the malicious functionality. On Windows, it downloads and installs a malicious executable, and disguises it as a system utility. After installation, the code attempts to cover its tracks by cleaning logs and removing downloaded files. The installed executable is a heavily obfuscated malware with multiple sandbox evasion techniques, finally running an infostealer identifying itself as \"Snow Stealer\". It collects at least browser data and modifies cryptowallet applications.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-envprovision\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote executable.\n\n\n - action-hidden-in-lib-usage\n\n\n - covering-tracks\n\n\n - persistence\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - malware\n\n\n - infostealer\n\n\n - exfiltration-browser-data\n\n\n - exfiltration-crypto\n",
+  "affected": [
+    {
+      "package": {
+        "name": "envprovision",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.2.0",
+        "1.3.0",
+        "1.4.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/envprovision/_core.py",
+              "sha256": "3e21a40b4a2aa44563f4c21e5e689d1eba7aaa4280939ae8ba47d1020b581190",
+              "tlsh": "f771557a4c4fb4034273820d5d169815d33297836fba8005b8ad4b166fb8931a5f8efe"
+            },
+            {
+              "path": "src/envprovision/_proc.py",
+              "sha256": "7ec7834451e7885805eae3e4d22c8bd8fd84b03a300a9e6828242c5c6d5da644",
+              "tlsh": "53314811bc1f5101dab2c0af6821a091ebea0747d78a4877b8fdc6607f7a170c1a1d6f"
+            },
+            {
+              "path": "src/envprovision/_net.py",
+              "sha256": "4d90b9a71e8d97336c81945ff939060986e21f00f6d3238bddd8264bdb572d6c",
+              "tlsh": "a821fe23dc62aa13d2b6a07d5567d5a1f32367079b569ca6f58cd2281ff4430c0a210c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "envprovision-1.4.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "6c777ad253b3011cb77879184b09af89f0beece77421da504611fecb1576b809",
+                "md5": "c5aa87f5deaf45aa804ae06b079bda2f",
+                "sha256": "c22ca485f34789be7c25c7491cc43663033847d4ce3bc3ae485794f15ca8758e"
+              }
+            },
+            {
+              "filename": "envprovision-1.4.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "640a4f46ff7c9b0a6e7ad360fc6f382d9b947cd0c24d2e377ce28b8a4487646d",
+                "md5": "a3840d1e92b1f4f8b0aaa337cbca3fd3",
+                "sha256": "a9799e0c7e784c06299cb664853752ba6ba69e9ccb7c167144cd6b6717c38727"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/d49fa53949d9350ee34c4e1279ee72e6fafc294ae338825f66c33c7f188b878c/details"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.virustotal.com/gui/file-analysis/MGQ3ZGViMWFhYzU0YjY3ODllZWI1ZGJkMDY4Nzk3NGM6MTc4NzUxODgyOQ=="
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/envprovision"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/envprovision/1.4.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/envprovision/1.3.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/envprovision/1.2.0/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "env-metadata.up.railway.app"
+      ],
+      "urls": [
+        "https://env-metadata.up.railway.app/vbv_a8F3kL92xQ/manifest.json",
+        "https://env-metadata.up.railway.app/vbv_a8F3kL92xQ/appsetupw.exe",
+        "https://energy-total.up.railway.app/vbv_a8F3kL92xQ/manifest.json"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "pypi/2026-08-envprovision/envprovision",
+        "import_time": "2026-08-23T22:08:02.977700609Z",
+        "modified_time": "2026-08-23T21:37:06.612848Z",
+        "sha256": "cf3a48b407852ec03ead22bb8c16c03f252ba5fafa5c86ed1a739427e7d7d869",
+        "source": "kam193",
+        "versions": [
+          "1.2.0",
+          "1.3.0",
+          "1.4.0"
+        ]
+      },
+      {
+        "id": "pypi/2026-08-envprovision/envprovision",
+        "import_time": "2026-08-23T22:41:37.85527192Z",
+        "modified_time": "2026-08-23T21:37:06.612848Z",
+        "sha256": "edb91aef88dce4beff995d02c493ec56945d755830711763e10f04a26fafe8d8",
+        "source": "kam193",
+        "versions": [
+          "1.2.0",
+          "1.3.0",
+          "1.4.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018591",
+        "import_time": "2026-08-24T05:20:12.680957751Z",
+        "modified_time": "2026-08-24T05:04:46Z",
+        "sha256": "a414ad5404fdeeb23c37f1580aeee8175765ba8613e8fadd1a0254bf0e25d2f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018594",
+        "import_time": "2026-08-24T05:20:12.96269736Z",
+        "modified_time": "2026-08-24T05:05:16Z",
+        "sha256": "0353d445914769dd5c09ff12d638e2a4f0ea2169e0efc9db8f976df9eaaced26",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-018592",
+        "import_time": "2026-08-24T05:20:12.776710104Z",
+        "modified_time": "2026-08-24T05:04:57Z",
+        "sha256": "41fb2384e13c6e4f45c607f3ba94e75896fc6c011e128f09fdbd5565edbcfc42",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
+}
