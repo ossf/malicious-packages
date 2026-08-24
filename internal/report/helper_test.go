@@ -14,7 +14,11 @@
 
 package report
 
-import "github.com/ossf/osv-schema/bindings/go/osvschema"
+import (
+	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	mppb "github.com/ossf/malicious-packages/proto"
+)
 
 // Vuln is a test helper method that provides access to the underlying raw
 // vulnerability object.
@@ -22,8 +26,14 @@ func (r *Report) Vuln() *osvschema.Vulnerability {
 	return r.raw
 }
 
+// DbSpecificVuln is a test helper method that provides access to the underlying
+// raw database specific vulnerability object.
+func (r *Report) DbSpecificVuln() *mppb.Vulnerability {
+	return r.rawDbSpecificVuln
+}
+
 // Origins is a test helper method that provides access to the underlying
 // origins array.
-func (r *Report) Origins() []*OriginRef {
+func (r *Report) Origins() []*mppb.OriginRef {
 	return r.origins
 }

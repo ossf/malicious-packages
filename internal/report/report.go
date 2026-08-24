@@ -37,6 +37,7 @@ import (
 
 	"github.com/ossf/malicious-packages/internal/gitname"
 	"github.com/ossf/malicious-packages/internal/reportfilter"
+	mppb "github.com/ossf/malicious-packages/proto"
 )
 
 const (
@@ -59,18 +60,10 @@ var (
 	ecosystemRE = regexp.MustCompile(`[ \/_-]+`)
 )
 
-type databaseSpecific struct {
-	Origins []*OriginRef `json:"malicious-packages-origins"`
-	IOCs    Indicators   `json:"iocs"`
-}
-
-type dbSpecificVuln struct {
-	DatabaseSpecific databaseSpecific `json:"database_specific,omitempty"`
-}
-
 type Report struct {
 	raw                   *osvschema.Vulnerability
-	origins               []*OriginRef
+	rawDbSpecificVuln     *mppb.Vulnerability
+	origins               []*mppb.OriginRef
 	Ecosystem             string
 	Name                  string
 	allowMultipleAffected bool
@@ -88,27 +81,22 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 	if err := protojson.Unmarshal(b, r.raw); err != nil {
 		return err
 	}
-	var db dbSpecificVuln
-	if err := json.Unmarshal(b, &db); err != nil {
-		return fmt.Errorf("%w: invalid origins format: %w", ErrUnexpectedOSV, err)
+
+	r.rawDbSpecificVuln = &mppb.Vulnerability{}
+	dec := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err := dec.Unmarshal(b, r.rawDbSpecificVuln); err != nil {
+		return fmt.Errorf("%w: invalid database specific format: %w", ErrUnexpectedOSV, err)
 	}
-	r.origins = db.DatabaseSpecific.Origins
+	r.origins = r.rawDbSpecificVuln.GetDatabaseSpecific().GetOrigins()
 
-	// TODO: validate schema version is >= 1.4.0
-
-	// Ensure the vuln object is valid.
-	if err := validateVulnInternal(r.raw, r.allowMultipleAffected); err != nil {
+	// Validate the parsed data.
+	if err := r.Validate(); err != nil {
 		return err
 	}
 
 	// Populates the report-level Name and Ecosystem from the report - handling
 	// git-based reports and canonicalizing the name.
 	r.Name, r.Ecosystem = r.fetchNameAndEcosystem(r.raw)
-
-	// Ensure the details can be parsed.
-	if _, _, err := r.ParseDetails(); err != nil {
-		return fmt.Errorf("%w: invalid details: %w", ErrInvalidDetails, err)
-	}
 
 	return nil
 }
@@ -128,15 +116,16 @@ func (r *Report) MarshalJSON() ([]byte, error) {
 		// be populated into the structpb.Struct. Serializing to JSON ensures that
 		// all the fields have the correct keys and the values are properly
 		// serialized when they are passed to structpb.NewStruct().
-		b, err := json.Marshal(r.origins)
+		obj := mppb.DatabaseSpecific_builder{Origins: r.origins}.Build()
+		b, err := protojson.Marshal(obj)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal origins: %w", err)
 		}
-		var origins []any
-		if err := json.Unmarshal(b, &origins); err != nil {
+		var originMap map[string]any
+		if err := json.Unmarshal(b, &originMap); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal origins: %w", err)
 		}
-		dbMap[originRefKey] = origins
+		dbMap[originRefKey] = originMap[originRefKey]
 	} else {
 		// There are no origins, so remove them from dbMap.
 		delete(dbMap, originRefKey)
@@ -167,13 +156,13 @@ func (r *Report) Split() ([]*Report, error) {
 		newReport := proto.Clone(r.raw).(*osvschema.Vulnerability)
 		newReport.Affected = []*osvschema.Affected{r.raw.Affected[i]}
 
-		var origins []*OriginRef
+		var origins []*mppb.OriginRef
 		for _, o := range r.origins {
-			cloned := &OriginRef{
+			cloned := &mppb.OriginRef{
 				Source:       o.Source,
-				SHASum:       o.SHASum,
+				ShaSum:       o.ShaSum,
 				ImportTime:   o.ImportTime,
-				ID:           o.ID,
+				Id:           o.Id,
 				ModifiedTime: o.ModifiedTime,
 				Ranges:       newReport.Affected[0].Ranges,
 				Versions:     newReport.Affected[0].Versions,
@@ -225,6 +214,30 @@ func (r *Report) WriteJSON(w io.Writer) error {
 	}
 	_, err = normalized.WriteTo(w)
 	return err
+}
+
+// Validate ensures the report is valid OSV and valid for the malicious packages
+// repository. If the report is not valid an error is returned.
+func (r *Report) Validate() error {
+	// TODO: validate schema version is >= 1.4.0
+
+	// Ensure the vuln object is valid.
+	if err := validateVulnInternal(r.raw, r.allowMultipleAffected); err != nil {
+		return err
+	}
+	// Ensure the origins are valid.
+	if err := validateOrigins(r.origins); err != nil {
+		return err
+	}
+	// Ensure the IOCs are valid.
+	if err := validateIOCs(r.rawDbSpecificVuln.GetDatabaseSpecific().GetIocs()); err != nil {
+		return err
+	}
+	// Ensure the details can be parsed.
+	if _, _, err := r.ParseDetails(); err != nil {
+		return fmt.Errorf("%w: invalid details: %w", ErrInvalidDetails, err)
+	}
+	return nil
 }
 
 // Path returns a directory name for where the report will be placed.
@@ -379,7 +392,7 @@ func (r *Report) Normalize() error {
 	}
 
 	if len(r.origins) == 1 {
-		r.SetDetails("", map[*OriginRef]string{
+		r.SetDetails("", map[*mppb.OriginRef]string{
 			r.origins[0]: r.raw.Details,
 		})
 	}

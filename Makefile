@@ -32,6 +32,22 @@ test/unit:
 validate: ## Validate all OSV files
 	go run ./cmd/validate -config ./config/config.yaml
 
+# Target for downloading dependencies for generating protos. This target
+# ensures that osv-schema repo is available at the same version as the Go
+# module we are using. The code is idempotent.
+.PHONY: download-proto-deps
+download-proto-deps:
+	@OSV_VERSION=$$(go list -m -f '{{.Version}}' $(OSV_MODULE)); \
+	OSV_COMMIT=$${OSV_VERSION##*-}; \
+	mkdir -p proto_deps/osv; cd proto_deps/osv && git init -q; \
+	git remote add origin https://github.com/ossf/osv-schema; \
+	git fetch -q --depth 1 origin "$$OSV_COMMIT"; \
+	git checkout -q FETCH_HEAD;
+
+.PHONY: gen-protos
+gen-protos: download-proto-deps ## Generate protobuf code
+	protoc -I=./proto_deps --go_out=paths=source_relative:./proto --proto_path=./proto malicious_packages.proto
+
 .PHONY: preprocess
 preprocess: ## Preprocess repository before assigning IDs
 	go run ./cmd/preprocess -config ./config/config.yaml
