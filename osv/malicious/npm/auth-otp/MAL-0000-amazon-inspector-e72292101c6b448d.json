@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-24T16:45:30Z",
+  "modified": "2026-08-24T16:45:30Z",
+  "summary": "auth-otp postinstall harvests Minecraft and Discord credentials, exfiltrates via obfuscated Discord webhook, and drops a second-stage JAR",
+  "details": "Package advertises itself as a zero-dependency TOTP/HOTP library, but package.json runs `node lib/core.js --setup` as a postinstall lifecycle script. lib/core.js first checks for CI/audit/pack indicators (CI, CONTINUOUS_INTEGRATION, JEST_WORKER_ID, missing APPDATA/USERPROFILE/USERNAME/COMPUTERNAME, npm_lifecycle_script containing 'audit' or 'pack') and exits cleanly in those environments, so the payload only fires on real Windows developer machines. On a live host it enumerates Minecraft launcher account stores under %APPDATA% (vanilla launcher_accounts*.json, Lunar accounts.json, Essential microsoft_accounts.json, CurseForge storage.json, ModrinthApp DB/JSON/LDB files, launcher_msa_credentials*.bin) and extracts Xbox/MSA access and refresh tokens. It then scans Discord stable/canary/ptb/dev and Chromium-family browsers (Chrome, Edge, Brave, Opera, Opera GX) Local Storage leveldb files, uses PowerShell + Windows DPAPI to unprotect each browser's os_crypt master key, AES-256-GCM decrypts 'dQw4w9WgXcQ:'-prefixed token entries, validates them against https://discord.com/api/v9/users/@me, and POSTs the working tokens as JSON embeds (with @everyone) to a hardcoded Discord webhook whose URL is reassembled at runtime from seven string fragments to defeat plain-string scanners, resolving to https://discord.com/api/webhooks/1532429233769419004/VE9zx782_hy5vedls0lwNRAVA1sUGb9Q2chTdXdrcmXuNzztkeXe7Ilbt36OjWaNnTXe. The same postinstall path downloads a JAR (fabric-api-boost-1.0.0.jar) from a similarly split URL pointing at github.com/ghysghqgHUJ/.jar/releases/download/v1.0.0/ — a personal GitHub account unrelated to the package publisher, with no hash or signature verification — and stages it into the victim's Minecraft mods directory as a second-stage payload.",
+  "affected": [
+    {
+      "package": {
+        "name": "auth-otp",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/core.js",
+              "sha256": "cfe30c3274446421de0b3f0121ba98cbff0fc405d20c0421e0d6c677fe32d60c",
+              "tlsh": "af92947565f3202472a3e1ed5a079019a179f4433109ded07aacb2846fcf578a2f39bd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "auth-otp-1.0.3.tgz",
+              "hashes": {
+                "sha1": "a80bc9fdb76ec5e0c23123d63e8ffe7b13011cb5",
+                "sha512_sri": "sha512-mRxAvrhhpiqq5Flb/jAGRUTMZ7BFq+UXDejos4uupx7DUF7ACSmM/Vvm+F11HtovmaHbmlJQnPJMHFfOXPumyg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/auth-otp/v/1.0.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018646",
+        "import_time": "2026-08-24T16:49:14.674463597Z",
+        "modified_time": "2026-08-24T16:45:30Z",
+        "sha256": "e72292101c6b448dbaea5dc1e2af91cc55b35b32ee1e722c4f5b21dfb91e032d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

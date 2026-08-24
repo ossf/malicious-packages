@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-24T16:38:08Z",
+  "modified": "2026-08-24T16:38:08Z",
+  "summary": "libsignal-node lookalike hijacks @whiskeysockets/baileys on import to auto-follow attacker's WhatsApp channel",
+  "details": "Package advertises itself as 'Open Whisper Systems libsignal for Node.js' but ships an install.js that has nothing to do with libsignal. On require() of the package, index.js schedules install.installNewsletterAutoFollow() via setTimeout; that function locates @whiskeysockets/baileys inside the installer's node_modules and overwrites lib/Socket/newsletter.js with a hardcoded modified copy, then process.exit(0)s. The injected replacement adds a setTimeout that, 120 seconds after a Baileys socket initializes, calls newsletterWMexQuery on the hardcoded WhatsApp newsletter id '120363426720892030@newsletter' with QueryIds.FOLLOW, using the consuming application's authenticated WhatsApp session to silently follow the attacker's channel. Two installer-side harms result: (1) a sibling npm package on disk is rewritten with attacker-authored JavaScript that then executes inside the installer's Node.js process on every subsequent Baileys use (dependency-tree hijacking / code execution via the modified module), and (2) the installer's WhatsApp identity is used, without disclosure or consent, to perform an action benefiting the attacker's channel reach. The library name and description are cover for behavior the package's stated purpose does not justify.",
+  "affected": [
+    {
+      "package": {
+        "name": "@blurrydespair/libsignal-node",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.2.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "install.js",
+              "sha256": "08c55abbf761167767efd00b91ffb94eaeb5fd884ec57fe2af199d04cc43ac16",
+              "tlsh": "3472b49665fa67a917a37054a67fb0e0b334f203751598627f8c90020f4a2dce8f3bd8"
+            },
+            {
+              "path": "package.json",
+              "sha256": "595d31c88285dd5db956bd263d3e5f420141833ffadd407c890786a056a51676",
+              "tlsh": "23f08b10c918dc7351c43a2a6c31090a97a20d934594bc0c37c6c40ccfad29f63feaae"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@blurrydespair/libsignal-node/v/2.2.9"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018623",
+        "import_time": "2026-08-24T16:49:13.03865321Z",
+        "modified_time": "2026-08-24T16:38:08Z",
+        "sha256": "0b7ff09078e56bd40b5ad38f72027a55a39067b82aaffb0bfe6891e3d6d912e8",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.2.9"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
