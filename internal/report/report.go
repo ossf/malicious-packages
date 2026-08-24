@@ -62,7 +62,7 @@ var (
 
 type Report struct {
 	raw                   *osvschema.Vulnerability
-	rawDbSpecificVuln     *mppb.Vulnerability
+	rawDBSpecificVuln     *mppb.Vulnerability
 	origins               []*mppb.OriginRef
 	Ecosystem             string
 	Name                  string
@@ -82,12 +82,12 @@ func (r *Report) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	r.rawDbSpecificVuln = &mppb.Vulnerability{}
+	r.rawDBSpecificVuln = &mppb.Vulnerability{}
 	dec := protojson.UnmarshalOptions{DiscardUnknown: true}
-	if err := dec.Unmarshal(b, r.rawDbSpecificVuln); err != nil {
+	if err := dec.Unmarshal(b, r.rawDBSpecificVuln); err != nil {
 		return fmt.Errorf("%w: invalid database specific format: %w", ErrUnexpectedOSV, err)
 	}
-	r.origins = r.rawDbSpecificVuln.GetDatabaseSpecific().GetOrigins()
+	r.origins = r.rawDBSpecificVuln.GetDatabaseSpecific().GetOrigins()
 
 	// Validate the parsed data.
 	if err := r.Validate(); err != nil {
@@ -230,7 +230,7 @@ func (r *Report) Validate() error {
 		return err
 	}
 	// Ensure the IOCs are valid.
-	if err := validateIOCs(r.rawDbSpecificVuln.GetDatabaseSpecific().GetIocs()); err != nil {
+	if err := validateIOCs(r.rawDBSpecificVuln.GetDatabaseSpecific().GetIocs()); err != nil {
 		return err
 	}
 	// Ensure the details can be parsed.

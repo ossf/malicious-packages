@@ -26,10 +26,10 @@ func (r *Report) Vuln() *osvschema.Vulnerability {
 	return r.raw
 }
 
-// DbSpecificVuln is a test helper method that provides access to the underlying
+// DBSpecificVuln is a test helper method that provides access to the underlying
 // raw database specific vulnerability object.
-func (r *Report) DbSpecificVuln() *mppb.Vulnerability {
-	return r.rawDbSpecificVuln
+func (r *Report) DBSpecificVuln() *mppb.Vulnerability {
+	return r.rawDBSpecificVuln
 }
 
 // Origins is a test helper method that provides access to the underlying

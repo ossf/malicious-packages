@@ -27,7 +27,7 @@ import (
 
 func TestIndicators_Valid(t *testing.T) {
 	r := testReport(osvconstants.EcosystemPyPI, "example")
-	r.DbSpecificVuln().DatabaseSpecific = mppb.DatabaseSpecific_builder{
+	r.DBSpecificVuln().DatabaseSpecific = mppb.DatabaseSpecific_builder{
 		Iocs: mppb.Indicators_builder{
 			Domains: []string{"example", "example.com", "this.is.an.example.com", "_service.at.example.com", "foo-bar.example.com", "g.co"},
 			Ips:     []string{"127.0.0.1", "127.0.0.0/24", "2001:db8:a0b:12f0::1", "2001:db8:a0b:12f0::1/32"},
@@ -254,7 +254,7 @@ func TestIndicators_ValidationErrors(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			r := testReport(osvconstants.EcosystemPyPI, "example")
-			r.DbSpecificVuln().DatabaseSpecific = &mppb.DatabaseSpecific{Iocs: test.iocs}
+			r.DBSpecificVuln().DatabaseSpecific = &mppb.DatabaseSpecific{Iocs: test.iocs}
 			if err := r.Validate(); !errors.Is(err, report.ErrUnexpectedOSV) {
 				t.Fatalf("Validate() = %v; want = %v", err, report.ErrUnexpectedOSV)
 			}
