@@ -1,0 +1,80 @@
+{
+  "modified": "2026-08-25T08:54:29Z",
+  "published": "2026-08-25T08:54:29Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-14489",
+  "summary": "Malicious code in hydration-cls-ui (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (01c60e3a0dd707077bad78ec7f0e5f79032dc9b86814d65bfd0083275a6059de)\nThe package advertises itself as a dependency-free streak/date-math library but ships an x86_64 Linux ELF at dist/internal/calc.dat and auto-launches it. The main module dist/index.mjs contains a top-level IIFE that resolves the binary path, verifies a hardcoded SHA-256, chmods it to 0755, and spawns it detached via cp.spawn with stdio 'pipe' and shell false — running the moment any consumer imports the package. The internal daymath.mjs _ensureEngine() is a stub returning true, so the ELF has no computational role. Strings inside calc.dat identify a full remote-access tool (\"RedShell\") with a /redshell command dispatcher exposing socks, portfwd, bin, elf, and persist subcommands, a SOCKS5 proxy, TCP port forwarding, arbitrary /bin/sh command execution with output capture, and TLS beaconing (libssl.so.3) to a hardcoded C2 at 217.60.77.63. Second-stage delivery uses curl to fetch ELF payloads from http://217.60.77.63/Others/\u003cfile\u003e and shellcode from http://217.60.77.63/SC/\u003cfile\u003e, executed via memfd_create (syscall 319) or /tmp/.elf_XXXXXX staging with chmod +x, plus a dropper reference to https://litterbox.catbox.moe/resources/internals/api.php. Bulk exfiltration is implemented as chunked POST /api/extract-receive HTTP/1.1 with Content-Type: application/octet-stream to the C2, alongside /ssh_keys, /creds, /dbfind, /download, /upload, /env, and /clipboard handlers that harvest SSH keys, credential stores, environment variables, and clipboard contents. Persistence is installed by writing ~/.config/systemd/user/svc-update.service (Description=\"System Update Service\", ExecStart=/proc/self/exe, Restart=always) and enabling it with systemctl --user daemon-reload \u0026\u0026 systemctl --user enable --now, with additional cron, ~/.bashrc, and XDG-autostart branches. The README lists the shipped file as internal/calc-cache.bin while the actual name is internal/calc.dat, and wrapper comments describe it as a \"native math accelerator\" and \"integrity verification — critical security gate\", disguising the ELF payload.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "hydration-cls-ui"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.mjs",
+              "sha256": "7e5c49845b216300d90613b2be1ba2e774a62f42d7a1e4b603d085531e3b5a7d",
+              "tlsh": "3f417466afbd632897fc0782ce387193196994430f92e994d94d4b3871c0b58e7c0965"
+            },
+            {
+              "path": "dist/internal/calc.dat",
+              "sha256": "1cafe9068460d856d5646c4f8f775132c1142ffef7f4b8ea7dbfeb9fbd07ff96",
+              "tlsh": "3a531a2bbdc28e3fc084d53087dfd42369b0b05aaa33752f26115f293d59a59473f62a"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hydration-cls-ui-1.0.0.tgz",
+              "hashes": {
+                "sha1": "77e1f012e52cd0c5a3bab51da75ab198f74e6632",
+                "sha512_sri": "sha512-smw8q+CVm1lPQVAbbP9teq1jgtFmBjBjEmwnssITUwzgZ004hxCM8Tvgxa4FLLCmUT7ohP5OcIJJj+bhZIvqXg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hydration-cls-ui/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018736",
+        "import_time": "2026-08-25T09:18:05.667418236Z",
+        "modified_time": "2026-08-25T08:54:29Z",
+        "sha256": "01c60e3a0dd707077bad78ec7f0e5f79032dc9b86814d65bfd0083275a6059de",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
