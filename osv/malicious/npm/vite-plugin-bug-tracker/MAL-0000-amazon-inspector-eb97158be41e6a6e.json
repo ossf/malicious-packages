@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-25T08:10:02Z",
+  "modified": "2026-08-25T08:10:02Z",
+  "summary": "vite-plugin-bug-tracker injects obfuscated end-user PII exfiltrator into built HTML",
+  "details": "The Vite plugin advertises itself as a bug/error tracker but its transformIndexHtml hook injects a script into the developer's built HTML that harvests end-user identifiers (sessionStorage fields `account`, `phone`, `realName`) and beacons them to a runtime-decoded destination. The destination URL is stored obfuscated in a parameter literally named `cipher` and reconstructed at runtime via `atob(_c).split('').map(c=>c.charCodeAt(0)^42)`; the outbound payload is likewise base64+XOR-42 encoded (`btoa(q.split(...).map(...^42))`). Delivery uses a sendBeacon / no-cors fetch / Image fallback chain that avoids DevTools visibility. When no session is present, `sessionStorage.setItem` is monkey-patched so that the exfil fires as soon as a key matching the configured scope is written, capturing the identifiers at login. Any application built with this plugin ships this identity harvester to its production users; the collected fields are user PII, not error data, and the destination and payload obfuscation are inconsistent with legitimate telemetry.",
+  "affected": [
+    {
+      "package": {
+        "name": "vite-plugin-bug-tracker",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "1822cc483a60c1e91b95ebb98d8841db8a0aa848903d91acda319a45048ac5d9",
+              "tlsh": "3681747bb063216496a1246b017f843ca3be89031c5ef564b95d911bafcc62c067eff9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vite-plugin-bug-tracker-1.1.0.tgz",
+              "hashes": {
+                "sha1": "6f1513189cfbf1a205aba0004e6919a3869ae483",
+                "sha512_sri": "sha512-L4G2uOfIedYCUKIAd/gneJY9zvg1igXnEhoPxqKJNFQj9mNuvQA4MrISLjqvlk0KRMUvB+is+BU0llENudwClQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-plugin-bug-tracker/v/1.1.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018700",
+        "import_time": "2026-08-25T08:20:36.668891566Z",
+        "modified_time": "2026-08-25T08:10:02Z",
+        "sha256": "eb97158be41e6a6e36740b2b1dba4186f54b8eb8648fc2e6cdcb5a02b7451d99",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
