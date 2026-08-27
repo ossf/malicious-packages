@@ -1,19 +1,60 @@
 {
-  "modified": "2026-08-26T19:21:41Z",
-  "published": "2026-08-26T19:21:41Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-14545",
+  "published": "2026-08-26T19:21:41Z",
+  "modified": "2026-08-27T03:57:26.764981821Z",
   "summary": "Malicious code in pybitjs (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (8cf3b72788a1ad482702768ea3b7f958793a0997cf77342578c31bc6dcfd23c8)\nPackage embeds obfuscated, JS-based malware downloading further remote stages. The code is triggered during building the package and on every Python startup (via PTH file). The next-stage IP is delivered via a blockchain. \n\nThe payload and embedded IoCs are consistent with campaigns attributed to Lazarus APT/PolinRider.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-pybitjs\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - malware\n\n\n - abuses-pth\n\n\n - c2-in-blockchain\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (611713d33cb9efee440b0a416812cbb2ceda3d43c0cdc73c1f8b353400209df5)\nThe package's setuptools cmdclasses (BuildPy, Develop) invoke `node pybitjs/js/main.js` during `pip install`, and write a `pybitjs.pth` file containing `import pybitjs._autorun; pybitjs._autorun.run_main_js_once()` so the same Node.js payload is re-executed on every subsequent Python interpreter startup. The bundled `pybitjs/js/main.js` is heavily string-array obfuscated (obfuscator.io style `_0x240a` / `_0x4963`) and implements an EtherHiding-style C2: it queries Ethereum JSON-RPC endpoints (drpc.org, publicnode.com, blockscout, etherscan-like API) for transactions involving the hardcoded address `0xa322E5f3...`, extracts an IPv4 from the transaction data, HTTP-fetches an XOR-encrypted blob from that IP, decrypts it, and passes the decrypted content to `eval(...)` and to `spawn('node', ['-e', <payload>], {detached:true}).unref()`. Because the C2 host is dereferenced from an on-chain transaction, the destination is attacker-mutable, and installing or launching Python with this package present causes arbitrary attacker-controlled code to be fetched and executed on the installer's host.\n\n## Source: kam193 (8cf3b72788a1ad482702768ea3b7f958793a0997cf77342578c31bc6dcfd23c8)\nPackage embeds obfuscated, JS-based malware downloading further remote stages. The code is triggered during building the package and on every Python startup (via PTH file). The next-stage IP is delivered via a blockchain. \n\nThe payload and embedded IoCs are consistent with campaigns attributed to Lazarus APT/PolinRider.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-pybitjs\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - malware\n\n\n - abuses-pth\n\n\n - c2-in-blockchain\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "pybitjs"
+        "name": "pybitjs",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pybitjs/_setup_cmd.py",
+              "sha256": "3412cc9f8fc3de5b22181c17e36954e2efd405d761235c3f246809a59ea67bbe",
+              "tlsh": "2021ce229e4bb07093b2cb5c6c53c192d37653671ea84445f8fe2a411f77064876a6ff"
+            },
+            {
+              "path": "pybitjs/js/main.js",
+              "sha256": "4993aa30d2d541be164763583a0b87f4a8c6f1d0c47a7c8a83b211600b3304e1",
+              "tlsh": "dfe23284a7d0a440034b6abbbb1bf4e5e96a0cac75844acbf11dbd84f766327e4f1531"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pybitjs-0.1.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "1d019404be807e2eac95590ff01a59423f6c4008ee1891df0d3fc1fed0b75b22",
+                "md5": "040ee49bc6e196601ccc32644bc520a8",
+                "sha256": "71fccb4b146bd7b8d3c55a493a34a301b220ca72af5a6e92e7bae4135953fc17"
+              }
+            },
+            {
+              "filename": "pybitjs-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "c7603e8ce1ac02df7b538e42113f5575d71e900a6e596b2784371d2de8fbebb3",
+                "md5": "ccad7bc111ae37db310a78dfd0c132de",
+                "sha256": "8355734423650ec61c10dcac725645a0d506f9dbd869935c8de8cb545bd40582"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -28,16 +69,10 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/pybitjs"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pybitjs/0.1.0/"
     }
   ],
   "database_specific": {
@@ -59,7 +94,34 @@
         "versions": [
           "0.1.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-018762",
+        "import_time": "2026-08-27T03:55:24.459222868Z",
+        "modified_time": "2026-08-27T02:56:17Z",
+        "sha256": "611713d33cb9efee440b0a416812cbb2ceda3d43c0cdc73c1f8b353400209df5",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
