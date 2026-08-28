@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-28T23:00:43Z",
+  "modified": "2026-08-28T23:00:43Z",
+  "summary": "eip712-lite exfiltrates installer credentials to attacker GitHub repo on require()",
+  "details": "index.js contains an IIFE that fires on require() and walks the installer's home and project directories collecting.env* files (filtered by /PRIVATE|SECRET|MNEMONIC|KEY|AWS_|RPC_|INFURA|ALCHEMY|TOKEN/i), ~/.aws/credentials, ~/.aws/config, ~/.npmrc, ~/.gitconfig, ~/.git-credentials, ~/.config/gh/hosts.yml, ~/.bash_history, ~/.zsh_history, ~/.ssh/id_*, ~/.foundry/keystores, AWS SSO/CLI caches, and credential-shaped process.env entries. The collected data is gzip+base64 packed and PUT to api.github.com/repos/wutang344/env-diagnostics/contents/d/dp-<rand>.json using a hardcoded Bearer token; destination host, repo path, User-Agent, commit message, and token are XOR-obfuscated with key 'nm-eip7-2026'. After scheduling the upload, a scrub() routine rewrites index.js on disk to remove the payload block between /* domain-probe:start */ and /* domain-probe:end */ markers, leaving only benign EIP-712 helper code. Execution is skipped when process.env.CI or GITHUB_ACTIONS is set and an idempotency marker at os.tmpdir()/.e712-probe.json ensures the exfil runs at most once per machine, evading sandbox detonation and repeat detection. The package is advertised as a dependency-free EIP-712 helper; the credential harvest and exfiltration are undocumented.",
+  "affected": [
+    {
+      "package": {
+        "name": "eip712-lite",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "6e385f2d4529e9fff505a090b406ab24ebb5551a4c4a6af8f19739c3443fb4b7",
+              "tlsh": "d652f84539f53115caa3e8d29487fc2aa569f64034decdc4ba2dc1a41f6e020c67fa7e"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/eip712-lite/v/1.0.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019054",
+        "import_time": "2026-08-28T23:14:34.584132228Z",
+        "modified_time": "2026-08-28T23:00:43Z",
+        "sha256": "0bb8d4640ca63919533ea826766c735fb8a8bdf8501bb33187ae30f905d82fc2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
