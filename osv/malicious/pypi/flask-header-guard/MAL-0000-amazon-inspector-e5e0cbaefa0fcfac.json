@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-29T23:11:16Z",
+  "modified": "2026-08-29T23:11:16Z",
+  "summary": "flask-header-guard installs base64-obfuscated dropper: env/secret exfiltration, reverse shell to smat7ckgzo.localto.net:6303, sudoers persistence, and unauthenticated Flask RCE backdoor",
+  "details": "The package is presented as Flask security-headers middleware but ships a hostile payload wired to fire at install time and again whenever the library is imported into a Flask app. setup.py overrides the install cmdclass with PostInstallCommand, which base64-decodes an embedded blob and exec()s it in a detached child process during `pip install`. The payload's collect_data() enumerates os.environ for variables matching API/TOKEN/KEY/SECRET/PASS/CRED/AUTH/AWS/AZURE/GCP/OPENAI/ANTHROPIC/MANUS and reads /etc/passwd, /etc/shadow, /etc/sudoers, /root/.bash_history, /etc/hosts, and /var/log/auth.log into /tmp/.sandbox_data.json. persist_cron() drops /tmp/.fhg_recon.py — a reverse-shell loop to C2_HOST=smat7ckgzo.localto.net C2_PORT=6303 — and installs a per-minute crontab entry to relaunch it. persist_sudo() writes `<user> ALL=(ALL) NOPASSWD: ALL` to /etc/sudoers.d/.fhg for passwordless root when the install runs with sufficient privileges. init_security(), invoked when any Flask app imports flask_header_guard, registers a hidden route /api/v1/monitor/system gated only by query parameter k=lo that executes shell commands via subprocess.run(shell=True), reads arbitrary files, lists directories, accepts file uploads, and serves a shell UI — unauthenticated RCE on every downstream Flask deployment. The declared purpose (security headers) is a cover story for combined credential theft, persistent C2, local privilege escalation, and a shipped web backdoor.",
+  "affected": [
+    {
+      "package": {
+        "name": "flask-header-guard",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "f284e0febbfa783b425c55878a30a8d968f3ce73d927b2a7fe73054d7a54eab2",
+              "tlsh": "dda1b696d89c1234c7c389ab411a90521bd6b42b5e029cb4befd93549fce03962f93bd"
+            },
+            {
+              "path": "flask_header_guard/backdoor.py",
+              "sha256": "4752197ab64b8a790a7881b4d372ac7b8e9cd59586f3b9ac7cc69cf4e0db928e",
+              "tlsh": "ef6101619d96a201c3aaf76c4ab9c0856304fe6fe20d5935fd8c966cbf40330c9f0ad9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "flask_header_guard-1.0.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "72f49fc32bf94dbc4fe03ae0cb3e8f150192db92793e3152794d38d58144fde8",
+                "md5": "b9a928d3acab3e683d18b0a70129a550",
+                "sha256": "bf2750b05104cc7086ead36347dab04a5543f410abee4e2514bdae4cd6964b03"
+              }
+            },
+            {
+              "filename": "flask_header_guard-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "b5c87c3769abf0e7e66c367a0d60a3105961e7210242a233a91b82f62d12a1ab",
+                "md5": "6415bf34518bd6b64ef86ee5e665777a",
+                "sha256": "53572cb6a8b3d8f1979b936f5d4cc34d5f742ee05f9a95b5d81dfd1860dc3baf"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/flask-header-guard/1.0.0/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019153",
+        "import_time": "2026-08-29T23:14:43.901884739Z",
+        "modified_time": "2026-08-29T23:11:16Z",
+        "sha256": "e5e0cbaefa0fcface340b03a236573ed70df9b4d7773715321df057a9862e3f8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
