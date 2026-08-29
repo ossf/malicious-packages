@@ -1,20 +1,27 @@
 {
-  "schema_version": "1.7.4",
+  "modified": "2026-08-29T02:24:19Z",
   "published": "2026-08-29T02:14:39Z",
-  "modified": "2026-08-29T02:14:39Z",
-  "summary": "Import-time decrypt-and-exec loader sourcing payload from unpinned dependency",
-  "details": "Both shipped bundles (dist/supersignaturenature.cjs.js and dist/supersignaturenature.umd.js) contain a top-level loader that imports an encrypted blob (desKey/rsaToken) from the runtime dependency manager-thedate, DES-decrypts it with a hardcoded password, and pipes the plaintext into child_process.spawn('node', []).stdin — executing arbitrary JavaScript at require/import time. The loader is absent from the repository's src/ tree and appears only in the shipped dist/ bundles, and package.json pins manager-thedate to \"latest\", so whoever controls that dependency name can rotate the ciphertext and cause arbitrary code to run on every installer of this package.",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-15560",
+  "summary": "Malicious code in supersignaturenature (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ab1df02839294b29ff278b7a80505be50de75eb0f317f4bf29635236a75e4b15)\nThe published dist/ bundles (main/module/browser entrypoints) contain code absent from the src/ tree: at library load they read an encrypted rsaToken from a package file via readRSAFromPackage(), DES-decrypt it using a key imported from the dependency manager-thedate, and pipe the plaintext into child_process.spawn('node', [],...) via stdin, executing the decrypted JavaScript in the installer's Node process. The DES key dependency is declared as \"manager-thedate\": \"latest\" in package.json, so the effective payload can be changed at any time by whoever controls that dependency, even though supersignaturenature itself is version-pinned. The src/ tree implements a straightforward Theta blockchain client with no fs, child_process, DES, or spawn usage; the shipped dist/*.js contains var child_process = require('child_process'), function decryptToken(token, password) using CryptoJS.DES.decrypt, readRSAFromPackage, and rsa_exec.stdin.write(String(rsaDecrypted)) against a spawned node process. The runtime code is not a rollup of the shipped source, so review of src/ does not reveal the loader that consumers actually execute.\n",
   "affected": [
     {
       "package": {
-        "name": "supersignaturenature",
-        "ecosystem": "npm"
+        "ecosystem": "npm",
+        "name": "supersignaturenature"
       },
       "versions": [
-        "1.0.5"
+        "1.0.5",
+        "1.0.6"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -61,6 +68,19 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/supersignaturenature/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/supersignaturenature/v/1.0.6"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
     }
   ],
   "database_specific": {
@@ -74,16 +94,17 @@
         "versions": [
           "1.0.5"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-019146",
+        "import_time": "2026-08-29T02:22:21.5860358Z",
+        "modified_time": "2026-08-29T02:14:55Z",
+        "sha256": "ab1df02839294b29ff278b7a80505be50de75eb0f317f4bf29635236a75e4b15",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
+        ]
       }
     ]
-  },
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "contact": [
-        "inspector-research@amazon.com"
-      ],
-      "type": "FINDER"
-    }
-  ]
+  }
 }
