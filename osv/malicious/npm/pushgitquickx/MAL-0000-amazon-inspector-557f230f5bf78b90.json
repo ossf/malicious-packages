@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-08-31T16:46:25Z",
+  "modified": "2026-08-31T16:46:25Z",
+  "summary": "CLI executes shell commands returned by a remote LLM on git push errors",
+  "details": "The `push` subcommand of this CLI catches exceptions from git operations and, in the error handler, sends the git error text and JSON-serialized `git status` output (branch name, tracked and untracked file paths, ahead/behind info) to Google Gemini via the `@google/generative-ai` SDK using a Google API key hardcoded in the source. The model's response includes a `commandsToRun` array, and the code iterates that array and executes each string via `execSync` on the installer's machine with `stdio: 'ignore'` (`for (const cmd of aiResponse.commandsToRun) { execSync(cmd, { stdio: 'ignore' }); }`). Because the remote model is conditioned on attacker-influenceable inputs (branch names, file paths, error strings coming from arbitrary repository state) and any command it emits is run without confirmation, allow-listing, or logging, this is a remote-controlled shell-execution surface on the installer's host — running `gitquickpush push` inside a repo whose contents can steer the model output can result in arbitrary command execution, including destructive git operations or broader host commands. The AI phone-home is also undisclosed in the README, and the git-status payload sent to Google is routed through the author's own hardcoded Gemini API key rather than a caller-configured credential, so the caller does not choose the destination. The same source additionally embeds the author's Google generative-language API key in plaintext, exposing the author's own quota.",
+  "affected": [
+    {
+      "package": {
+        "name": "pushgitquickx",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.16"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "gitquickpush.js",
+              "sha256": "d5cb73f7e4a6251f8149455da776acc7453c6216ca811ffa7449c2f321b849b1",
+              "tlsh": "7be1c6421dfb22351577689a676f002a6832d6033348dd50babcc355ef9a6a0cbe37dd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pushgitquickx/v/1.0.16"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019170",
+        "import_time": "2026-08-31T17:16:13.872724865Z",
+        "modified_time": "2026-08-31T16:46:25Z",
+        "sha256": "557f230f5bf78b909b207a6568053a346e32a2fcbd14130a824bd6de8fc7fbf6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.16"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
