@@ -32,6 +32,10 @@ test/unit:
 validate: ## Validate all OSV files
 	go run ./cmd/validate -config ./config/config.yaml
 
+.PHONY: gen-protos
+generate: ## Run go generate across the repo
+	go generate ./...
+
 .PHONY: preprocess
 preprocess: ## Preprocess repository before assigning IDs
 	go run ./cmd/preprocess -config ./config/config.yaml
