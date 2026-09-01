@@ -1,20 +1,66 @@
 {
-  "modified": "2026-08-31T05:02:04Z",
-  "published": "2026-08-31T05:02:04Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-15603",
+  "published": "2026-08-31T05:02:04Z",
+  "modified": "2026-08-31T18:24:31.002907941Z",
   "summary": "Malicious code in pyservercheck (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (4b365b9df06973db4f112bdbf2ad704dcc91c1b7b3eaceddb06a8e884c3f760a)\nPackage embeds obfuscated, JS-based malware downloading further remote stages. The code is triggered during building the package and on every Python startup (via PTH file). The next-stage IP is delivered via a blockchain. \n\nThe payload and embedded IoCs are consistent with campaigns attributed to Lazarus APT/PolinRider.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-pybitjs\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - malware\n\n\n - abuses-pth\n\n\n - c2-in-blockchain\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d10f01e2954dde5faac23074d02bb989f22d0dcb78be82c1c4417531fef8b859)\nThe package ships a bundled Node script pyservercheck/js/main.js whose visible top half is a healthcheck stub matching the README, followed by a long run of tab whitespace and a trailing eval(atob('...')) that decodes to a two-stage loader. The decoded loader queries public Ethereum RPC endpoints (eth.blockscout.com, 1rpc.io/eth, eth.drpc.org, ethereum-rpc.publicnode.com, eth-mainnet.public.blastapi.io) for the latest transaction from the hardcoded sender 0xa322E5f3D311D3080e6f0121063e9aDC2490Ef1a, extracts an IPv4 pair from the tx `to` field, fetches XOR-obfuscated stage-2 code from http://<decoded-ip>:443/0x/cls and /0x/ls, eval()s it, and re-launches it via a detached `spawn('node', ['-e', <code>])`. Execution is wired to two auto-triggers: pyproject.toml overrides setuptools `build_py` and `develop` with pyservercheck._setup_cmd.BuildPy/Develop, whose `run()` calls _run_main_js_now() -> subprocess.run(['node', main.js]) during `pip install` / `pip install -e.`; and BuildPy also writes a `pyservercheck.pth` file containing `import pyservercheck._hooks; pyservercheck._hooks.ensure_once()`, which Python auto-executes at every interpreter startup, invoking run_js() again. The `.main_js_ran` marker is advisory and can be removed to force re-execution. The C2 destination is rotatable by publishing a new Ethereum transaction from the sender address, so the fetched payload is fully attacker-controlled at each run.\n\n## Source: kam193 (4b365b9df06973db4f112bdbf2ad704dcc91c1b7b3eaceddb06a8e884c3f760a)\nPackage embeds obfuscated, JS-based malware downloading further remote stages. The code is triggered during building the package and on every Python startup (via PTH file). The next-stage IP is delivered via a blockchain. \n\nThe payload and embedded IoCs are consistent with campaigns attributed to Lazarus APT/PolinRider.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-pybitjs\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - malware\n\n\n - abuses-pth\n\n\n - c2-in-blockchain\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "pyservercheck"
+        "name": "pyservercheck",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1.0",
         "0.1.1"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyservercheck/js/main.js",
+              "sha256": "c746ab75ae87f8ff30537050d0d95c2318cb8eb4d35e82bcee3a3e9018051f45",
+              "tlsh": "f7226cf5e38225641e7ddd011aa1acc4a227587d3070c385baba0fdd4a85ee9887f69c"
+            },
+            {
+              "path": "pyservercheck/_setup_cmd.py",
+              "sha256": "bce0f43cd1cc7f146b84822342da5886d7b24fb1846c2d063565d1bfdb88b077",
+              "tlsh": "2821cd324d47b42696b3c75c6c138091d3b292570fa44845f8fe56511fbb060867baee"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pyservercheck-0.1.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "c9053640bf3e2802c6e479a103b287429632a11d2dc006912dbbd16a9d4ca6d9",
+                "md5": "fd792c17f989be31cc65ca01ce3802d8",
+                "sha256": "7c8bd0ca8e3f7660accc2540c0a33728198ca6a639a5826908ed27a658fcb71b"
+              }
+            },
+            {
+              "filename": "pyservercheck-0.1.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "60070a87281eee394b8ce284c523fba10f10a9bd070ccf2626012d3a7ecfe6e4",
+                "md5": "aaa64a284bdb733abda7d7220f9dbef0",
+                "sha256": "8ecb12b68e2b1b33bb895e39e430d57c190943aa383ed8f73923ee4ba698c089"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -29,16 +75,14 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/pyservercheck"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyservercheck/0.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyservercheck/0.1.0/"
     }
   ],
   "database_specific": {
@@ -61,7 +105,44 @@
           "0.1.0",
           "0.1.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-019174",
+        "import_time": "2026-08-31T17:16:14.314056352Z",
+        "modified_time": "2026-08-31T16:49:08Z",
+        "sha256": "d10f01e2954dde5faac23074d02bb989f22d0dcb78be82c1c4417531fef8b859",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019248",
+        "import_time": "2026-08-31T18:22:26.671572395Z",
+        "modified_time": "2026-08-31T17:54:19Z",
+        "sha256": "c5e1bb46b88795a27a36cb00f9357e45af504c5c8fbcfbd850601cc11481b0f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
