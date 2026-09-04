@@ -1,25 +1,55 @@
 {
-  "modified": "2026-09-04T05:20:06Z",
-  "published": "2026-09-04T05:17:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-15910",
+  "published": "2026-09-04T05:17:12Z",
+  "modified": "2026-09-04T05:41:40.797777179Z",
   "summary": "Malicious code in timeweave (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a13dedf39b86297c5a26019ef1ab0f2622181dd0dd1b58349774071ea0b3da30)\ntimeweave 1.7.0 presents itself as a timezone/IANA rule cache but its updater is a fetch-and-execute dropper. The public API functions detect_timezone and convert_timezone call _ensure_cache(), which starts a daemon thread ('curls-autoupdate') running _sync_database(). _sync_database fetches a JSON manifest from the hardcoded endpoint https://timezone.api.globaltimedata.com/latest/db.json and then calls _process_extension_resources(manifest), which iterates an 'extensions.assets' list of arbitrary URLs chosen by the remote server, downloads each payload, writes it under %LOCALAPPDATA%\\MicrosoftEngine\\\u003cname\u003e and invokes it via ctypes.windll.kernel32.WinExec. Integrity is checked only when the manifest itself supplies a hash, so the server fully controls what executes. The staging directory name 'MicrosoftEngine' mimics a legitimate Microsoft component, the local identifiers at the exec sink use random consonant-cluster names (isefjsehfnsf, wdxvhivdda, mpozzjjdz) inconsistent with the rest of the codebase, and exceptions along the fetch/move/exec path are silently swallowed. The chain fires on normal library use rather than at pip install, bypassing install-time sandboxes and reaching WinExec on any Windows host that imports and uses the library.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6c6450b478521f96973a556306ed36a1430407373bb1331e051faec0266e1e0d)\nThe package presents itself as a timezone/IANA cache utility but ships a manifest-driven Windows code-execution channel. updater.py defines DEFAULT_DB_URL = \"https://timezone.api.globaltimedata.com/latest/db.json\" and _sync_database() fetches that JSON, then passes it to _process_extension_resources(), which iterates manifest['extensions']['assets'|'resources'], downloads each entry's url to a temp directory (Path(tempfile.mkdtemp(prefix=\"firebeta_\"))) and, on win32, executes the downloaded file via ctypes.windll.kernel32.WinExec(cmd, 0) with attacker-supplied args. This flow is reachable from ordinary library use: __init__.py's detect_timezone() and convert_timezone() call _ensure_cache(), which spawns a daemon thread named 'curls-autoupdate' that runs _sync_database(), so any consumer importing timeweave and calling the advertised API triggers the fetch-and-execute path unless TIMEWEAVE_NO_AUTO_UPDATE/OFFLINE/NO_NETWORK is set. The checksum in the manifest offers no protection because the same server supplies both the manifest and the checksum. Naming (\"_process_extension_resources\", thread \"curls-autoupdate\", temp prefix \"firebeta_\") is unrelated to timezone data and disguises the execution path. The result is arbitrary Windows code execution on any host that uses the package, controlled by whoever operates globaltimedata.com.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "timeweave"
+        "name": "timeweave",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "1.6.0",
         "1.9.0",
         "1.7.0",
         "1.4.0",
-        "1.8.0"
+        "1.8.0",
+        "1.2.0",
+        "1.1.0",
+        "1.3.0",
+        "1.0.0",
+        "1.5.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -96,15 +126,26 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/timeweave/1.8.0/"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.2.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.1.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.3.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.0.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.5.0/"
     }
   ],
   "database_specific": {
@@ -158,7 +199,66 @@
         "versions": [
           "1.8.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-019468",
+        "import_time": "2026-09-04T05:39:32.103762301Z",
+        "modified_time": "2026-09-04T05:18:09Z",
+        "sha256": "38aa372aab1ef7e46ecc01015fde8d0eccfba473a7c05e33be3b6a0ad48372b2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019469",
+        "import_time": "2026-09-04T05:39:32.171349169Z",
+        "modified_time": "2026-09-04T05:18:21Z",
+        "sha256": "6c6450b478521f96973a556306ed36a1430407373bb1331e051faec0266e1e0d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019470",
+        "import_time": "2026-09-04T05:39:32.230432931Z",
+        "modified_time": "2026-09-04T05:18:29Z",
+        "sha256": "b01e47ddfba1165c75612b323c164386144286e84f61c5d9b8713897ccc1c510",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019471",
+        "import_time": "2026-09-04T05:39:32.296206277Z",
+        "modified_time": "2026-09-04T05:18:37Z",
+        "sha256": "bff6b19cc56f8f428f1e122b3d5c4b87953c7cbb10419a4b3ebfe4f6e0c8cf34",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019467",
+        "import_time": "2026-09-04T05:39:31.932250612Z",
+        "modified_time": "2026-09-04T05:18:02Z",
+        "sha256": "e79ca4e75dc0f1faec9a315de8262de0ec6e595b9db5895a75ea6d9133a6337d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.5.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
