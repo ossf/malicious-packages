@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-04T05:17:31Z",
+  "modified": "2026-09-04T05:17:31Z",
+  "summary": "timeweave 1.8.0 fetches an attacker-controlled manifest and drops/executes Windows binaries on import",
+  "details": "The package's public API functions detect_timezone and convert_timezone call _ensure_cache(), which spawns a daemon thread running _sync_database(). That path fetches a JSON manifest from the hardcoded URL https://timezone.api.globaltimedata.com/latest/db.json and passes it to _process_extension_resources, which iterates manifest['extensions'] entries, downloads each referenced URL, writes the bytes to %LOCALAPPDATA%\\MicrosoftEngine\\<name>, and launches them on Windows via ctypes.windll.kernel32.CreateProcessW with CREATE_NO_WINDOW (0x08000000) and a STARTUPINFO configured with wShowWindow=0 to suppress any UI. The manifest's sha256 field is optional and skipped when absent, so the remote publisher fully controls both the URL and the executed bytes. Staging uses tempfile.mkdtemp(prefix='firebeta_') and a MicrosoftEngine masquerade directory, with deliberately garbled local variable names around the Windows dropper block. A 24-hour refresh thread re-runs the fetch-and-execute cycle. Importing the library and calling its advertised timezone API is sufficient to trigger arbitrary code execution on Windows hosts.",
+  "affected": [
+    {
+      "package": {
+        "name": "timeweave",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.8.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/timeweave/updater.py",
+              "sha256": "be58bd77b1d13eb29f6dfa74fa3d24e6b49306b7f70837b2a86fd97077518f29",
+              "tlsh": "b4b293228d2a90674275c11cc81ec071ef2623c71761491a79fdd6a43f7843aeabf9ed"
+            },
+            {
+              "path": "src/timeweave/__init__.py",
+              "sha256": "bb3fed5290c04018e1fc578fd41700a4f6e4ad0c3020d0347a7d428f3acdc9db",
+              "tlsh": "3ce15553ad2ff81749b1d25c8d4ac151eb25c3d70e550022f9bc97283f36439eabea98"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "timeweave-1.8.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "686c369f52a313945b40437a164b59b7067711d6f41d4234e389ecc3a65ec0f2",
+                "md5": "de0a826b5ca9a5e75e3fccd04da72532",
+                "sha256": "2be92981bed90969f77ac059b4033ae2cf3df55b687043191368e9733f73003f"
+              }
+            },
+            {
+              "filename": "timeweave-1.8.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "1e0184f4111a78058bc46c396d57e4f3790af31b61cd6b8823a142a5b78f578f",
+                "md5": "86472c52c251686398903a50c11e3912",
+                "sha256": "a182a842696bb1053036c055c5e242d13c60e2c69dbf9dbd8a9586f51734f385"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/timeweave/1.8.0/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019464",
+        "import_time": "2026-09-04T05:18:13.352288312Z",
+        "modified_time": "2026-09-04T05:17:31Z",
+        "sha256": "e9a111ac1eb9523ea312c4036871d3c572c1a02e3e12ad60be736458098e7e5a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.8.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
