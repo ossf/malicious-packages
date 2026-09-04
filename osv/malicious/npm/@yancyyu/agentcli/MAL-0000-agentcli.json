@@ -1,0 +1,78 @@
+{
+  "modified": "2026-09-03T00:00:00Z",
+  "published": "2026-09-03T00:00:00Z",
+  "schema_version": "1.6.0",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@yancyyu/agentcli"
+      },
+      "versions": [
+        "1.9.9",
+        "1.9.10",
+        "1.9.11",
+        "1.9.12",
+        "1.9.13",
+        "1.9.14",
+        "1.9.15",
+        "1.9.16",
+        "1.9.17",
+        "1.9.18",
+        "1.9.19",
+        "1.9.20",
+        "1.9.21",
+        "1.9.22",
+        "1.9.23",
+        "1.9.24",
+        "1.10.0"
+      ]
+    }
+  ],
+  "details": "The npm package `@yancyyu/agentcli` ships a Feishu/Lark credential stealer. An auto-started telemetry worker (`src/main/telemetry/worker.ts`, started via `agentcli init`/`agentcli usage start` and macOS launchd) calls `safeScanLarkCredentials()` in its periodic run loop; the scan reads and decrypts local Lark credentials (macOS Keychain AES-256-GCM `.enc` under `~/Library/Application Support/lark-cli/`, Windows DPAPI under `HKCU\\Software\\LarkCli\\keychain`), refreshes tokens and POSTs {app_id, app_secret, access_token, refresh_token} to the operator backend (endpoint `/api/v1/report/lark-credentials`, later renamed `/api/v1/feishu/lark-cli/credentials`; default cloud hosts include `agentbus.skg.com`, `159.75.231.98:8088`, `47.112.24.153`).\n\nThese versions were identified independently by codelake Research and are NOT part of the existing OSV record MAL-2026-11123 (Amazon Inspector), which covers 1.9.25-1.9.80. codelake pins the true malicious boundary at 1.9.9 (2026-07-12) via the import->call reachability chain (`telemetry/worker.ts` -> `larkCredentials`), 16 versions earlier than the previously-catalogued 1.9.25; the reachable credential theft is present continuously across 1.9.9-1.9.24 (each verified) and 1.10.0. Versions 1.8.8-1.9.8 exfiltrate local Claude/Codex conversations to the same backend but do not yet steal Lark credentials (out of scope for this malware record).\n\nClassified by codelake Research from static code + dataflow review of the published npm tarballs. This report extends the confirmed-malicious set with 17 additional versions and an earlier boundary; codelake independently detected the package across its full malicious range (including the versions already in MAL-2026-11123) and scopes this report to the not-yet-listed versions to avoid duplication.",
+  "credits": [
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3047-yancyyu-agentcli"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3047-yancyyu-agentcli"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://osv.dev/vulnerability/MAL-2026-11123"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "paths": [
+            "package/dist/telemetry-worker.bundle.mjs"
+          ],
+          "note": "Bundled Lark/Feishu credential stealer worker (auto-started via launchd); keychain decryption + token POST (observed in 1.10.0).",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "2bd1173f8621e672128ffbdcf20536c8cc1a9f3cd39ece960a31f70173cd508f"
+          }
+        },
+        {
+          "paths": [
+            "package/bin/lib/larkSecrets.mjs"
+          ],
+          "note": "Lark credential read/decrypt + upload logic invoked by the telemetry worker (observed in 1.10.0).",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "2eb47cf8a23d796640ce11ac914a1671d58c8e339ccbd8670816a1a7864f1481"
+          }
+        }
+      ]
+    }
+  }
+}
