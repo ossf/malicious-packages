@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-03T23:49:22Z",
+  "modified": "2026-09-03T23:49:22Z",
+  "summary": "uvhttp-custom setup.py drops and executes Windows.exe from Discord CDN at install",
+  "details": "setup.py contains an obfuscated payload of the form `(lambda __: exec(__import__('base64').b64decode('...').decode()))(None)` alongside an otherwise-benign setuptools import. The decoded payload writes a bundled script.ps1 to disk and invokes `powershell -ExecutionPolicy Bypass -File script.ps1`. The PowerShell script uses System.Net.WebClient.DownloadFile to fetch a Windows executable from cdn.discordapp.com/attachments/1532996358427115552/1539384056284717066/enlisted_launcher_1.0.3.190-movn8hpfe.exe into %TEMP%\\file.exe and launches it via Start-Process with -WindowStyle Hidden. No hash or signature verification is performed. The payload also invokes `os.system(\"calc\")`. Running `pip install uvhttp-custom` on Windows therefore causes the installer's machine to download and silently execute an opaque, unsigned binary from an anonymous Discord CDN URL.",
+  "affected": [
+    {
+      "package": {
+        "name": "uvhttp-custom",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.9.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "6c42b687060806d7e39218b02b89b94915544f52bef0d9a56c0e9426f2945270",
+              "tlsh": "7f3165d789632f82843c8d3e20a62cabca65848d05b0d6847e3d02c13b60a29983044b"
+            },
+            {
+              "path": "script.ps1",
+              "sha256": "a69e596f447f819645413a842a23a02f6064a024b68c8b03cd9fbd1326bfc5d2",
+              "tlsh": "fde061aee54da165c1435a85f12ae657d14594069042ec40857ecc37685509ea6c9451"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "uvhttp_custom-1.9.9.tar.gz",
+              "hashes": {
+                "blake2b_256": "6c90d8ad73797f9e993862b12aff80220e8fd3b89f66d5b9b6e4a96ad22b61af",
+                "md5": "3dbef748539042257fcdb50875f448d9",
+                "sha256": "d9ffc3fb574dfdaa05158c318d84c615cf191e44fabbc49888f9beca63628b18"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/uvhttp-custom/1.9.9/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019380",
+        "import_time": "2026-09-04T00:45:54.446669561Z",
+        "modified_time": "2026-09-03T23:49:22Z",
+        "sha256": "bf8bf69e0edd8a79c920c35d2c49e722b38d801c07401dfb673bdb1beb6ea3fc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.9"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
