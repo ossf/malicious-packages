@@ -1,0 +1,85 @@
+{
+  "modified": "2026-08-18T23:50:30Z",
+  "published": "2026-08-18T23:50:30Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-14185",
+  "summary": "Malicious code in mutex-thread (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e142539248a690ef78ebe7ceeaa4c16e9903107a04704e1947cf296bce543097)\nThe package presents itself as a mutex library but lib/Mutex.js contains an injected branch in runExclusive that, when a caller passes callback.meta.jobId === 'cross-chain-transfer', spawns lib/withLoad.min.js as a detached node child with stdio ignored and windowsHide true. lib/withLoad.min.js is a hex/base64-obfuscated dropper that reads an encrypted key from a Sepolia Ethereum smart contract (via eth-sepolia.g.alchemy.com and sepolia.infura.io RPC endpoints), derives a shared secret, decrypts payloads hosted on the contract, writes them to disk, chmods 755, and re-spawns node on them. Before entering its command loop it collects host reconnaissance (os.platform, release, arch, hostname, cpus, totalmem, freemem, uptime) and posts it to a hardcoded Slack bot via slack.com/api/chat.postMessage and to a hardcoded Telegram bot at api.telegram.org/bot\u003ctoken\u003e/sendMessage. lib/tryLoad.min.d.js polls slack.com/api/conversations.history every ~10 seconds with a hardcoded bearer token and channel id, reassembles chunked messages, AES-GCM-decrypts them using a key passed via argv, writes the plaintext to withLoad.min.js, chmods 755, and spawns node on it; an 'exitexitexit' sentinel triggers self-deletion of loader files and killing of a peer PID. String-array rotation and base64 wrapping are used to hide C2 hosts, bot tokens, channel ids, and the Sepolia contract address.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "mutex-thread"
+      },
+      "versions": [
+        "1.3.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Mutex.js",
+              "sha256": "d26e78a6950438cc186905e8d64bf620da5954e1ab42e13150b538a29406fe3e",
+              "tlsh": "6541a28467f395161233b0dac76b8005b17c8027024cc9a5f94dd1ea6f5506ccbe5bbd"
+            },
+            {
+              "path": "lib/withLoad.min.js",
+              "sha256": "9bffc4afc9e892a6ba29864f4ced4804bb884d1e425003422c8fdd97256ef490",
+              "tlsh": "67421acdfb98353603d6b89e92586c87c5998ca2572dc600fa89dd8f305e3d095a3f78"
+            },
+            {
+              "path": "lib/tryLoad.min.d.js",
+              "sha256": "b7af51bfbb90d738ced23d3b07212125565919224e747ba8a353cd815ec11845",
+              "tlsh": "c7a1e9cd9fad3c760fd60466a49621030a79fc9aaa087190e545cbdd3f59b8051c3ff5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "mutex-thread-1.3.0.tgz",
+              "hashes": {
+                "sha1": "7524fe0df37fcea71c860fb662f4890b51a98e9f",
+                "sha512_sri": "sha512-tf0sGByl7nz8dTiMLzSQTQ862radlBj+7MqZPxiQ8TflALw6mlQqLPXN7IgjcIwKZlElk3+hMgRT9w3Mlk2MAg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/mutex-thread/v/1.3.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-018228",
+        "import_time": "2026-08-19T00:21:10.94968594Z",
+        "modified_time": "2026-08-18T23:50:30Z",
+        "sha256": "e142539248a690ef78ebe7ceeaa4c16e9903107a04704e1947cf296bce543097",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.3.0"
+        ]
+      }
+    ]
+  }
+}
