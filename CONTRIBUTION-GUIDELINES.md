@@ -14,6 +14,7 @@ If you use AI assistance, please keep the following in mind:
   - `ecosystem`
   - `affected version ranges`
 - Prioritise clarity: LLM output tends to be overly verbose, which consumes human review time and effort. Please be concise and clear! Pay extra attention to descriptions and additional metadata like `iocs` that LLMs tend to inflate.
+- Ensure all PR information is related only to the specifics of the package and the malicious behaviour.
 
 ## What Makes a Great Submission
 A high-quality malicious package report is concise, and balances clarity and evidence.
@@ -28,7 +29,6 @@ Clearly describe why the package is malicious, what it does, and the impact it m
 Provide the essential package ids (ecosystem, name, versions).
 The schema for additions is specified [here](https://github.com/ossf/malicious-packages/blob/main/docs/schema_additions.md). Avoid over-inflating reports with vague or speculative metadata. If available, populate `IOCs` with correct and not overly generic data. Link directly to malicious source files, commit diffs, or sandbox runs when available.
 
-
 Here are a couple of examples of good PRs: [#1433](https://github.com/ossf/malicious-packages/pull/1433), [#1340](https://github.com/ossf/malicious-packages/pull/1340), [#1006](https://github.com/ossf/malicious-packages/pull/1006).
 
 ## PR Checklist
@@ -38,6 +38,8 @@ Before submitting your PR, check:
 
 [ ] Are all required fields present and accurate?
 
+[ ] If a report about this package already exists, am I adding new information?
+
 [ ] Do all tests and formatting checks pass?
 
 [ ] Is there a PR summary and is it written in clear, concise language?
@@ -45,4 +47,3 @@ Before submitting your PR, check:
 [ ] Have I removed generic AI fluff, redundant disclaimers, or excessive details?
 
 [ ] Am I prepared to answer review feedback directly?
-
