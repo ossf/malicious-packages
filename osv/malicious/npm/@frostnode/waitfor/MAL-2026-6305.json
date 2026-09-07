@@ -1,15 +1,18 @@
 {
-  "modified": "2026-06-23T20:50:18Z",
-  "published": "2026-06-22T12:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-6305",
+  "published": "2026-06-22T12:00:00Z",
+  "modified": "2026-08-13T22:13:34.448585161Z",
+  "aliases": [
+    "GHSA-w6p8-666c-885f"
+  ],
   "summary": "Malicious code in @frostnode/waitfor (npm)",
-  "details": "@frostnode/waitfor (malicious versions 0.9.0, 0.10.3, 0.10.4, and 0.10.5, published by frostnode-gk8pbf@wshu.net) is a trojanized npm package belonging to the wshu.net credential-stealer campaign. The campaign published trojanized look-alike utility packages across 12+ scopes whose publisher accounts all follow the pattern \u003cscope\u003e-\u003c6 random chars\u003e@wshu.net, with every scope created on June 4, 2026 in a ~40-minute burst. This package masquerades as a wait/delay utility and ships real, working utility code so it passes a glance, while bundling a much larger malicious payload (lib/tickinit.js in the earliest variant, dist/cjs/tickinit.cjs thereafter). package.json declares a postinstall hook (e.g. \"node ./dist/cjs/tickinit.cjs\") that runs the payload automatically on npm install. The payload is heavily obfuscated with javascript-obfuscator (hex-named identifiers, a while (!![]) array-rotation IIFE, base64+RC4 string decoding, control-flow flattening, and runtime-decrypted module resolution to stay out of the static module graph). At runtime it is a Chromium browser credential stealer: it reads Chromium Cookies and Login Data and decrypts saved passwords protected by AES-256-GCM (the v10/v11 app-bound key schemes), then exfiltrates them over HTTPS using a spoofed Mozilla/5.0 user agent. Consistent with the campaign, the dangerous versions sit in mid-ranges while the latest tag (0.10.6) points to a scrubbed release with an empty scripts block. Malicious payload dist/cjs/tickinit.cjs (0.10.5) SHA-256: 2de602e6422a991346aaf0b74ed6bd525215f5177b9f7f267ccb4d82e919273d.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c332f4386c51821f983068e5df440f4fbc53c88d6ecc561ca41a8a444d3df998)\nPackage is published under scope `@frostnode` but its package.json homepage and repository point at `https://github.com/mmustra/rxjs-poll` — the legitimate `rxjs-poll` library by a different maintainer. The library source in `dist/cjs/index.js` is a near-verbatim copy of mmustra/rxjs-poll with one injected line: `var _trapHook = require('./tickinit.cjs')` at the top, and `_trapHook.runPrepare()` invoked from inside the package's only documented export, `poll(config)` (dist/cjs/index.js:204). `dist/cjs/tickinit.cjs` is a ~259KB obfuscator.io-protected blob (string-array shuffling, RC4-decoded property names, control-flow flattening, runtime `Function(...)` construction). It carries hardcoded base64 ciphertext that is decrypted at runtime via `crypto.createDecipheriv('aes-256-gcm', …)` to recover a C2 URL, then re-launches the user's node binary under an env-var sentinel, dynamically requires child_process/fs/os/https/crypto, downloads attacker-controlled bytes to `os.tmpdir()`, writes a `.lock` JSON with sha256, and spawns the downloaded file via `child_process.spawn(process.execPath, [tmpfile], {detached:true}).unref()`. tickinit.cjs additionally exports `onInstall = () =\u003e runPrepare()` and ends with `if (require.main === module) onInstall();`, providing extra trigger surfaces (direct `node tickinit.cjs` invocation, or a future postinstall hook) for the same dropper. Any consumer who imports `@frostnode/waitfor` and calls `poll()` — the documented and sole API — gets remote-code execution on their machine with no consent, no version pinning, and no signature verification of the downloaded payload. The AES-GCM-wrapped destination, repackaging of an unrelated maintainer's library under a new scope, and multiple redundant trigger paths are the canonical malicious-dropper fingerprint.\n",
+  "details": "@frostnode/waitfor (malicious versions 0.9.0, 0.10.3, 0.10.4, and 0.10.5, published by frostnode-gk8pbf@wshu.net) is a trojanized npm package belonging to the wshu.net credential-stealer campaign. The campaign published trojanized look-alike utility packages across 12+ scopes whose publisher accounts all follow the pattern <scope>-<6 random chars>@wshu.net, with every scope created on June 4, 2026 in a ~40-minute burst. This package masquerades as a wait/delay utility and ships real, working utility code so it passes a glance, while bundling a much larger malicious payload (lib/tickinit.js in the earliest variant, dist/cjs/tickinit.cjs thereafter). package.json declares a postinstall hook (e.g. \"node ./dist/cjs/tickinit.cjs\") that runs the payload automatically on npm install. The payload is heavily obfuscated with javascript-obfuscator (hex-named identifiers, a while (!![]) array-rotation IIFE, base64+RC4 string decoding, control-flow flattening, and runtime-decrypted module resolution to stay out of the static module graph). At runtime it is a Chromium browser credential stealer: it reads Chromium Cookies and Login Data and decrypts saved passwords protected by AES-256-GCM (the v10/v11 app-bound key schemes), then exfiltrates them over HTTPS using a spoofed Mozilla/5.0 user agent. Consistent with the campaign, the dangerous versions sit in mid-ranges while the latest tag (0.10.6) points to a scrubbed release with an empty scripts block. Malicious payload dist/cjs/tickinit.cjs (0.10.5) SHA-256: 2de602e6422a991346aaf0b74ed6bd525215f5177b9f7f267ccb4d82e919273d.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c332f4386c51821f983068e5df440f4fbc53c88d6ecc561ca41a8a444d3df998)\nPackage is published under scope `@frostnode` but its package.json homepage and repository point at `https://github.com/mmustra/rxjs-poll` — the legitimate `rxjs-poll` library by a different maintainer. The library source in `dist/cjs/index.js` is a near-verbatim copy of mmustra/rxjs-poll with one injected line: `var _trapHook = require('./tickinit.cjs')` at the top, and `_trapHook.runPrepare()` invoked from inside the package's only documented export, `poll(config)` (dist/cjs/index.js:204). `dist/cjs/tickinit.cjs` is a ~259KB obfuscator.io-protected blob (string-array shuffling, RC4-decoded property names, control-flow flattening, runtime `Function(...)` construction). It carries hardcoded base64 ciphertext that is decrypted at runtime via `crypto.createDecipheriv('aes-256-gcm', …)` to recover a C2 URL, then re-launches the user's node binary under an env-var sentinel, dynamically requires child_process/fs/os/https/crypto, downloads attacker-controlled bytes to `os.tmpdir()`, writes a `.lock` JSON with sha256, and spawns the downloaded file via `child_process.spawn(process.execPath, [tmpfile], {detached:true}).unref()`. tickinit.cjs additionally exports `onInstall = () => runPrepare()` and ends with `if (require.main === module) onInstall();`, providing extra trigger surfaces (direct `node tickinit.cjs` invocation, or a future postinstall hook) for the same dropper. Any consumer who imports `@frostnode/waitfor` and calls `poll()` — the documented and sole API — gets remote-code execution on their machine with no consent, no version pinning, and no signature verification of the downloaded payload. The AES-GCM-wrapped destination, repackaging of an unrelated maintainer's library under a new scope, and multiple redundant trigger paths are the canonical malicious-dropper fingerprint.\n\n## Source: ghsa-malware (45d3b4006f2a579c3afa45d739ec615060d2fa87bf3912024b3fc68ae460c5ad)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@frostnode/waitfor"
+        "name": "@frostnode/waitfor",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -30,6 +33,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -110,76 +118,97 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@frostnode/waitfor/v/0.10.6"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
     },
     {
-      "name": "SafeDep",
-      "type": "FINDER",
-      "contact": [
-        "https://safedep.io"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-w6p8-666c-885f"
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "1ff87d2a064268d21f566dd146204b2c20a245e82fcfc6fc4b788f3f569c29fa",
-        "import_time": "2026-06-23T16:54:13.96590191Z",
         "id": "IN-MAL-2026-007276",
+        "import_time": "2026-06-23T16:54:13.96590191Z",
         "modified_time": "2026-06-23T16:22:22Z",
+        "sha256": "1ff87d2a064268d21f566dd146204b2c20a245e82fcfc6fc4b788f3f569c29fa",
+        "source": "amazon-inspector",
         "versions": [
           "0.9.0"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "4b92e731c9ad177768438e7f577a52979ccc6af15b6adcb09f589cc33ba0f329",
-        "import_time": "2026-06-23T16:54:13.843462386Z",
         "id": "IN-MAL-2026-007275",
+        "import_time": "2026-06-23T16:54:13.843462386Z",
         "modified_time": "2026-06-23T16:22:21Z",
+        "sha256": "4b92e731c9ad177768438e7f577a52979ccc6af15b6adcb09f589cc33ba0f329",
+        "source": "amazon-inspector",
         "versions": [
           "0.10.4"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "5d130c3bb36c2b19d70b2219521f961067f42854a87e2c2f21291f2dfcc96ed7",
-        "import_time": "2026-06-23T16:54:14.033523573Z",
         "id": "IN-MAL-2026-007277",
+        "import_time": "2026-06-23T16:54:14.033523573Z",
         "modified_time": "2026-06-23T16:22:22Z",
+        "sha256": "5d130c3bb36c2b19d70b2219521f961067f42854a87e2c2f21291f2dfcc96ed7",
+        "source": "amazon-inspector",
         "versions": [
           "0.10.3"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "d0e3751015a32bcdd6a8f1f7e864c65992d1d2aa781b6e2a043cd28767549641",
-        "import_time": "2026-06-23T16:54:14.159795475Z",
         "id": "IN-MAL-2026-007278",
+        "import_time": "2026-06-23T16:54:14.159795475Z",
         "modified_time": "2026-06-23T16:22:24Z",
+        "sha256": "d0e3751015a32bcdd6a8f1f7e864c65992d1d2aa781b6e2a043cd28767549641",
+        "source": "amazon-inspector",
         "versions": [
           "0.10.5"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "c332f4386c51821f983068e5df440f4fbc53c88d6ecc561ca41a8a444d3df998",
-        "import_time": "2026-06-23T20:48:30.170384358Z",
         "id": "IN-MAL-2026-007351",
+        "import_time": "2026-06-23T20:48:30.170384358Z",
         "modified_time": "2026-06-23T19:41:03Z",
+        "sha256": "c332f4386c51821f983068e5df440f4fbc53c88d6ecc561ca41a8a444d3df998",
+        "source": "amazon-inspector",
         "versions": [
           "0.10.6"
         ]
+      },
+      {
+        "id": "GHSA-w6p8-666c-885f",
+        "import_time": "2026-08-13T22:11:44.650351468Z",
+        "modified_time": "2026-08-13T15:36:22Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "45d3b4006f2a579c3afa45d739ec615060d2fa87bf3912024b3fc68ae460c5ad",
+        "source": "ghsa-malware"
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
