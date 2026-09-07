@@ -1,0 +1,82 @@
+{
+  "modified": "2026-09-03T00:00:00Z",
+  "published": "2026-09-03T00:00:00Z",
+  "schema_version": "1.6.0",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "VSCode",
+        "name": "AzureCdnInfo.edrtester"
+      },
+      "versions": [
+        "1.0.4"
+      ]
+    }
+  ],
+  "details": "The Visual Studio Code Marketplace extension `AzureCdnInfo.edrtester` (version 1.0.4) presents as an EDR/telemetry test utility but is a beaconing backdoor. On activation, `extension.js` loads `edrdrill.js`, which performs host reconnaissance \u2014 hostname, current working directory and local IP \u2014 and resolves the Windows domain controller / PDC via DNS SRV and reverse lookups (`ext.dns.js`: `queryDC()` / `queryPDC()`).\n\nIt then opens an outbound beacon, immediately on activation and every 150 seconds thereafter (`setUpBeaconing()` on a `setInterval`), via an `http.request` to `xeroshoes.com:80` on path `/bcon/` \u2014 but it sets the `Host:` header to `officeupdate.southeast.cloudapp.azure-cdn.info` and a decoy browser User-Agent. Because the TCP peer and the advertised host differ, this is HTTP Host-header domain fronting (not SNI). The beacon exfiltrates hostname, local IP and a timestamp under the decoy identity.\n\nA reverse-shell function (`phone_home()`) and an AES-decrypt routine are bundled, but in this build the reverse shell is not dispatched (no command handler wires it up) and a second endpoint `goofy.japaneast.cloudapp.azure.com` is commented out, so the active scope is host reconnaissance plus beaconing. The dormant remote-command capability is a trivial change away from being armed. Analysis was static (code + dataflow) on the inert VSIX; no installation, execution, or live callback was performed.\n\nDetected and classified independently by codelake Research from the VS Code Marketplace feed; at the time of reporting `AzureCdnInfo.edrtester` was not present in OSV or GHSA (a first-catch).",
+  "credits": [
+    {
+      "name": "codelake Research",
+      "type": "FINDER",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3045-edrtester"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3045-edrtester"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "xeroshoes.com",
+        "officeupdate.southeast.cloudapp.azure-cdn.info"
+      ],
+      "files": [
+        {
+          "paths": [
+            "extension/edrdrill.js"
+          ],
+          "note": "Core payload: host recon, 150s HTTP beacon with Host-header domain fronting, AES-decrypt routine, and a dormant reverse shell (phone_home, not dispatched in this build).",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "eebb86f9d25df589229ce17cb2ee98c3b37f79739f4abb608171ed64977cbb77"
+          }
+        },
+        {
+          "paths": [
+            "extension/extension.js"
+          ],
+          "note": "VS Code activation entrypoint; loads the payload module on activate().",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "0615802ff0a30b46b159a064bd63ae7a58bab0097c215bce608f4c67306bfeaf"
+          }
+        },
+        {
+          "paths": [
+            "extension/ext.dns.js"
+          ],
+          "note": "Active Directory reconnaissance: domain controller / PDC discovery via DNS SRV and reverse lookups (queryDC/queryPDC).",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "acd8833a51e369f4d5638191322bd14196d6960dd70b3b5142d91d8daf92cec5"
+          }
+        },
+        {
+          "paths": [
+            "extension/ext.logging.js"
+          ],
+          "note": "Internal logging helper used by the payload.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "28d6e35c0c6dbbb149a8f15f01dc278b76c40eb72dfb20472d6bb367c41d3e39"
+          }
+        }
+      ]
+    }
+  }
+}
