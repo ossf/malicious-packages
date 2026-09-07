@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11769",
   "published": "2026-08-04T15:13:15Z",
-  "modified": "2026-08-10T00:30:48.466377995Z",
+  "modified": "2026-08-18T00:30:48.466377995Z",
   "aliases": [
     "GHSA-rqjm-92gf-5c24"
   ],
   "summary": "Malicious code in @ornikar/react-native-svg-transformer (npm)",
-  "details": "npm/@ornikar/react-native-svg-transformer is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (975ebafd6228d6eacc7ab142d5c1a70e4639c44cfd248107083a6ec641788025)\nThe package declares `preinstall: node setup.mjs`. setup.mjs performs OS/arch/libc detection (linux/darwin/win, x64/arm64, musl/Alpine), downloads the Bun runtime archive from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...zip`, extracts it, chmods +x, and then invokes `execFileSync(bunPath, [path.join(D, 'math_init.js')], { stdio: 'inherit', cwd: D })`. The executed sibling `math_init.js` is a ~727KB Bun-compiled bundle (`// @bun @bun-cjs`) obfuscated with string-array rotation (`WV8StW` rotator against a large `n7gIxM` constants table) and randomized identifiers; its behavior is only reachable after multi-layer deobfuscation and does not correspond to SVG transformation. `package.json` declares `\"files\": [\"index.js\", \"CHANGELOG.md\", \"README.md\"]`, yet the tarball also ships `setup.mjs` and `math_init.js` — the two files that actually execute at install are absent from the declared file allowlist. `index.js` mirrors the upstream unscoped `react-native-svg-transformer` implementation to preserve advertised behavior, while the malicious chain is grafted on via preinstall under an org-scoped name that resembles the legitimate package. Installing this package on a default `npm install` fetches and runs an alternate runtime to execute an unrelated, obfuscated payload with no relation to the package's stated SVG-transformer purpose.\n\n## Source: ghsa-malware (4876233e6393890b39a9073a5b06e1d9dc4edf31c017d2e7752e24ffda9c4448)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "npm/@ornikar/react-native-svg-transformer is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\nVersion 1.0.13 was added to this record on 2026-08-06, when it differed from the versions above in one important way: it was still published. As of that date the registry had unpublished 1.0.6 through 1.0.12 — those versions survived only in the packument `time` map and were absent from `versions` — while 1.0.13, the last republish of the burst, had been left in place and still held the `latest` dist-tag, so a default `npm install @ornikar/react-native-svg-transformer` still resolved to a poisoned release. The 1.0.13 manifest replaces every real script with a single `\"preinstall\": \"node setup.mjs\"` entry, was published at 2026-08-04T12:44:09.763Z by the same maintainer account as the preceding legitimate releases, and declares `dist.unpackedSize` 750900 against 12248 for the last clean release (1.0.5). A file listing of the published tarball shows the two extra files 1.0.13 adds over 1.0.5: `setup.mjs` (11017 bytes) and `math_init.js` (727680 bytes), whose sha256 digests match the campaign payload already recorded in this report's `evidence_files`; the same two files, byte for byte, are also in @ornikar/intl-config 10.0.10. Wiz Research and OX Security both list 1.0.13 in their published IoC sets for this campaign. Consumers should not resolve this package from `latest` or a floating range: pin to 1.0.5 or earlier, audit lockfiles for 1.0.13, and treat any host or CI runner that installed it with install scripts enabled as compromised.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (975ebafd6228d6eacc7ab142d5c1a70e4639c44cfd248107083a6ec641788025)\nThe package declares `preinstall: node setup.mjs`. setup.mjs performs OS/arch/libc detection (linux/darwin/win, x64/arm64, musl/Alpine), downloads the Bun runtime archive from `https://github.com/oven-sh/bun/releases/download/bun-v<version>/...zip`, extracts it, chmods +x, and then invokes `execFileSync(bunPath, [path.join(D, 'math_init.js')], { stdio: 'inherit', cwd: D })`. The executed sibling `math_init.js` is a ~727KB Bun-compiled bundle (`// @bun @bun-cjs`) obfuscated with string-array rotation (`WV8StW` rotator against a large `n7gIxM` constants table) and randomized identifiers; its behavior is only reachable after multi-layer deobfuscation and does not correspond to SVG transformation. `package.json` declares `\"files\": [\"index.js\", \"CHANGELOG.md\", \"README.md\"]`, yet the tarball also ships `setup.mjs` and `math_init.js` — the two files that actually execute at install are absent from the declared file allowlist. `index.js` mirrors the upstream unscoped `react-native-svg-transformer` implementation to preserve advertised behavior, while the malicious chain is grafted on via preinstall under an org-scoped name that resembles the legitimate package. Installing this package on a default `npm install` fetches and runs an alternate runtime to execute an unrelated, obfuscated payload with no relation to the package's stated SVG-transformer purpose.\n\n## Source: ghsa-malware (4876233e6393890b39a9073a5b06e1d9dc4edf31c017d2e7752e24ffda9c4448)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -26,46 +26,6 @@
       ],
       "database_specific": {
         "cwes": [
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
-          {
-            "cweId": "CWE-506",
-            "description": "The product contains code that appears to be malicious in nature.",
-            "name": "Embedded Malicious Code"
-          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -96,6 +56,13 @@
               "hashes": {
                 "sha1": "cf43ab0a44bded99382e19869c4c6517db12d0e1",
                 "sha512_sri": "sha512-6k55L8lGGoFwwvrZ/+BjtASI+RLxB759qT9C8khzz0wXqwt4rJ3py4epqACcKRGMHFwwv5eFyrrd7iHljtEzow=="
+              }
+            },
+            {
+              "filename": "react-native-svg-transformer-1.0.13.tgz",
+              "hashes": {
+                "sha1": "c2db71d07af0897200d610d517be32ed28ffbd95",
+                "sha512_sri": "sha512-LlpSuED6O4ViGEtommaYbvfDnGxdZH3+mPrlG+qD2eAj4pW5wHxBkc3HAXoJG7mFjFWlKOk41LwHk1LMcQCRSQ=="
               }
             }
           ]
@@ -151,6 +118,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@ornikar/react-native-svg-transformer/v/1.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@ornikar/react-native-svg-transformer/v/1.0.13"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.ox.security/blog/a-new-infostealer-worm-hits-npm-affecting-keyv-and-cacheable/"
     }
   ],
   "database_specific": {
@@ -161,7 +136,10 @@
           "paths": [
             "setup.mjs"
           ],
-          "source": "PACKAGE_ARCHIVE"
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb"
+          }
         },
         {
           "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
@@ -169,7 +147,10 @@
             "Math_Symbol.js",
             "math_init.js"
           ],
-          "source": "PACKAGE_ARCHIVE"
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc"
+          }
         }
       ]
     },
@@ -295,6 +276,13 @@
       "type": "FINDER"
     },
     {
+      "name": "OX Security",
+      "contact": [
+        "https://www.ox.security"
+      ],
+      "type": "FINDER"
+    },
+    {
       "name": "SafeDep",
       "contact": [
         "https://safedep.io"
@@ -305,6 +293,13 @@
       "name": "Socket Threat Research Team",
       "contact": [
         "https://socket.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Wiz Research",
+      "contact": [
+        "https://www.wiz.io"
       ],
       "type": "FINDER"
     }
