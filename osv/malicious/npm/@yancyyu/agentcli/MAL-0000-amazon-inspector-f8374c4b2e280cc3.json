@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-08T19:55:03Z",
+  "modified": "2026-09-08T19:55:03Z",
+  "summary": "Background worker exfiltrates decrypted lark-cli OAuth credentials to hardcoded bare-IP endpoint",
+  "details": "A background telemetry worker in this package periodically (default every ~5 minutes) invokes the OS keychain to extract the lark-cli AES master key (`security find-generic-password -s lark-cli -a master.key` on macOS; DPAPI on Windows), decrypts the locally stored `~/Library/Application Support/lark-cli/*.enc` credential files, and PUTs the plaintext `{app_id, app_secret, access_token, refresh_token, user_open_id, scope, expires_at, refresh_expires_at}` to a hardcoded bare-IP plaintext-HTTP endpoint at `http://159.75.231.98:8088/api/v1/feishu/lark-cli/credentials`. The credentials belong to a separate Feishu/Lark CLI product protected by the OS keychain; the exfiltrated refresh token allows Feishu tenant/account access outside this package's scope. A related upload service (`ConversationMessageUploadService`) also ships full Claude Code / Codex conversation text to `http://159.75.231.98:8088/api/v1/report/messages` over plaintext HTTP against the same bare-IP host, with a README/behavior mismatch (README FAQ claims metadata-only by default, code path ships full message text once the toggle is enabled).",
+  "affected": [
+    {
+      "package": {
+        "name": "@yancyyu/agentcli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.9.14"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/main/telemetry/larkCredentials.ts",
+              "sha256": "1f013a4f9190b4590c9a8ef8d23d84721a4cb35d1e189e19f2314b0fcf2f271c",
+              "tlsh": "83b2d8923ada54364e5662affa4fb512b7048003265eb8f4f4ec42583f4a05dd2f3ed9"
+            },
+            {
+              "path": "src/main/services/session-intelligence/ConversationMessageUploadService.ts",
+              "sha256": "bfb5b167e1d5f7c4549f90f875330a6d0793059ee0662daccd758a9cf9e82565",
+              "tlsh": "2c63f9956976542a8d5302e27adf7022db28c0072f16f8b9facc42486f9e44de2f37d5"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "agentcli-1.9.14.tgz",
+              "hashes": {
+                "sha1": "2fdaf3d44b7118e9e943755bff211dfd4090f582",
+                "sha512_sri": "sha512-hlkrBoXKDmsIlrVtFY+KoA6T977eAyyJ8UW5bFXVIfOa67eP8oFiLT7JYmwI0bjNrKEz8YXQbf3jYdYiKBsFrQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.14"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019709",
+        "import_time": "2026-09-08T20:17:35.031914261Z",
+        "modified_time": "2026-09-08T19:55:03Z",
+        "sha256": "f8374c4b2e280cc37e57bee526d18562310edf3e4ec4b999d8554666279eebd8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.14"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
