@@ -32,7 +32,7 @@ test/unit:
 validate: ## Validate all OSV files
 	go run ./cmd/validate -config ./config/config.yaml
 
-.PHONY: gen-protos
+.PHONY: generate
 generate: ## Run go generate across the repo
 	go generate ./...
 
