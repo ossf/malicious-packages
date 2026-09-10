@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-15603",
   "published": "2026-08-31T05:02:04Z",
-  "modified": "2026-08-31T18:24:31.002907941Z",
+  "modified": "2026-09-09T13:42:33.061671704Z",
   "summary": "Malicious code in pyservercheck (PyPI)",
   "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d10f01e2954dde5faac23074d02bb989f22d0dcb78be82c1c4417531fef8b859)\nThe package ships a bundled Node script pyservercheck/js/main.js whose visible top half is a healthcheck stub matching the README, followed by a long run of tab whitespace and a trailing eval(atob('...')) that decodes to a two-stage loader. The decoded loader queries public Ethereum RPC endpoints (eth.blockscout.com, 1rpc.io/eth, eth.drpc.org, ethereum-rpc.publicnode.com, eth-mainnet.public.blastapi.io) for the latest transaction from the hardcoded sender 0xa322E5f3D311D3080e6f0121063e9aDC2490Ef1a, extracts an IPv4 pair from the tx `to` field, fetches XOR-obfuscated stage-2 code from http://<decoded-ip>:443/0x/cls and /0x/ls, eval()s it, and re-launches it via a detached `spawn('node', ['-e', <code>])`. Execution is wired to two auto-triggers: pyproject.toml overrides setuptools `build_py` and `develop` with pyservercheck._setup_cmd.BuildPy/Develop, whose `run()` calls _run_main_js_now() -> subprocess.run(['node', main.js]) during `pip install` / `pip install -e.`; and BuildPy also writes a `pyservercheck.pth` file containing `import pyservercheck._hooks; pyservercheck._hooks.ensure_once()`, which Python auto-executes at every interpreter startup, invoking run_js() again. The `.main_js_ran` marker is advisory and can be removed to force re-execution. The C2 destination is rotatable by publishing a new Ethereum transaction from the sender address, so the fetched payload is fully attacker-controlled at each run.\n\n## Source: kam193 (4b365b9df06973db4f112bdbf2ad704dcc91c1b7b3eaceddb06a8e884c3f760a)\nPackage embeds obfuscated, JS-based malware downloading further remote stages. The code is triggered during building the package and on every Python startup (via PTH file). The next-stage IP is delivered via a blockchain. \n\nThe payload and embedded IoCs are consistent with campaigns attributed to Lazarus APT/PolinRider.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-08-pybitjs\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - malware\n\n\n - abuses-pth\n\n\n - c2-in-blockchain\n",
   "affected": [
@@ -83,6 +83,10 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/pyservercheck/0.1.0/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://blog.deception.pro/blog/hok-dprk-polinrider-sep-2026"
     }
   ],
   "database_specific": {
@@ -124,6 +128,17 @@
         "source": "amazon-inspector",
         "versions": [
           "0.1.0"
+        ]
+      },
+      {
+        "id": "pypi/2026-08-pybitjs/pyservercheck",
+        "import_time": "2026-09-09T13:40:44.66835196Z",
+        "modified_time": "2026-08-31T05:02:04.882072Z",
+        "sha256": "f1055492f23d11a5e7fc8c3f6b635e7d78a1777aae41d1e2d2ddfbb147ed3311",
+        "source": "kam193",
+        "versions": [
+          "0.1.0",
+          "0.1.1"
         ]
       }
     ]
