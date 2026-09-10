@@ -3,8 +3,8 @@
   "published": "2026-07-15T11:28:20Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10677",
-  "summary": "Malicious code in deployowl (npm) — Fixed in 2.3.0+",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b875dd11198fbfc694fe8b3227090e95f13734b5cf64556c6c727b48d7471035)\nThe SDK's captureSnapshot() iterated Object.entries(process.env) and attached environment variables to captured errors. Separately, init() invoked syncInfrastructure() using eval(\"require\") to read package.json dependencies. \n\n## Remediation & Fix Notice (v2.3.0+):\nAll reported behaviors were completely remediated and refactored in v2.3.0+. All vulnerable versions (0.1.0 through 2.1.0) have been deprecated on npm.\n- eval('require') usage removed and replaced with standard module.createRequire().\n- Unrestricted process.env collection removed and replaced with an explicit user-configured allowedEnvVars allowlist (default empty).\n- Dependency telemetry removed from default behavior and made explicit opt-in.\n- Package migrated to canonical scoped package `@deployowl/deployowl`.\n",
+  "summary": "Malicious code in deployowl (npm)",
+  "details": "## Remediation & Fix Notice (v2.3.0+):\nAll reported behaviors were completely remediated and refactored in v2.3.0+. All vulnerable versions (0.1.0 through 2.1.0) have been deprecated on npm.\n- eval('require') usage removed and replaced with standard module.createRequire().\n- Unrestricted process.env collection removed and replaced with an explicit user-configured allowedEnvVars allowlist (default empty).\n- Dependency telemetry removed from default behavior and made explicit opt-in.\n- Package migrated to canonical scoped package `@deployowl/deployowl`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b875dd11198fbfc694fe8b3227090e95f13734b5cf64556c6c727b48d7471035)\nThe SDK's captureSnapshot() iterates Object.entries(process.env) and attaches every environment variable to every captured error, then POSTs the payload to https://api.deployowl.com/api/v1/errors. Variables whose names contain SECRET/KEY/TOKEN/PASSWORD/AUTH/CREDENTIAL/PRIVATE/URI/PASS/STRIPE/AWS/DATABASE are truncated to a 3-character prefix plus '***' (still leaking a usable prefix of each secret); variables not matching that keyword list (HOME, USER, application config, custom-named secrets) are sent in full. Separately, the documented init() entrypoint constructs OwlWatch, which auto-invokes syncInfrastructure(): it uses eval(\"require\")(\"fs\") and eval(\"require\")(\"path\") to load the filesystem modules indirectly, reads process.cwd()/package.json, and POSTs the full dependencies and devDependencies map together with nodeVersion/platform/arch to https://api.deployowl.com/api/v1/infrastructure. Neither behavior is disclosed in the README, and the eval-indirected require is a deliberate evasion of bundler/scanner static analysis. Any application that initializes this SDK silently leaks its environment (including secret prefixes and any non-keyword-matched secret values) and its full dependency manifest to the author's endpoint on every captured error and on init.\n",
   "affected": [
     {
       "package": {
@@ -36,7 +36,7 @@
         "cwes": [
           {
             "cweId": "CWE-506",
-            "description": "The product contained code that appeared to be malicious in nature in versions <= 2.1.0 (Fixed in 2.3.0+).",
+            "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
           }
         ],
@@ -68,7 +68,7 @@
     },
     {
       "type": "ADVISORY",
-      "url": "https://github.com/deployowl/deployowl-app/issues/1390"
+      "url": "https://github.com/ossf/malicious-packages/issues/1390"
     }
   ],
   "credits": [
