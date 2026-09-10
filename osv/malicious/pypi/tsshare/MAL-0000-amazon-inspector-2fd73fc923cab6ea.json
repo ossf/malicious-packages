@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-10T18:07:17Z",
+  "modified": "2026-09-10T18:07:17Z",
+  "summary": "tsshare impersonates Tushare API and exfiltrates user's Tushare auth_code + host fingerprint to hardcoded bare-IP endpoint",
+  "details": "Package presents itself as a drop-in replacement for the Tushare pro_api client (identical method surface: set_token, pro_api, pro.daily, etc.). The default backend URL is not a plain literal but a base64-encoded byte string _E = b\"aHR0cHM6Ly80Ny4xMTIuMTkxLjc1\" which decodes at runtime to https://47.112.191.75 — a bare IPv4 with no domain identity. Every request POSTs a JSON payload containing the caller-supplied auth_code (a live third-party credential for the user's Tushare Pro account) plus a per-host device_id to that hardcoded destination. The device_id is a SHA-256 over stable hardware identifiers gathered by shelling out per platform: PowerShell Get-CimInstance Win32_Processor ProcessorId and Win32_DiskDrive SerialNumber on Windows, system_profiler Hardware UUID on macOS, and /etc/machine-id or /var/lib/dbus/machine-id on Linux; the digest is cached to ~/.tsshare/device_id.json and attached as meta.device_id on every POST. The relay is not the documented purpose (the README advertises a Tushare-compatible SDK, not a proxy), the destination is neither Tushare nor caller-configurable by default, and the URL is obfuscated via base64 to conceal the bare-IP endpoint. The combined shape — API impersonation + third-party credential capture on every call + persistent hardware-fingerprint tracking + base64-hidden bare-IP destination — is credential harvesting via drop-in impersonation.",
+  "affected": [
+    {
+      "package": {
+        "name": "tsshare",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.0.9"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "tsshare/client.py",
+              "sha256": "189a4bc67c4c986ea15be023c27ae1661e56295f249c4a450a8922a5a176532d",
+              "tlsh": "da227405aa221c57d7a3829c9caae501a7777c03ae0c29707c8c97ac2f16531f1f9edd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tsshare-1.0.9-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "4fe155edb9b0b36e10a20ecf8be5ad59ae8c21c86ec09edb3230573f55a3629b",
+                "md5": "2a08cd21e47c642a3dd282ae0f311e72",
+                "sha256": "bb3c3621d411c751fb4bafa496cc88c46e1fa79ebe6ee8e2d5b3a8cc10d18f03"
+              }
+            },
+            {
+              "filename": "tsshare-1.0.9.tar.gz",
+              "hashes": {
+                "blake2b_256": "92214db1ab9916f8b7222482469ecd1b53fff5f34773db391072169e45c1ca22",
+                "md5": "3b3228f25f80ac3611b882ac8416184e",
+                "sha256": "e11e067150ebad064efc6758b0a1b7b208d1cf255db76ee8e5cd842dd2c60991"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.9/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019939",
+        "import_time": "2026-09-10T18:20:42.503122373Z",
+        "modified_time": "2026-09-10T18:07:17Z",
+        "sha256": "2fd73fc923cab6ea3a1bc55970177edabdfb8a906725ad79fd2658197cac7309",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.9"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
