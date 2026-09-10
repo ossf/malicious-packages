@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11584",
+  "published": "2026-08-04T15:49:51Z",
+  "modified": "2026-08-05T07:08:50.427000525Z",
+  "aliases": [
+    "GHSA-7g8p-fjjf-5ggq"
+  ],
+  "summary": "Malicious code in @nebula.js/stardust (npm)",
+  "details": "npm/@nebula.js/stardust is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (818b9c5be087da064c6cef14c4890e3233448c780c1e2fecbdbf6ee74352195d)\nThis version of @nebula.js/stardust declares a `preinstall` hook (`node setup.mjs`) that is not present in the legitimate qlik-oss/nebula.js upstream. `setup.mjs` uses obfuscator.io-style hex-named identifiers and property-indirection control flow. At install time it downloads a Bun runtime binary from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/...`, extracts it to a temp directory, and invokes it via `execFileSync` to run the sibling file `math_init.js` — a 727KB `// @bun @bun-cjs` compiled bundle that is not runnable under Node and cannot be inspected without the fetched Bun runtime. If a local `bun` already exists it is used directly. Neither `setup.mjs` nor `math_init.js` is listed in `package.json` `files` (which only declares `LICENSE`, `core`, `dist`, `types/index.d.ts`), yet both ship at the tarball root. README and description are copied verbatim from the legitimate QlikTech `@nebula.js/stardust` package, but the manifest/shipped-files divergence and the added preinstall are inconsistent with the upstream project. The alternate-runtime execution of an obfuscated compiled-CJS blob on the installer's machine at `npm install` time is an alternate-runtime-dropper pattern; the payload's behavior cannot be observed by Node-focused analysis. Combined with the scope-hijack indicators (undeclared smuggled files, brand-impersonation README, no such preinstall upstream), this version is a malicious release of a well-known scope.\n\n## Source: ghsa-malware (c0fc23e247925b6c8dab8c9d4cde3b8d446e2bbf5ca060fd7f0b9043e9413ec9)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@nebula.js/stardust",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "7.1.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "896ee823194cc127c22dd343d99d07bbcbdad0aed91fa803fd6100c4212ad320",
+              "tlsh": "f731cd14de11cc232ed846a4982606426559040b8d6ef81c33e2d36d9fae7df66f973e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "stardust-7.1.2.tgz",
+              "hashes": {
+                "sha1": "b7c2d55c24cab2d8ac7ccfd589bbe2778fe03e4d",
+                "sha512_sri": "sha512-ItilrTv1OhIlTGSMk72BlwBcxOaDl6v+9U59BITeyn2CZId3Iryz8bV5LL/dbjshqtMSHmwOnuDXb656Zw4e0A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nebula.js/stardust"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-7g8p-fjjf-5ggq"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nebula.js/stardust/v/7.1.2"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-7g8p-fjjf-5ggq",
+        "import_time": "2026-08-05T00:10:17.958288729Z",
+        "modified_time": "2026-08-04T15:49:51Z",
+        "sha256": "c0fc23e247925b6c8dab8c9d4cde3b8d446e2bbf5ca060fd7f0b9043e9413ec9",
+        "source": "ghsa-malware",
+        "versions": [
+          "7.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013565",
+        "import_time": "2026-08-05T07:06:54.221883617Z",
+        "modified_time": "2026-08-05T06:41:40Z",
+        "sha256": "818b9c5be087da064c6cef14c4890e3233448c780c1e2fecbdbf6ee74352195d",
+        "source": "amazon-inspector",
+        "versions": [
+          "7.1.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

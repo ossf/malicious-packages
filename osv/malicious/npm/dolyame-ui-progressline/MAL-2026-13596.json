@@ -1,0 +1,80 @@
+{
+  "modified": "2026-08-07T12:35:03Z",
+  "published": "2026-08-07T12:35:03Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13596",
+  "summary": "Malicious code in dolyame-ui-progressline (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e109a79a8ebbb2a7d21a37668b162bc92a5602ad24e7db6b6ce711f5cee152f6)\nOn require, index.js loads _shim.js which fetches a platform-specific binary from hardcoded Cloudflare Workers endpoints (oob-worker.cf101-adf.workers.dev, oob-worker.cf102-baf.workers.dev, oob-worker.cf99-9b3.workers.dev) with a DNS TXT-record base64 fallback under *.dl.wel1.ru, writes the payload to a temp path with a deceptive name (/var/tmp/.cache_* on Unix, %TEMP%\\dotnet_diag_*.exe on Windows), chmods it to 0755, and spawns it detached via /bin/sh -c or cmd.exe. The main module lib/telemetry.js (styled as a Sentry-like SDK) contains a parallel dropper path that base64-decodes chunks fetched via DNS TXT failover, writes an 'extension' to disk, sets executable permissions, and spawns it detached — giving a second import-time trigger if the _shim path fails. Both files obfuscate the host names and sensitive API references by concatenating string fragments (e.g. [\"oob-worker.cf10\",\"1-adf.worke\",\"rs.de\",\"v\"].join(\"\"), require(\"child_\"+\"process\"), fs[\"chmod\"+\"Sync\"]) to evade static scanners. The behavior is framed as 'telemetry' with token opt-out env checks but there is no legitimate telemetry function: the sole effect on require is remote binary retrieval and execution on the installer's host.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "dolyame-ui-progressline"
+      },
+      "versions": [
+        "35.8.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_shim.js",
+              "sha256": "f9968874643d51f7cc28ad8c7877b91975b184fb62786dd2679ba5386003fcfe",
+              "tlsh": "69a1a85617fa30180792e5d8852f9816719bf69333c4e5c4fb4c6a944fea12883b39ed"
+            },
+            {
+              "path": "lib/telemetry.js",
+              "sha256": "dc1f2f2475eb808f862119b0a02e1ecd0c54cdd0d86d75e0245a70e6ee478d92",
+              "tlsh": "d673304966fb10214263b0685ebb40437635c4072a4eed5dba9c43ec9f8db3896f1fb9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "dolyame-ui-progressline-35.8.1.tgz",
+              "hashes": {
+                "sha1": "64d5f8ef03dd44b8a437f06257650ab70f9f3f02",
+                "sha512_sri": "sha512-NCmvEVCMPM8tovFOb7OJ1gbrjDxqWpSiucW3C29nr22naWBWghMdA97Zmk0nD79guLFQDQgo/+JU130Yp1mXnQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/dolyame-ui-progressline/v/35.8.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017039",
+        "import_time": "2026-08-07T12:51:23.338480596Z",
+        "modified_time": "2026-08-07T12:35:03Z",
+        "sha256": "e109a79a8ebbb2a7d21a37668b162bc92a5602ad24e7db6b6ce711f5cee152f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "35.8.1"
+        ]
+      }
+    ]
+  }
+}

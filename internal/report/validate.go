@@ -26,6 +26,7 @@ import (
 	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
 	"github.com/package-url/packageurl-go"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/ossf/malicious-packages/internal/gitname"
 )
@@ -122,6 +123,16 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		if es := v.Affected[i].EcosystemSpecific; len(es.GetFields()) > 0 {
 			return fmt.Errorf("%w: ecosystem_specific must not be set", ErrUnexpectedOSV)
 		}
+
+		// Ensure database specific data does not contain unexpected keys.
+		if err := validateDatabaseSpecific(v.Affected[i].DatabaseSpecific, true); err != nil {
+			return fmt.Errorf("%w: affected database_specific invalid: %w", ErrUnexpectedOSV, err)
+		}
+	}
+
+	// Ensure database specific data does not contain unexpected keys.
+	if err := validateDatabaseSpecific(v.DatabaseSpecific, false); err != nil {
+		return fmt.Errorf("%w: affected database_specific invalid: %w", ErrUnexpectedOSV, err)
 	}
 
 	return nil
@@ -298,6 +309,25 @@ func validatePURL(ecosystem osvconstants.Ecosystem, name, purl string) error {
 		return fmt.Errorf("%w: purl %q name %q does not match %q", ErrInvalidOSV, purl, p.Name, name)
 	}
 
+	return nil
+}
+
+// validateDatabaseSpecific protect the database_specific objects from being
+// populated with unexpected data. This is to limit new changes being introduced
+// without discusion.
+// TODO: extend this validation across the structures within these keys.
+func validateDatabaseSpecific(ds *structpb.Struct, isAffected bool) error {
+	var validKeys []string
+	if isAffected {
+		validKeys = []string{"cwes", "indicators", "iocs", "ghsa"}
+	} else {
+		validKeys = []string{originRefKey, "iocs"}
+	}
+	for k := range ds.GetFields() {
+		if !slices.Contains(validKeys, k) {
+			return fmt.Errorf("unexpected key %q", k)
+		}
+	}
 	return nil
 }
 

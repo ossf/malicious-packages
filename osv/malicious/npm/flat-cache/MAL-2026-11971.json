@@ -1,0 +1,109 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11971",
+  "published": "2026-08-04T10:43:17Z",
+  "modified": "2026-08-05T00:12:12.181914897Z",
+  "aliases": [
+    "GHSA-8jxr-wprf-45g8"
+  ],
+  "summary": "Malicious code in flat-cache (npm)",
+  "details": "npm/flat-cache version 6.1.24 is a trojanized release published on 2026-08-04 during the compromise of the npm/GitHub maintainer account behind the keyv and cacheable package families (user \"Jaredwray\"). Attackers pushed the malicious payload to the source repository and cut releases through GitHub Actions, so the poisoned versions reached npm with a valid, signed provenance attestation (provenance attests build integrity, not source integrity). Delivery is through the npm install lifecycle: the trojanized package.json adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs before any project code on a bare `npm install`, while the normal compiled output is left intact so the package still works after install. setup.mjs downloads a standalone Bun runtime and uses it to run a second stage (shipped as Math_Symbol.js, a heavily obfuscated ~728 KB Bun bundle, referenced at runtime as math_init.js). The stealer harvests credentials from cloud instance metadata (AWS IMDS at 169.254.169.254, ECS at 169.254.170.2, GCP, Azure), AWS/GCP/Azure keys, HashiCorp Vault tokens, Kubernetes service-account tokens, GitHub Actions OIDC and org/repo secrets, and npm tokens, with a TruffleHog-style regex sweep for further secrets and private keys. Using the stolen npm identity (including npm OIDC trusted publishing) it enumerates and republishes further packages the token can reach — which, for a maintainer controlling both keyv and cacheable, gave the worm a large blast radius. Stolen findings are exfiltrated to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and to destinations resolved over DNS, and autostart hooks are planted in the repository's .claude/ and .vscode/ configuration to run the loader when a developer or AI coding agent opens a clone. Treat any environment that installed this version (with install scripts enabled) as fully compromised and rotate every reachable credential. Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (437a2cf9e9142608f18fc633cd57ba2321c530a9020c6bc988748612a9ebdaec)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "flat-cache",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "6.1.24"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/flat-cache"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-8jxr-wprf-45g8"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-8jxr-wprf-45g8",
+        "import_time": "2026-08-05T00:10:17.985997763Z",
+        "modified_time": "2026-08-04T10:43:22Z",
+        "sha256": "437a2cf9e9142608f18fc633cd57ba2321c530a9020c6bc988748612a9ebdaec",
+        "source": "ghsa-malware",
+        "versions": [
+          "6.1.24"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

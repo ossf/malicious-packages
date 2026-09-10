@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11579",
+  "published": "2026-08-04T15:49:16Z",
+  "modified": "2026-08-05T08:24:51.103088922Z",
+  "aliases": [
+    "GHSA-mwhj-hw75-h6r7"
+  ],
+  "summary": "Malicious code in @nebula.js/sn-org-chart (npm)",
+  "details": "npm/@nebula.js/sn-org-chart is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c164bc817fe7df7f985db26e6e407ebc41697acae3c7fd0c2afc5b60d339b598)\nThe package declares `preinstall: node setup.mjs`. setup.mjs fingerprints the host (running `ldd --version` and reading `/etc/os-release` to detect musl/Alpine) and, if `bun` is not already present, downloads a platform-specific Bun release archive from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/<arch>.zip`, extracts it to a temp path, chmods it executable, and invokes the sibling `math_init.js` under that Bun binary via `execFileSync`. `math_init.js` is a heavily obfuscated 728KB bundle using a numeric string-array with a rotate function (`WV8StW`) and hex-mangled identifiers, with no readable imports and no apparent relation to the package's advertised purpose (a Qlik org-chart visualization). The scope `@nebula.js/*` is a Qlik-published family; an org-chart visualization has no legitimate need to pull a second language runtime at install and execute an opaque bundle under it. Executing obfuscated author code at install time under a smuggled runtime yields arbitrary code execution on the installer's machine.\n\n## Source: ghsa-malware (c7c171869bbafed7a4f06de6cc9c2ce8a92ebd018b60a1931048167e2a2bc9c6)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@nebula.js/sn-org-chart",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.7.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sn-org-chart-1.7.1.tgz",
+              "hashes": {
+                "sha1": "0357491ce18d1866d9abf3bf54f02331b8dcaba5",
+                "sha512_sri": "sha512-/euqcTnmlfB37AfoVSQf+eQnmIYSl3PG9ZDHCvQj3y2TRJqupi1Jw2ezsTPP4YKpropsunFHiunMzTvsTB1lkA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nebula.js/sn-org-chart"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-mwhj-hw75-h6r7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nebula.js/sn-org-chart/v/1.7.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-mwhj-hw75-h6r7",
+        "import_time": "2026-08-05T00:10:18.158283997Z",
+        "modified_time": "2026-08-04T15:49:16Z",
+        "sha256": "c7c171869bbafed7a4f06de6cc9c2ce8a92ebd018b60a1931048167e2a2bc9c6",
+        "source": "ghsa-malware",
+        "versions": [
+          "1.7.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013971",
+        "import_time": "2026-08-05T08:22:19.761395927Z",
+        "modified_time": "2026-08-05T07:42:23Z",
+        "sha256": "c164bc817fe7df7f985db26e6e407ebc41697acae3c7fd0c2afc5b60d339b598",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.7.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

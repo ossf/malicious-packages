@@ -1,0 +1,200 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11627",
+  "published": "2026-08-04T15:32:05Z",
+  "modified": "2026-08-05T08:24:51.198176428Z",
+  "aliases": [
+    "GHSA-29f9-2vff-42c7"
+  ],
+  "summary": "Malicious code in @onereach/salesforce-miaw-client (npm)",
+  "details": "npm/@onereach/salesforce-miaw-client is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (df5aaceb2f852a1b48658a1b698ef2bfa9c9acd29136ed2fbb94ae4e3896968c)\npackage.json declares scripts.preinstall = 'node setup.mjs'. setup.mjs uses obfuscated `_0x...` identifiers and, on `npm install`, downloads a Bun runtime archive from github.com/oven-sh/bun releases into a temporary directory, extracts and chmods it, then invokes the dropped Bun binary against a sibling file math_init.js at the package root. math_init.js is a ~727KB Bun-compiled (`// @bun @bun-cjs`) bundle with obfuscator.io-style string-array + rotate obfuscation (function WV8StW rotating a ~1000-entry mixed number/string array, mangled identifiers like MmgoCP, etDiOOB, JqTtnbZ). The name math_init.js has no relation to the advertised Salesforce Messaging-for-In-App-and-Web HTTP client purpose. package.json declares `files: [\"dist\"]`, yet setup.mjs and the 727KB math_init.js are shipped at the tarball root outside that allowlist, so the payload is not surfaced in the declared manifest and is wired in only through the preinstall lifecycle hook. Executing the payload under Bun places it outside Node's tooling visibility, defeating Node-based supply-chain and runtime scanners. The combination — install-time fetch of a second language runtime, execution of a heavily obfuscated bundle unrelated to the package's stated purpose, and payload smuggling outside the declared files list — is arbitrary code execution on any host running `npm install` on this version.\n\n## Source: ghsa-malware (b1fb559d97bebc677040ca042a431fce92863b38b60c5ffe64f9181b28a764bd)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@onereach/salesforce-miaw-client",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.0.3",
+        "0.0.4",
+        "0.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "salesforce-miaw-client-0.0.4.tgz",
+              "hashes": {
+                "sha1": "b07312b60c2d322f12e2d47a122f2b8bd3bb5743",
+                "sha512_sri": "sha512-y60LoajPptwzT0qDI6Y1bvUbCJufwdxeKyozsZHo1nBmqG/ZKdyVmiOifIOjGO1tneSyO4gpvEKUQiqO5MyN6Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/salesforce-miaw-client"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-29f9-2vff-42c7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/salesforce-miaw-client/v/0.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/salesforce-miaw-client/v/0.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/salesforce-miaw-client/v/0.0.3"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-29f9-2vff-42c7",
+        "import_time": "2026-08-05T00:10:17.830474775Z",
+        "modified_time": "2026-08-04T16:25:27Z",
+        "sha256": "b1fb559d97bebc677040ca042a431fce92863b38b60c5ffe64f9181b28a764bd",
+        "source": "ghsa-malware",
+        "versions": [
+          "0.0.5",
+          "0.0.4",
+          "0.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013709",
+        "import_time": "2026-08-05T07:07:00.331303991Z",
+        "modified_time": "2026-08-05T07:03:10Z",
+        "sha256": "723a34499e3f75cf2cdcb24e22be99fb8f35b18b97681b3308f88fdfc166bebd",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013641",
+        "import_time": "2026-08-05T07:06:57.711532427Z",
+        "modified_time": "2026-08-05T06:52:58Z",
+        "sha256": "df5aaceb2f852a1b48658a1b698ef2bfa9c9acd29136ed2fbb94ae4e3896968c",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013752",
+        "import_time": "2026-08-05T08:22:04.009368344Z",
+        "modified_time": "2026-08-05T07:09:34Z",
+        "sha256": "46ad79bade066a3605882d23b0c5ef2cd6295a67abb3b087c0c07eba3c623343",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

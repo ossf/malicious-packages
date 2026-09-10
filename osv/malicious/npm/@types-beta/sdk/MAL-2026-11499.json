@@ -1,0 +1,162 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11499",
+  "published": "2026-07-29T00:00:00Z",
+  "modified": "2026-08-04T22:32:00.961265809Z",
+  "summary": "Malicious code in @types-beta/sdk (npm)",
+  "details": "The npm package `@types-beta/sdk` is a supply-chain dropper that impersonates the trusted `@types` (DefinitelyTyped) namespace to look like a routine type-definition dependency. It bundles a Windows executable (`vendor/nanocache.exe`) and launches it as an import-time side effect: `dist/index.js` calls `init()` at module load, and on Windows `init()` spawns the bundled binary via `child_process` — detached, `stdio: 'ignore'`, `windowsHide: true`. There is no lifecycle install hook; simply importing the package (directly or transitively) executes the payload on Windows.\n\nStatic analysis of the bundled binary (it was not executed) shows a WinHTTP WebSocket-based remote-access agent: it dials out to a command-and-control server and maintains a persistent, auto-reconnecting channel (WinHttpConnect / WinHttpWebSocketSend / WinHttpWebSocketReceive), executes remote commands, and starts an interactive PowerShell session. Embedded strings include `[agent] Connecting to %ls:%d (secure=%d)`, `[+] Connected client=%s server=%ls`, `[>] cmd: %s`, and `[shell] PowerShell session started (UTF-8, pipeline mode)`, with `[-] Disconnected, reconnecting in %dms...` for resilience.\n\nVersions 0.1.0-0.1.3 are affected and were live on npm at the time of reporting. Detected and classified independently by codelake Research from the live npm feed; at the time of reporting `@types-beta/sdk` was not present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5a3bdb989bdab8b3038c0eb791bf3e09ee753c363d198162f54420b82d9326ed)\nThe package masquerades as a type-definitions package in the @types-beta/* namespace but ships a 1.1 MB Windows executable at vendor/nanocache.exe. The main entry dist/index.js calls init() at module load time, which on Windows spawns vendor/nanocache.exe with detached: true, stdio: \"ignore\", windowsHide: true, then child.unref()s it, so a hidden background process starts whenever a consumer writes `import \"@types-beta/sdk\"`. The bundled PE (sha256 9a65f46787db4dd1e278a06f617094c59ca113ee92f6a8021b62967bb64b947a) contains embedded strings consistent with a remote-control agent (`/ws/agent`, `disconnect`, `update`, `exit_code`). The README reinforces the impersonation by contrasting the package with `@types-beta/node` as \"type definitions only\", while this package auto-executes native code on import. Import-time launch of an opaque, undocumented native binary with agent-shaped protocol strings on a namespace crafted to imitate DefinitelyTyped constitutes a backdoor installation on the developer's host.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@types-beta/sdk",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.1.0",
+        "0.1.1",
+        "0.1.2",
+        "0.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/init.js",
+              "sha256": "bd449234aacde1ee3e788a4867d75c5e8ae5f642753cbfbe00ae0518e36056b7",
+              "tlsh": "1e21230513f2217a0f2104c6a71fd65337eb48231206d0b5f9dd839a6f9036e42babe6"
+            },
+            {
+              "path": "vendor/nanocache.exe",
+              "sha256": "656eccdd2123d3e44bb8d961d1b75154dedbf9a9a66dd7569f3176e3a78acdb4",
+              "tlsh": "ad454c17e2a345fcc56bc1b4965787b2b970b8694234bd6e1e94d3322f23e504f2eb24"
+            },
+            {
+              "path": "README.md",
+              "sha256": "1ce0200df523b435f2edecae0178dcffb11f257dfccddda527f7afd3c8b7a903",
+              "tlsh": "3641302f9703033609915122abfca3e8d375f4682b311ae4bc1e027f5313b2d5521bea"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "sdk-0.1.1.tgz",
+              "hashes": {
+                "sha1": "b9b8d019ac2f620cca51c55de346d0cff98ed9f6",
+                "sha512_sri": "sha512-0dPW5q8BeqT9TduKDHEL67lMb1TCSFFtx2FEFHD0NPCRwyz4vdaj5LQQ4/Lvkj63tz7qNf3WsU2bDTBj3Rl/KA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://research.codelake.dev/advisories/clr-2026-3041-types-beta-sdk"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@types-beta/sdk/v/0.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@types-beta/sdk/v/0.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@types-beta/sdk/v/0.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@types-beta/sdk/v/0.1.3"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "hashes": [
+        "sha256:9c7aaf7078a0e0de15a4855e541946b0952a024e84735f1ad39b0b91ad257851",
+        "sha256:b2e985dfc5a494c8bd2f6e2e7a22d35cc0964c0103a596de62e150c2df8097e2"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011168",
+        "import_time": "2026-08-04T22:30:02.86990097Z",
+        "modified_time": "2026-08-04T21:42:25Z",
+        "sha256": "cbfde7f85ff6afcc89921a3f67e3daaacd985383f9986ff92102a86e3ba7ba94",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011169",
+        "import_time": "2026-08-04T22:30:02.941182229Z",
+        "modified_time": "2026-08-04T21:42:31Z",
+        "sha256": "0b68df6d804a2c0a4d9471d8e102570c81533595541ddde58a099c27b0b6ba77",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011167",
+        "import_time": "2026-08-04T22:30:02.833009Z",
+        "modified_time": "2026-08-04T21:42:17Z",
+        "sha256": "5a3bdb989bdab8b3038c0eb791bf3e09ee753c363d198162f54420b82d9326ed",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-011165",
+        "import_time": "2026-08-04T22:30:02.698913666Z",
+        "modified_time": "2026-08-04T21:42:00Z",
+        "sha256": "612e2c25d7dd7afd79de96039bf11ad7103fc96f4cbc50a57e958d5671c85255",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3041-types-beta-sdk"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

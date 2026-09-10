@@ -1,6 +1,7 @@
 package report_test
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/ossf/osv-schema/bindings/go/osvconstants"
@@ -537,5 +538,153 @@ func TestValidateVuln_Fail_EcosystemSpecific(t *testing.T) {
 
 	if err == nil {
 		t.Error("ValidateVuln() == nil; want err")
+	}
+}
+
+func TestValidateVuln_DatabaseSpecific(t *testing.T) {
+	emptyStruct, err := structpb.NewStruct(map[string]any{})
+	if err != nil {
+		t.Fatalf("failed to create empty struct: %v", err)
+	}
+
+	cwesStruct, _ := structpb.NewStruct(map[string]any{"cwes": []any{"CWE-506"}})
+	indicatorsStruct, _ := structpb.NewStruct(map[string]any{"indicators": []any{}})
+	iocsStruct, _ := structpb.NewStruct(map[string]any{"iocs": map[string]any{}})
+	ghsaStruct, _ := structpb.NewStruct(map[string]any{"ghsa": "GHSA-1234-5678-9012"})
+	allAffectedStruct, _ := structpb.NewStruct(map[string]any{
+		"cwes":       []any{"CWE-506"},
+		"indicators": []any{},
+		"iocs":       map[string]any{},
+		"ghsa":       "GHSA-1234-5678-9012",
+	})
+
+	originsStruct, _ := structpb.NewStruct(map[string]any{"malicious-packages-origins": []any{}})
+	allTopLevelStruct, _ := structpb.NewStruct(map[string]any{
+		"malicious-packages-origins": []any{},
+		"iocs":                       map[string]any{},
+	})
+
+	invalidKeyStruct, _ := structpb.NewStruct(map[string]any{"unexpected_custom_key": "custom_value"})
+	mixedInvalidStruct, _ := structpb.NewStruct(map[string]any{
+		"cwes":       []any{"CWE-506"},
+		"unexpected": true,
+	})
+
+	tests := []struct {
+		name     string
+		affected *structpb.Struct
+		top      *structpb.Struct
+		wantErr  bool
+	}{
+		{
+			name: "nil database_specific",
+		},
+		{
+			name:     "empty database_specific",
+			affected: emptyStruct,
+			top:      emptyStruct,
+		},
+		{
+			name:     "valid affected cwes",
+			affected: cwesStruct,
+		},
+		{
+			name:     "valid affected indicators",
+			affected: indicatorsStruct,
+		},
+		{
+			name:     "valid affected iocs",
+			affected: iocsStruct,
+		},
+		{
+			name:     "valid affected ghsa",
+			affected: ghsaStruct,
+		},
+		{
+			name:     "all valid affected keys combined",
+			affected: allAffectedStruct,
+		},
+		{
+			name: "valid top-level malicious-packages-origins",
+			top:  originsStruct,
+		},
+		{
+			name: "valid top-level iocs",
+			top:  iocsStruct,
+		},
+		{
+			name: "all valid top-level keys combined",
+			top:  allTopLevelStruct,
+		},
+		{
+			name:     "invalid affected key (malicious-packages-origins is top-level only)",
+			affected: originsStruct,
+			wantErr:  true,
+		},
+		{
+			name:     "invalid affected key (unknown custom key)",
+			affected: invalidKeyStruct,
+			wantErr:  true,
+		},
+		{
+			name:     "invalid affected keys (mixed valid and invalid)",
+			affected: mixedInvalidStruct,
+			wantErr:  true,
+		},
+		{
+			name:    "invalid top-level key (cwes is affected-level only)",
+			top:     cwesStruct,
+			wantErr: true,
+		},
+		{
+			name:    "invalid top-level key (indicators is affected-level only)",
+			top:     indicatorsStruct,
+			wantErr: true,
+		},
+		{
+			name:    "invalid top-level key (ghsa is affected-level only)",
+			top:     ghsaStruct,
+			wantErr: true,
+		},
+		{
+			name:    "invalid top-level key (unknown custom key)",
+			top:     invalidKeyStruct,
+			wantErr: true,
+		},
+		{
+			name:    "invalid top-level keys (mixed valid and invalid)",
+			top:     mixedInvalidStruct,
+			wantErr: true,
+		},
+		{
+			name:     "valid combined affected and top-level database_specific",
+			affected: allAffectedStruct,
+			top:      allTopLevelStruct,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vuln := &osvschema.Vulnerability{
+				DatabaseSpecific: tt.top,
+				Affected: []*osvschema.Affected{
+					{
+						Package: &osvschema.Package{
+							Ecosystem: string(osvconstants.EcosystemPyPI),
+							Name:      "example",
+						},
+						Versions:         []string{"0.0.1"},
+						DatabaseSpecific: tt.affected,
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateVuln() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if tt.wantErr && !errors.Is(err, report.ErrUnexpectedOSV) {
+				t.Errorf("ValidateVuln() error = %v; want error wrapping ErrUnexpectedOSV", err)
+			}
+		})
 	}
 }

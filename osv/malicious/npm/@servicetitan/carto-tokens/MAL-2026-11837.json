@@ -1,0 +1,289 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11837",
+  "published": "2026-08-04T15:27:49Z",
+  "modified": "2026-08-05T06:02:51.569139559Z",
+  "aliases": [
+    "GHSA-28qx-rhw7-pmgg"
+  ],
+  "summary": "Malicious code in @servicetitan/carto-tokens (npm)",
+  "details": "npm/@servicetitan/carto-tokens is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0cda6887df1c74912f107354e60e3803cec29ade1e17f7be2ded614db066af4b)\npackage.json declares scripts.preinstall='node setup.mjs'. setup.mjs is a hex-obfuscated launcher (_0xNNNN identifiers, per-function string-lookup dictionaries) that downloads the Bun runtime from https://github.com/oven-sh/bun/releases/download/bun-v1.3.13, extracts the platform-specific Bun binary to a temp directory, chmods it executable, and invokes it via execFileSync against a sibling file math_init.js. math_init.js is a 727KB Bun-compiled bundle (`// @bun @bun-cjs` header) obfuscated with a rotated string-array (WV8StW rotator + n7gIxM lookup table); its behavior cannot be inspected by Node-based tooling because it runs under the freshly downloaded Bun runtime. The package advertises itself as a design-tokens library that emits JSON/vanilla-extract/motion/react-native assets and has no functional need to fetch a separate JavaScript runtime or execute a compiled bundle at install time. Neither setup.mjs nor math_init.js is included in package.json's files allowlist (which lists only build/vanilla-extract, build/motion, build/react-native, README.md), and the README documents no preinstall step, no Bun download, and no math_init.js — the install-time files are present in the tarball despite not appearing in the declared manifest. The combination of preinstall auto-execution, alternate-runtime evasion of Node-based scanners, heavy obfuscation of both the launcher and the payload, purpose mismatch with the advertised design-token functionality, and files-allowlist smuggling matches an alternate-runtime dropper compromise of the scoped package.\n\n## Source: ghsa-malware (1c43a9c8542d8ccb08fea4a13a1de50fb516b6b47cd70edd280ef6c759f7cb39)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/carto-tokens",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.3.1",
+        "0.3.2",
+        "0.3.3",
+        "0.3.4",
+        "0.3.5",
+        "0.3.6",
+        "0.3.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "46aad79a4091ba3f352b7293f157ffe4d7673f000cfbff41eb42b54c003d62bf",
+              "tlsh": "5f116612c4e64db361dd23e1a8364262a87a4843885c7d0837c69e4d1f8d5cf107eb7e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "carto-tokens-0.3.7.tgz",
+              "hashes": {
+                "sha1": "72314fe4034d947d6e1c098e955e1b3fc6b58530",
+                "sha512_sri": "sha512-OA2y0GWxrEbXUcRrqm5vZeNlon8yTCgzd1JyEwXk9l1S+IYh/QnwQntf2rvm4v2hQj3iWzUB9pL/awdD7O69Iw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-28qx-rhw7-pmgg"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/carto-tokens/v/0.3.3"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-28qx-rhw7-pmgg",
+        "import_time": "2026-08-05T00:10:17.828553265Z",
+        "modified_time": "2026-08-04T16:43:32Z",
+        "sha256": "1c43a9c8542d8ccb08fea4a13a1de50fb516b6b47cd70edd280ef6c759f7cb39",
+        "source": "ghsa-malware",
+        "versions": [
+          "0.3.7",
+          "0.3.6",
+          "0.3.4",
+          "0.3.5",
+          "0.3.3",
+          "0.3.2",
+          "0.3.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012039",
+        "import_time": "2026-08-05T03:12:12.523566842Z",
+        "modified_time": "2026-08-05T03:02:46Z",
+        "sha256": "0cda6887df1c74912f107354e60e3803cec29ade1e17f7be2ded614db066af4b",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012494",
+        "import_time": "2026-08-05T04:38:16.883973359Z",
+        "modified_time": "2026-08-05T04:07:36Z",
+        "sha256": "95521fbb517b849735f26955f30c7a3b92ebb3e12783ff03aed1604581dfa254",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012408",
+        "import_time": "2026-08-05T04:38:07.068848738Z",
+        "modified_time": "2026-08-05T03:55:23Z",
+        "sha256": "d88013cd00d01b267012ca727f49c2abf3033171b27012ee48f0a6f6cf9ca32a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012580",
+        "import_time": "2026-08-05T04:38:27.829715149Z",
+        "modified_time": "2026-08-05T04:20:17Z",
+        "sha256": "314ba9e389fec786851d5a1d8b68ddd14000e69a6219c7f5a9175d9e9f11481b",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012627",
+        "import_time": "2026-08-05T04:38:33.37090778Z",
+        "modified_time": "2026-08-05T04:26:42Z",
+        "sha256": "3d0f2ec4dead257b23b33a05719e2e0c6787c4eff002b0d8be7c831de6a1d71c",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012746",
+        "import_time": "2026-08-05T05:59:59.391401666Z",
+        "modified_time": "2026-08-05T04:43:15Z",
+        "sha256": "28ad87e830331c5df9de45d37b0305b0c7592ab37dd8fcf5aea2f81c9fb0ec5b",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012722",
+        "import_time": "2026-08-05T05:59:56.558307069Z",
+        "modified_time": "2026-08-05T04:39:49Z",
+        "sha256": "5fa5d9bc16ebf97fc8807643053794d315b43a5b22956b8cf5f522e0a9e7cf21",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

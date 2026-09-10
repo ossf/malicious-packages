@@ -1,0 +1,289 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11951",
+  "published": "2026-08-04T15:27:57Z",
+  "modified": "2026-08-05T06:02:51.748170274Z",
+  "aliases": [
+    "GHSA-gvcw-wg5r-hjwg"
+  ],
+  "summary": "Malicious code in @servicetitan/widget-platform-monolith (npm)",
+  "details": "npm/@servicetitan/widget-platform-monolith is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3ca7ec74ea2283bcc91fd4f25bda66d59302382d2f5e3d0b6add78a1b5ee5dcf)\n@servicetitan/widget-platform-monolith 5.6.3 declares `scripts.preinstall: node setup.mjs`. setup.mjs is itself obfuscated (obfuscator.io-style `_0x` identifiers) and, when the Bun runtime is not already present on the host, downloads the Bun binary from `github.com/oven-sh/bun/releases/download/bun-v1.3.13/...zip`, marks it executable, and invokes it via `execFileSync(bunPath, [math_init.js])` to run the sibling file `math_init.js`. math_init.js is a 727 KB heavily obfuscated blob (`// @bun @bun-cjs` header, string-array rotation function, hex `_0xXXXX` identifier scheme) with no source maps or build artifacts explaining its behavior. Running the install-time payload under a freshly downloaded alternate language runtime evades Node-focused inspection. The package advertises itself as a ServiceTitan-scoped wrapper that re-exports `@servicetitan/widget-platform` from `dist/index.js`, providing a benign-looking cover for the preinstall dropper. The pattern — obfuscated preinstall script + download of an alternate runtime + execution of a large obfuscated sibling payload — is install-time remote code execution on any host running `npm install`.\n\n## Source: ghsa-malware (11b05a9539be08ab24e3159fb186f40af8f4af8c9a8cb788bc1b09a80be04b72)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@servicetitan/widget-platform-monolith",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "5.6.1",
+        "5.6.2",
+        "5.6.3",
+        "5.6.4",
+        "5.6.5",
+        "5.6.6",
+        "5.6.7"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "413b88f0c8d4e7b0577d33c3e1d707a4f6a4932ecb8b20d9e62fb9ad68cfb8a3",
+              "tlsh": "9901f710c6a54cf332dd36f15c7b01436a7ad84b4c19be2c26e3a21d078d7eb50bb6a9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "widget-platform-monolith-5.6.5.tgz",
+              "hashes": {
+                "sha1": "f1af1e047e1a5428eb5413da1547004f0362ab69",
+                "sha512_sri": "sha512-mSRWnKtcRJT68xWucGLJdw6F7LTMWPQAPnJv7PFXloZJoynVxrWPTQFsx7KtN8TSeHervVSQG/U83LRVyl26Rw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-gvcw-wg5r-hjwg"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@servicetitan/widget-platform-monolith/v/5.6.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-gvcw-wg5r-hjwg",
+        "import_time": "2026-08-05T00:10:18.083933539Z",
+        "modified_time": "2026-08-04T16:41:42Z",
+        "sha256": "11b05a9539be08ab24e3159fb186f40af8f4af8c9a8cb788bc1b09a80be04b72",
+        "source": "ghsa-malware",
+        "versions": [
+          "5.6.7",
+          "5.6.6",
+          "5.6.5",
+          "5.6.4",
+          "5.6.3",
+          "5.6.2",
+          "5.6.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012563",
+        "import_time": "2026-08-05T04:38:25.756997773Z",
+        "modified_time": "2026-08-05T04:17:49Z",
+        "sha256": "01380fc8dafb5f7b96291f239ce9f8e2c06be406e5e2512737b609925a179afd",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012209",
+        "import_time": "2026-08-05T04:37:43.343125763Z",
+        "modified_time": "2026-08-05T03:27:03Z",
+        "sha256": "180e6fd1b2f24a0999238f3faed96b94330034f7da81b69702b023472b557a83",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012175",
+        "import_time": "2026-08-05T04:37:39.193032571Z",
+        "modified_time": "2026-08-05T03:22:15Z",
+        "sha256": "1abefa1c2fda23177892b32607f97a956fefb9f30a00ac259f1c0e2e283a185e",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012611",
+        "import_time": "2026-08-05T04:38:31.592254204Z",
+        "modified_time": "2026-08-05T04:24:34Z",
+        "sha256": "ba65a84ec4746dceb07e93cc3c8d29f62c37c2f85f2b73b453fa60b9f9b6bada",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012790",
+        "import_time": "2026-08-05T06:00:04.506242666Z",
+        "modified_time": "2026-08-05T04:49:25Z",
+        "sha256": "07089fbe6e9d6c55d49f0b00416a461e630eaf098dd6c40d9bc18a50c375d073",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012708",
+        "import_time": "2026-08-05T05:59:55.001532371Z",
+        "modified_time": "2026-08-05T04:37:50Z",
+        "sha256": "3ca7ec74ea2283bcc91fd4f25bda66d59302382d2f5e3d0b6add78a1b5ee5dcf",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-012858",
+        "import_time": "2026-08-05T06:00:12.769481604Z",
+        "modified_time": "2026-08-05T04:59:26Z",
+        "sha256": "ec5d4efa5a5e335c09035fb261d28408b962e2c1eff5b234ed4909861755c390",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.6.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

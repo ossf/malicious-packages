@@ -1,0 +1,179 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-13739",
+  "published": "2026-08-11T00:00:00Z",
+  "modified": "2026-08-12T06:00:00Z",
+  "summary": "Malicious code in ethereum-vault-connector (npm)",
+  "details": "ethereum-vault-connector is a malicious npm package that impersonates Euler's Ethereum Vault Connector (EVC) protocol. It carries no legitimate functionality; the published tarball contains only a package.json and an install-time payload (index.js). Both `preinstall` and `postinstall` run `node index.js || true`, so the code executes automatically when the package is installed.\n\nVersion 1.0.0 harvests environment variables whose names match `KEY|TOKEN|SECRET|PASS|PRIVATE|MNEMONIC|RPC|AWS|GITHUB|NPM|KUBE|VAULT|AUTH|PGP|GPG|SEED|WALLET`, the contents of `~/.npmrc` and `~/.gitconfig`, and directory listings of `~/.ssh`, `~/.foundry/keystores`, `~/.config/hardhat`, and `~/.config/gcloud`, along with the hostname, username, working directory, and platform. The collected JSON is exfiltrated via an HTTPS POST to `https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09`. Errors are swallowed so the install never visibly fails.\n\nVersion 1.1.0, published roughly 2.5 hours after 1.0.0 for all six packages within the same ~9-second window, reads full file contents (up to 4000 bytes) instead of just listing them. New targets include `.aws/credentials`, `.aws/config`, `.ssh/id_rsa`, `.ssh/id_ed25519`, `.ssh/config`, `.kube/config`, `.docker/config.json`, `.netrc`, `.pgpass`, `.pypirc`, `.git-credentials`, and two GCP credential files (`application_default_credentials.json` and `legacy_credentials`) — the `~/.config/gcloud` directory listing is still collected too. It also reads local `.env`, `.env.local`, `.env.production`, `.env.development`, and `secrets.env` files from the working directory, and adds cryptocurrency wallet theft: key files from Solana, Anchor, NEAR, and Sui wallet paths, plus the first three files under `~/.foundry/keystores`. The credential regex gains BEARER, API, INFURA, ALCHEMY, HELIUS, QUICKNODE, ANKR, and PRIVATE_KEY to catch RPC and API provider tokens. Both versions exfiltrate to the same webhook.site endpoint.\n\nIn 1.0.0, index.js opens with a fake comment claiming it is `@plumenetwork/nest-artifacts`, an unrelated install-time shim — `@plumenetwork/nest-artifacts` is not itself a malicious package, just a leftover label from whatever template the attacker reused across this batch, published by npm account `mssjeep843`. The fake comment was removed in 1.1.0. Five sibling packages from the same account impersonate Euler's EVC, Aerodrome Finance, Camelot AMM, and the BoringVault pattern, sharing this same webhook.site endpoint, byte-identical payload template, and 1.0.0-to-1.1.0 escalation. Two further packages from the same account (PyPI `dlmm` and `dlmm-sdk`, impersonating Meteora's DLMM SDK) ran an equivalent harvester and are tracked separately as MAL-2026-13728 and MAL-2026-13729.\n\nAny environment that installed either version should rotate the exposed secrets and treat harvested keys as compromised, prioritizing wallet private keys and RPC/API tokens if 1.1.0 was installed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e356d2defccd58232dcae91909871df86b18c3ba9adcaf07e0d754a57cf390fc)\nPackage impersonates Euler Labs' 'Ethereum Vault Connector' Solidity project but ships a Node.js credential stealer as index.js, invoked automatically via preinstall and postinstall lifecycle hooks. On install, index.js filters process.env for keys matching KEY/TOKEN/SECRET/PASS/PRIVATE/MNEMONIC/AWS/GITHUB/NPM/WALLET and reads standard installer credential paths (~/.aws/credentials, ~/.ssh/id_rsa, ~/.ssh/id_ed25519, ~/.kube/config, ~/.docker/config.json, ~/.netrc, ~/.npmrc, ~/.git-credentials, ~/.config/gcloud, Solana/Sui/Anchor keys, ~/.foundry/keystores) and local.env files. Collected data is exfiltrated via a detached child node process that sleeps 60-240 seconds (to outlive the install sandbox) and POSTs a JSON body to https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09. The script also bails out when hostname matches scan-/detonation/sandbox/ubuntu-fc-uvm patterns, username is scan/nonroot/sandbox, environment contains honey/canarytokens markers, or the npm registry is a known mirror — sandbox-evasion behavior confirming hostile intent.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "ethereum-vault-connector",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0",
+        "1.1.0",
+        "1.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "1f84c52510b2ce123049e95804a558ddf20ed5f1845c845d64f1ec09528be484",
+              "tlsh": "da4174e712faa1281a52b3c1a7671064a636f242370af9d4a29c15251f8e07c80b39fd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ethereum-vault-connector-1.0.0.tgz",
+              "hashes": {
+                "sha1": "52330d17f7187ce5970b631c553061313c0eb168",
+                "sha512_sri": "sha512-Z+cQTObDb8XOsnNwETIHudHr71sjXGPHLxBMLiCqYGRvepnjcl4lIsToZTlY81494s7Qzk4eARQPN98nZd961g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ethereum-vault-connector/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ethereum-vault-connector/v/1.1.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ethereum-vault-connector/v/1.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ethereum-vault-connector"
+    },
+    {
+      "type": "ARTICLE",
+      "url": "https://o3.security/blog/crypto-defi-npm-supply-chain-attack-npmrc-exfiltration"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "1f84c52510b2ce123049e95804a558ddf20ed5f1845c845d64f1ec09528be484"
+          },
+          "note": "1.0.0 install-time credential harvester (preinstall/postinstall hook)",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "009a250478285559257d9c3f7e254aeb7edc09dbe130ca6e9140e6e23fc18452"
+          },
+          "note": "1.1.0 escalated payload: adds wallet keystore theft (Solana/Anchor/NEAR/Sui), local .env file reads, expanded RPC/API key regex, full credential-file-content reads",
+          "paths": [
+            "package/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://webhook.site/326b0891-2093-4800-a4c1-686ce3e07b09"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-017363",
+        "import_time": "2026-08-11T15:26:48.733057633Z",
+        "modified_time": "2026-08-11T15:17:06Z",
+        "sha256": "50f8dee1a69f5f3fdf5e39bcaedcd4163e389b3963eeb7569fa42711b6d56724",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017356",
+        "import_time": "2026-08-11T15:26:48.019376006Z",
+        "modified_time": "2026-08-11T15:14:40Z",
+        "sha256": "99623b96d87eb7341efce9b7278926faae4b631167a46d73c49b2785d3cb7863",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-017359",
+        "import_time": "2026-08-11T15:26:48.289073998Z",
+        "modified_time": "2026-08-11T15:16:15Z",
+        "sha256": "e356d2defccd58232dcae91909871df86b18c3ba9adcaf07e0d754a57cf390fc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "O3 Security",
+      "contact": [
+        "https://o3.security"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ]
+}

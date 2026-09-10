@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-20T00:00:00Z",
-  "published": "2026-07-20T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10944",
+  "published": "2026-07-20T00:00:00Z",
+  "modified": "2026-08-04T21:35:15.176184921Z",
   "summary": "Malicious code in zer0onetencent (npm)",
-  "details": "The zer0onetencent package was published to the npm registry by user 't2423048543' (maintainer email t2423048543@gmail.com). It is described as 'A simple date formatting utility' but ships no such functionality; index.js only exports a hello() stub returning the package name, indicating a package created to deliver an install-time payload.\n\nThe package.json declares a postinstall hook (\"node postinstall.js\") that runs automatically at npm install time. The bundled postinstall.js embeds a shell command chain that performs cloud-metadata SSRF and credential/environment harvesting: it queries a public IP echo service (http://cip.cc), probes a Meituan/Sankuai internal SSRF test endpoint (https://mtsrc-test.sankuai.com/ssrf), requests AWS EC2 instance metadata credentials for the IAM role 'sandyclaw-canary-worker-role' (http://169.254.169.254/latest/meta-data/iam/security-credentials/sandyclaw-canary-worker-role), and reads Tencent Cloud metadata (http://metadata.tencentyun.com/latest/meta-data/ and http://169.254.0.23/latest/meta-data/). It then reads the installing process's environment via /proc/self/environ and exfiltrates the concatenated output, together with a directory listing of /data/, by HTTP POST to the attacker-controlled Burp Collaborator endpoint http://t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com (paths /metadata and /data).\n\nAs shipped, the malicious command chain is stored inside postinstall.js as a JSON document (a copy of a package manifest) rather than as executable JavaScript, so the 'node postinstall.js' hook raises a syntax error and the embedded payload does not execute as-published; the intent and payload are nonetheless unambiguously malicious. A sibling package (zer0onetencent2) by the same maintainer carries an identical payload differing only in the Collaborator subdomain.",
+  "details": "The zer0onetencent package was published to the npm registry by user 't2423048543' (maintainer email t2423048543@gmail.com). It is described as 'A simple date formatting utility' but ships no such functionality; index.js only exports a hello() stub returning the package name, indicating a package created to deliver an install-time payload.\n\nThe package.json declares a postinstall hook (\"node postinstall.js\") that runs automatically at npm install time. The bundled postinstall.js embeds a shell command chain that performs cloud-metadata SSRF and credential/environment harvesting: it queries a public IP echo service (http://cip.cc), probes a Meituan/Sankuai internal SSRF test endpoint (https://mtsrc-test.sankuai.com/ssrf), requests AWS EC2 instance metadata credentials for the IAM role 'sandyclaw-canary-worker-role' (http://169.254.169.254/latest/meta-data/iam/security-credentials/sandyclaw-canary-worker-role), and reads Tencent Cloud metadata (http://metadata.tencentyun.com/latest/meta-data/ and http://169.254.0.23/latest/meta-data/). It then reads the installing process's environment via /proc/self/environ and exfiltrates the concatenated output, together with a directory listing of /data/, by HTTP POST to the attacker-controlled Burp Collaborator endpoint http://t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com (paths /metadata and /data).\n\nAs shipped, the malicious command chain is stored inside postinstall.js as a JSON document (a copy of a package manifest) rather than as executable JavaScript, so the 'node postinstall.js' hook raises a syntax error and the embedded payload does not execute as-published; the intent and payload are nonetheless unambiguously malicious. A sibling package (zer0onetencent2) by the same maintainer carries an identical payload differing only in the Collaborator subdomain.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (db63abb2f3fa01d1de98c5b63e2b7cde88f35ddb18a752e670dc982fc0ddcc89)\nThe package is presented as 'A simple date formatting utility' with a trivial index.js exporting a hello() function, but its postinstall lifecycle script executes a shell one-liner that queries cloud instance metadata services — the AWS IMDS role credentials endpoint at 169.254.169.254 (path /latest/meta-data/iam/security-credentials/sandyclaw-canary-worker-role), the Tencent Cloud metadata service at metadata.tencentyun.com, and an additional internal SSRF endpoint — writes the responses to /tmp, reads /proc/self/environ, then POSTs the aggregated output to the hardcoded Burp Collaborator subdomain t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com. Running on cloud build infrastructure yields short-lived IAM/STS credentials and installer environment variables to the operator of that collaborator host. The stated package purpose is a decoy for the install-time credential-harvest behavior.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "zer0onetencent"
+        "name": "zer0onetencent",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -21,14 +21,45 @@
           ]
         }
       ],
+      "versions": [
+        "1.0.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
         ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "postinstall.js",
+              "sha256": "c629b2e94bb301b3fc4c43192e5f40a4c88fcfa8d05d4224495d4b4a3908b768",
+              "tlsh": "d6014ed92261b9736dc29e79e376034bb400f8472ec05b95c1d518f0898d671b255b1e"
+            },
+            {
+              "path": "package.json",
+              "sha256": "f64b7a56d6c48b30fa95cafb22515f570b3a3ebd1d45fd82089787338caa127f",
+              "tlsh": "2dd0a7144d105a336bd496a99da3490bbe219e1b024c7c1d23db255c83dfab3c4fe31e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "zer0onetencent-1.0.0.tgz",
+              "hashes": {
+                "sha1": "9a42071550142f23fc3faf4b2993b796b382ec51",
+                "sha512_sri": "sha512-1d8UlS/qCcFq6F50GnXtXBb/Q9HKHhqX1LLCAC7ae+kW8S5747t9hmYm6mnggi/Smx28golLnVmasddu6JcKRA=="
+              }
+            }
+          ]
+        },
         "iocs": {
           "domains": [
             "t5z0g2hzoydgi8mz3pfkzg8dm4svgl4a.oastify.com"
@@ -45,18 +76,40 @@
     {
       "type": "WEB",
       "url": "https://www.npmjs.com/package/zer0onetencent"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "SafeDep",
-      "type": "FINDER",
-      "contact": [
-        "https://safedep.io"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zer0onetencent/v/1.0.0"
     }
   ],
   "database_specific": {
-    "malicious-packages-origins": null
-  }
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-011001",
+        "import_time": "2026-08-04T21:33:13.059427548Z",
+        "modified_time": "2026-08-04T21:17:57Z",
+        "sha256": "db63abb2f3fa01d1de98c5b63e2b7cde88f35ddb18a752e670dc982fc0ddcc89",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

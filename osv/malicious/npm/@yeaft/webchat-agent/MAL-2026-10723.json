@@ -1,21 +1,897 @@
 {
-  "modified": "2026-07-16T18:44:35Z",
-  "published": "2026-07-16T18:44:35Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10723",
+  "published": "2026-07-16T18:44:35Z",
+  "modified": "2026-08-06T13:11:06.613206736Z",
   "summary": "Malicious code in @yeaft/webchat-agent (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f9c505d42f1b2b4f64592abbf753ebf4b8eb5e11d359bc4fb8b8a9a9db3ec36e)\nOn startup the agent opens a WebSocket to a configurable server (SERVER_URL / config.serverUrl, default ws://localhost:3456) and dispatches server-originated messages to handlers on the installer's host. `handleTerminalCreate` spawns the user's login shell via node-pty (`pty.spawn(shell,...)`) and `handleTerminalInput` writes bytes from the WebSocket directly into that PTY (`term.pty.write(msg.data)`), giving whoever controls the endpoint an interactive shell on the host. The same router exposes `read_file`, `write_file`, `delete_files`, `git_push`, and `upgrade_agent` operations, and installs a persistent systemd/launchd/pm2 service via service/*.js so the channel is re-established across reboots. The `upgrade_agent` message writes a detached bash/VBScript that runs `npm install @yeaft/webchat-agent@latest` and restarts the service, letting the remote party force a reinstall and restart on demand. Because `serverUrl` can be pointed at any host, an installer that connects to (or is MITM'd onto) a hostile endpoint exposes full-host remote code execution and persistence. A separate startup path git-clones https://github.com/yeaft/yeaft-skills.git (unpinned default-branch HEAD) into ~/.claude/plugins/marketplaces/yeaft-skills-dev and enables it in ~/.claude/settings.json, silently registering a mutable-HEAD plugin into Claude Code's plugin system on every run.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b627f9a4ff0aaacfcd612224f76fe679e9d0a04578519d75516136e7496aad43)\nThe package installs itself as a user-level service (systemd on Linux via service/linux.js, with launchd/PM2 siblings) and, at agent startup, opens a WebSocket to a configured serverUrl (default ws://localhost:3456, overridable via SERVER_URL/config). The WebSocket message router in connection/message-router.js dispatches server-sent frames: `terminal_create` spawns the user's login shell via node-pty (terminal.js: `pty.spawn(shell,...)`) in the agent's workDir, and `terminal_input` writes the server's `msg.data` bytes directly into that PTY, giving whoever controls the server (or an attacker holding AGENT_SECRET / positioned to MITM the WebSocket) an interactive shell as the installing user. An `upgrade_agent` message handled by connection/upgrade.js runs `npm install @yeaft/webchat-agent@latest --registry=https://pkg.yeaft.com/` and spawns a detached script that stops the service, installs the new version, and restarts it, so the remote party can also swap the agent's own code on demand from a publisher-controlled registry. On every startup, index.js additionally git-clones https://github.com/yeaft/yeaft-skills.git from the mutable `main` branch into ~/.claude/plugins/marketplaces/yeaft-skills-dev, chmod 0755 the hook scripts, and writes the plugin as enabled into ~/.claude/settings.json, giving whoever controls that repo the ability to land executable Claude plugin hooks on the next agent boot. The service/linux.js unit also prepends ~/.local/bin and ~/.npm-global/bin to PATH in the service environment. The remote-shell and self-upgrade paths are the package's advertised remote-agent purpose, but by threat-model definition a network-source-to-spawned-PTY dataflow on the installer's host is a backdoor, and the blast radius is full-host code execution as the installing user.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@yeaft/webchat-agent"
+        "name": "@yeaft/webchat-agent",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.171"
+        "1.0.171",
+        "1.0.199",
+        "1.0.325",
+        "1.0.376",
+        "1.0.189",
+        "1.0.283",
+        "1.0.252",
+        "1.0.238",
+        "1.0.243",
+        "1.0.282",
+        "1.0.216",
+        "1.0.184",
+        "1.0.352",
+        "1.0.329",
+        "1.0.361",
+        "1.0.281",
+        "1.0.217",
+        "1.0.188",
+        "1.0.312",
+        "1.0.350",
+        "1.0.253",
+        "1.0.355",
+        "1.0.300",
+        "1.0.206",
+        "1.0.257",
+        "1.0.226",
+        "1.0.337",
+        "1.0.309",
+        "1.0.273",
+        "1.0.311",
+        "1.0.269",
+        "1.0.289",
+        "1.0.258",
+        "1.0.222",
+        "1.0.374",
+        "1.0.224",
+        "1.0.351",
+        "1.0.336",
+        "1.0.335",
+        "1.0.242",
+        "1.0.307",
+        "1.0.172",
+        "1.0.228",
+        "1.0.219",
+        "1.0.321",
+        "1.0.249",
+        "1.0.211",
+        "1.0.371",
+        "1.0.368",
+        "1.0.244",
+        "1.0.262",
+        "1.0.344",
+        "1.0.180",
+        "1.0.237",
+        "1.0.334",
+        "1.0.323",
+        "1.0.250",
+        "1.0.315",
+        "1.0.298",
+        "1.0.354",
+        "1.0.227",
+        "1.0.332",
+        "1.0.274",
+        "1.0.182",
+        "1.0.378",
+        "1.0.245",
+        "1.0.369",
+        "1.0.192",
+        "1.0.194",
+        "1.0.220",
+        "1.0.338",
+        "1.0.296",
+        "1.0.232",
+        "1.0.367",
+        "1.0.202",
+        "1.0.310",
+        "1.0.324",
+        "1.0.341",
+        "1.0.308",
+        "1.0.255",
+        "1.0.364",
+        "1.0.198",
+        "1.0.204",
+        "1.0.247",
+        "1.0.277",
+        "1.0.290",
+        "1.0.203",
+        "1.0.263",
+        "1.0.201",
+        "1.0.254",
+        "1.0.288",
+        "1.0.278",
+        "1.0.349",
+        "1.0.183",
+        "1.0.235",
+        "1.0.175",
+        "1.0.260",
+        "1.0.365",
+        "1.0.285",
+        "1.0.239",
+        "1.0.295",
+        "1.0.353",
+        "1.0.331",
+        "1.0.193",
+        "1.0.384",
+        "1.0.185",
+        "1.0.342",
+        "1.0.240",
+        "1.0.304",
+        "1.0.246",
+        "1.0.287",
+        "1.0.292",
+        "1.0.173",
+        "1.0.264",
+        "1.0.359",
+        "1.0.195",
+        "1.0.316",
+        "1.0.377",
+        "1.0.234",
+        "1.0.267",
+        "1.0.210",
+        "1.0.270",
+        "1.0.314",
+        "1.0.363",
+        "1.0.181",
+        "1.0.221",
+        "1.0.293",
+        "1.0.233",
+        "1.0.214",
+        "1.0.373",
+        "1.0.333",
+        "1.0.200",
+        "1.0.356",
+        "1.0.190",
+        "1.0.207",
+        "1.0.284",
+        "1.0.317",
+        "1.0.294",
+        "1.0.272",
+        "1.0.186",
+        "1.0.271",
+        "1.0.348",
+        "1.0.191",
+        "1.0.357",
+        "1.0.213",
+        "1.0.347",
+        "1.0.265"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,15 +933,590 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.171"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.199"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.325"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.376"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.189"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.283"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.252"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.238"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.243"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.282"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.216"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.184"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.352"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.329"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.361"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.281"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.217"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.188"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.312"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.350"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.253"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.355"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.300"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.206"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.257"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.226"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.337"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.309"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.273"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.311"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.269"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.289"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.258"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.222"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.374"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.224"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.351"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.336"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.335"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.242"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.307"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.172"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.228"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.219"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.321"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.249"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.211"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.371"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.368"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.244"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.262"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.344"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.180"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.237"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.334"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.323"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.250"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.315"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.298"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.354"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.227"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.332"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.274"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.182"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.378"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.245"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.369"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.192"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.194"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.220"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.338"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.296"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.232"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.367"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.202"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.310"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.324"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.341"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.308"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.255"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.364"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.198"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.204"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.247"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.277"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.290"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.203"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.263"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.201"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.254"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.288"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.278"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.349"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.183"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.235"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.175"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.260"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.365"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.285"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.239"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.295"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.353"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.331"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.193"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.384"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.185"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.342"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.240"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.304"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.246"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.287"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.292"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.173"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.264"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.359"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.195"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.316"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.377"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.234"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.267"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.210"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.270"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.314"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.363"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.181"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.221"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.293"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.233"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.214"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.373"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.333"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.200"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.356"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.190"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.207"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.284"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.317"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.294"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.272"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.186"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.271"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.348"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.191"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.357"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.213"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.347"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yeaft/webchat-agent/v/1.0.265"
     }
   ],
   "database_specific": {
@@ -79,7 +1530,1476 @@
         "versions": [
           "1.0.171"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-016147",
+        "import_time": "2026-08-06T13:08:54.754380436Z",
+        "modified_time": "2026-08-06T12:38:26Z",
+        "sha256": "33b778da32a0c5667c3de8b8e4977f8ae4671aa083f67767fd1fdd089089ea89",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.199"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016198",
+        "import_time": "2026-08-06T13:09:00.699655075Z",
+        "modified_time": "2026-08-06T12:45:56Z",
+        "sha256": "7e2527684f4a813f20bfe36628f34c2070fd5210ea2a8bbfe5265e6d8585b202",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.325"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016179",
+        "import_time": "2026-08-06T13:08:58.418620619Z",
+        "modified_time": "2026-08-06T12:43:13Z",
+        "sha256": "9c75919016ed23e3c910aed1f3d824dd9427f15371439eb078ba6ab2f8b9e09b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.376"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016243",
+        "import_time": "2026-08-06T13:09:05.968712886Z",
+        "modified_time": "2026-08-06T12:52:39Z",
+        "sha256": "e15f0c75b2694053c5b628652524e29bf6d3ddb3a54b272abbaca6d2c0bbe88d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.189"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016126",
+        "import_time": "2026-08-06T13:08:52.106662646Z",
+        "modified_time": "2026-08-06T12:35:20Z",
+        "sha256": "f18eb33b0bdb22e5426fae7236dd3e406209aa449f919d6e35d201c0f94d3277",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.283"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016162",
+        "import_time": "2026-08-06T13:08:56.502818642Z",
+        "modified_time": "2026-08-06T12:40:47Z",
+        "sha256": "64cb30813b097f9f3f50eeffa5c6d2fa989b2dba89da3570fabb92cacd1f9310",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.252"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016223",
+        "import_time": "2026-08-06T13:09:03.429526875Z",
+        "modified_time": "2026-08-06T12:49:43Z",
+        "sha256": "ad6f905420baf884b473ce3fc74be281a3626c2a3450750c7f5f6f18fcca5060",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.238"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016136",
+        "import_time": "2026-08-06T13:08:53.595627874Z",
+        "modified_time": "2026-08-06T12:36:49Z",
+        "sha256": "2986b0d302ac89e9bec1217f54fa84219307ad86295a6aafca7a021d8ca5c225",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.243"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016157",
+        "import_time": "2026-08-06T13:08:55.921961923Z",
+        "modified_time": "2026-08-06T12:40:02Z",
+        "sha256": "298e93d47cc0282375f45e790343459e1f422f8b557d56145396276d373f98f0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.282"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016163",
+        "import_time": "2026-08-06T13:08:56.617249335Z",
+        "modified_time": "2026-08-06T12:40:57Z",
+        "sha256": "589f10d346dfe9c5d8a941854549e92ade1ea7ad4bbb7a5f7e9bdb05177e507f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.216"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016149",
+        "import_time": "2026-08-06T13:08:55.003562126Z",
+        "modified_time": "2026-08-06T12:38:46Z",
+        "sha256": "69fc43bff470970b1503e429a3796ce60e73bbd1937ca21419ad0d3b3aca9441",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.184"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016187",
+        "import_time": "2026-08-06T13:08:59.433343538Z",
+        "modified_time": "2026-08-06T12:44:20Z",
+        "sha256": "811c262b4394aaae788f40c2bc41ec8473f82266ba52353b3f45bb2a4b677df4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.352"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016195",
+        "import_time": "2026-08-06T13:09:00.402227573Z",
+        "modified_time": "2026-08-06T12:45:32Z",
+        "sha256": "8d2831f618fa6a1abed49b941f062c6d0bc78ab3cbf7a5ebfc931a73a24d37f4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.329"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016182",
+        "import_time": "2026-08-06T13:08:58.779671332Z",
+        "modified_time": "2026-08-06T12:43:38Z",
+        "sha256": "d189d08de5c09496e0021db92dffdf429d48f677be453290bc3f2db13e2f7396",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.361"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016127",
+        "import_time": "2026-08-06T13:08:52.191573707Z",
+        "modified_time": "2026-08-06T12:35:27Z",
+        "sha256": "5614b6892db6d5cd87a80f4b7c959f07f9d80c899abf0a4966778bcda697841b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.281"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016144",
+        "import_time": "2026-08-06T13:08:54.43091732Z",
+        "modified_time": "2026-08-06T12:38:00Z",
+        "sha256": "73f348b0136b9fcb79e1c204baacc5a0ee0886d8da0b761c815bf164e4210017",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.217"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016167",
+        "import_time": "2026-08-06T13:08:57.057498118Z",
+        "modified_time": "2026-08-06T12:41:31Z",
+        "sha256": "9d2f74da99ed50c42364e31510481083ec2c484f6c8d90ac890637d8e63f167b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.188"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016154",
+        "import_time": "2026-08-06T13:08:55.493986214Z",
+        "modified_time": "2026-08-06T12:39:30Z",
+        "sha256": "bd7d5d82753b48a92fc5a6cb061882c6b9df9e5fa6f13e0d4fa307b0eb1ab915",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.312"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016171",
+        "import_time": "2026-08-06T13:08:57.578931046Z",
+        "modified_time": "2026-08-06T12:42:07Z",
+        "sha256": "f16e8c0e8a95514e893956ed485af038b4f00a4c7ccf63c48082a751983e22f5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.350"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016219",
+        "import_time": "2026-08-06T13:09:03.026572035Z",
+        "modified_time": "2026-08-06T12:49:08Z",
+        "sha256": "fa8716295f5b552a90444673baab4a45422daeefc883218f7180e338b9d0875a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.253"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016186",
+        "import_time": "2026-08-06T13:08:59.345358437Z",
+        "modified_time": "2026-08-06T12:44:10Z",
+        "sha256": "6ff89601c79eacdf386793388366b71de8b0c96f08df5b337fb6fe9573a6af83",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.355"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016205",
+        "import_time": "2026-08-06T13:09:01.438254849Z",
+        "modified_time": "2026-08-06T12:47:00Z",
+        "sha256": "8c75729bbaa740bc25ab9be7bb238859366bf2b76eff58e7e10081f5d3f65fa3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.300"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016237",
+        "import_time": "2026-08-06T13:09:05.177511706Z",
+        "modified_time": "2026-08-06T12:51:48Z",
+        "sha256": "eefdfe914f8269e793891fba1c2243083a85a5c495b503c1d593748a8b6125ce",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.206"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016221",
+        "import_time": "2026-08-06T13:09:03.225628432Z",
+        "modified_time": "2026-08-06T12:49:26Z",
+        "sha256": "bc4f330768767c88d56b08bc700b73fdc4bbebc3cb5862d7548548889132e90c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.257"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016226",
+        "import_time": "2026-08-06T13:09:03.7685466Z",
+        "modified_time": "2026-08-06T12:50:11Z",
+        "sha256": "e2cb1435054f49d99209a6fb102528fc747ccca601b18d06abb722d0c431e030",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.226"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016191",
+        "import_time": "2026-08-06T13:08:59.93081024Z",
+        "modified_time": "2026-08-06T12:44:56Z",
+        "sha256": "0a9ea609294c5b66dd8e0a3e1038bde9dd6e2a9e8e2f1f64a6cc5d5867e39b04",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.337"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016203",
+        "import_time": "2026-08-06T13:09:01.215463765Z",
+        "modified_time": "2026-08-06T12:46:43Z",
+        "sha256": "17735c06e6a0c9246928be9ee33c60d5bdec672a7d73e9a7d655be210f49af3a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.309"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016215",
+        "import_time": "2026-08-06T13:09:02.554490943Z",
+        "modified_time": "2026-08-06T12:48:34Z",
+        "sha256": "38cea81a640dcf247489c84eaca644f3b1ea4349c8fdfcfc5558729e85ca124f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.273"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016119",
+        "import_time": "2026-08-06T13:08:51.371134968Z",
+        "modified_time": "2026-08-06T12:34:18Z",
+        "sha256": "dee1cd18722cbe6cfccc5dac2947e0a061187b6505e2a89d7ebd015eea26af81",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.311"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016156",
+        "import_time": "2026-08-06T13:08:55.817007453Z",
+        "modified_time": "2026-08-06T12:39:52Z",
+        "sha256": "f4ba1e34c7c370d33c6098ec48c82d59878b9d83de797cc6f5fe8c666d542afe",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.269"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016123",
+        "import_time": "2026-08-06T13:08:51.806829961Z",
+        "modified_time": "2026-08-06T12:34:54Z",
+        "sha256": "f9bcc76a17d0194327c1204bf0ebaff3bcb449e06a4d314db613182c56ffb10e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.289"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016178",
+        "import_time": "2026-08-06T13:08:58.316773563Z",
+        "modified_time": "2026-08-06T12:43:06Z",
+        "sha256": "30c9f487f5b8f00173843c4367fd588a3c2b04f6f734964de57282f564ae0a28",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.258"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016228",
+        "import_time": "2026-08-06T13:09:04.070411015Z",
+        "modified_time": "2026-08-06T12:50:33Z",
+        "sha256": "41edd5be14320bf38909554ed070a0083d238ae162369556fcf8b1b711488689",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.222"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016113",
+        "import_time": "2026-08-06T13:08:50.746181833Z",
+        "modified_time": "2026-08-06T12:33:22Z",
+        "sha256": "a2ec39672c13846d75fd3d4573db84687999d848631be33dce343f7aab714f84",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.374"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016227",
+        "import_time": "2026-08-06T13:09:03.911054084Z",
+        "modified_time": "2026-08-06T12:50:21Z",
+        "sha256": "b29f3c60439f7959dd1c2de3746e6eaaa0ad3b6155fb1728ad1ff78af573ccaf",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.224"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016184",
+        "import_time": "2026-08-06T13:08:59.127285185Z",
+        "modified_time": "2026-08-06T12:43:55Z",
+        "sha256": "c00348a15eaf91093f322670d76e517198511d1c84d8e774e8cd3596e60fc951",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.351"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016192",
+        "import_time": "2026-08-06T13:09:00.038378838Z",
+        "modified_time": "2026-08-06T12:45:04Z",
+        "sha256": "a635dff70c2935fdfded9c6b8d76ac96f8288b4578562b12ee557dda732be019",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.336"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016117",
+        "import_time": "2026-08-06T13:08:51.145892816Z",
+        "modified_time": "2026-08-06T12:33:59Z",
+        "sha256": "d0a4219535ebfc83c52eaa6d8868219b3c97d4dcc6fe3a3a1158bf2e8c5a9453",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.335"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016139",
+        "import_time": "2026-08-06T13:08:53.90474583Z",
+        "modified_time": "2026-08-06T12:37:13Z",
+        "sha256": "5c67e653cb60839af45b8cdca0cfd83652216d3c8c1b8521196164db006436d8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.242"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016202",
+        "import_time": "2026-08-06T13:09:01.121089184Z",
+        "modified_time": "2026-08-06T12:46:34Z",
+        "sha256": "7a969452aa7ce3082854e4ff1d3bf7d4512761c6644a5f75f370c14c12f69ed5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.307"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016249",
+        "import_time": "2026-08-06T13:09:06.665395886Z",
+        "modified_time": "2026-08-06T12:53:29Z",
+        "sha256": "7f1cbaae88a6db28295b3a53a6723fa2cfe31800f635e2be29dcdc1bf0cd83cc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.172"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016160",
+        "import_time": "2026-08-06T13:08:56.304282781Z",
+        "modified_time": "2026-08-06T12:40:31Z",
+        "sha256": "92c3725483fc7ca4e7f19a0dab06aa1345dacb0f22a12a325020c29859943d78",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.228"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016232",
+        "import_time": "2026-08-06T13:09:04.48903068Z",
+        "modified_time": "2026-08-06T12:51:05Z",
+        "sha256": "bc21c9b9451bc3fdbb54a37f1031fc72cd086213584b0763b7a39814d751f663",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.219"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016118",
+        "import_time": "2026-08-06T13:08:51.282493057Z",
+        "modified_time": "2026-08-06T12:34:09Z",
+        "sha256": "c7dcb3646977b816fa572c54cf9fbd237ef6042903e805a22b808d05ec6a4aed",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.321"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016133",
+        "import_time": "2026-08-06T13:08:53.292627233Z",
+        "modified_time": "2026-08-06T12:36:21Z",
+        "sha256": "ca1520ccf58fe11d2fc7c7cd75f6d0fb64d9f0c84635e114ec3e0feb110c63a1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.249"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016230",
+        "import_time": "2026-08-06T13:09:04.285749136Z",
+        "modified_time": "2026-08-06T12:50:49Z",
+        "sha256": "e201a70c8e84e6e65a5de281e5b6135dc20cc09e088af6c0e39c5a8b515ecd99",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.211"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016110",
+        "import_time": "2026-08-06T13:08:50.368559625Z",
+        "modified_time": "2026-08-06T12:32:58Z",
+        "sha256": "1ce4d2d1b0dc3219ca2ce785c5383056a5a5af62e1c9ae99147fc792fcbe98e4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.371"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016175",
+        "import_time": "2026-08-06T13:08:58.003564368Z",
+        "modified_time": "2026-08-06T12:42:41Z",
+        "sha256": "1daa2421440bb2fc6c5ba5eb8ce07bf2e034ed4d4f33013fe8a7279178ff145f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.368"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016134",
+        "import_time": "2026-08-06T13:08:53.393661215Z",
+        "modified_time": "2026-08-06T12:36:30Z",
+        "sha256": "49e62bb8a94e11922054f0720415e80cfb15d17971640a8567596132360c15cd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.244"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016129",
+        "import_time": "2026-08-06T13:08:52.4180973Z",
+        "modified_time": "2026-08-06T12:35:45Z",
+        "sha256": "4cb64360a29ffdc00401086288860abcabda1a5565da214ddc6b7e8e7c5ebcaa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.262"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016115",
+        "import_time": "2026-08-06T13:08:50.935668385Z",
+        "modified_time": "2026-08-06T12:33:42Z",
+        "sha256": "611c476852225254a539efd69a77bb2323ec80669d004372deb22881e29ef708",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.344"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016247",
+        "import_time": "2026-08-06T13:09:06.391477544Z",
+        "modified_time": "2026-08-06T12:53:13Z",
+        "sha256": "8c70d8f3de832fd5a3716ce6abfe244e77ee160c50d39bdb9d4800b3c7314e48",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.180"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016225",
+        "import_time": "2026-08-06T13:09:03.677993476Z",
+        "modified_time": "2026-08-06T12:50:03Z",
+        "sha256": "a87309b8944d3d95c22535ac38219eb5f71c8ea06d8e6990aba6b58f4889324e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.237"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016190",
+        "import_time": "2026-08-06T13:08:59.818022511Z",
+        "modified_time": "2026-08-06T12:44:48Z",
+        "sha256": "f34d7a0a1b1c67a797884174818b3ff937f22800d70fe1e39d686f4b0c0e0f11",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.334"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016196",
+        "import_time": "2026-08-06T13:09:00.497787355Z",
+        "modified_time": "2026-08-06T12:45:40Z",
+        "sha256": "77a09492f35d6043efb9d5e12364b35d47fcccbe3a59d0c1d345af0fb04b3146",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.323"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016137",
+        "import_time": "2026-08-06T13:08:53.696495246Z",
+        "modified_time": "2026-08-06T12:36:55Z",
+        "sha256": "98c4c3f263cb56d9185c31d984d19ebb864817858864f999a0d9b92c69ffd2c4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.250"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016200",
+        "import_time": "2026-08-06T13:09:00.907296167Z",
+        "modified_time": "2026-08-06T12:46:14Z",
+        "sha256": "fe8480f4acb4d89c93b017bf3f04886466efb6bb136448cfafe17e9605cf4f61",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.315"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016122",
+        "import_time": "2026-08-06T13:08:51.707168256Z",
+        "modified_time": "2026-08-06T12:34:47Z",
+        "sha256": "4dcb6be662a2cc4e97328918cfd545157ec22a2f36fa97a9bf495ba318e3495c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.298"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016188",
+        "import_time": "2026-08-06T13:08:59.617384401Z",
+        "modified_time": "2026-08-06T12:44:28Z",
+        "sha256": "e5d390ddf7aac65a610912575e5d87ded8d013ffa6d616c0c1f2db84e0bf583a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.354"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016143",
+        "import_time": "2026-08-06T13:08:54.328441452Z",
+        "modified_time": "2026-08-06T12:37:49Z",
+        "sha256": "f1fa7954adb4fedab766d73e67c7a932889bd87665defb834a928ef252877cc5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.227"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016194",
+        "import_time": "2026-08-06T13:09:00.262256964Z",
+        "modified_time": "2026-08-06T12:45:21Z",
+        "sha256": "a9f6bdf2d71454e798b69ed507f64868ef9306fa22b0692c37e290e76d6a06d7",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.332"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016214",
+        "import_time": "2026-08-06T13:09:02.447259407Z",
+        "modified_time": "2026-08-06T12:48:21Z",
+        "sha256": "f82fe4172b40175ca40d87e5c7a7f5be4553ae4faef68cbf69643dc9298474c5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.274"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016246",
+        "import_time": "2026-08-06T13:09:06.27922668Z",
+        "modified_time": "2026-08-06T12:53:06Z",
+        "sha256": "e69636ed5debee1dff951d25a1e21595bbb374c58cd3d936336c21e6073da01f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.182"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016112",
+        "import_time": "2026-08-06T13:08:50.654347659Z",
+        "modified_time": "2026-08-06T12:33:13Z",
+        "sha256": "181c670d196d28a939808ff9540813e90c443901629f26d202ceabe0f54ce779",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.378"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016220",
+        "import_time": "2026-08-06T13:09:03.126610109Z",
+        "modified_time": "2026-08-06T12:49:16Z",
+        "sha256": "86d7eb814915eb0cdb94af137686f72d71d2feb917228e44b10bd51a5f8d292b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.245"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016152",
+        "import_time": "2026-08-06T13:08:55.31687768Z",
+        "modified_time": "2026-08-06T12:39:15Z",
+        "sha256": "caa47a79eada099b4437b873d0c7ce2e8e3879518b23503aa6d8a1d7296db204",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.369"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016244",
+        "import_time": "2026-08-06T13:09:06.06464614Z",
+        "modified_time": "2026-08-06T12:52:47Z",
+        "sha256": "cb3ac783678741484dc9efd7e832a6c9df6b10b6a50f2130457553acbfb5e27d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.192"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016241",
+        "import_time": "2026-08-06T13:09:05.696475832Z",
+        "modified_time": "2026-08-06T12:52:23Z",
+        "sha256": "fa92dd4f2846f6adf573b64c17da6b54bbd2930ca65b7e9f8622505d17c44163",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.194"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016231",
+        "import_time": "2026-08-06T13:09:04.392469332Z",
+        "modified_time": "2026-08-06T12:50:58Z",
+        "sha256": "02a791c2f11f3a86e1a1df11b0c7d1aae38ef38b79dd9b5b2a1262e647b7f01f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.220"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016189",
+        "import_time": "2026-08-06T13:08:59.706960328Z",
+        "modified_time": "2026-08-06T12:44:37Z",
+        "sha256": "3ebac0904d03a7c77d1c78cda1899600e8dc90a6c41eca42e3ae02f05a63923c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.338"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016207",
+        "import_time": "2026-08-06T13:09:01.687559437Z",
+        "modified_time": "2026-08-06T12:47:19Z",
+        "sha256": "63134f5a323d0f7de955d29bc2b636ccdb5bbbdf4a6869b5d240ece0bfe4a0dd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.296"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016140",
+        "import_time": "2026-08-06T13:08:54.008922465Z",
+        "modified_time": "2026-08-06T12:37:21Z",
+        "sha256": "b4b9c707564c00076db8aa23069d5399d9b65adf4a7f427c52e5348133b67452",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.232"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016111",
+        "import_time": "2026-08-06T13:08:50.488411381Z",
+        "modified_time": "2026-08-06T12:33:05Z",
+        "sha256": "3300485406f06837a287c25e565497eb6555324800f627ea9fed39f6995976b4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.367"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016235",
+        "import_time": "2026-08-06T13:09:04.857102497Z",
+        "modified_time": "2026-08-06T12:51:32Z",
+        "sha256": "eef87bc32f57ff0ae2212e1711a63be04d54d62cc4419ebe1bebd5e77e9a1deb",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.202"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016120",
+        "import_time": "2026-08-06T13:08:51.47067804Z",
+        "modified_time": "2026-08-06T12:34:29Z",
+        "sha256": "f00a6eb32136809e16cc231a9e8a987528163126a3c9af0aed109ca92fac6c94",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.310"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016197",
+        "import_time": "2026-08-06T13:09:00.601701136Z",
+        "modified_time": "2026-08-06T12:45:48Z",
+        "sha256": "b7e794d2204252d41c828d5882b5e2244c5bb79d6f616585a8e4b8be8c8350e3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.324"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016253",
+        "import_time": "2026-08-06T13:09:07.150245718Z",
+        "modified_time": "2026-08-06T12:54:05Z",
+        "sha256": "c320b12367beb845b969e977c16c67a25f4274f0c9ae3966353fdcf2643ea959",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.341"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016124",
+        "import_time": "2026-08-06T13:08:51.917377557Z",
+        "modified_time": "2026-08-06T12:35:04Z",
+        "sha256": "f69d802fffcaea270d23d3bd83a322fa4d1bafd914c41b8f8ba554d608f1b7e1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.308"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016164",
+        "import_time": "2026-08-06T13:08:56.709305904Z",
+        "modified_time": "2026-08-06T12:41:05Z",
+        "sha256": "0c32cac2e7134a22e3969b369b1cd079ec6dff829b949ae613a95ae071c2aeb6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.255"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016168",
+        "import_time": "2026-08-06T13:08:57.161877505Z",
+        "modified_time": "2026-08-06T12:41:42Z",
+        "sha256": "17d0b8a5d2e6007a04bae83d7f76c207957c2e379b6cc0a6fb419696cac24739",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.364"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016239",
+        "import_time": "2026-08-06T13:09:05.391273648Z",
+        "modified_time": "2026-08-06T12:52:05Z",
+        "sha256": "2300ab91e596e7175e69814f6b7ca8eaf0e29fec321f3a7877763a1e6fa6a690",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.198"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016145",
+        "import_time": "2026-08-06T13:08:54.533722436Z",
+        "modified_time": "2026-08-06T12:38:10Z",
+        "sha256": "2b79ba358d4a6bf0fbb2978d9146e4b591e1a82594f31d6bea797fb00e3b6ffc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.204"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016135",
+        "import_time": "2026-08-06T13:08:53.503103795Z",
+        "modified_time": "2026-08-06T12:36:40Z",
+        "sha256": "7a388d2ea04d13db3f6b19e615ec43ada648ea2ae791eaf93a0d3ce7b2aa514d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.247"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016210",
+        "import_time": "2026-08-06T13:09:02.01686385Z",
+        "modified_time": "2026-08-06T12:47:48Z",
+        "sha256": "8a943663a716f2e224a8d7edff27e84e24b5940da934b55306dbd35a5764955b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.277"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016212",
+        "import_time": "2026-08-06T13:09:02.215445012Z",
+        "modified_time": "2026-08-06T12:48:03Z",
+        "sha256": "c0a6865a04104378060ac6131acd801f3c3a4b2474df1da456141f032431d712",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.290"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016238",
+        "import_time": "2026-08-06T13:09:05.272605794Z",
+        "modified_time": "2026-08-06T12:51:55Z",
+        "sha256": "fb43b601aa2aa56275b1ee6694c150eac142f5d7fb11e8ed07df962b36ba3e3c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.203"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016217",
+        "import_time": "2026-08-06T13:09:02.790094006Z",
+        "modified_time": "2026-08-06T12:48:49Z",
+        "sha256": "57dde34beda8523e8cc386fdcfaaab249b9e1b1a0287560d411d291945d0f60c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.263"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016236",
+        "import_time": "2026-08-06T13:09:05.012232229Z",
+        "modified_time": "2026-08-06T12:51:41Z",
+        "sha256": "862abe378bde53e72ce562699969b2f47d67300b3638b93b6f93c72028a1b510",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.201"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016222",
+        "import_time": "2026-08-06T13:09:03.323079375Z",
+        "modified_time": "2026-08-06T12:49:34Z",
+        "sha256": "a99c54fa6300055d4ced445ff641f75a5669f330f578cb5c5410f497c0adbc8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.254"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016155",
+        "import_time": "2026-08-06T13:08:55.645445291Z",
+        "modified_time": "2026-08-06T12:39:41Z",
+        "sha256": "c4eb4e0d338c7eb273b5f720553bf2167b16e855aaec760cf9c184a102ce00f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.288"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016128",
+        "import_time": "2026-08-06T13:08:52.297672518Z",
+        "modified_time": "2026-08-06T12:35:37Z",
+        "sha256": "d47b03b10ada2b4f7d07bf95c8d3a8261e4635d34a6e8d6891e04d72c148610e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.278"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016185",
+        "import_time": "2026-08-06T13:08:59.240175364Z",
+        "modified_time": "2026-08-06T12:44:02Z",
+        "sha256": "50046c2936c53bed469b920142a05cd26642186096b68be85121c6f3b5d0bd06",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.349"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016165",
+        "import_time": "2026-08-06T13:08:56.841780782Z",
+        "modified_time": "2026-08-06T12:41:14Z",
+        "sha256": "72941441de20dc4858ad3eea0dbdb454d0fc479903a4e8e1c3eb1192f79d2ad4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.183"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016142",
+        "import_time": "2026-08-06T13:08:54.230799511Z",
+        "modified_time": "2026-08-06T12:37:37Z",
+        "sha256": "95b1a0419f43811c58c5ac27b74b00f0310218e568ea61b50ebdca025c63a39b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.235"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016150",
+        "import_time": "2026-08-06T13:08:55.105416336Z",
+        "modified_time": "2026-08-06T12:38:59Z",
+        "sha256": "c896dcb3526210e7af496954fe51a38324d175743e52004aff33e888eb98d31b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.175"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016131",
+        "import_time": "2026-08-06T13:08:53.023269567Z",
+        "modified_time": "2026-08-06T12:36:01Z",
+        "sha256": "0b8304c6847a6745795cbfd04c1bdc0bd864e8d718a0b36143da916f4083269e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.260"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016170",
+        "import_time": "2026-08-06T13:08:57.439998523Z",
+        "modified_time": "2026-08-06T12:41:57Z",
+        "sha256": "ba14fdd8d8d47cd55721df8e26374d012400c1e97179d17ecf96fe2c1795f5fb",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.365"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016174",
+        "import_time": "2026-08-06T13:08:57.911289255Z",
+        "modified_time": "2026-08-06T12:42:32Z",
+        "sha256": "d15783a90c80c6995682174c67e34be0000c941f515eb892a2927631987e4906",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.285"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016141",
+        "import_time": "2026-08-06T13:08:54.124616732Z",
+        "modified_time": "2026-08-06T12:37:29Z",
+        "sha256": "dd6420c353599d1f5131a294d7eeb0eb974162c07b8315d7bcb1386afe0cf339",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.239"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016206",
+        "import_time": "2026-08-06T13:09:01.546625546Z",
+        "modified_time": "2026-08-06T12:47:07Z",
+        "sha256": "e7d335c484c26256727d776ba91d4295f006a0aea4dd3e29c78a1f858c49c607",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.295"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016109",
+        "import_time": "2026-08-06T13:08:50.275170811Z",
+        "modified_time": "2026-08-06T12:32:45Z",
+        "sha256": "ffca6642640eb08e786647039f4cb89e503ad987fc6300c077e3adcd2c96346d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.353"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016151",
+        "import_time": "2026-08-06T13:08:55.203546388Z",
+        "modified_time": "2026-08-06T12:39:07Z",
+        "sha256": "cc53d18ac1c53faf064e5bc8406754b68ad1b43c1ed882423f3ca4aa15246906",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.331"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016172",
+        "import_time": "2026-08-06T13:08:57.680450699Z",
+        "modified_time": "2026-08-06T12:42:15Z",
+        "sha256": "1160cfbca3c8fadb8c3af39124e35cebb4730cdbf088beab709407c3f3598961",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.193"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016173",
+        "import_time": "2026-08-06T13:08:57.793862332Z",
+        "modified_time": "2026-08-06T12:42:22Z",
+        "sha256": "77d04f9e8e50dccd5aeff33adc83ec019d8bb727a6821d9d913c60f73627261d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.384"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016148",
+        "import_time": "2026-08-06T13:08:54.872922731Z",
+        "modified_time": "2026-08-06T12:38:35Z",
+        "sha256": "78a7f6a6493bf764fa61af3bc2ac212ff22c8236bfefd0beefb1aa33312baf44",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.185"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016250",
+        "import_time": "2026-08-06T13:09:06.768767409Z",
+        "modified_time": "2026-08-06T12:53:40Z",
+        "sha256": "8dcde9a06ead00155adc52caeb05456125aa098274a47a11ed586ffc8f5b96a8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.342"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016159",
+        "import_time": "2026-08-06T13:08:56.182262266Z",
+        "modified_time": "2026-08-06T12:40:23Z",
+        "sha256": "c2da17932f064154bb4c3f030356071c0b63cb76c15ef46b0788693c60a20d8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.240"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016204",
+        "import_time": "2026-08-06T13:09:01.333347589Z",
+        "modified_time": "2026-08-06T12:46:51Z",
+        "sha256": "3a60b10f12206672e4dbdb3d8efdf056500dc2069d2f10f890f9f90ed64a7c09",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.304"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016138",
+        "import_time": "2026-08-06T13:08:53.799509937Z",
+        "modified_time": "2026-08-06T12:37:02Z",
+        "sha256": "3d34fc5fb50ca2e8b0d633dbac52728f9a3e32df6c3cf0c5129da77939735178",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.246"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016125",
+        "import_time": "2026-08-06T13:08:52.007288121Z",
+        "modified_time": "2026-08-06T12:35:11Z",
+        "sha256": "6e8d032f94e8662ad8bd0c4638bda0380116670d10a856e48ea5262b89398643",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.287"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016213",
+        "import_time": "2026-08-06T13:09:02.318960104Z",
+        "modified_time": "2026-08-06T12:48:11Z",
+        "sha256": "945162c02a94f2354af65723d72fb6051909c252677ad8d0f2e7bc74871d23a3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.292"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016169",
+        "import_time": "2026-08-06T13:08:57.27133056Z",
+        "modified_time": "2026-08-06T12:41:49Z",
+        "sha256": "b31461fa8ae78fb96a4f2eaf6b4a156d1f240d3fc98518033ef70060eef849de",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.173"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016218",
+        "import_time": "2026-08-06T13:09:02.886753751Z",
+        "modified_time": "2026-08-06T12:48:58Z",
+        "sha256": "f3a203d0c3749514de5ada3555499d97717ccaaa88adce8dd4643fcd05efc469",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.264"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016183",
+        "import_time": "2026-08-06T13:08:58.880617046Z",
+        "modified_time": "2026-08-06T12:43:45Z",
+        "sha256": "21e7605629ceea08fdf5ac2f1fd4315a86c103fd6f9942ba727fa63c5e93aeb1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.359"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016240",
+        "import_time": "2026-08-06T13:09:05.515419546Z",
+        "modified_time": "2026-08-06T12:52:15Z",
+        "sha256": "74d8f01f0e9af3f981e5511ef7fba5f9f64d0329a720f5c1e3992229809e9825",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.195"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016201",
+        "import_time": "2026-08-06T13:09:01.015109104Z",
+        "modified_time": "2026-08-06T12:46:25Z",
+        "sha256": "60da72a9ab9c9da62b485197dcc356cd16dae60525b4c76321a50151f1db0a4b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.316"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016180",
+        "import_time": "2026-08-06T13:08:58.516942456Z",
+        "modified_time": "2026-08-06T12:43:20Z",
+        "sha256": "7e53190db2c52cd6b1deb90f2baabc1cd7d2231e161d6a3a394c6267f7d8e3e3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.377"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016224",
+        "import_time": "2026-08-06T13:09:03.562647915Z",
+        "modified_time": "2026-08-06T12:49:53Z",
+        "sha256": "d986706096678334c5ef8723d8c5afaa0384cf135b4ab1ee387333262d51c5f2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.234"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016158",
+        "import_time": "2026-08-06T13:08:56.045475676Z",
+        "modified_time": "2026-08-06T12:40:12Z",
+        "sha256": "66c198b765379cd2b52484b1263d6d17795e814f3b148eb5f49dce41f2b66868",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.267"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016252",
+        "import_time": "2026-08-06T13:09:07.029597678Z",
+        "modified_time": "2026-08-06T12:53:57Z",
+        "sha256": "8a17ec9d4c8d38a621e5175476b7b5090ec53d73820a2ae9357f0d3e0d0b5a96",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.210"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016216",
+        "import_time": "2026-08-06T13:09:02.651058451Z",
+        "modified_time": "2026-08-06T12:48:41Z",
+        "sha256": "a364ac6b808de77b97bc83b940d43a340dcfea0e1f113a4dbcd19ec85f3f6a83",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.270"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016121",
+        "import_time": "2026-08-06T13:08:51.570757887Z",
+        "modified_time": "2026-08-06T12:34:36Z",
+        "sha256": "fc636734d1e723cee4f4717816033215fb79a1f7d2c5c5f00d529480c09656e4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.314"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016181",
+        "import_time": "2026-08-06T13:08:58.62048213Z",
+        "modified_time": "2026-08-06T12:43:30Z",
+        "sha256": "3e8ac783ca2bbab42a0afee9df2fe52b6c09b78827f999db50adf563bf971fca",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.363"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016248",
+        "import_time": "2026-08-06T13:09:06.517351752Z",
+        "modified_time": "2026-08-06T12:53:22Z",
+        "sha256": "94263b31ba4eb2d28615b1919d23467129731db63e671f570d2010f74c46f53f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.181"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016229",
+        "import_time": "2026-08-06T13:09:04.190216399Z",
+        "modified_time": "2026-08-06T12:50:41Z",
+        "sha256": "961c1619bf40894b54e2970e7ee941fa1342ec4c2e914d96a8b1a5a54f060541",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.221"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016209",
+        "import_time": "2026-08-06T13:09:01.9090097Z",
+        "modified_time": "2026-08-06T12:47:39Z",
+        "sha256": "9865c12cd3519cc44cf7a69b79bf81692a218f6957e1020565091930620f8885",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.293"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016161",
+        "import_time": "2026-08-06T13:08:56.411467011Z",
+        "modified_time": "2026-08-06T12:40:38Z",
+        "sha256": "acb20a97c55e33de1a2183f2b0f1df6738f2d075b6d61ea81377137e2fa2fa8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.233"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016166",
+        "import_time": "2026-08-06T13:08:56.944038006Z",
+        "modified_time": "2026-08-06T12:41:21Z",
+        "sha256": "b816d98cc2746726fbf99f34e4de449389eed957fad748d688a11a5b1f399de6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.214"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016177",
+        "import_time": "2026-08-06T13:08:58.219653794Z",
+        "modified_time": "2026-08-06T12:42:57Z",
+        "sha256": "31d7b863c5ae9f12e98f4db3e7c5ccbccaf41ee1187b5cfdbca8d33116bc2526",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.373"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016193",
+        "import_time": "2026-08-06T13:09:00.129713026Z",
+        "modified_time": "2026-08-06T12:45:12Z",
+        "sha256": "355deea40ec7023350ff8f63ca45bbff17b7015832de207f74bffee1d97fc6e0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.333"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016254",
+        "import_time": "2026-08-06T13:09:07.266992656Z",
+        "modified_time": "2026-08-06T12:54:13Z",
+        "sha256": "398bb1b6fa2fc56d67363991913a5421066fc5680dc6da3a5daed48fc1784e97",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.200"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016153",
+        "import_time": "2026-08-06T13:08:55.405255081Z",
+        "modified_time": "2026-08-06T12:39:22Z",
+        "sha256": "43e075ab0d6c0da078c47d7cfe946303c55da9cbf01a3c8b5687cd6d3dfbff73",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.356"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016146",
+        "import_time": "2026-08-06T13:08:54.629023742Z",
+        "modified_time": "2026-08-06T12:38:18Z",
+        "sha256": "62eb5f9d1bef82d1b9ee2b3a3b0f98ad43be32c7035fb8a7d58ffdc181137003",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.190"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016234",
+        "import_time": "2026-08-06T13:09:04.742393096Z",
+        "modified_time": "2026-08-06T12:51:23Z",
+        "sha256": "785085510a0bd84a564ce12ac5b08e6a1579f65342f048e09bafdefa86d929ac",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.207"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016211",
+        "import_time": "2026-08-06T13:09:02.12294653Z",
+        "modified_time": "2026-08-06T12:47:55Z",
+        "sha256": "a3ef35858404681e62fe90b2ae18c08dcffcc9f0329b32f701cec204b9cb30fa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.284"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016199",
+        "import_time": "2026-08-06T13:09:00.808302165Z",
+        "modified_time": "2026-08-06T12:46:04Z",
+        "sha256": "ef9829ce56ecd204a96249c55abb11887f513d59889ace3c53f301d733a02858",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.317"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016208",
+        "import_time": "2026-08-06T13:09:01.813545455Z",
+        "modified_time": "2026-08-06T12:47:27Z",
+        "sha256": "0833b491e19f821d7defeac2e5955110500ba5137f37a6c443090679f4f07eb0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.294"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016130",
+        "import_time": "2026-08-06T13:08:52.904286141Z",
+        "modified_time": "2026-08-06T12:35:53Z",
+        "sha256": "afcf87a834962e685bef1b57e4337c41245f50f585ad882bad01598d52e630bd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.272"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016245",
+        "import_time": "2026-08-06T13:09:06.18195143Z",
+        "modified_time": "2026-08-06T12:52:55Z",
+        "sha256": "cbb23167f71c05f9701e7e52ecddfbe276045f7fed495640bdeb60e12c50027a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.186"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016176",
+        "import_time": "2026-08-06T13:08:58.116167164Z",
+        "modified_time": "2026-08-06T12:42:49Z",
+        "sha256": "d9c43ebb0cc435054d207c149ec9ecc3448a6c27d6fb1c47dfba39099e7d19a4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.271"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016114",
+        "import_time": "2026-08-06T13:08:50.840376737Z",
+        "modified_time": "2026-08-06T12:33:34Z",
+        "sha256": "fb0daffc0e4bc741d64225dfded6f5068d675e78719f992cab7b65bb9932c5ec",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.348"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016242",
+        "import_time": "2026-08-06T13:09:05.830487491Z",
+        "modified_time": "2026-08-06T12:52:30Z",
+        "sha256": "47d184a01e5f88ea4825a2f03392484de42f7dc42b9991e1b583c100908cd803",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.191"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016251",
+        "import_time": "2026-08-06T13:09:06.870928478Z",
+        "modified_time": "2026-08-06T12:53:48Z",
+        "sha256": "5fdbd8d3430368107d1d5f3269a1a28909affeedf4937860a9f68e121ee90e8d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.357"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016233",
+        "import_time": "2026-08-06T13:09:04.583711538Z",
+        "modified_time": "2026-08-06T12:51:14Z",
+        "sha256": "79d7d2f9aac75110525ee0996c36a65964ec97f2f32b944cc8c912431aca8bd8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.213"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016116",
+        "import_time": "2026-08-06T13:08:51.040706146Z",
+        "modified_time": "2026-08-06T12:33:50Z",
+        "sha256": "b627f9a4ff0aaacfcd612224f76fe679e9d0a04578519d75516136e7496aad43",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.347"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-016132",
+        "import_time": "2026-08-06T13:08:53.144647358Z",
+        "modified_time": "2026-08-06T12:36:10Z",
+        "sha256": "fe864f4c0ab37934402fa333d6dcbbfb213e157dddae373e0108a7efc022ff2f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.265"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

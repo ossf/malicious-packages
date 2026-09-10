@@ -1,15 +1,15 @@
 {
-  "modified": "2026-07-28T07:58:22Z",
-  "published": "2026-07-09T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-10023",
+  "published": "2026-07-09T00:00:00Z",
+  "modified": "2026-08-05T07:08:50.671441246Z",
   "summary": "Malicious code in @wagni_bot/bsc-sdk (npm)",
   "details": "The npm package `@wagni_bot/bsc-sdk` is a supply-chain credential stealer disguised as a **BNB Smart Chain (BSC)** SDK. It is one member of a coordinated campaign of 25 crypto/web3 typosquat packages published under the single npm scope `@wagni_bot` on 2026-07-09.\n\nEach package declares a `postinstall` lifecycle hook (`postinstall: node postinstall.js`) that executes automatically on `npm install`, before the package is ever imported. The script fingerprints the host and user (`os.hostname()`, `os.userInfo()`, `os.platform()`), walks the user's home directory (`readdirSync`/`readFileSync`) and reads high-value secrets — SSH private keys (`~/.ssh/id_rsa`), cryptocurrency wallet files, and `.env` files (API keys, tokens, seed phrases). It then JSON-encodes the collected data and exfiltrates it to a hardcoded Telegram bot via the Telegram Bot API `sendMessage` endpoint (https://api.telegram.org/bot8804087989:AAHUia-5DCloXsg9M9QhffTsHO5J_6FAxQM/sendMessage). All error paths are swallowed so the install appears normal.\n\ncodelake Research proved the packages belong to one campaign deterministically: the payload file is byte-identical across all 25 packages at each published version (version-lockstep), and every package exfiltrates to the same Telegram bot token — a single automated actor. Detected and classified independently from the live npm feed on 2026-07-09; at the time of reporting the packages were still live on npm and none of the 25 were present in OSV or GHSA (a first-catch).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (68707229cc80d6db8fe3b087a40601cdbd8b23bcda9a3030ede4e0ac85fe0cf8)\n@wagni_bot/bsc-sdk@1.1.0 is a typosquat of BSC-SDK-family packages whose sole purpose is credential theft at install time. index.js exports an empty object; the package provides no advertised BNB Smart Chain functionality. The postinstall lifecycle script recursively scans the current working directory, the user's home directory, and ~/.ssh for files matching id_rsa, id_ed25519, *.pem, *.key, *.cred, and.env, and POSTs their contents to a hardcoded bare-IP endpoint at http://107.161.90.180:7777. In parallel, it enumerates process.env for keys containing PRIVATE, SECRET, TOKEN, API_KEY, PASSWORD, MNEMONIC, SEED, WALLET, or AWS and transmits the matching key=value pairs along with hostname, username, and cwd to the same endpoint. The destination is a plaintext HTTP bare IP on a non-standard port, consistent with throwaway stealer infrastructure. Every developer and CI runner that runs `npm install` on this package has their SSH private keys, PEM certificates, and credential-shaped environment variables shipped to the attacker.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@wagni_bot/bsc-sdk"
+        "name": "@wagni_bot/bsc-sdk",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.2.0",
@@ -23,6 +23,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -117,22 +122,10 @@
     {
       "type": "ADVISORY",
       "url": "https://research.codelake.dev/advisories/clr-2026-3017-wagni-bsc-sdk"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
     },
     {
-      "name": "codelake Research",
-      "type": "FINDER",
-      "contact": [
-        "https://research.codelake.dev/advisories/clr-2026-3017-wagni-bsc-sdk"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@wagni_bot/bsc-sdk/v/1.1.2"
     }
   ],
   "database_specific": {
@@ -146,75 +139,101 @@
     },
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "01e01daf028cc2f0fcf1ea2b6bc4500a123febdb5656bfa1f80ce675e96d7798",
-        "import_time": "2026-07-09T16:20:35.853833944Z",
         "id": "IN-MAL-2026-009042",
+        "import_time": "2026-07-09T16:20:35.853833944Z",
         "modified_time": "2026-07-09T15:19:07Z",
+        "sha256": "01e01daf028cc2f0fcf1ea2b6bc4500a123febdb5656bfa1f80ce675e96d7798",
+        "source": "amazon-inspector",
         "versions": [
           "1.2.0"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "315cebf0b6c9fed4a189fff2b0cd6c292e870150deeb5d6a43067972c43b54e6",
-        "import_time": "2026-07-09T16:20:37.074404884Z",
         "id": "IN-MAL-2026-009058",
+        "import_time": "2026-07-09T16:20:37.074404884Z",
         "modified_time": "2026-07-09T15:21:39Z",
+        "sha256": "315cebf0b6c9fed4a189fff2b0cd6c292e870150deeb5d6a43067972c43b54e6",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.3"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "4cead275a720b5cfe0cabc4cb264a1ca1840473e9368c5174e886bb7dbc5a939",
-        "import_time": "2026-07-09T16:20:37.455187713Z",
         "id": "IN-MAL-2026-009062",
+        "import_time": "2026-07-09T16:20:37.455187713Z",
         "modified_time": "2026-07-09T15:22:13Z",
+        "sha256": "4cead275a720b5cfe0cabc4cb264a1ca1840473e9368c5174e886bb7dbc5a939",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.1"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "584f507a0470ea912e3a84a54a7c2f86aab44e6717f6ea9736121d54f073891a",
-        "import_time": "2026-07-09T16:20:36.221502742Z",
         "id": "IN-MAL-2026-009046",
+        "import_time": "2026-07-09T16:20:36.221502742Z",
         "modified_time": "2026-07-09T15:19:47Z",
+        "sha256": "584f507a0470ea912e3a84a54a7c2f86aab44e6717f6ea9736121d54f073891a",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.4"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "68707229cc80d6db8fe3b087a40601cdbd8b23bcda9a3030ede4e0ac85fe0cf8",
-        "import_time": "2026-07-09T16:20:38.099144938Z",
         "id": "IN-MAL-2026-009070",
+        "import_time": "2026-07-09T16:20:38.099144938Z",
         "modified_time": "2026-07-09T15:23:34Z",
+        "sha256": "68707229cc80d6db8fe3b087a40601cdbd8b23bcda9a3030ede4e0ac85fe0cf8",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.0"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "6dd15e1f251a2897f0cb347c79e4443c00a9cefdce96275b91f379c4bd0ce93f",
-        "import_time": "2026-07-09T16:20:33.917438787Z",
         "id": "IN-MAL-2026-009031",
+        "import_time": "2026-07-09T16:20:33.917438787Z",
         "modified_time": "2026-07-09T15:17:19Z",
+        "sha256": "6dd15e1f251a2897f0cb347c79e4443c00a9cefdce96275b91f379c4bd0ce93f",
+        "source": "amazon-inspector",
         "versions": [
           "1.1.5"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "83881f27f5d074f0086d86e1215f8df95a1decf65057bf2b6a6db74b7aa7591f",
-        "import_time": "2026-07-09T16:20:35.797613686Z",
         "id": "IN-MAL-2026-009041",
+        "import_time": "2026-07-09T16:20:35.797613686Z",
         "modified_time": "2026-07-09T15:18:59Z",
+        "sha256": "83881f27f5d074f0086d86e1215f8df95a1decf65057bf2b6a6db74b7aa7591f",
+        "source": "amazon-inspector",
         "versions": [
           "1.0.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-013318",
+        "import_time": "2026-08-05T07:06:41.086130078Z",
+        "modified_time": "2026-08-05T06:06:00Z",
+        "sha256": "56cfca1f1c7e7f82ede4112e38907406a6098e287aa53bba60b51a46bdf35818",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "codelake Research",
+      "contact": [
+        "https://research.codelake.dev/advisories/clr-2026-3017-wagni-bsc-sdk"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

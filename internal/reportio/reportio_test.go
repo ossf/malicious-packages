@@ -15,11 +15,14 @@
 package reportio_test
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	"github.com/ossf/malicious-packages/internal/report"
 	"github.com/ossf/malicious-packages/internal/reportio"
 )
 
@@ -239,5 +242,96 @@ func TestMoveReport_Errors(t *testing.T) {
 				t.Fatalf("MoveReport() = nil; want an error")
 			}
 		})
+	}
+}
+
+func TestMutateReport_Success(t *testing.T) {
+	dir := t.TempDir()
+	reportFile := filepath.Join(dir, "report.json")
+	tempDir := filepath.Join(dir, "temp")
+	if err := os.Mkdir(tempDir, 0o777); err != nil {
+		t.Fatalf("Mkdir() = %v; want no error", err)
+	}
+
+	rJSON := `{ "schema_version": "1.5.0", "summary": "original summary", "affected": [{"package":{"ecosystem": "npm", "name": "example"}, "versions": ["0"]}]}`
+	if err := os.WriteFile(reportFile, []byte(rJSON), 0o600); err != nil {
+		t.Fatalf("WriteFile() = %v; want no error", err)
+	}
+
+	now := time.Now().Truncate(time.Second).UTC()
+	err := reportio.MutateReport(reportFile, func(r *report.Report) (bool, error) {
+		r.Withdraw(now)
+		return true, nil
+	}, tempDir)
+	if err != nil {
+		t.Fatalf("MutateReport() = %v; want no error", err)
+	}
+
+	mutated, err := report.FromFile(reportFile)
+	if err != nil {
+		t.Fatalf("FromFile() = %v; want no error", err)
+	}
+	if !mutated.IsWithdrawn() {
+		t.Error("IsWithdrawn() = false; want true")
+	}
+}
+
+func TestMutateReport_NoChange(t *testing.T) {
+	dir := t.TempDir()
+	reportFile := filepath.Join(dir, "report.json")
+	tempDir := filepath.Join(dir, "temp")
+	if err := os.Mkdir(tempDir, 0o777); err != nil {
+		t.Fatalf("Mkdir() = %v; want no error", err)
+	}
+
+	rJSON := `{ "schema_version": "1.5.0", "summary": "original summary", "affected": [{"package":{"ecosystem": "npm", "name": "example"}, "versions": ["0"]}]}`
+	if err := os.WriteFile(reportFile, []byte(rJSON), 0o600); err != nil {
+		t.Fatalf("WriteFile() = %v; want no error", err)
+	}
+
+	err := reportio.MutateReport(reportFile, func(r *report.Report) (bool, error) {
+		return false, nil
+	}, tempDir)
+	if err != nil {
+		t.Fatalf("MutateReport() = %v; want no error", err)
+	}
+
+	mutated, err := report.FromFile(reportFile)
+	if err != nil {
+		t.Fatalf("FromFile() = %v; want no error", err)
+	}
+	if mutated.IsWithdrawn() {
+		t.Error("IsWithdrawn() = true; want false")
+	}
+}
+
+func TestMutateReport_FnError(t *testing.T) {
+	dir := t.TempDir()
+	reportFile := filepath.Join(dir, "report.json")
+	tempDir := filepath.Join(dir, "temp")
+	if err := os.Mkdir(tempDir, 0o777); err != nil {
+		t.Fatalf("Mkdir() = %v; want no error", err)
+	}
+
+	rJSON := `{ "schema_version": "1.5.0", "summary": "original summary", "affected": [{"package":{"ecosystem": "npm", "name": "example"}, "versions": ["0"]}]}`
+	if err := os.WriteFile(reportFile, []byte(rJSON), 0o600); err != nil {
+		t.Fatalf("WriteFile() = %v; want no error", err)
+	}
+
+	testErr := errors.New("test mutation error")
+	err := reportio.MutateReport(reportFile, func(r *report.Report) (bool, error) {
+		r.Withdraw(time.Now())
+		return false, testErr
+	}, tempDir)
+	if err == nil || !errors.Is(err, testErr) {
+		t.Fatalf("MutateReport() = %v; want error wrapping %v", err, testErr)
+	}
+
+	mutated, err := report.FromFile(reportFile)
+	if err != nil {
+		t.Fatalf("FromFile() = %v; want no error", err)
+	}
+	if mutated.IsWithdrawn() {
+		t.Error("IsWithdrawn() = true; want false")
 	}
 }
