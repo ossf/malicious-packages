@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-16044",
   "published": "2026-09-04T00:00:00Z",
-  "modified": "2026-09-10T05:39:55.468170822Z",
+  "modified": "2026-09-10T18:22:47.901336224Z",
   "summary": "Malicious code in tsshare (PyPI)",
-  "details": "The PyPI package `tsshare` is malicious. It impersonates the popular Chinese market-data library `tushare` — its docstrings advertise compatibility with `Tushare pro_bar` and it ships `MyShareClient`/`MyShareError` aliases. `tsshare/client.py` conceals its default API endpoint by base64-decoding it at runtime: in 1.0.5–1.0.18 the value decodes to the hardcoded raw IP `https://47.112.191.75` (Alibaba Cloud, China), and in 1.0.19 it rotates to the domain `https://fszzw56.com`. On use, the client builds a persistent cross-platform hardware fingerprint (Windows disk-drive serial via `Win32_DiskDrive`, macOS `Hardware UUID` via `system_profiler`, Linux `/etc/machine-id`) and routes the request — carrying the user's Tushare `auth_code` token — to that hidden endpoint, so the operator receives the paid API token together with a stable machine identifier. There is no install-time hook; exfiltration occurs on API use.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (27b53b00771492d758231bd358fe62b1c212a76c2628633e9b3e2c308285779f)\nPackage presents itself as a drop-in replacement for the Tushare pro_api SDK. Its TsshareClient.query method, together with a __getattr__ proxy that captures every attribute access, POSTs the caller-supplied auth_code (the user's tushare.pro credential in the Tushare ecosystem) together with query parameters to a hardcoded default endpoint constructed as base_url + /api/v1/proxy. The default base_url is stored as a base64 byte literal (_E = b\"aHR0cHM6Ly9mc3p6dzU2LmNvbQ==\") and decoded at call time by _default_base_url, resolving to https://fszzw56.com, a host unrelated to Tushare. On first call the client also collects a stable hardware fingerprint — Windows CPU ProcessorId and disk SerialNumber via PowerShell/CIM, macOS Hardware UUID via system_profiler, or Linux /etc/machine-id — SHA-256-hashes it, caches it in ~/.tsshare/device_id.json, and attaches it as meta.device_id on every request. The combination of Tushare-lookalike naming, an obfuscated non-Tushare destination, forwarding of the caller's third-party credential, and stable hardware identifiers routes both the user's Tushare token and machine identity to an author-controlled host the caller never opted into.\n",
+  "details": "The PyPI package `tsshare` is malicious. It impersonates the popular Chinese market-data library `tushare` — its docstrings advertise compatibility with `Tushare pro_bar` and it ships `MyShareClient`/`MyShareError` aliases. `tsshare/client.py` conceals its default API endpoint by base64-decoding it at runtime: in 1.0.5–1.0.18 the value decodes to the hardcoded raw IP `https://47.112.191.75` (Alibaba Cloud, China), and in 1.0.19 it rotates to the domain `https://fszzw56.com`. On use, the client builds a persistent cross-platform hardware fingerprint (Windows disk-drive serial via `Win32_DiskDrive`, macOS `Hardware UUID` via `system_profiler`, Linux `/etc/machine-id`) and routes the request — carrying the user's Tushare `auth_code` token — to that hidden endpoint, so the operator receives the paid API token together with a stable machine identifier. There is no install-time hook; exfiltration occurs on API use.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (539c8fdb69887b093801655215f1857f53abb20e6dc763198c543def86c39387)\nThe package presents itself as a drop-in replacement for Tushare's pro_api, but every method call is dispatched through a query() that POSTs to a hardcoded default backend at https://47.112.191.75/api/v1/proxy rather than to tushare.pro. The destination URL is stored base64-encoded (_E = b\"aHR0cHM6Ly80Ny4xMTIuMTkxLjc1\") and decoded at runtime by _default_base_url, and the destination is a bare IP unrelated to the credential's issuer. set_token() stores the caller's Tushare auth_code, and every subsequent proxied call includes {'auth_code': self.auth_code,...} in the POST body to that endpoint, so the paid third-party credential leaves the trust boundary it was issued for and can be logged or replayed by the operator of 47.112.191.75. The client also collects a persistent hardware fingerprint on first use — PowerShell Win32_Processor ProcessorId and Win32_DiskDrive SerialNumber on Windows, system_profiler Hardware UUID on macOS, /etc/machine-id on Linux — SHA-256 hashes it, caches it under ~/.tsshare/device_id.json, and attaches it as meta.device_id to every request, giving the backend operator a stable per-machine identifier unnecessary for the advertised proxy function. TLS certificate verification on the requests.Session is disabled by default (session.verify defaults to false via TSSHARE_SSL_VERIFY/MYSHARE_SSL_VERIFY) and urllib3 InsecureRequestWarning is silenced, so the auth_code and hardware ID are transmitted to the bare-IP HTTPS endpoint without cert validation.\n",
   "affected": [
     {
       "package": {
@@ -22,7 +22,22 @@
         }
       ],
       "versions": [
-        "1.0.19"
+        "1.0.19",
+        "1.0.7",
+        "1.0.5",
+        "1.0.11",
+        "1.0.18",
+        "1.0.6",
+        "1.0.14",
+        "1.0.10",
+        "1.0.16",
+        "1.0.2",
+        "1.0.8",
+        "1.0.1",
+        "1.0.4",
+        "1.0.15",
+        "1.0.17",
+        "1.0.9"
       ],
       "database_specific": {
         "cwes": [
@@ -30,8 +45,110 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "tsshare/client.py",
+              "sha256": "189a4bc67c4c986ea15be023c27ae1661e56295f249c4a450a8922a5a176532d",
+              "tlsh": "da227405aa221c57d7a3829c9caae501a7777c03ae0c29707c8c97ac2f16531f1f9edd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "tsshare-1.0.7-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "10bb4bb7e8e7bc0644b0b8bba2fc2d0c042767e84e77e1ef0c9535c76b960722",
+                "md5": "d98f858ef7b04b5cbfef6c3eb19a540a",
+                "sha256": "790041013132e0f7a65ca4dd6cf91592e0491198e821cdd5a5a0197fb2f3b745"
+              }
+            },
+            {
+              "filename": "tsshare-1.0.7.tar.gz",
+              "hashes": {
+                "blake2b_256": "c7d9f342e0dd3612cfd29f220f70c1c8ca636fb65fa4b6615ee01f5235bc842d",
+                "md5": "ddb8d31071100aeffc90d895aa61ad25",
+                "sha256": "3585f067f42abfa59b54cf846653de7918aa5e94431491611908bc52873d9f02"
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -39,8 +156,322 @@
     {
       "type": "ADVISORY",
       "url": "https://research.codelake.dev/advisories/clr-2026-3053-tsshare"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.7/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.5/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.11/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.18/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.6/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.14/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.10/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.16/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.8/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.4/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.15/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.17/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.9/"
     }
   ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "fszzw56.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "29453a1e5d67a98d313736026116b556b19f984ba03857c269eca0f06a543873"
+          },
+          "note": "tsshare 1.0.5: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "4de73f9c46c43669da913d746257cd96c6a5b6f58775b459342764c8c46e5405"
+          },
+          "note": "tsshare 1.0.6: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "189a4bc67c4c986ea15be023c27ae1661e56295f249c4a450a8922a5a176532d"
+          },
+          "note": "tsshare 1.0.9: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "0851ecfe02c43e5da464d81932166a22e47d205a6cda1a608c3e1cdead9052f6"
+          },
+          "note": "tsshare 1.0.14: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "19ca5c52f32e85095f5398312f0033dd7584f3f5a49ebce419e91f4df224e41a"
+          },
+          "note": "tsshare 1.0.15: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "18b9f8fde4828197ade30950516d5aafae1bb75cf9404db8bab932bfb883fdd1"
+          },
+          "note": "tsshare 1.0.16: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "0371d8654341e50e0e8f4068323bef48e8c0271cd64d59de27a71074a9846b9b"
+          },
+          "note": "tsshare 1.0.18: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "9323e40c5a183d269df723f5f0a018a3cc7c45c9267f514871dd4c583774e204"
+          },
+          "note": "tsshare 1.0.19: base64-hidden default endpoint _E='aHR0cHM6Ly9mc3p6dzU2LmNvbQ==' decodes to https://fszzw56.com; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
+          "paths": [
+            "tsshare/client.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "47.112.191.75"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-019735",
+        "import_time": "2026-09-09T01:28:58.636872863Z",
+        "modified_time": "2026-09-09T01:20:42Z",
+        "sha256": "27b53b00771492d758231bd358fe62b1c212a76c2628633e9b3e2c308285779f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.19"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019946",
+        "import_time": "2026-09-10T18:20:42.858099859Z",
+        "modified_time": "2026-09-10T18:08:16Z",
+        "sha256": "4cfc237fd6890867155c1ff9e99ae031d38b6d7c5fa9a5d54a24e8fb206f6603",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019938",
+        "import_time": "2026-09-10T18:20:42.469926202Z",
+        "modified_time": "2026-09-10T18:07:08Z",
+        "sha256": "7976188a8832f8f124055bb4a64019aba18321a6553889e190a0792e1932306b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019933",
+        "import_time": "2026-09-10T18:20:42.2191418Z",
+        "modified_time": "2026-09-10T18:06:21Z",
+        "sha256": "860aab879124b80cf175aabdd71fccc2a5ac0582ff66b383af6d1e1216cbd8c6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019945",
+        "import_time": "2026-09-10T18:20:42.798848615Z",
+        "modified_time": "2026-09-10T18:08:08Z",
+        "sha256": "a62ed7952029bd8db20aa25cad8b91a0f7366728bff9533b6f035a735eb53488",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.18"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019943",
+        "import_time": "2026-09-10T18:20:42.690809236Z",
+        "modified_time": "2026-09-10T18:07:52Z",
+        "sha256": "d7eef0f32ee48fc8f7ed0bcf42cbccb055aac1a2e64b71e88a207d6e584f72c1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019941",
+        "import_time": "2026-09-10T18:20:42.625259195Z",
+        "modified_time": "2026-09-10T18:07:35Z",
+        "sha256": "059237c3b3d57a2d16a12fb9a7a8aed2d129ca220262fbdf9386b5a10c8fd47a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.14"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019930",
+        "import_time": "2026-09-10T18:20:41.99919485Z",
+        "modified_time": "2026-09-10T18:05:54Z",
+        "sha256": "104ff67136d4d4edd657b55027cc4013f1f911e8e7baeb720a5f241b84567837",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019940",
+        "import_time": "2026-09-10T18:20:42.562903094Z",
+        "modified_time": "2026-09-10T18:07:25Z",
+        "sha256": "539c8fdb69887b093801655215f1857f53abb20e6dc763198c543def86c39387",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.16"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019937",
+        "import_time": "2026-09-10T18:20:42.422057499Z",
+        "modified_time": "2026-09-10T18:06:58Z",
+        "sha256": "8bbd950208161283bead87e6a397c4f38046a0e65b153881c2b8750912e8a949",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019934",
+        "import_time": "2026-09-10T18:20:42.253418788Z",
+        "modified_time": "2026-09-10T18:06:32Z",
+        "sha256": "3fe365ccea70fc8af7042bd5796f978d63edb77c238c249baa3c41dd8e3b690a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.8"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019932",
+        "import_time": "2026-09-10T18:20:42.143938603Z",
+        "modified_time": "2026-09-10T18:06:10Z",
+        "sha256": "5773ffd7450523907c75fed5906c28ba9e35920689614631b40b7eb7471726cf",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019942",
+        "import_time": "2026-09-10T18:20:42.662291196Z",
+        "modified_time": "2026-09-10T18:07:43Z",
+        "sha256": "6633256ccb3f2508e8abc229b6ed16748df2c952028ce3acfd5fe35885bb2e8e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019936",
+        "import_time": "2026-09-10T18:20:42.360089985Z",
+        "modified_time": "2026-09-10T18:06:48Z",
+        "sha256": "c26fc1e77b9e28e13519ba4db339d9be9a419a6cb9e4dad46d12d1fe6f6fe2a1",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.15"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019944",
+        "import_time": "2026-09-10T18:20:42.760440902Z",
+        "modified_time": "2026-09-10T18:08:00Z",
+        "sha256": "c8b1a62ab1eeff36d10ee9df26e1d1add0d42ca2b5db76f8fcbe03fa9728708c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.17"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019939",
+        "import_time": "2026-09-10T18:20:42.503122373Z",
+        "modified_time": "2026-09-10T18:07:17Z",
+        "sha256": "2fd73fc923cab6ea3a1bc55970177edabdfb8a906725ad79fd2658197cac7309",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.9"
+        ]
+      }
+    ]
+  },
   "credits": [
     {
       "name": "Amazon Inspector",
@@ -58,114 +489,10 @@
     },
     {
       "name": "codelake Research",
-      "type": "FINDER",
       "contact": [
         "https://research.codelake.dev"
-      ]
-    }
-  ],
-  "database_specific": {
-    "malicious-packages-origins": [
-      {
-        "id": "IN-MAL-2026-019735",
-        "import_time": "2026-09-09T01:28:58.636872863Z",
-        "modified_time": "2026-09-09T01:20:42Z",
-        "sha256": "27b53b00771492d758231bd358fe62b1c212a76c2628633e9b3e2c308285779f",
-        "source": "amazon-inspector",
-        "versions": [
-          "1.0.19"
-        ]
-      }
-    ],
-    "iocs": {
-      "ips": [
-        "47.112.191.75"
       ],
-      "domains": [
-        "fszzw56.com"
-      ],
-      "files": [
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.5: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "29453a1e5d67a98d313736026116b556b19f984ba03857c269eca0f06a543873"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.6: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "4de73f9c46c43669da913d746257cd96c6a5b6f58775b459342764c8c46e5405"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.9: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "189a4bc67c4c986ea15be023c27ae1661e56295f249c4a450a8922a5a176532d"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.14: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "0851ecfe02c43e5da464d81932166a22e47d205a6cda1a608c3e1cdead9052f6"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.15: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "19ca5c52f32e85095f5398312f0033dd7584f3f5a49ebce419e91f4df224e41a"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.16: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "18b9f8fde4828197ade30950516d5aafae1bb75cf9404db8bab932bfb883fdd1"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.18: base64-hidden default endpoint _E='aHR0cHM6Ly80Ny4xMTIuMTkxLjc1' decodes to https://47.112.191.75; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "0371d8654341e50e0e8f4068323bef48e8c0271cd64d59de27a71074a9846b9b"
-          }
-        },
-        {
-          "paths": [
-            "tsshare/client.py"
-          ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "tsshare 1.0.19: base64-hidden default endpoint _E='aHR0cHM6Ly9mc3p6dzU2LmNvbQ==' decodes to https://fszzw56.com; builds a cross-platform hardware fingerprint (Win32_DiskDrive serial / macOS Hardware UUID / Linux /etc/machine-id) and routes the user's Tushare auth_code token to that endpoint.",
-          "digests": {
-            "sha256": "9323e40c5a183d269df723f5f0a018a3cc7c45c9267f514871dd4c583774e204"
-          }
-        }
-      ]
+      "type": "FINDER"
     }
-  }
+  ]
 }
