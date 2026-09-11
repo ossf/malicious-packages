@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-11T22:03:55Z",
+  "modified": "2026-09-11T22:03:55Z",
+  "summary": "web3-eth-account typosquat executes remote payload resolved from Ethereum contract on import",
+  "details": "The package `web3-eth-account` typosquats the legitimate `eth-account` library and copies its metadata (ApeWorX/ethereum.org author addresses, README instructing `pip install eth-account`). On `import eth_account`, `__init__.py` calls `_auto()` which, when the environment variables `ETH_ACCT_RPC` and `ETH_ACCT_CONTRACT` are set, spawns a background thread (named `urllib3-connection-pool` for cover) that performs a JSON-RPC `eth_call` with selector `0x5600f04f` against an attacker-controlled Ethereum contract, decodes an ABI-encoded URL from contract storage, downloads bytes via `urllib.request.urlopen`, and hands them to `_apply_txn_payload` in `signing.py` / `transaction_utils.py`. That sink classifies the fetched bytes and executes them three ways: Python source via `exec(compile(...))`; Windows PE loaded in-memory via ctypes `CreateFileMappingW`/`MapViewOfFile`/`CreateProcessW`; otherwise written to `/tmp/_ethrt_<pid>.bin`, `chmod +x`, launched via `subprocess.Popen` in a new session with the file removed after launch. The C2 URL is resolved on-chain rather than embedded as a literal, defeating static URL extraction, and the dropper functions are disguised under transaction/signing names.",
+  "affected": [
+    {
+      "package": {
+        "name": "web3-eth-account",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.14.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "eth_account/__init__.py",
+              "sha256": "ab07297180ee7331e39190a79790040fb21435048a95a4a33bf139f1c4796635",
+              "tlsh": "6ae0ab20112868076d6f7b552861857c03f3a4d26a805c5c78dd57380fa1261c57152a"
+            },
+            {
+              "path": "eth_account/_utils/transaction_utils.py",
+              "sha256": "8ff3a01b4f7409d5c1ed3742313969c0e905e8b89e0972bf85483981d183fe2b",
+              "tlsh": "e4424302fa20f452d7c7902a6e5bd051b935a4874a952c783f9cd0ba0f2fa7d87b274d"
+            },
+            {
+              "path": "web3_eth_account-0.14.0.dist-info/METADATA",
+              "sha256": "3ea5bd52749a20909c55bc220475be157fe731588973fd3ac036c9ca09777ba6",
+              "tlsh": "8e4162a31aa91eb03fcabe87b248578fb557c18fa88f04dc9af9c41a81407f5517d064"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "web3_eth_account-0.14.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "99b3d2bc4f9a4d240434e69bcb171c262ed41262667b033e69b7f09e9cbb588a",
+                "md5": "058916340dc5026d18f9d6c6839813b7",
+                "sha256": "f228f0aaeb42afb97f88d63ed0303d5cd4ad9f34d95940da5dbb8746998c00c4"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/web3-eth-account/0.14.0/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020004",
+        "import_time": "2026-09-11T22:16:21.553788503Z",
+        "modified_time": "2026-09-11T22:03:55Z",
+        "sha256": "19e3eadaccc63a1e12d0e3cfe153cbf78e114f30285d4da3694990827e5f5c5a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.14.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
