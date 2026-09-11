@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-11123",
   "published": "2026-07-28T13:30:51Z",
-  "modified": "2026-09-07T10:28:47.911390174Z",
+  "modified": "2026-09-08T20:19:20.042946289Z",
   "summary": "Malicious code in @yancyyu/agentcli (npm)",
-  "details": "The npm package `@yancyyu/agentcli` ships a Feishu/Lark credential stealer. An auto-started telemetry worker (`src/main/telemetry/worker.ts`, started via `agentcli init`/`agentcli usage start` and macOS launchd) calls `safeScanLarkCredentials()` in its periodic run loop; the scan reads and decrypts local Lark credentials (macOS Keychain AES-256-GCM `.enc` under `~/Library/Application Support/lark-cli/`, Windows DPAPI under `HKCU\\Software\\LarkCli\\keychain`), refreshes tokens and POSTs {app_id, app_secret, access_token, refresh_token} to the operator backend (endpoint `/api/v1/report/lark-credentials`, later renamed `/api/v1/feishu/lark-cli/credentials`; default cloud hosts include `agentbus.skg.com`, `159.75.231.98:8088`, `47.112.24.153`).\n\nThese versions were identified independently by codelake Research and are NOT part of the existing OSV record MAL-2026-11123 (Amazon Inspector), which covers 1.9.25-1.9.80. codelake pins the true malicious boundary at 1.9.9 (2026-07-12) via the import->call reachability chain (`telemetry/worker.ts` -> `larkCredentials`), 16 versions earlier than the previously-catalogued 1.9.25; the reachable credential theft is present continuously across 1.9.9-1.9.24 (each verified) and 1.10.0. Versions 1.8.8-1.9.8 exfiltrate local Claude/Codex conversations to the same backend but do not yet steal Lark credentials (out of scope for this malware record).\n\nClassified by codelake Research from static code + dataflow review of the published npm tarballs. This report extends the confirmed-malicious set with 17 additional versions and an earlier boundary; codelake independently detected the package across its full malicious range (including the versions already in MAL-2026-11123) and scopes this report to the not-yet-listed versions to avoid duplication.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7f6774653f487db8fbb9b40f1c1aba2bf959edffae409445162b0d245a3bedf1)\nThe @yancyyu/agentcli package installs a telemetry worker (dist/telemetry-worker.bundle.mjs) that is started by `agentcli init` / `agentcli usage start` and auto-started via macOS launchd. The worker enumerates every lark-cli (Feishu) profile stored on the host — decrypting macOS Keychain-wrapped AES-256-GCM `.enc` files under `~/Library/Application Support/lark-cli/` and Windows DPAPI-protected values under `HKCU\\Software\\LarkCli\\keychain` — refreshes each token, and batch-POSTs `{app_id, app_secret, access_token, refresh_token}` for every profile every 5 minutes to a hardcoded default endpoint `http://47.112.24.153` (plain HTTP, bare IPv4, no TLS). The endpoint constant `DEFAULT_OPENHERMIT_CLOUD_BASE_URL` is the single default for the credential batch upload and conversation/usage pipelines when no override env var or settings value is present. The enumeration is not limited to AgentCli-created profiles; every lark-cli profile on the machine is harvested. The `reportAllLarkCredentials` code comment states: \"enumerate all personal lark-cli profiles, refresh each, then read current credentials [...] batch the complete eligible set to the server.\" The postinstall step additionally rewrites the optional `cc-connect` dependency's installer to prepend third-party China GitHub mirror hosts (gh-proxy.com, ghproxy.net) in front of upstream release URLs before the cc-connect native binary is downloaded and executed, broadening the trust boundary for that binary. Feishu (Lark) `app_id` + `app_secret` combined with valid access/refresh tokens allow full impersonation of the affected tenant applications; sending them cleartext to a bare IPv4 over HTTP additionally exposes them to any on-path observer.\n",
+  "details": "The npm package `@yancyyu/agentcli` ships a Feishu/Lark credential stealer. An auto-started telemetry worker (`src/main/telemetry/worker.ts`, started via `agentcli init`/`agentcli usage start` and macOS launchd) calls `safeScanLarkCredentials()` in its periodic run loop; the scan reads and decrypts local Lark credentials (macOS Keychain AES-256-GCM `.enc` under `~/Library/Application Support/lark-cli/`, Windows DPAPI under `HKCU\\Software\\LarkCli\\keychain`), refreshes tokens and POSTs {app_id, app_secret, access_token, refresh_token} to the operator backend (endpoint `/api/v1/report/lark-credentials`, later renamed `/api/v1/feishu/lark-cli/credentials`; default cloud hosts include `agentbus.skg.com`, `159.75.231.98:8088`, `47.112.24.153`).\n\nThese versions are not part of the existing OSV record MAL-2026-11123 (Amazon Inspector), which covers 1.9.25-1.9.80. The true malicious boundary is 1.9.9 (2026-07-12) via the import->call reachability chain (`telemetry/worker.ts` -> `larkCredentials`), 16 versions earlier than the previously-catalogued 1.9.25; the reachable credential theft is present continuously across 1.9.9-1.9.24 (each verified) and 1.10.0. Versions 1.8.8-1.9.8 exfiltrate local Claude/Codex conversations to the same backend but do not yet steal Lark credentials (out of scope for this malware record).\n\nThis report extends the confirmed-malicious set with 17 additional versions and an earlier boundary, scoped to the versions not yet listed in MAL-2026-11123 to avoid duplication. Determined by static code and dataflow review of the published npm tarballs.\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7f6774653f487db8fbb9b40f1c1aba2bf959edffae409445162b0d245a3bedf1)\nThe @yancyyu/agentcli package installs a telemetry worker (dist/telemetry-worker.bundle.mjs) that is started by `agentcli init` / `agentcli usage start` and auto-started via macOS launchd. The worker enumerates every lark-cli (Feishu) profile stored on the host — decrypting macOS Keychain-wrapped AES-256-GCM `.enc` files under `~/Library/Application Support/lark-cli/` and Windows DPAPI-protected values under `HKCU\\Software\\LarkCli\\keychain` — refreshes each token, and batch-POSTs `{app_id, app_secret, access_token, refresh_token}` for every profile every 5 minutes to a hardcoded default endpoint `http://47.112.24.153` (plain HTTP, bare IPv4, no TLS). The endpoint constant `DEFAULT_OPENHERMIT_CLOUD_BASE_URL` is the single default for the credential batch upload and conversation/usage pipelines when no override env var or settings value is present. The enumeration is not limited to AgentCli-created profiles; every lark-cli profile on the machine is harvested. The `reportAllLarkCredentials` code comment states: \"enumerate all personal lark-cli profiles, refresh each, then read current credentials [...] batch the complete eligible set to the server.\" The postinstall step additionally rewrites the optional `cc-connect` dependency's installer to prepend third-party China GitHub mirror hosts (gh-proxy.com, ghproxy.net) in front of upstream release URLs before the cc-connect native binary is downloaded and executed, broadening the trust boundary for that binary. Feishu (Lark) `app_id` + `app_secret` combined with valid access/refresh tokens allow full impersonation of the affected tenant applications; sending them cleartext to a bare IPv4 over HTTP additionally exposes them to any on-path observer.\n",
   "affected": [
     {
       "package": {
@@ -59,6 +59,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -342,6 +347,10 @@
     {
       "type": "ADVISORY",
       "url": "https://osv.dev/vulnerability/MAL-2026-11123"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@yancyyu/agentcli/v/1.9.14"
     }
   ],
   "database_specific": {
@@ -638,6 +647,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.9.25"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-019709",
+        "import_time": "2026-09-08T20:17:35.031914261Z",
+        "modified_time": "2026-09-08T19:55:03Z",
+        "sha256": "f8374c4b2e280cc37e57bee526d18562310edf3e4ec4b999d8554666279eebd8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.9.14"
         ]
       }
     ]
