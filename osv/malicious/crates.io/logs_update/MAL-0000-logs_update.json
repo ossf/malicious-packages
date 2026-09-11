@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-09-11T00:00:00Z",
+  "published": "2026-09-11T00:00:00Z",
+  "details": "logs-update is a malicious crate published to crates.io on 2026-09-10 with zero downloads. It pretends to be a terminal progress-bar library, but renders nothing to a terminal. The whole crate steals files and sets up remote access.\n\nThe crate has no build script, so it does not run during `cargo build` of a dependent. It runs when someone runs its binary (for example after `cargo install logs-update`) or when a dependent calls its run() function.\n\nWhen it runs, it does four things:\n\n1. It POSTs a machine fingerprint (username, OS, and local IP) to https://rust-api-jet.vercel.app/api/validate/system-info.\n\n2. It reads the project's .env and its trading-bot config files and POSTs them to https://rust-api-jet.vercel.app/api/validate/project-env.\n\n3. It walks the filesystem and POSTs the contents of .env, .json, .txt, .doc, .docx, and .xlsx files to https://rust-api-jet.vercel.app/api/validate/files.\n\n4. On Linux, it appends an attacker's SSH public key to ~/.ssh/authorized_keys, giving the attacker remote login as that user.\n\nThe crate targets crypto trading-bot developers: it hunts Polymarket order-book client configs, and those developers keep exchange API keys and wallet secrets in their .env files. Every version is malicious.\n\nAttacker SSH public key appended to ~/.ssh/authorized_keys (comment yyy@gmail.com): ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDGheept5OU9//Jp0Zfq3F49s8sqkq7k6n4DA43N/DKgXz3qsQduaCHwdRmHKnx+y3SGaCGl3zlwYh5P+IO3TDfhnfPeEcIabTfHGSwJCzWF155gePLEHE1ClcZqDkMCKKJk9QumEj+5fM1LKWwx2OA+zhegm06pDpn7+6rJk6yOIXauHlnRrELlC6R/nxCAIPtA8988cbRMA6g2gqpWnbgN5NZgcT5+2RB8yZJ6uEk0IG/HrdbxYiOVMF+GTJjMmeiTMskstLlv1DHTT25BiTRA8N8l26bS5KLD7gS0dM+//G/DrcpQ89485gqOO8oZKJsagG78ez20CO6t+1A6vcBoEJljonP8S72g/cYPdB9SofHSCRPOImNXy/wwHMzOKeQrpAn2MbY3evUNPt4Tx/2eXpP1t+0P+3aLIO6MbDq7pHYAwHP54Tj5HFFbOLEcG3e5BmM4h5m5ZCa0+tsb6Jpkf7okFeEuY3NOcr1JdvmrKMPsLMsSZTb0QOJFmK4dA0S95PRtMPTut5zfKg6gznMhwl8pl8Vfdf0a62TTrmDGTvYPVUh+QtFupyjqHa3LU1s0V53btWzqtTxVSjYj2qxTfuZ1ZSOegDwQtxvMDxf5EJvt02mSZ8zRqxwVYtPn6dofrkE4Kl0eYL/4eYuO5bvZfOns/XYTC4bjt7V/j0SOQ== yyy@gmail.com",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "crates.io",
+        "name": "logs-update"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://crates.io/crates/logs-update"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "rust-api-jet.vercel.app"
+      ],
+      "urls": [
+        "https://rust-api-jet.vercel.app/api/validate/system-info",
+        "https://rust-api-jet.vercel.app/api/validate/project-env",
+        "https://rust-api-jet.vercel.app/api/validate/files"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["src/lib.rs"],
+          "note": "Core payload: runs the four exfil and persistence steps, and holds the exfil endpoints and attacker SSH key.",
+          "digests": {
+            "sha256": "101955bda3e06ef511cbd6c47f6e723252ae405c256b46cedfdac63d9421b1a4"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["src/system_info.rs"],
+          "note": "Builds the machine fingerprint (username, OS, first non-internal IPv4) and POSTs it to the system-info endpoint.",
+          "digests": {
+            "sha256": "fc2325e4fe8d3fe6397fc71dd2ecc1bfa26c07ffc1f57473d409db73fb9c5387"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["src/project_env.rs"],
+          "note": "Reads the project .env and Polymarket/CLOB trading-client config files and POSTs them to the project-env endpoint.",
+          "digests": {
+            "sha256": "949d2359f5adf42a4e86f1556914713df535dd0038a9195cc0dbb4765c5d5297"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["src/filesystem_sweep.rs"],
+          "note": "Walks the filesystem to depth 10 collecting .env/.json/.txt/.doc/.docx/.xlsx files and POSTs their contents in batches.",
+          "digests": {
+            "sha256": "a91d4a3edaa45b5ad9aeb8c3ce976068ea00bede622c1a21032fd8c9f5a3c7a8"
+          }
+        }
+      ]
+    }
+  }
+}
