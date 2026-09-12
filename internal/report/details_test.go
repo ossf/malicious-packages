@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
+
+	mppb "github.com/ossf/malicious-packages/proto"
 )
 
 func reportWithDetail(details string) *Report {
@@ -140,7 +142,7 @@ func TestParseDetails_Sources_OneEmpty(t *testing.T) {
 	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n")
 	o := r.AddOrigin("test-source", "deadbeef")
 	wantUser := "user contributed report"
-	wantSources := map[*OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o: "",
 	}
 	gotUser, gotSources, err := r.ParseDetails()
@@ -159,7 +161,7 @@ func TestParseDetails_Sources_Single(t *testing.T) {
 	r := reportWithDetail("user contributed report\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\n\nthis\nis a\ntest.   \n")
 	o := r.AddOrigin("test-source", "deadbeef")
 	wantUser := "user contributed report"
-	wantSources := map[*OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o: "this\nis a\ntest.",
 	}
 	gotUser, gotSources, err := r.ParseDetails()
@@ -179,7 +181,7 @@ func TestParseDetails_Sources_Two(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "user contributed report"
-	wantSources := map[*OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o1: "source one",
 		o2: "source two",
 	}
@@ -200,7 +202,7 @@ func TestParseDetails_Sources_TwoOneEmpty(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "user contributed report"
-	wantSources := map[*OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o1: "",
 		o2: "source two",
 	}
@@ -237,7 +239,7 @@ func TestSetDetails_UserContributionOnly(t *testing.T) {
 func TestSetDetails_SingleSource(t *testing.T) {
 	r := reportWithDetail("")
 	o := r.AddOrigin("test-source", "deadbeef")
-	r.SetDetails("user contribution", map[*OriginRef]string{
+	r.SetDetails("user contribution", map[*mppb.OriginRef]string{
 		o: "source one",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: test-source (deadbeef)\nsource one\n"
@@ -250,9 +252,9 @@ func TestSetDetails_TwoSources(t *testing.T) {
 	r := reportWithDetail("")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
-	r.SetDetails("user contribution", map[*OriginRef]string{
+	r.SetDetails("user contribution", map[*mppb.OriginRef]string{
 		o1: "source one",
-	}, map[*OriginRef]string{
+	}, map[*mppb.OriginRef]string{
 		o2: "source two",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: another-test-source (abcdef123)\nsource two\n\n## Source: test-source (deadbeef)\nsource one\n"
@@ -265,9 +267,9 @@ func TestSetDetails_TwoSourcesOneEmpty(t *testing.T) {
 	r := reportWithDetail("")
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
-	r.SetDetails("user contribution", map[*OriginRef]string{
+	r.SetDetails("user contribution", map[*mppb.OriginRef]string{
 		o1: "",
-	}, map[*OriginRef]string{
+	}, map[*mppb.OriginRef]string{
 		o2: "source two",
 	})
 	want := "user contribution\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: another-test-source (abcdef123)\nsource two\n"
@@ -281,9 +283,9 @@ func TestSetDetails_SameSourceChooseLongest(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("test-source", "abcdef123")
 	o3 := r.AddOrigin("test-source", "00000000")
-	r.SetDetails("user contribution", map[*OriginRef]string{
+	r.SetDetails("user contribution", map[*mppb.OriginRef]string{
 		o3: "short report",
-	}, map[*OriginRef]string{
+	}, map[*mppb.OriginRef]string{
 		o1: "this report is longer",
 		o2: "this is a report",
 	})
@@ -298,7 +300,7 @@ func TestSetAndParse(t *testing.T) {
 	o1 := r.AddOrigin("test-source", "deadbeef")
 	o2 := r.AddOrigin("another-test-source", "abcdef123")
 	wantUser := "this\nis a\nreport."
-	wantSources := map[*OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o1: "source\none\ndetails",
 		o2: "source two\n\ndetails as well.",
 	}
