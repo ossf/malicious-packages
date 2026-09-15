@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11794",
+  "published": "2026-08-04T15:53:25Z",
+  "modified": "2026-08-05T07:08:50.577018341Z",
+  "aliases": [
+    "GHSA-mc8j-vx8m-ww53"
+  ],
+  "summary": "Malicious code in @qlik/eslint-config-base (npm)",
+  "details": "npm/@qlik/eslint-config-base is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0b0741aea184efa97c0ba033ebd9cae3ec9f4f8dc5553b827fb41d7754fd4336)\nPackage is published as an ESLint config but ships a preinstall script (setup.mjs) that downloads the Bun runtime from github.com/oven-sh/bun/releases, extracts it to a temp directory, marks it executable, and uses it to run a bundled 727KB Bun-compiled opaque payload (math_init.js) at install time. Both setup.mjs and math_init.js are heavily obfuscated: setup.mjs uses obfuscator.io-style mangled identifiers and string-lookup alias tables; math_init.js contains a shuffled string-array plus rotation function characteristic of javascript-obfuscator output. Neither file is referenced by the ESLint config surface (a ~50-line index.js) and neither is listed in the package.json `files` array (which declares only jest.js, playwright.js, typescript.js, vitest.js). Installing the package causes an alternate-runtime dropper to execute attacker-controlled bytes on the installer's machine before any consumer code runs, giving the publisher arbitrary code execution on every install. The composition (undeclared executables outside the manifest, unrelated Bun runtime pulled for an ESLint config, obfuscated payload) is consistent with a compromise or takeover of the @qlik scope rather than a legitimate release.\n\n## Source: ghsa-malware (ba664e59b05ecbcd33dd5b313ac17076082b7dc1dc8fcd3a6fdd7c72cdf31a27)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@qlik/eslint-config-base",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "4e1e877273ecde313ce07d71a9999203b9164d604af6910fc9d0a270bd784274",
+              "tlsh": "7f216010caa95d6302d8a55add3952d3552509470c5afc0cb2f6702c4b1c2df24beaed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "eslint-config-base-0.1.1.tgz",
+              "hashes": {
+                "sha1": "e2031e690bbfecfc2a08e2f5150e6ba6f77b55c0",
+                "sha512_sri": "sha512-0OL4U4H8w0+H36pwknkA1+ev6BUGhH+zIy1yFN94t3mYVX8OWgjbn2Rqqbqj9vdbKqkODaXJ71Vlr7W+2NnNsQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/eslint-config-base"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-mc8j-vx8m-ww53"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@qlik/eslint-config-base/v/0.1.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-mc8j-vx8m-ww53",
+        "import_time": "2026-08-05T00:10:18.142799006Z",
+        "modified_time": "2026-08-04T15:53:25Z",
+        "sha256": "ba664e59b05ecbcd33dd5b313ac17076082b7dc1dc8fcd3a6fdd7c72cdf31a27",
+        "source": "ghsa-malware",
+        "versions": [
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013690",
+        "import_time": "2026-08-05T07:06:59.553406028Z",
+        "modified_time": "2026-08-05T07:00:18Z",
+        "sha256": "0b0741aea184efa97c0ba033ebd9cae3ec9f4f8dc5553b827fb41d7754fd4336",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

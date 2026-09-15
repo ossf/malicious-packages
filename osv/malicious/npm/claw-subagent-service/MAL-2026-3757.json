@@ -1,15 +1,15 @@
 {
-  "modified": "2026-06-12T19:46:13Z",
-  "published": "2026-05-14T19:25:16Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-3757",
+  "published": "2026-05-14T19:25:16Z",
+  "modified": "2026-08-05T17:06:47.000628140Z",
   "summary": "Malicious code in claw-subagent-service (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307)\nOn `npm install -g`, the package's `scripts/post-install.js` registers a privileged Windows service `claw-subagent-service` pointing at `service/daemon.js`, configured with `sc.exe failure... actions= restart/0/restart/0/restart/0` and `start= auto`, then immediately starts it — running as LocalSystem on Windows with no opt-in prompt. Once running, three behaviors stack into a remote-control surface against the installer:\n\n1. Self-replacing update channel (`service/updater.js`): a 6-hour interval calls `npm view claw-subagent-service version --json` and, when a newer version is published, runs `npm install -g claw-subagent-service@\u003clatest\u003e` and restarts the worker. Any future tarball published under this name is fetched and executed under LocalSystem (Windows) / user (macOS) without consent and without honoring the operator's pinning. Linux is gated, Windows + macOS are not.\n\n2. Vendor-controlled IM command channel (`service/worker.js`, `service/modules/rongyun-message-handler.js`, `service/modules/script-executor.js`, `service/rongcloud/openclaw-client.js`): the worker fetches a token from `https://newsradar.dreamdt.cn/im/api/claw/token/\u003cnodeId\u003e` and joins a RongCloud IM session (appKey `bmdehs6pbyyks`). `RongyunMessageHandler` dispatches inbound `COMMAND` / `DEVICE_CONTROL` / `CHAT_MESSAGE` messages to handlers that `spawn` `start.sh`/`stop.sh`/`restart.sh`/`status.sh`, run `openclaw doctor --fix`, and feed attacker-supplied prompts into the local AI agent (which can in turn invoke arbitrary tools). Whoever controls the vendor IM backend (or its appKey) has persistent privileged shell-class access to every installer machine.\n\n3. Continuous data exfiltration (`service/modules/heartbeat-dashboard.js`, `service/modules/dashboard-collector.js`): every 30 seconds the worker reads `~/.openclaw/agents/*/sessions/*.jsonl`, `~/.openclaw/projects/projects.json`, `~/.openclaw/tasks/tasks.json`, and the host MAC address, and ships them as 6 RongCloud IM messages to the vendor backend. Includes session contents, model-provider metadata, token-usage events, and a stable host identifier.\n\nThe README documents the product's purpose, but the combination — postinstall privileged-service persistence + 6-hour silent self-replacement + always-on remote-command IM channel + continuous session/host-id upload — is a vendor-operated remote-administration agent installed on the operator's machine via `npm install`. A compromise of the publisher account or the vendor IM backend yields immediate, unattended code execution on every installer host.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307)\nOn `npm install -g`, the package's `scripts/post-install.js` registers a privileged Windows service `claw-subagent-service` pointing at `service/daemon.js`, configured with `sc.exe failure... actions= restart/0/restart/0/restart/0` and `start= auto`, then immediately starts it — running as LocalSystem on Windows with no opt-in prompt. Once running, three behaviors stack into a remote-control surface against the installer:\n\n1. Self-replacing update channel (`service/updater.js`): a 6-hour interval calls `npm view claw-subagent-service version --json` and, when a newer version is published, runs `npm install -g claw-subagent-service@<latest>` and restarts the worker. Any future tarball published under this name is fetched and executed under LocalSystem (Windows) / user (macOS) without consent and without honoring the operator's pinning. Linux is gated, Windows + macOS are not.\n\n2. Vendor-controlled IM command channel (`service/worker.js`, `service/modules/rongyun-message-handler.js`, `service/modules/script-executor.js`, `service/rongcloud/openclaw-client.js`): the worker fetches a token from `https://newsradar.dreamdt.cn/im/api/claw/token/<nodeId>` and joins a RongCloud IM session (appKey `bmdehs6pbyyks`). `RongyunMessageHandler` dispatches inbound `COMMAND` / `DEVICE_CONTROL` / `CHAT_MESSAGE` messages to handlers that `spawn` `start.sh`/`stop.sh`/`restart.sh`/`status.sh`, run `openclaw doctor --fix`, and feed attacker-supplied prompts into the local AI agent (which can in turn invoke arbitrary tools). Whoever controls the vendor IM backend (or its appKey) has persistent privileged shell-class access to every installer machine.\n\n3. Continuous data exfiltration (`service/modules/heartbeat-dashboard.js`, `service/modules/dashboard-collector.js`): every 30 seconds the worker reads `~/.openclaw/agents/*/sessions/*.jsonl`, `~/.openclaw/projects/projects.json`, `~/.openclaw/tasks/tasks.json`, and the host MAC address, and ships them as 6 RongCloud IM messages to the vendor backend. Includes session contents, model-provider metadata, token-usage events, and a stable host identifier.\n\nThe README documents the product's purpose, but the combination — postinstall privileged-service persistence + 6-hour silent self-replacement + always-on remote-command IM channel + continuous session/host-id upload — is a vendor-operated remote-administration agent installed on the operator's machine via `npm install`. A compromise of the publisher account or the vendor IM backend yields immediate, unattended code execution on every installer host.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "claw-subagent-service"
+        "name": "claw-subagent-service",
+        "ecosystem": "npm"
       },
       "versions": [
         "0.0.80",
@@ -45,10 +45,16 @@
         "0.0.164",
         "0.0.160",
         "0.0.153",
-        "0.0.179"
+        "0.0.179",
+        "1.4.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -397,360 +403,374 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/claw-subagent-service/v/0.0.179"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "actran@amazon.com",
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/claw-subagent-service/v/1.4.0"
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "cffe41c34a6702c2b84f2c907dbf451269481608a72724c4b91ebf5d6b4838a6",
-        "import_time": "2026-05-15T07:37:17.616805105Z",
         "id": "IN-MAL-2026-002709",
+        "import_time": "2026-05-15T07:37:17.616805105Z",
         "modified_time": "2026-05-14T19:25:16Z",
+        "sha256": "cffe41c34a6702c2b84f2c907dbf451269481608a72724c4b91ebf5d6b4838a6",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.80"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "36657c2be433b784c573082d364304325acccf033f70df17dbfe104b0173ccbe",
-        "import_time": "2026-05-26T05:50:56.31089624Z",
         "id": "IN-MAL-2026-003599",
+        "import_time": "2026-05-26T05:50:56.31089624Z",
         "modified_time": "2026-05-20T19:29:40Z",
+        "sha256": "36657c2be433b784c573082d364304325acccf033f70df17dbfe104b0173ccbe",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.91"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "48f868daf1dbecb4d933bab3463f3b7282591204e9b986716d2c9cd3608e263d",
-        "import_time": "2026-05-26T05:52:02.992812712Z",
         "id": "IN-MAL-2026-004159",
+        "import_time": "2026-05-26T05:52:02.992812712Z",
         "modified_time": "2026-05-22T07:05:51Z",
+        "sha256": "48f868daf1dbecb4d933bab3463f3b7282591204e9b986716d2c9cd3608e263d",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.120"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "733a45db422bf6eb3db666a43d8fe2af97838027cc1a8e03b4a01b3299a3bd94",
-        "import_time": "2026-05-26T05:51:59.105538097Z",
         "id": "IN-MAL-2026-004125",
+        "import_time": "2026-05-26T05:51:59.105538097Z",
         "modified_time": "2026-05-22T02:25:48Z",
+        "sha256": "733a45db422bf6eb3db666a43d8fe2af97838027cc1a8e03b4a01b3299a3bd94",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.113"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "95cefec7be266dfeeb149accfa155b4dcd840b95cc519fde7c2821905fdc419b",
-        "import_time": "2026-05-26T05:51:10.270902399Z",
         "id": "IN-MAL-2026-003715",
+        "import_time": "2026-05-26T05:51:10.270902399Z",
         "modified_time": "2026-05-21T03:01:12Z",
+        "sha256": "95cefec7be266dfeeb149accfa155b4dcd840b95cc519fde7c2821905fdc419b",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.99"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "99f0ef22930df709f974171e0df480254eef2ef9c93a6a5223996c121ff6987b",
-        "import_time": "2026-05-26T05:51:15.444153183Z",
         "id": "IN-MAL-2026-003758",
+        "import_time": "2026-05-26T05:51:15.444153183Z",
         "modified_time": "2026-05-21T06:27:47Z",
+        "sha256": "99f0ef22930df709f974171e0df480254eef2ef9c93a6a5223996c121ff6987b",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.101"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "303446c72fa50219b6746e3a2008f6de4e1d12779404219825601c277f18e473",
-        "import_time": "2026-05-26T05:52:00.313222544Z",
         "id": "IN-MAL-2026-004136",
+        "import_time": "2026-05-26T05:52:00.313222544Z",
         "modified_time": "2026-05-22T05:40:24Z",
+        "sha256": "303446c72fa50219b6746e3a2008f6de4e1d12779404219825601c277f18e473",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.116"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "30fdbc682901d04eb97e8cb6d8c14956c8e09aca2f956bd87c59f00599d10f60",
-        "import_time": "2026-05-26T05:52:04.237204432Z",
         "id": "IN-MAL-2026-004169",
+        "import_time": "2026-05-26T05:52:04.237204432Z",
         "modified_time": "2026-05-22T08:19:40Z",
+        "sha256": "30fdbc682901d04eb97e8cb6d8c14956c8e09aca2f956bd87c59f00599d10f60",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.122"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "5df13d641a03a27652af69077359099e972dde7bac0c72d383508f92d8841070",
-        "import_time": "2026-05-26T05:51:18.731610032Z",
         "id": "IN-MAL-2026-003786",
+        "import_time": "2026-05-26T05:51:18.731610032Z",
         "modified_time": "2026-05-21T09:01:50Z",
+        "sha256": "5df13d641a03a27652af69077359099e972dde7bac0c72d383508f92d8841070",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.105"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "bc1cb8def110e7bdd0e843499b852c9a6f3af0b52c1ff2611c49e5e418785675",
-        "import_time": "2026-05-26T05:52:56.768504436Z",
         "id": "IN-MAL-2026-004612",
+        "import_time": "2026-05-26T05:52:56.768504436Z",
         "modified_time": "2026-05-25T09:03:20Z",
+        "sha256": "bc1cb8def110e7bdd0e843499b852c9a6f3af0b52c1ff2611c49e5e418785675",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.138"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "4d1a6ae7eae94d775f1d21680c365105891c30eb2e87d8d1d1d69e44819e8111",
-        "import_time": "2026-05-26T05:51:19.071489778Z",
         "id": "IN-MAL-2026-003789",
+        "import_time": "2026-05-26T05:51:19.071489778Z",
         "modified_time": "2026-05-21T09:11:53Z",
+        "sha256": "4d1a6ae7eae94d775f1d21680c365105891c30eb2e87d8d1d1d69e44819e8111",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.108"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "ab72eb7ec46c1907b7a6b3e7a6cb9de58b8406633d31a286124e47b511960471",
-        "import_time": "2026-05-26T05:51:16.091311546Z",
         "id": "IN-MAL-2026-003763",
+        "import_time": "2026-05-26T05:51:16.091311546Z",
         "modified_time": "2026-05-21T06:41:22Z",
+        "sha256": "ab72eb7ec46c1907b7a6b3e7a6cb9de58b8406633d31a286124e47b511960471",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.102"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "d06927fc08f20b60826111731ea8ed22740b01cb298615311f35eea4aef371b8",
-        "import_time": "2026-05-26T05:51:19.405169047Z",
         "id": "IN-MAL-2026-003792",
+        "import_time": "2026-05-26T05:51:19.405169047Z",
         "modified_time": "2026-05-21T09:19:00Z",
+        "sha256": "d06927fc08f20b60826111731ea8ed22740b01cb298615311f35eea4aef371b8",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.109"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "e4c465488fc835c702f879ee07edae63f2d817677b65efb9ca9b8ecbe66d761d",
-        "import_time": "2026-05-26T05:52:57.657155057Z",
         "id": "IN-MAL-2026-004619",
+        "import_time": "2026-05-26T05:52:57.657155057Z",
         "modified_time": "2026-05-25T10:01:48Z",
+        "sha256": "e4c465488fc835c702f879ee07edae63f2d817677b65efb9ca9b8ecbe66d761d",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.140"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "fec887eac0cd06fe2e0ab422610657d5a210d5d1f946a052fbc56584e79fba08",
-        "import_time": "2026-05-26T05:52:56.16366997Z",
         "id": "IN-MAL-2026-004608",
+        "import_time": "2026-05-26T05:52:56.16366997Z",
         "modified_time": "2026-05-25T08:43:08Z",
+        "sha256": "fec887eac0cd06fe2e0ab422610657d5a210d5d1f946a052fbc56584e79fba08",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.136"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "333fba03fc604abdd5ccbe25a3d35c4b7bd81e5e8e786e8b6a132a0f650df9a4",
-        "import_time": "2026-05-26T05:52:53.811456578Z",
         "id": "IN-MAL-2026-004588",
+        "import_time": "2026-05-26T05:52:53.811456578Z",
         "modified_time": "2026-05-25T06:15:39Z",
+        "sha256": "333fba03fc604abdd5ccbe25a3d35c4b7bd81e5e8e786e8b6a132a0f650df9a4",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.130"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "794dad83a81c79ee83ec6c3fba1cc2033e7f7dc960218c84ff3dc2431ab9d9d9",
-        "import_time": "2026-05-26T05:52:00.466691946Z",
         "id": "IN-MAL-2026-004137",
+        "import_time": "2026-05-26T05:52:00.466691946Z",
         "modified_time": "2026-05-22T06:04:40Z",
+        "sha256": "794dad83a81c79ee83ec6c3fba1cc2033e7f7dc960218c84ff3dc2431ab9d9d9",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.117"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "7dc1f62ea4a6d815ae987b34f9bec5475377bb9779e941c1704cd9ca5b17473a",
-        "import_time": "2026-05-26T05:51:19.500932639Z",
         "id": "IN-MAL-2026-003793",
+        "import_time": "2026-05-26T05:51:19.500932639Z",
         "modified_time": "2026-05-21T09:33:37Z",
+        "sha256": "7dc1f62ea4a6d815ae987b34f9bec5475377bb9779e941c1704cd9ca5b17473a",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.110"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "e253b3e58b41aa4bb3427195d4b3a9a1b0b7fa0336d3632b954ed6f01028f67b",
-        "import_time": "2026-05-26T05:52:57.9350433Z",
         "id": "IN-MAL-2026-004621",
+        "import_time": "2026-05-26T05:52:57.9350433Z",
         "modified_time": "2026-05-25T10:17:56Z",
+        "sha256": "e253b3e58b41aa4bb3427195d4b3a9a1b0b7fa0336d3632b954ed6f01028f67b",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.141"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "0703ce6de2620bf057068954a5d65415320294df003738fd84d1b8e181d04de1",
-        "import_time": "2026-05-26T05:52:56.440683683Z",
         "id": "IN-MAL-2026-004609",
+        "import_time": "2026-05-26T05:52:56.440683683Z",
         "modified_time": "2026-05-25T08:54:34Z",
+        "sha256": "0703ce6de2620bf057068954a5d65415320294df003738fd84d1b8e181d04de1",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.137"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "30ccb28b8d00615bbabb9298997ae2a1a5126408f52465cf8eae97617cf96b28",
-        "import_time": "2026-05-26T05:51:59.257705869Z",
         "id": "IN-MAL-2026-004126",
+        "import_time": "2026-05-26T05:51:59.257705869Z",
         "modified_time": "2026-05-22T02:39:02Z",
+        "sha256": "30ccb28b8d00615bbabb9298997ae2a1a5126408f52465cf8eae97617cf96b28",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.114"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "1062890dca012ff08aec1ffeec8afd26460c4ae0cfd633b137f799c3067c91ea",
-        "import_time": "2026-05-26T07:48:28.165131685Z",
         "id": "IN-MAL-2026-004853",
+        "import_time": "2026-05-26T07:48:28.165131685Z",
         "modified_time": "2026-05-26T07:00:10Z",
+        "sha256": "1062890dca012ff08aec1ffeec8afd26460c4ae0cfd633b137f799c3067c91ea",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.151"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "b6778ae3f21c2b7f88ec0263297a216890d13ee290aa64a2ee3fcdded87d7bf5",
-        "import_time": "2026-05-26T07:48:28.113541862Z",
         "id": "IN-MAL-2026-004852",
+        "import_time": "2026-05-26T07:48:28.113541862Z",
         "modified_time": "2026-05-26T06:51:48Z",
+        "sha256": "b6778ae3f21c2b7f88ec0263297a216890d13ee290aa64a2ee3fcdded87d7bf5",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.149"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "d84635712776e58ee8c8027284ddb58636d5e492f73f40aaf85ca8ffb1bbfa62",
-        "import_time": "2026-05-26T07:48:28.206103557Z",
         "id": "IN-MAL-2026-004854",
+        "import_time": "2026-05-26T07:48:28.206103557Z",
         "modified_time": "2026-05-26T07:00:29Z",
+        "sha256": "d84635712776e58ee8c8027284ddb58636d5e492f73f40aaf85ca8ffb1bbfa62",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.146"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "1b5d67d286b4968f1935e1913720aeaf077c304ca5bf53990bca73d9955470b2",
-        "import_time": "2026-06-12T19:43:53.124093144Z",
         "id": "IN-MAL-2026-005970",
+        "import_time": "2026-06-12T19:43:53.124093144Z",
         "modified_time": "2026-06-12T19:06:13Z",
+        "sha256": "1b5d67d286b4968f1935e1913720aeaf077c304ca5bf53990bca73d9955470b2",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.162"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "43f662536173d8d4a65688a34f43734279360c61699e5099c37620047cc64791",
-        "import_time": "2026-06-12T19:43:53.441444411Z",
         "id": "IN-MAL-2026-005973",
+        "import_time": "2026-06-12T19:43:53.441444411Z",
         "modified_time": "2026-06-12T19:06:18Z",
+        "sha256": "43f662536173d8d4a65688a34f43734279360c61699e5099c37620047cc64791",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.170"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "a0d6d3f523d5fcd475516e80698e8113ba35d9706c447f741a11b9cae791f61a",
-        "import_time": "2026-06-12T19:43:53.542411804Z",
         "id": "IN-MAL-2026-005974",
+        "import_time": "2026-06-12T19:43:53.542411804Z",
         "modified_time": "2026-06-12T19:06:20Z",
+        "sha256": "a0d6d3f523d5fcd475516e80698e8113ba35d9706c447f741a11b9cae791f61a",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.177"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "afc179e3310ae1344b516d263a0371eeb7e8b7f2f15018ac9e481d858f5cfc39",
-        "import_time": "2026-06-12T19:43:52.855728045Z",
         "id": "IN-MAL-2026-005967",
+        "import_time": "2026-06-12T19:43:52.855728045Z",
         "modified_time": "2026-06-12T19:06:08Z",
+        "sha256": "afc179e3310ae1344b516d263a0371eeb7e8b7f2f15018ac9e481d858f5cfc39",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.156"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307",
-        "import_time": "2026-06-12T19:43:53.037606017Z",
         "id": "IN-MAL-2026-005969",
+        "import_time": "2026-06-12T19:43:53.037606017Z",
         "modified_time": "2026-06-12T19:06:11Z",
+        "sha256": "b2ccba152d6841731431c91157874c72b5f9778fdf88b634a45ab5d9da961307",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.161"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "46a143c6c479913ab343d4f646e622dfbe5ea1d43fadfa91cad8f88217381ee0",
-        "import_time": "2026-06-12T19:43:53.319482167Z",
         "id": "IN-MAL-2026-005972",
+        "import_time": "2026-06-12T19:43:53.319482167Z",
         "modified_time": "2026-06-12T19:06:16Z",
+        "sha256": "46a143c6c479913ab343d4f646e622dfbe5ea1d43fadfa91cad8f88217381ee0",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.168"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "9390e597984a79eeec19a8c027110199a5b92686bd7e5988a1f3d79cdd8238f3",
-        "import_time": "2026-06-12T19:43:53.227301659Z",
         "id": "IN-MAL-2026-005971",
+        "import_time": "2026-06-12T19:43:53.227301659Z",
         "modified_time": "2026-06-12T19:06:15Z",
+        "sha256": "9390e597984a79eeec19a8c027110199a5b92686bd7e5988a1f3d79cdd8238f3",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.164"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "ae6ed7b124a98c15ad1c2c6dfd047b981035359f23bcdbf75a1e66acb6c3a6f2",
-        "import_time": "2026-06-12T19:43:52.959133463Z",
         "id": "IN-MAL-2026-005968",
+        "import_time": "2026-06-12T19:43:52.959133463Z",
         "modified_time": "2026-06-12T19:06:10Z",
+        "sha256": "ae6ed7b124a98c15ad1c2c6dfd047b981035359f23bcdbf75a1e66acb6c3a6f2",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.160"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "b7ec2ce3375130ea9655acabe575991547ce220543c7898a1109dcc2faa8b100",
-        "import_time": "2026-06-12T19:43:52.763338839Z",
         "id": "IN-MAL-2026-005966",
+        "import_time": "2026-06-12T19:43:52.763338839Z",
         "modified_time": "2026-06-12T19:06:06Z",
+        "sha256": "b7ec2ce3375130ea9655acabe575991547ce220543c7898a1109dcc2faa8b100",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.153"
         ]
       },
       {
-        "source": "amazon-inspector",
-        "sha256": "fe00a0a1a9427eb816467287a34d06fc287f769b2169ce4a8158138d4fb7c807",
-        "import_time": "2026-06-12T19:43:53.652190195Z",
         "id": "IN-MAL-2026-005975",
+        "import_time": "2026-06-12T19:43:53.652190195Z",
         "modified_time": "2026-06-12T19:06:21Z",
+        "sha256": "fe00a0a1a9427eb816467287a34d06fc287f769b2169ce4a8158138d4fb7c807",
+        "source": "amazon-inspector",
         "versions": [
           "0.0.179"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-015824",
+        "import_time": "2026-08-05T17:04:49.215634551Z",
+        "modified_time": "2026-08-05T16:17:04Z",
+        "sha256": "9ca56c374765787791fab8e50cfb08ff8724b38a2242b873d3257fc3e6d6504e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.4.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "actran@amazon.com",
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

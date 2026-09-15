@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/renameio"
+
 	"github.com/ossf/malicious-packages/internal/report"
 )
 
@@ -84,6 +86,11 @@ func OriginExistsInPaths(path string, bases []string, sourceID, shasum string) (
 //
 // An error will be returned if there is an error reading the the filesystem.
 func ReportsInPaths(path string, bases []string) ([]string, error) {
+	if len(bases) == 0 {
+		// If bases is empty assume path is a full path to a report directory.
+		return reportsInPath(filepath.Clean(path))
+	}
+
 	var reports []string
 	for _, base := range bases {
 		fp := filepath.Clean(filepath.Join(base, path))
@@ -154,6 +161,8 @@ func PreparePath(path, base string) (string, error) {
 // MoveReport will relocate the report at the supplied path r, from baseSrc
 // to baseDest.
 //
+// r, baseSrc and baseDest are expected to be absolute paths.
+//
 // An error will be returned if the move fails, if the destination directory
 // can not be created, or the report does not live under baseSrc.
 func MoveReport(r, baseSrc, baseDest string) error {
@@ -182,6 +191,41 @@ func MoveReport(r, baseSrc, baseDest string) error {
 
 	if err := os.Rename(r, dest); err != nil {
 		return fmt.Errorf("rename: %w", err)
+	}
+	return nil
+}
+
+// MutateReport allows for the atomic mutation of the report file using the
+// mutateFn. The tempDir is used internally by renameio.
+//
+// mutateFn returns a bool indicating whether or not the report was changed. If
+// the bool is true the report will be written to disk and atomically moved
+// to replace the original file.
+func MutateReport(file string, mutateFn func(*report.Report) (bool, error), tempDir string) error {
+	r, err := report.FromFile(file)
+	if err != nil {
+		return fmt.Errorf("failed to read report %s: %w", file, err)
+	}
+
+	if changed, err := mutateFn(r); err != nil {
+		return fmt.Errorf("failed to mutate report %s: %w", file, err)
+	} else if !changed {
+		return nil
+	}
+
+	t, err := renameio.TempFile(tempDir, file)
+	if err != nil {
+		return fmt.Errorf("failed to open temp file for %s: %w", file, err)
+	}
+	defer t.Cleanup()
+
+	err = r.WriteJSON(t)
+	if err != nil {
+		return fmt.Errorf("failed to write %s: %w", file, err)
+	}
+
+	if err := t.CloseAtomicallyReplace(); err != nil {
+		return fmt.Errorf("atomic save failed for %s: %w", file, err)
 	}
 	return nil
 }

@@ -38,8 +38,7 @@ func New() *StartKeys {
 // ReadYAML populates the data from the supplied reader containing YAML content.
 func (sk *StartKeys) ReadYAML(r io.Reader) error {
 	dec := yaml.NewDecoder(r)
-	err := dec.Decode(&(sk.keys))
-	if err != nil {
+	if err := dec.Decode(&sk.keys); err != nil {
 		return fmt.Errorf("failed decoding state yaml: %w", err)
 	}
 	return nil

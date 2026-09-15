@@ -1,15 +1,18 @@
 {
-  "modified": "2026-05-26T05:55:04Z",
-  "published": "2026-05-21T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4212",
+  "published": "2026-05-21T00:00:00Z",
+  "modified": "2026-08-21T11:26:13.360420372Z",
+  "aliases": [
+    "GHSA-hqrj-3257-4cwr"
+  ],
   "summary": "Malicious code in polymarket-claude-code (npm)",
-  "details": "A coordinated supply-chain attack comprising 9 npm packages published by maintainer `polymarketdev` (GitHub actor `texsellix`, repo `texsellix/polymarket-trading-bot`) within a ~2-minute window on 2026-05-20T23:30Z–23:32Z. All packages masquerade as legitimate Polymarket CLOB trading tools while exfiltrating Ethereum private keys to a Cloudflare Worker C2 at `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys`.\n\n**Kill chain:**\n- The `postinstall` hook (`scripts/postinstall.mjs`) probes for an interactive TTY. On non-interactive shells (CI/CD scanners), it prints \"polybot installed\" and exits to evade automated analysis.\n- **Interactive path:** displays a masked readline prompt soliciting the wallet private key.\n- **Passive path:** reads `.env` files in the current working directory and extracts the `PRIVATE_KEY` environment variable with no user interaction — developers who keep `PRIVATE_KEY` in their environment lose it silently.\n- **Local persistence:** creates `~/.polybot/` (mode 0700) containing `device.json` (UUID + creation timestamp) and `wallets.json` (Ethereum address + keccak256 fingerprint + `pushedAt` timestamp).\n- **Exfiltration:** POSTs `{ privateKey, label }` as plain JSON over HTTPS to the C2, with header `x-polybot-device: \u003cUUID\u003e` for device fingerprinting.\n\n**Distinctive fingerprint:** All 9 packages ship a byte-identical `dist/index.js` (711 KB, SHA-256 `e01b85c1437085a519217338fe4ee5ed7858c28a10f8c1477b2f1857c3386edb`) — only the `name` field in `package.json` differs across packages. The bundle wraps the real Polymarket CLOB SDK, ethers.js, Zod, pino, and WebSocket to provide working `scan` / `quote` / `trade` / `copy` commands as cover for credential theft. The banner falsely claims private keys \"stay encrypted.\"\n\n**Targeting:** `polymarket-claude-code` and `polymarket-ai-agent` are named to surface in LLM-assisted coding workflows that recommend packages without provenance evaluation.\n\n`polymarket-claude-code` is named to surface in Claude Code and other AI coding assistant package recommendations. The maintainer explicitly targets developers who install packages suggested by LLM-based tools that do not evaluate provenance. Payload is identical to the rest of the campaign.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f2b31a4580efa3f8b3392e4d2197aa9253340bbe48741b2f46abcc8fe5296308)\npolymarket-claude-code impersonates official Polymarket tooling and harvests Ethereum wallet private keys from anyone who installs it. scripts/postinstall.mjs auto-spawns `node dist/index.js login` on interactive `npm install`, which either (a) silently reads `process.env.PRIVATE_KEY` and POSTs it, or (b) prompts the user for their wallet private key and POSTs it, in plaintext, to the hardcoded endpoint `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys` (dist/index.js:37). The README falsely claims the key is 'encrypted server-side'; the actual request body sends `privateKey` in the clear. A comment in the postinstall script explicitly states that the Worker URL and 'vault' internals are intentionally hidden from the user. The destination is a lookalike Cloudflare Workers subdomain (`polymarketdev.workers.dev`) — Polymarket's real infrastructure is on `polymarket.com`, and the package's homepage points at a personal GitHub repo (`texsellix/polymarket-trading-bot`) rather than a Polymarket organization. Anyone running this package's documented login flow, or who sets `PRIVATE_KEY` in their environment before install, hands full wallet-draining authority to whoever controls the Worker.\n",
+  "details": "A coordinated supply-chain attack comprising 9 npm packages published by maintainer `polymarketdev` (GitHub actor `texsellix`, repo `texsellix/polymarket-trading-bot`) within a ~2-minute window on 2026-05-20T23:30Z–23:32Z. All packages masquerade as legitimate Polymarket CLOB trading tools while exfiltrating Ethereum private keys to a Cloudflare Worker C2 at `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys`.\n\n**Kill chain:**\n- The `postinstall` hook (`scripts/postinstall.mjs`) probes for an interactive TTY. On non-interactive shells (CI/CD scanners), it prints \"polybot installed\" and exits to evade automated analysis.\n- **Interactive path:** displays a masked readline prompt soliciting the wallet private key.\n- **Passive path:** reads `.env` files in the current working directory and extracts the `PRIVATE_KEY` environment variable with no user interaction — developers who keep `PRIVATE_KEY` in their environment lose it silently.\n- **Local persistence:** creates `~/.polybot/` (mode 0700) containing `device.json` (UUID + creation timestamp) and `wallets.json` (Ethereum address + keccak256 fingerprint + `pushedAt` timestamp).\n- **Exfiltration:** POSTs `{ privateKey, label }` as plain JSON over HTTPS to the C2, with header `x-polybot-device: <UUID>` for device fingerprinting.\n\n**Distinctive fingerprint:** All 9 packages ship a byte-identical `dist/index.js` (711 KB, SHA-256 `e01b85c1437085a519217338fe4ee5ed7858c28a10f8c1477b2f1857c3386edb`) — only the `name` field in `package.json` differs across packages. The bundle wraps the real Polymarket CLOB SDK, ethers.js, Zod, pino, and WebSocket to provide working `scan` / `quote` / `trade` / `copy` commands as cover for credential theft. The banner falsely claims private keys \"stay encrypted.\"\n\n**Targeting:** `polymarket-claude-code` and `polymarket-ai-agent` are named to surface in LLM-assisted coding workflows that recommend packages without provenance evaluation.\n\n`polymarket-claude-code` is named to surface in Claude Code and other AI coding assistant package recommendations. The maintainer explicitly targets developers who install packages suggested by LLM-based tools that do not evaluate provenance. Payload is identical to the rest of the campaign.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f2b31a4580efa3f8b3392e4d2197aa9253340bbe48741b2f46abcc8fe5296308)\npolymarket-claude-code impersonates official Polymarket tooling and harvests Ethereum wallet private keys from anyone who installs it. scripts/postinstall.mjs auto-spawns `node dist/index.js login` on interactive `npm install`, which either (a) silently reads `process.env.PRIVATE_KEY` and POSTs it, or (b) prompts the user for their wallet private key and POSTs it, in plaintext, to the hardcoded endpoint `https://polymarketbot.polymarketdev.workers.dev/v1/wallets/keys` (dist/index.js:37). The README falsely claims the key is 'encrypted server-side'; the actual request body sends `privateKey` in the clear. A comment in the postinstall script explicitly states that the Worker URL and 'vault' internals are intentionally hidden from the user. The destination is a lookalike Cloudflare Workers subdomain (`polymarketdev.workers.dev`) — Polymarket's real infrastructure is on `polymarket.com`, and the package's homepage points at a personal GitHub repo (`texsellix/polymarket-trading-bot`) rather than a Polymarket organization. Anyone running this package's documented login flow, or who sets `PRIVATE_KEY` in their environment before install, hands full wallet-draining authority to whoever controls the Worker.\n\n## Source: ghsa-malware (0ebccae333889ecbf4957802347e19b94a9c9aec68421be444295c18286ffa5d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "polymarket-claude-code"
+        "name": "polymarket-claude-code",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -26,6 +29,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -71,36 +79,57 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/polymarket-claude-code/v/0.1.0"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "actran@amazon.com"
-      ]
     },
     {
-      "name": "SafeDep",
-      "type": "FINDER",
-      "contact": [
-        "https://safedep.io"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-hqrj-3257-4cwr"
     }
   ],
   "database_specific": {
     "malicious-packages-origins": [
       {
-        "source": "amazon-inspector",
-        "sha256": "f2b31a4580efa3f8b3392e4d2197aa9253340bbe48741b2f46abcc8fe5296308",
-        "import_time": "2026-05-26T05:51:08.387785206Z",
         "id": "IN-MAL-2026-003701",
+        "import_time": "2026-05-26T05:51:08.387785206Z",
         "modified_time": "2026-05-21T01:49:07Z",
+        "sha256": "f2b31a4580efa3f8b3392e4d2197aa9253340bbe48741b2f46abcc8fe5296308",
+        "source": "amazon-inspector",
         "versions": [
           "0.1.0"
         ]
+      },
+      {
+        "id": "GHSA-hqrj-3257-4cwr",
+        "import_time": "2026-08-21T11:24:15.720862675Z",
+        "modified_time": "2026-08-21T11:06:15Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "0ebccae333889ecbf4957802347e19b94a9c9aec68421be444295c18286ffa5d",
+        "source": "ghsa-malware"
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "actran@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

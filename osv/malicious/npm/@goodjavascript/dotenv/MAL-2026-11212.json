@@ -1,0 +1,103 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11212",
+  "published": "2026-07-30T22:47:58Z",
+  "modified": "2026-08-03T05:00:40.881932138Z",
+  "aliases": [
+    "GHSA-c5ch-4w75-vcw7"
+  ],
+  "summary": "Malicious code in @goodjavascript/dotenv (npm)",
+  "details": "@goodjavascript/dotenv@1.0.0 (published 2025-03-22T09:05:32Z, replaced by an npm 0.0.1-security holding stub 2026-07-30T22:47:55Z — approximately 16 months live) is a two-file package that impersonates the API of the widely used dotenv configuration loader while running a command-and-control implant.\n\nThe published tarball contains only package.json (164 bytes) and index.js (840 bytes); unpacked size 1004 bytes. There is no scripts block, so there is no install hook — the implant is triggered at runtime, when the module is imported. The package declares a single runtime dependency, systeminformation@^5.25.11.\n\nindex.js exports { config: () => {} }, a no-op stub matching real dotenv's config() entry point, so a caller doing require('@goodjavascript/dotenv').config() observes no error and no effect.\n\nAt module load the file registers setInterval(..., 10000).unref(). The .unref() prevents the timer from holding the Node event loop open, so a host process still exits normally and the implant does not hang builds or short-lived scripts.\n\nThe beacon uses a bare global fetch and the package declares no engines constraint, so the network activity below occurs on Node runtimes that expose a global fetch (Node 18 and later). On each 10-second tick:\n\n1. systeminformation.getStaticData() collects a full static host profile (OS, hardware, network, UUIDs).\n2. The entire profile is POSTed as JSON to http://45.9.148.93/get/<system.uuid.os> — plain HTTP, hardcoded IPv4, no TLS. The OS UUID in the path serves as a per-host identifier.\n3. The response is parsed as JSON. If the field res.cute is present, it is treated as JavaScript source and executed: vm.createContext(ctx) followed by new vm.Script(res.cute).runInContext(ctx), where ctx is { res: <callback>, ...global }. Spreading global into the context gives the delivered code access to the host's Node globals. This is arbitrary remote code execution under the operator's control.\n4. Delivered code may call res(data) — the callback exposed as the context's res property — to POST results back to http://45.9.148.93/re/<system.uuid.os> with body { re: res.cuteId, data }, where res.cuteId correlates the result to the issued task.\n\nClassification: remote access trojan / staged remote-code-execution loader with host reconnaissance exfiltration. Trigger: runtime, on import — there is no install script. The code is not obfuscated.\n\nThe registry has since stripped the package metadata and replaced all content with an 0.0.1-security holding stub, so the tarball is no longer retrievable from npm or from the common mirrors (npmmirror, unpkg, yarn, Skypack, esm.sh, jspm, or jsDelivr file bodies). The analysed bytes were recovered from Software Heritage, which archived the package on 2025-11-04 while it was still published, and were verified independently: the recovered index.js has sha256 a5666532c367714568c5d112300e41d3c3fd6b8665c94f2bb98f5d74fc4d2d6c, matching the per-file sha256 recorded in jsDelivr's flat manifest for 1.0.0. Both sources are linked below.\n\nAt the time of writing, the address 45.9.148.93 does not appear in any other report in this repository.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (27bc0fba7c8305959e897341bc7487fdeb7cd478f89f715f2a36c98a9cdd12ba)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@goodjavascript/dotenv",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-c5ch-4w75-vcw7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@goodjavascript/dotenv"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://archive.softwareheritage.org/browse/release/7f86f9ba0e8d621eda44b4412560d85ddf83fc83/"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://data.jsdelivr.com/v1/package/npm/%40goodjavascript%2Fdotenv@1.0.0/flat"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "45.9.148.93"
+      ],
+      "urls": [
+        "http://45.9.148.93/get/",
+        "http://45.9.148.93/re/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-c5ch-4w75-vcw7",
+        "import_time": "2026-07-31T01:10:09.62125259Z",
+        "modified_time": "2026-07-30T22:47:59Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "27bc0fba7c8305959e897341bc7487fdeb7cd478f89f715f2a36c98a9cdd12ba",
+        "source": "ghsa-malware"
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "r-bedekar",
+      "contact": [
+        "https://github.com/r-bedekar"
+      ],
+      "type": "ANALYST"
+    }
+  ]
+}

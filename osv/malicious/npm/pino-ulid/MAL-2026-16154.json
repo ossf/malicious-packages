@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16154",
+  "published": "2026-09-14T00:00:00Z",
+  "modified": "2026-09-15T06:10:07.938171185Z",
+  "summary": "Malicious code in pino-ulid (npm)",
+  "details": "The npm package pino-ulid is named like a ULID generator, but it is a remote-access trojan. On install, its package.json postinstall script runs `node dist/node/utils.js` (after checking the dist files exist with existsSync). dist/node/utils.js writes a PID lock file, sets up persistence on Windows using schtasks and reg under the name `pkg-agent`, skips machines with fewer than 4 CPUs, and then starts dist/node/payload.js as a detached child process. dist/node/payload.js (about 456 KB, SHA-256 3a9089e9db3650dd6d1584fae709022002dc34854b961abfb014a90f0a7c6a50) is the agent. It connects to a hardcoded WebSocket command-and-control (C2) server. The C2 URL is hidden in dist/agent/config.js as a base64 string XORed with the 8-byte key [90,60,126,18,159,75,109,138], which decodes to ws://95.216.232.162:8010/ (HTTP form http://95.216.232.162:8010/, 15000 ms heartbeat). The agent sends a machine id and system info to the C2, reconnects if the link drops, and supports a `deploy_binary` command: the C2 sends base64 content that the agent writes to disk and runs, replacing itself and setting up persistence again. This gives the attacker remote code execution on the victim machine. The ULID name and description are just cover for the bundled agent that runs on install.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ade54621ac8726adc77fa29c4176808cdf82d0d1f8e45c2e051a17b1fd515779)\npino-ulid impersonates the popular `pino` and `ulid` packages (homepage points at github.com/ulid/javascript) and ships a genuine ULID code path as cover. The package.json `postinstall` hook runs `node dist/node/utils.js`, which spawns `dist/node/payload.js` detached with stdio ignored and unref'd, gated by a minimum CPU-count check (sandbox evasion) and a prior-install check against schtasks / HKCU Run / launchd / systemd / autostart. The bundled 466 KB `dist/node/payload.js` self-labels as `Package-bin Agent - Bundled payload`, includes the `ws` client, decodes a hardcoded configuration via `Buffer.from(enc, 'base64')`, derives a per-host id via `getSystemMachineId`/`defaultAgentId`, and opens a WebSocket control channel. Its `ws.on('message',...)` handler reaches `execSync`/`spawnSync` sinks and writes attacker-supplied `task.contentBase64` bytes to disk via `writeFile`, providing remote shell execution and arbitrary file drop on the installer's host. The agent installs cross-platform boot persistence: a systemd user unit at `~/.config/systemd/user/pkg-agent.service` and/or `~/.config/autostart/pkg-agent.desktop` on Linux, `~/Library/LaunchAgents/com.launchkeeper.pkg-agent.plist` on macOS, and a Task Scheduler entry plus `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run` value `pkg-agent` on Windows. Running `npm install pino-ulid` installs a persistent remotely-controlled agent unrelated to the advertised ULID functionality.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "pino-ulid",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "2.12.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "a81bb3f3339a740224fb53648604e7374e0b104f3993166d84a7cc277aed0439",
+              "tlsh": "4b612025cd980e331ac024d4e8ba5691e536885b89c4f958b3a9425d4fcc3af01ff2ed"
+            },
+            {
+              "path": "dist/node/payload.js",
+              "sha256": "3a9089e9db3650dd6d1584fae709022002dc34854b961abfb014a90f0a7c6a50",
+              "tlsh": "ffa4a44d6ef7111146a3b0b96faf9002b634d007250ced94bd9c93e46f8997c86f6be8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pino-ulid-2.12.3.tgz",
+              "hashes": {
+                "sha1": "8b619cac7a316f1e94d80669ec6e8fd1c50faaf8",
+                "sha512_sri": "sha512-G1qz3x6yt0BU4NLk1yTrMsdB8hdtPw6RzzflABO/wS9dhBiJ5lKuf5OepyQNzl6whTBjdOafTXCWTRDbsppOUA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pino-ulid/v/2.12.3"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Postinstall loader: registers Windows persistence (schtasks/reg as pkg-agent) and spawns dist/node/payload.js detached.",
+          "paths": [
+            "dist/node/utils.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "3a9089e9db3650dd6d1584fae709022002dc34854b961abfb014a90f0a7c6a50"
+          },
+          "note": "WebSocket C2 agent; deploy_binary command writes and runs attacker-supplied code (RCE).",
+          "paths": [
+            "dist/node/payload.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "95.216.232.162"
+      ],
+      "urls": [
+        "ws://95.216.232.162:8010/",
+        "http://95.216.232.162:8010/"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020043",
+        "import_time": "2026-09-14T18:20:58.681134891Z",
+        "modified_time": "2026-09-14T18:08:59Z",
+        "sha256": "ade54621ac8726adc77fa29c4176808cdf82d0d1f8e45c2e051a17b1fd515779",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.12.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

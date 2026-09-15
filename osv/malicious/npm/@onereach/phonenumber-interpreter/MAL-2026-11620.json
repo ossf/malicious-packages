@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-11620",
+  "published": "2026-08-04T13:20:14Z",
+  "modified": "2026-08-05T08:24:51.188491274Z",
+  "aliases": [
+    "GHSA-8289-7q2r-f33m"
+  ],
+  "summary": "Malicious code in @onereach/phonenumber-interpreter (npm)",
+  "details": "npm/@onereach/phonenumber-interpreter is affected by the large-scale, self-propagating npm supply-chain worm of 2026-08-04 (the \"Shai-Hulud: Here We Go Again\" wave) — the same campaign that began with the compromise of the keyv and cacheable maintainer account. The listed version(s) were trojanized and republished by the worm after it reached an npm publish token belonging to a maintainer in this namespace; the payload enumerates every package a stolen token controls and republishes each with the same hook, so many packages under this scope were poisoned in the same short window. Every poisoned release adds a preinstall hook (`\"preinstall\": \"node setup.mjs\"`) that runs on a bare `npm install`, before any project code. setup.mjs downloads a standalone Bun runtime and runs a byte-identical, heavily obfuscated ~728 KB second-stage credential stealer (shipped as Math_Symbol.js / math_init.js). It harvests GitHub, npm, AWS, GCP, Azure, HashiCorp Vault and Kubernetes credentials plus generic secrets and private keys (TruffleHog-style sweep), reads CI/CD secrets and identifies build runners, then republishes further packages the stolen token can reach. Rather than a fixed command-and-control host, it exfiltrates stolen findings to attacker-created GitHub repositories (descriptions reading \"Shai-Hulud: Here We Go Again\") and over DNS. Treat any environment that installed an affected version (with install scripts enabled) as compromised: rotate and revoke all reachable credentials (npm and GitHub tokens, cloud keys, Vault/Kubernetes secrets, and CI org/repo secrets). Part of the August 2026 npm worm that poisoned 400+ packages across many organizations.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (40a24844a966c31b5782cc13018de20d406d6791f2fbdf9b62b9f4a75e3b18be)\nThe package declares a `preinstall` script `node setup.mjs`. `setup.mjs` (itself obfuscated with `_0x`-hex identifiers and string-array indirection) downloads the Bun JavaScript runtime from `https://github.com/oven-sh/bun/releases/download/bun-v1.3.13/...zip`, extracts it to a temp directory, chmods it executable, and uses `execFileSync` to run the tarball-shipped `math_init.js` under Bun on any `npm install`. `math_init.js` is a 727KB Bun-compiled CJS module (`// @bun @bun-cjs`) using obfuscator.io-style transforms: shuffled string array rotated via `push(shift())`, hex-mangled identifiers, and a mixed integer/char decoder table; static extraction of its strings surfaces `child_process` and `.aws` references. The package advertises itself as a libphonenumber wrapper and has no legitimate need for a second JavaScript runtime to execute a large obfuscated blob at install time. Corroborating smuggling signal: `package.json` declares `\"files\": [\"lib\", \"index.js\", \"index.d.ts\"]`, but the tarball also ships `setup.mjs` and `math_init.js` — the entire attack surface lives outside the declared files allowlist. Bun is used specifically because Node-oriented scanners do not follow into a Bun-executed sibling file, so the payload's actual behavior is hidden from most SCA tooling. The Bun runtime is fetched from its official project domain, but the harm is not the runtime fetch — it is the execution of an obfuscated, mismatched-purpose, undeclared payload shipped inside the tarball under that runtime.\n\n## Source: ghsa-malware (70088ddca449db3b5a0fc0b161926428aa80321f833d5aa5eacdb09289d80577)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@onereach/phonenumber-interpreter",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.0.18",
+        "0.0.19",
+        "0.0.20"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.mjs",
+              "sha256": "fd3ca4007b225fdf8de7af4345a19179d5efa8c4bb9205f88cda806e5684b1eb",
+              "tlsh": "9a32640912f63210736765e6f54fa0e8f237094b2498dd47795cb188ef49c2ce9e25be"
+            },
+            {
+              "path": "math_init.js",
+              "sha256": "9fc2570b7cef51c1b8df116d144d11ff4096357be7d2c4c6367cfc2509cf1bcc",
+              "tlsh": "59f493746ec2786982736b5f2199e372e2652e11c27e73fb57e0e432a54c22c30eb51d"
+            },
+            {
+              "path": "package.json",
+              "sha256": "d606c18ca7c3c1eb6a46897cecef91867809de50317011ffb317f003bc8ce4a9",
+              "tlsh": "5f318935cc6c4ea301e845a9a5794282621188434e91fc0c779a931e8f6e6ef35fdb9e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "phonenumber-interpreter-0.0.19.tgz",
+              "hashes": {
+                "sha1": "fdea464abbde47e300bf1d044c3de7e55d6846eb",
+                "sha512_sri": "sha512-nKXn/H6xIhLoHbLtQ5I8ORWc2WO0x3poLNm8vgEk92RHzErCbOBRrNFC/77KKzaYAQcKWR8vqIo+SQhbqlW7ew=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://socket.dev/blog/popular-npm-packages-in-the-keyv-and-cacheable-namespaces-compromised-in-active-supply-chain"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.aikido.dev/blog/keyv-and-friends-compromised-in-npm-supply-chain-attack"
+    },
+    {
+      "type": "WEB",
+      "url": "https://safedep.io/keyv-npm-supply-chain-compromise/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/phonenumber-interpreter"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-8289-7q2r-f33m"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/phonenumber-interpreter/v/0.0.19"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/phonenumber-interpreter/v/0.0.18"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@onereach/phonenumber-interpreter/v/0.0.20"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "Stage 1 loader added to the package tarball and run via the preinstall script 'node setup.mjs'. Downloads a standalone Bun runtime and executes the second stage under it.",
+          "paths": [
+            "setup.mjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Stage 2 payload: byte-identical, heavily obfuscated ~728 KB Bun-bundle credential stealer, shipped in the tarball as Math_Symbol.js and executed at runtime as math_init.js.",
+          "paths": [
+            "Math_Symbol.js",
+            "math_init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-8289-7q2r-f33m",
+        "import_time": "2026-08-05T00:10:17.973866755Z",
+        "modified_time": "2026-08-04T15:53:24Z",
+        "sha256": "70088ddca449db3b5a0fc0b161926428aa80321f833d5aa5eacdb09289d80577",
+        "source": "ghsa-malware",
+        "versions": [
+          "0.0.19",
+          "0.0.18",
+          "0.0.20"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013691",
+        "import_time": "2026-08-05T07:06:59.582958731Z",
+        "modified_time": "2026-08-05T07:00:30Z",
+        "sha256": "40a24844a966c31b5782cc13018de20d406d6791f2fbdf9b62b9f4a75e3b18be",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.19"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-014154",
+        "import_time": "2026-08-05T08:22:32.737571555Z",
+        "modified_time": "2026-08-05T08:09:00Z",
+        "sha256": "4fd512296476117d62746d15a40778580bb9ce9aab47c45b989a4010ce22a3c2",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.18"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-013889",
+        "import_time": "2026-08-05T08:22:13.720017934Z",
+        "modified_time": "2026-08-05T07:30:00Z",
+        "sha256": "78c9f3368975bfcf1125873591f551f8012ff5cfa5969c18e3e276dc4551f8ca",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.20"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Aikido Security",
+      "contact": [
+        "https://www.aikido.dev"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Socket Threat Research Team",
+      "contact": [
+        "https://socket.dev"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

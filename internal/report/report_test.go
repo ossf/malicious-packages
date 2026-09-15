@@ -548,3 +548,56 @@ func TestReport_MarshalJSON_Origins(t *testing.T) {
 		t.Errorf("origin versions = %v; want [1.0.0]", origins[0].Versions)
 	}
 }
+
+func TestWithdrawal(t *testing.T) {
+	r := testReport(osvconstants.EcosystemNPM, "example")
+
+	// Initially should not be withdrawn
+	if r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = true; want false")
+	}
+
+	now := time.Now().Truncate(time.Second).UTC()
+	r.Withdraw(now)
+
+	if !r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = false; want true")
+	}
+	if got := r.Vuln().Withdrawn; !proto.Equal(got, timestamppb.New(now)) {
+		t.Errorf("Withdrawn time = %v; want %v", got, now)
+	}
+	if got := r.Vuln().Modified; !proto.Equal(got, timestamppb.New(now)) {
+		t.Errorf("Modified time = %v; want %v", got, now)
+	}
+}
+
+func TestUnwithdrawal(t *testing.T) {
+	r := testReport(osvconstants.EcosystemNPM, "example")
+
+	// Initially should be withdrawn.
+	r.Withdraw(time.Now().Truncate(time.Second).UTC())
+	if !r.IsWithdrawn() {
+		t.Error("IsWithdrawn() = false; want true")
+	}
+
+	r.Unwithdraw()
+	if r.IsWithdrawn() {
+		t.Error("After Unwithdraw: IsWithdrawn() = true; want false")
+	}
+	if got := r.Vuln().Withdrawn; got != nil {
+		t.Errorf("Withdrawn time = %v; want zero time", got)
+	}
+}
+
+func TestUpdateModified(t *testing.T) {
+	r := testReport(osvconstants.EcosystemNPM, "example")
+	oldModified := r.Vuln().Modified.AsTime()
+
+	time.Sleep(10 * time.Millisecond)
+	r.UpdateModified()
+
+	newModified := r.Vuln().Modified.AsTime()
+	if !newModified.After(oldModified) {
+		t.Errorf("UpdateModified didn't advance modified time: %v <= %v", newModified, oldModified)
+	}
+}
