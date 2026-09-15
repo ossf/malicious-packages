@@ -47,12 +47,43 @@ jobs:
         cd osv-schema/tools/ghsa
         pipenv sync
 
+    - name: Output GitHub quotas pre dump
+      run: |
+        gh api graphql -f query='
+          query {
+            rateLimit {
+              limit
+              cost
+              remaining
+              resetAt
+            }
+          }
+        '
+        gh api -i --silent "/advisories?type=malware&per_page=1&sort=updated&direction=desc"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
     - name: Dump GHSA Malware
       run: |
         cd osv-schema/tools/ghsa
         mkdir OUT
         TIMESINCE=`python3 -c 'import datetime; dt=datetime.datetime.now(datetime.UTC)-datetime.timedelta(hours=24); print(dt.isoformat())'`
-        pipenv run python dump_ghsa.py --token "${{ github.token }}" --query "classifications: [MALWARE] updatedSince: \"$TIMESINCE\"" OUT
+        pipenv run python dump_ghsa.py --token "${{ github.token }}" --query "classifications: [MALWARE] updatedSince: \"$TIMESINCE\" orderBy: { direction: ASC field: UPDATED_AT }" OUT
+
+    - name: Output GitHub quotas post dump
+      run: |
+        gh api graphql -f query='
+          query {
+            rateLimit {
+              limit
+              cost
+              remaining
+              resetAt
+            }
+          }
+        '
+      env:
+        GH_TOKEN: ${{ github.token }}
 
     - name: Convert GHSA to OSV
       run: |

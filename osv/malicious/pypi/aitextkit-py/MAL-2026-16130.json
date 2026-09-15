@@ -1,0 +1,164 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16130",
+  "published": "2026-09-11T15:22:35Z",
+  "modified": "2026-09-14T17:41:01.410848051Z",
+  "summary": "Malicious code in aitextkit-py (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (47e96f519e8acba48a6f7760b37a9ad70b94bfbf79fb5eac4fc682849b2837e3)\nThe package presents itself as a small text-cleaning utility library, but both shipped implementation modules (text.py and system.py) consist of a single-line pyobfuscator.com loader of the form `_ = lambda __: __import__('zlib').decompress(__import__('base64').b64decode(__[::-1]));exec((_)(b'...'))`, which reverses, base64-decodes, zlib-decompresses, and exec()s an opaque blob at module import. __init__.py imports from.text, so `import aitextkit` runs the decoded bytes on the installer's Python interpreter. __init__.py also re-exports an undocumented `setup` symbol whose body lives inside the obfuscated blob and which is not mentioned in the README, tests, or public API documentation - a common stager entry-point shape. system.py, which backs the documented `get_os_version()` helper, uses the identical loader and its tests reference `platform`, `release`, and `arch` fields, so the decoded code at minimum performs host enumeration inside code that is not inspectable from source. The declared text-utility purpose has no legitimate need to ship its entire implementation as an exec-decoded blob; the loader shape matches that used by PyPI credential-stealer families.\n\n## Source: kam193 (73303124008a821f9096bc4899d8df4302abc2e0f86822660422f855a1bc65cb)\nThe package hides code downloading script, which then downloads and executes a heavily obfuscated final stage. The remote stages are hosted on a domain presenting a suspicious-looking corporate website. The downloaded code establishes persistence e.g. as \"anymeetly-cameradriver\" systemd service. The discovered artifacts suggest strongly it acts as an infostealer and RAT.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-aitextkit-py\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - persistence\n\n\n - infostealer\n\n\n - exfiltration-browser-data\n\n\n - rat\n\n\n - The package contains code to execute remote commands (probably limited to a specific set) on the victim's machine.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "aitextkit-py",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.1.0",
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/aitextkit/text.py",
+              "sha256": "0255a199bee113f963aea5fa3e71f1a21bc7a09fff4bd306655556d801eba069",
+              "tlsh": "06512b9f5f135250e77ce44e5973e8bc51eb413469a4ddccc667c2b9513d09d621c144"
+            },
+            {
+              "path": "src/aitextkit/system.py",
+              "sha256": "49fbd2c2e22ad5f1b23eb4b28aa13d4cd66789f7c1f602646a4762e26f837402",
+              "tlsh": "8941e721090888c96770a2be1ab5967eca7ba46a03ca428eca7dc48885e4056d1cd299"
+            },
+            {
+              "path": "src/aitextkit/__init__.py",
+              "sha256": "dc98329f153b0e089a12d4fc04b63b89574693e4b479b698e9f55c1b6c986e0e",
+              "tlsh": "66f0b432cde7eda188b5de126e264182f9980b5b0422c417b934c95c0f360855bdb1eb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aitextkit_py-0.1.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "9836123b013fc812c2d1940733612ffb5f38e60282ab30203826e3e40a213731",
+                "md5": "46b882d4cb77569fa32342499791dfac",
+                "sha256": "cc559b785a4d9c319ee1f58558524f3f3d6f832d1d02587533898308a84e256f"
+              }
+            },
+            {
+              "filename": "aitextkit_py-0.1.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "993d7cd53358e0ca16510976bfd726e987901a2418ced3ebf1af765ac3ad29f9",
+                "md5": "ec3027b0c9462a429a1c9bd71c1b0a2e",
+                "sha256": "38eb22c9cdfb4d930dae69fb368d71ffac44e6376713a36ca64b8aa462ef12e0"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://www.linkedin.com/company/ssbeatech/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/aitextkit-py"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/aitextkit-py/0.1.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/aitextkit-py/0.1.1/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "ssbeatech.com",
+        "anymeetly.com"
+      ],
+      "urls": [
+        "https://ssbeatech.com/download/linux/install",
+        "https://ssbeatech.com/download/linux.zip",
+        "https://ssbeatech.com/download/win/install.ps1",
+        "https://ssbeatech.com/download/v1.0.3/win.zip"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "pypi/2026-09-aitextkit-py/aitextkit-py",
+        "import_time": "2026-09-11T16:19:44.973769778Z",
+        "modified_time": "2026-09-11T15:22:35.068345Z",
+        "sha256": "b1a048ec587dcab5a71ed9423d105b4b972f646b93f790f62c10d394610b64bf",
+        "source": "kam193",
+        "versions": [
+          "0.1.0",
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "pypi/2026-09-aitextkit-py/aitextkit-py",
+        "import_time": "2026-09-11T20:17:44.71873967Z",
+        "modified_time": "2026-09-11T15:22:35.068345Z",
+        "sha256": "73303124008a821f9096bc4899d8df4302abc2e0f86822660422f855a1bc65cb",
+        "source": "kam193",
+        "versions": [
+          "0.1.0",
+          "0.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020039",
+        "import_time": "2026-09-14T17:39:02.211063232Z",
+        "modified_time": "2026-09-14T17:36:15Z",
+        "sha256": "93b48d03570624cc619c16a2df2445ff54dd0094500780a1c28c5e08609059f5",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020040",
+        "import_time": "2026-09-14T17:39:02.284593505Z",
+        "modified_time": "2026-09-14T17:36:25Z",
+        "sha256": "47e96f519e8acba48a6f7760b37a9ad70b94bfbf79fb5eac4fc682849b2837e3",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
+}
