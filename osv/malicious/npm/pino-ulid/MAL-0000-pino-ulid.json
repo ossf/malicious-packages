@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-09-14T00:00:00Z",
+  "published": "2026-09-14T00:00:00Z",
+  "details": "The npm package pino-ulid is named like a ULID generator, but it is a remote-access trojan. On install, its package.json postinstall script runs `node dist/node/utils.js` (after checking the dist files exist with existsSync). dist/node/utils.js writes a PID lock file, sets up persistence on Windows using schtasks and reg under the name `pkg-agent`, skips machines with fewer than 4 CPUs, and then starts dist/node/payload.js as a detached child process. dist/node/payload.js (about 456 KB, SHA-256 3a9089e9db3650dd6d1584fae709022002dc34854b961abfb014a90f0a7c6a50) is the agent. It connects to a hardcoded WebSocket command-and-control (C2) server. The C2 URL is hidden in dist/agent/config.js as a base64 string XORed with the 8-byte key [90,60,126,18,159,75,109,138], which decodes to ws://95.216.232.162:8010/ (HTTP form http://95.216.232.162:8010/, 15000 ms heartbeat). The agent sends a machine id and system info to the C2, reconnects if the link drops, and supports a `deploy_binary` command: the C2 sends base64 content that the agent writes to disk and runs, replacing itself and setting up persistence again. This gives the attacker remote code execution on the victim machine. The ULID name and description are just cover for the bundled agent that runs on install.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "pino-ulid"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            { "introduced": "0" }
+          ]
+        }
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": ["https://safedep.io"]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": ["95.216.232.162"],
+      "urls": [
+        "ws://95.216.232.162:8010/",
+        "http://95.216.232.162:8010/"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["dist/node/utils.js"],
+          "note": "Postinstall loader: registers Windows persistence (schtasks/reg as pkg-agent) and spawns dist/node/payload.js detached."
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": ["dist/node/payload.js"],
+          "note": "WebSocket C2 agent; deploy_binary command writes and runs attacker-supplied code (RCE).",
+          "digests": {
+            "sha256": "3a9089e9db3650dd6d1584fae709022002dc34854b961abfb014a90f0a7c6a50"
+          }
+        }
+      ]
+    }
+  }
+}
