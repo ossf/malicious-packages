@@ -59,6 +59,16 @@ func TestPath(t *testing.T) {
 			want:      "github-action/this-is-a-package",
 		},
 		{
+			name:      "actions/checkout",
+			ecosystem: "GitHub Actions",
+			want:      "github-actions/actions/checkout",
+		},
+		{
+			name:      "actions/checkout/action",
+			ecosystem: "GitHub Actions",
+			want:      "github-actions/actions/checkout/action",
+		},
+		{
 			name:      "vscode.extension",
 			ecosystem: "VSCode:https://open-vsx.org",
 			want:      "vscode:open-vsx.org/vscode.extension",
@@ -132,6 +142,16 @@ func TestCanonicalizeName(t *testing.T) {
 			eco:  osvconstants.EcosystemRubyGems,
 			name: "This-is_a1.test_Example",
 			want: "This-is_a1.test_Example",
+		},
+		{
+			eco:  report.EcosystemGitHubActions,
+			name: "actions/checkout.git",
+			want: "actions/checkout",
+		},
+		{
+			eco:  report.EcosystemGitHubActions,
+			name: "actions/checkout",
+			want: "actions/checkout",
 		},
 	}
 
@@ -599,5 +619,22 @@ func TestUpdateModified(t *testing.T) {
 	newModified := r.Vuln().Modified.AsTime()
 	if !newModified.After(oldModified) {
 		t.Errorf("UpdateModified didn't advance modified time: %v <= %v", newModified, oldModified)
+	}
+}
+
+func TestReportPath_GitHubActions(t *testing.T) {
+	r := testReport(report.EcosystemGitHubActions, "actions/checkout")
+	if got := r.Path(); got != "github-actions/actions/checkout" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
+	}
+
+	rGit := testReport(report.EcosystemGitHubActions, "actions/checkout.git")
+	if got := rGit.Path(); got != "github-actions/actions/checkout" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
+	}
+
+	rSub := testReport(report.EcosystemGitHubActions, "actions/checkout/subaction")
+	if got := rSub.Path(); got != "github-actions/actions/checkout/subaction" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout/subaction")
 	}
 }
