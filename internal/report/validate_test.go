@@ -812,3 +812,527 @@ func TestValidateVuln_GitHubActions_PackageName(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		versions []string
+		wantErr  bool
+	}{
+		// Valid exact release tags
+		{
+			name:     "valid exact tag with v prefix",
+			versions: []string{"v1.0.0"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact tag without v prefix",
+			versions: []string{"1.0.0"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact tag v4.0.1",
+			versions: []string{"v4.0.1"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact tag 4.0.1",
+			versions: []string{"4.0.1"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact tag prerelease rc",
+			versions: []string{"1.0.0-rc1"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact tag prerelease beta",
+			versions: []string{"v2.0.0-beta.2"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid exact release label",
+			versions: []string{"release-2026.01"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid multiple exact tags",
+			versions: []string{"v1.0.0", "v1.0.1", "v1.0.2"},
+			wantErr:  false,
+		},
+
+		// Valid Git commit SHAs
+		{
+			name:     "valid 40-character commit sha lowercase",
+			versions: []string{"11bd71901bbe5b1630ceea73d27597364c9af683"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid 40-character commit sha another",
+			versions: []string{"b4ffde65f46336ab88eb53be808477a3936bae11"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid 40-character commit sha uppercase",
+			versions: []string{"B4FFDE65F46336AB88EB53BE808477A3936BAE11"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid 64-character commit sha",
+			versions: []string{"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid combination of exact tag and commit sha",
+			versions: []string{"v1.0.0", "11bd71901bbe5b1630ceea73d27597364c9af683"},
+			wantErr:  false,
+		},
+
+		// Rejected moving major tags
+		{
+			name:     "invalid moving tag v4",
+			versions: []string{"v4"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag 4",
+			versions: []string{"4"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag v1",
+			versions: []string{"v1"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag 1",
+			versions: []string{"1"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag uppercase V4",
+			versions: []string{"V4"},
+			wantErr:  true,
+		},
+
+		// Rejected moving minor tags
+		{
+			name:     "invalid moving tag v4.1",
+			versions: []string{"v4.1"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag 4.1",
+			versions: []string{"4.1"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag v1.0",
+			versions: []string{"v1.0"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid moving tag 1.0",
+			versions: []string{"1.0"},
+			wantErr:  true,
+		},
+
+		// Rejected moving branch names
+		{
+			name:     "invalid branch name latest",
+			versions: []string{"latest"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name main",
+			versions: []string{"main"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name master",
+			versions: []string{"master"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name head",
+			versions: []string{"head"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name uppercase HEAD",
+			versions: []string{"HEAD"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name dev",
+			versions: []string{"dev"},
+			wantErr:  true,
+		},
+
+		// Rejected zero version
+		{
+			name:     "invalid zero version 0",
+			versions: []string{"0"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid zero version v0",
+			versions: []string{"v0"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid zero version v0.0",
+			versions: []string{"v0.0"},
+			wantErr:  true,
+		},
+
+		// Rejected malformed / whitespace versions
+		{
+			name:     "invalid empty version string",
+			versions: []string{""},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid version leading whitespace",
+			versions: []string{" v1.0.0"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid version trailing whitespace",
+			versions: []string{"v1.0.0 "},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid version inner whitespace",
+			versions: []string{"v1.0. 0"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid mixed valid and moving tag",
+			versions: []string{"v1.0.0", "v4"},
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			vuln := &osvschema.Vulnerability{
+				Affected: []*osvschema.Affected{
+					{
+						Package: &osvschema.Package{
+							Ecosystem: string(report.EcosystemGitHubActions),
+							Name:      "actions/checkout",
+						},
+						Versions: tt.versions,
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if tt.wantErr {
+				if !errors.Is(err, report.ErrInvalidOSV) {
+					t.Errorf("ValidateVuln() error = %v; want error wrapping ErrInvalidOSV", err)
+				}
+			} else if err != nil {
+				t.Errorf("ValidateVuln() unexpected error = %v", err)
+			}
+		})
+	}
+}
+
+func TestValidateVuln_GitHubActions_Ranges(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		ranges  []*osvschema.Range
+		wantErr bool
+	}{
+		// Valid ECOSYSTEM ranges
+		{
+			name: "valid ecosystem range with 0 introduced and exact tag fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "1.0.1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with 0 introduced and v-prefixed tag fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "v4.0.1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with exact tags introduced and fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "1.0.0"},
+						{Fixed: "1.0.1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with commit sha fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "11bd71901bbe5b1630ceea73d27597364c9af683"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with commit sha introduced and fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "b4ffde65f46336ab88eb53be808477a3936bae11"},
+						{Fixed: "11bd71901bbe5b1630ceea73d27597364c9af683"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with last_affected exact tag",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{LastAffected: "4.0.0"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+
+		// Rejected moving tags in ECOSYSTEM ranges
+		{
+			name: "invalid ecosystem range with moving tag v4 fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "v4"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag v4.1 fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "v4.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag main fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "main"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag latest fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "latest"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag v4 introduced",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "v4"},
+						{Fixed: "4.0.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag v4.1 introduced",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "v4.1"},
+						{Fixed: "4.1.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with moving tag main introduced",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "main"},
+						{Fixed: "4.0.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with 0 fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "1.0.0"},
+						{Fixed: "0"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid ecosystem range with whitespace in event",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: " 1.0.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+
+		// Valid GIT ranges
+		{
+			name: "valid git range with commit sha introduced and fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_GIT,
+					Repo: "https://github.com/actions/checkout",
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "11bd71901bbe5b1630ceea73d27597364c9af683"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+
+		// Rejected GIT ranges with non-commit IDs
+		{
+			name: "invalid git range with moving tag v4 fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_GIT,
+					Repo: "https://github.com/actions/checkout",
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "v4"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid git range with branch name main fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_GIT,
+					Repo: "https://github.com/actions/checkout",
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "main"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+
+		// Rejected SEMVER ranges
+		{
+			name: "invalid range type SEMVER not supported for GitHub Actions",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_SEMVER,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "1.0.1"},
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			vuln := &osvschema.Vulnerability{
+				Affected: []*osvschema.Affected{
+					{
+						Package: &osvschema.Package{
+							Ecosystem: string(report.EcosystemGitHubActions),
+							Name:      "actions/checkout",
+						},
+						Ranges: tt.ranges,
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if tt.wantErr {
+				if !errors.Is(err, report.ErrInvalidOSV) {
+					t.Errorf("ValidateVuln() error = %v; want error wrapping ErrInvalidOSV", err)
+				}
+			} else if err != nil {
+				t.Errorf("ValidateVuln() unexpected error = %v", err)
+			}
+		})
+	}
+}

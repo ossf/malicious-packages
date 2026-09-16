@@ -34,8 +34,12 @@ import (
 )
 
 func testReport(ecosystem osvconstants.Ecosystem, name string) *report.Report {
-	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["0"]}]}`
-	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
+	ver := "0"
+	if ecosystem == report.EcosystemGitHubActions {
+		ver = "1.0.0"
+	}
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["%s"]}]}`
+	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name, ver)))
 	if err != nil {
 		panic(err)
 	}

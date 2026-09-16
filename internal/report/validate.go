@@ -20,6 +20,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"maps"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -98,6 +99,12 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 		ecosystem, err := validatePackage(v.Affected[i].Package)
 		if err != nil {
 			return err
+		}
+
+		if ecosystem == EcosystemGitHubActions {
+			if err := validateGitHubActionVersions(v.Affected[i].Versions); err != nil {
+				return err
+			}
 		}
 
 		if ecosystem == ecosystemGit && len(v.Affected[i].Ranges) == 0 {
@@ -212,6 +219,74 @@ func validateGitHubActionName(name string) error {
 	return nil
 }
 
+var movingTagRegexes = []*regexp.Regexp{
+	regexp.MustCompile(`^(?i)v?[0-9]+$`),
+	regexp.MustCompile(`^(?i)v?[0-9]+\.[0-9]+$`),
+	regexp.MustCompile(`^(?i)(latest|main|master|head|dev)$`),
+}
+
+// isGitCommitSHA reports whether s is a valid hex-encoded Git commit hash
+// (either 40-character SHA-1 or 64-character SHA-256).
+func isGitCommitSHA(s string) bool {
+	if len(s) != 40 && len(s) != 64 {
+		return false
+	}
+	for _, c := range []byte(s) {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
+}
+
+// isMovingTag reports whether v is a floating tag or branch name that is not
+// permitted for GitHub Actions advisories (e.g. "v1", "v4", "v4.1", "main").
+// Git commit hashes are never considered moving tags.
+func isMovingTag(v string) bool {
+	if isGitCommitSHA(v) {
+		return false
+	}
+	trimmed := strings.TrimSpace(v)
+	for _, re := range movingTagRegexes {
+		if re.MatchString(trimmed) {
+			return true
+		}
+	}
+	return false
+}
+
+// validateGitHubActionVersions ensures that versions listed for GitHub Actions
+// do not contain moving tags or invalid formatting.
+func validateGitHubActionVersions(versions []string) error {
+	for _, ver := range versions {
+		if ver == "" {
+			return fmt.Errorf("%w: version must not be empty", ErrInvalidOSV)
+		}
+		if strings.TrimSpace(ver) != ver || strings.ContainsAny(ver, " \t\r\n") {
+			return fmt.Errorf("%w: version contains whitespace: %q", ErrInvalidOSV, ver)
+		}
+		if isMovingTag(ver) {
+			return fmt.Errorf("%w: version %q is a moving tag and not permitted for GitHub Actions", ErrInvalidOSV, ver)
+		}
+	}
+	return nil
+}
+
+// validateGitHubActionRangeEvent ensures that event values in GitHub Actions ranges
+// do not contain moving tags. The introduced event may be "0".
+func validateGitHubActionRangeEvent(val string, allowZero bool) error {
+	if strings.TrimSpace(val) != val || strings.ContainsAny(val, " \t\r\n") {
+		return fmt.Errorf("%w: range event contains whitespace: %q", ErrInvalidOSV, val)
+	}
+	if allowZero && val == "0" {
+		return nil
+	}
+	if isMovingTag(val) {
+		return fmt.Errorf("%w: range event %q is a moving tag and not permitted for GitHub Actions", ErrInvalidOSV, val)
+	}
+	return nil
+}
+
 // semverEcosystem is an allowlist indicating which ecosystems are allowed to
 // have a range type of "SEMVER".
 var semverEcosystem = map[osvconstants.Ecosystem]struct{}{
@@ -293,6 +368,11 @@ func validateRange(r *osvschema.Range, ecosystem osvconstants.Ecosystem) error {
 		// Ensure the range contains a valid Git commit ID, if it is a Git range.
 		if r.Type == osvschema.Range_GIT {
 			if err := validateGitCommitID(val, allowZero); err != nil {
+				return err
+			}
+		}
+		if ecosystem == EcosystemGitHubActions {
+			if err := validateGitHubActionRangeEvent(val, allowZero); err != nil {
 				return err
 			}
 		}
