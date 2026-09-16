@@ -688,3 +688,127 @@ func TestValidateVuln_DatabaseSpecific(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateVuln_GitHubActions_PackageName(t *testing.T) {
+	tests := []struct {
+		name    string
+		pkgName string
+		wantErr bool
+	}{
+		{
+			name:    "valid standard owner/repo",
+			pkgName: "actions/checkout",
+			wantErr: false,
+		},
+		{
+			name:    "valid owner/repo with subpath",
+			pkgName: "actions/checkout/subaction",
+			wantErr: false,
+		},
+		{
+			name:    "valid owner/repo with .git suffix",
+			pkgName: "actions/checkout.git",
+			wantErr: false,
+		},
+		{
+			name:    "invalid single component",
+			pkgName: "checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid url scheme https",
+			pkgName: "https://github.com/actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid url scheme http",
+			pkgName: "http://github.com/actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid url scheme git@",
+			pkgName: "git@github.com:actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid url scheme git://",
+			pkgName: "git://github.com/actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid path traversal with .. in middle",
+			pkgName: "actions/../checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid path traversal with leading ..",
+			pkgName: "../actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid path traversal with trailing ..",
+			pkgName: "actions/checkout/..",
+			wantErr: true,
+		},
+		{
+			name:    "invalid path segment with .",
+			pkgName: "actions/./checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid empty segment double slash",
+			pkgName: "actions//checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid leading slash",
+			pkgName: "/actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid trailing slash",
+			pkgName: "actions/checkout/",
+			wantErr: true,
+		},
+		{
+			name:    "invalid whitespace leading",
+			pkgName: " actions/checkout",
+			wantErr: true,
+		},
+		{
+			name:    "invalid whitespace trailing",
+			pkgName: "actions/checkout ",
+			wantErr: true,
+		},
+		{
+			name:    "invalid whitespace middle",
+			pkgName: "actions/ check out",
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			vuln := &osvschema.Vulnerability{
+				Affected: []*osvschema.Affected{
+					{
+						Package: &osvschema.Package{
+							Ecosystem: string(report.EcosystemGitHubActions),
+							Name:      tt.pkgName,
+						},
+						Versions: []string{"1.0.0"},
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if tt.wantErr {
+				if !errors.Is(err, report.ErrInvalidOSV) {
+					t.Errorf("ValidateVuln() error = %v; want error wrapping ErrInvalidOSV", err)
+				}
+			} else if err != nil {
+				t.Errorf("ValidateVuln() unexpected error = %v", err)
+			}
+		})
+	}
+}

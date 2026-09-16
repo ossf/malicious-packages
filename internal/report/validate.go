@@ -35,12 +35,16 @@ const (
 	// ecosystemGit is synthetic ecosystem used when a git-based report is being
 	// processed, since those reports do not have any package data.
 	ecosystemGit = osvconstants.Ecosystem("Git")
+
+	// EcosystemGitHubActions is the ecosystem used for GitHub Actions reports.
+	EcosystemGitHubActions = osvconstants.EcosystemGitHubActions
 )
 
 var supportedEcosystems = []osvconstants.Ecosystem{
 	osvconstants.EcosystemAlpine,
 	osvconstants.EcosystemCratesIO,
 	osvconstants.EcosystemDebian,
+	EcosystemGitHubActions,
 	osvconstants.EcosystemGo,
 	osvconstants.EcosystemHex,
 	osvconstants.EcosystemMaven,
@@ -178,7 +182,34 @@ func validatePackage(pkg *osvschema.Package) (osvconstants.Ecosystem, error) {
 		}
 	}
 
+	// Specific validation for GitHub Actions package names.
+	if ecosystem == EcosystemGitHubActions {
+		if err := validateGitHubActionName(name); err != nil {
+			return "", err
+		}
+	}
+
 	return ecosystem, nil
+}
+
+func validateGitHubActionName(name string) error {
+	if strings.TrimSpace(name) != name || strings.ContainsAny(name, " \t\r\n") {
+		return fmt.Errorf("%w: action name contains whitespace: %q", ErrInvalidOSV, name)
+	}
+	if strings.Contains(name, "://") || strings.HasPrefix(name, "git@") {
+		return fmt.Errorf("%w: action name must not include url scheme: %q", ErrInvalidOSV, name)
+	}
+	trimmed, _ := strings.CutSuffix(name, ".git")
+	parts := strings.Split(trimmed, "/")
+	if len(parts) < 2 {
+		return fmt.Errorf("%w: invalid github action name %q: expected owner/repo", ErrInvalidOSV, name)
+	}
+	for _, p := range parts {
+		if p == "" || p == "." || p == ".." {
+			return fmt.Errorf("%w: invalid path segment %q in action %q", ErrInvalidOSV, p, name)
+		}
+	}
+	return nil
 }
 
 // semverEcosystem is an allowlist indicating which ecosystems are allowed to
