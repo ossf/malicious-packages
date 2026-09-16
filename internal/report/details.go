@@ -19,6 +19,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	mppb "github.com/ossf/malicious-packages/proto"
 )
 
 const (
@@ -62,7 +64,7 @@ func (r *Report) HasDetailsHeader() bool {
 //
 // On success user contains any user contributed details, and sources contains
 // the detail provided by each unique source, where the key is the source ID.
-func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err error) {
+func (r *Report) ParseDetails() (user string, sources map[*mppb.OriginRef]string, err error) {
 	parts := strings.Split(r.raw.Details, detailHeader)
 	if l := len(parts); l == 1 {
 		// If parts has one entry then assume there are only user contributed details.
@@ -74,7 +76,7 @@ func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err
 	// If we reached here then we have both user contributed details, and
 	// ingested source details.
 	user = strings.TrimSpace(parts[0])
-	sources = make(map[*OriginRef]string)
+	sources = make(map[*mppb.OriginRef]string)
 	if strings.TrimSpace(parts[1]) == "" {
 		// It is possible that the header was added, but there are no source
 		// details.
@@ -110,15 +112,15 @@ func (r *Report) ParseDetails() (user string, sources map[*OriginRef]string, err
 // If a source has multiple origins present, the origin for the same source with
 // the longest detail will be chosen based on the assumption that the longer
 // detail has more information in it.
-func (r *Report) SetDetails(user string, sourceDetailsSet ...map[*OriginRef]string) {
+func (r *Report) SetDetails(user string, sourceDetailsSet ...map[*mppb.OriginRef]string) {
 	res := ""
 	if user != "" {
 		res = strings.TrimSpace(user) + "\n"
 	}
 	res += detailHeader
-	bestOrigins := make(map[string]*OriginRef)
+	bestOrigins := make(map[string]*mppb.OriginRef)
 	var sources []string
-	detailMap := make(map[*OriginRef]string)
+	detailMap := make(map[*mppb.OriginRef]string)
 	for _, sourceDetails := range sourceDetailsSet {
 		for o, d := range sourceDetails {
 			if strings.TrimSpace(d) == "" {
@@ -147,7 +149,7 @@ func (r *Report) SetDetails(user string, sourceDetailsSet ...map[*OriginRef]stri
 	for _, s := range sources {
 		o := bestOrigins[s]
 		d := detailMap[o]
-		res += fmt.Sprintf(detailSectionHeader, o.Source, o.SHASum) + strings.TrimSpace(d) + "\n"
+		res += fmt.Sprintf(detailSectionHeader, o.Source, o.ShaSum) + strings.TrimSpace(d) + "\n"
 	}
 	// Assign!
 	r.raw.Details = res

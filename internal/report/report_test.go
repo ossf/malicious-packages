@@ -524,7 +524,7 @@ func TestReport_Split_WithTooManyOrigins(t *testing.T) {
 func TestReport_MarshalJSON_Origins(t *testing.T) {
 	r := testReport(osvconstants.EcosystemPyPI, "example")
 	ref := r.AddOrigin("test-source", "deadbeef")
-	ref.ID = "MAL-2024-1234"
+	ref.Id = "MAL-2024-1234"
 	ref.Versions = []string{"1.0.0"}
 
 	b, err := r.MarshalJSON()
@@ -541,7 +541,7 @@ func TestReport_MarshalJSON_Origins(t *testing.T) {
 	if len(origins) != 1 {
 		t.Fatalf("len(origins) = %d; want 1", len(origins))
 	}
-	if origins[0].Source != "test-source" || origins[0].SHASum != "deadbeef" || origins[0].ID != "MAL-2024-1234" {
+	if origins[0].Source != "test-source" || origins[0].ShaSum != "deadbeef" || origins[0].Id != "MAL-2024-1234" {
 		t.Errorf("origin = %+v; want matching test-source", origins[0])
 	}
 	if !reflect.DeepEqual(origins[0].Versions, []string{"1.0.0"}) {
