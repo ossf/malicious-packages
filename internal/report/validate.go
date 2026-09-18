@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"unicode"
 
 	"github.com/ossf/osv-schema/bindings/go/osvconstants"
 	"github.com/ossf/osv-schema/bindings/go/osvschema"
@@ -32,20 +33,22 @@ import (
 	"github.com/ossf/malicious-packages/internal/gitname"
 )
 
+var (
+	githubOrgRegex  = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9-]{0,38}$`)
+	githubRepoRegex = regexp.MustCompile(`^[a-zA-Z0-9_.-]{1,100}$`)
+)
+
 const (
 	// ecosystemGit is synthetic ecosystem used when a git-based report is being
 	// processed, since those reports do not have any package data.
 	ecosystemGit = osvconstants.Ecosystem("Git")
-
-	// EcosystemGitHubActions is the ecosystem used for GitHub Actions reports.
-	EcosystemGitHubActions = osvconstants.EcosystemGitHubActions
 )
 
 var supportedEcosystems = []osvconstants.Ecosystem{
 	osvconstants.EcosystemAlpine,
 	osvconstants.EcosystemCratesIO,
 	osvconstants.EcosystemDebian,
-	EcosystemGitHubActions,
+	osvconstants.EcosystemGitHubActions,
 	osvconstants.EcosystemGo,
 	osvconstants.EcosystemHex,
 	osvconstants.EcosystemMaven,
@@ -101,7 +104,7 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 			return err
 		}
 
-		if ecosystem == EcosystemGitHubActions {
+		if ecosystem == osvconstants.EcosystemGitHubActions {
 			if err := validateGitHubActionVersions(v.Affected[i].Versions); err != nil {
 				return err
 			}
@@ -190,7 +193,7 @@ func validatePackage(pkg *osvschema.Package) (osvconstants.Ecosystem, error) {
 	}
 
 	// Specific validation for GitHub Actions package names.
-	if ecosystem == EcosystemGitHubActions {
+	if ecosystem == osvconstants.EcosystemGitHubActions {
 		if err := validateGitHubActionName(name); err != nil {
 			return "", err
 		}
@@ -199,20 +202,32 @@ func validatePackage(pkg *osvschema.Package) (osvconstants.Ecosystem, error) {
 	return ecosystem, nil
 }
 
+func hasWhitespace(s string) bool {
+	return strings.ContainsFunc(s, unicode.IsSpace)
+}
+
 func validateGitHubActionName(name string) error {
-	if strings.TrimSpace(name) != name || strings.ContainsAny(name, " \t\r\n") {
+	if hasWhitespace(name) {
 		return fmt.Errorf("%w: action name contains whitespace: %q", ErrInvalidOSV, name)
-	}
-	if strings.Contains(name, "://") || strings.HasPrefix(name, "git@") {
-		return fmt.Errorf("%w: action name must not include url scheme: %q", ErrInvalidOSV, name)
 	}
 	trimmed, _ := strings.CutSuffix(name, ".git")
 	parts := strings.Split(trimmed, "/")
 	if len(parts) < 2 {
 		return fmt.Errorf("%w: invalid github action name %q: expected owner/repo", ErrInvalidOSV, name)
 	}
-	for _, p := range parts {
-		if p == "" || p == "." || p == ".." {
+	// Validate owner/org
+	org := parts[0]
+	if !githubOrgRegex.MatchString(org) {
+		return fmt.Errorf("%w: invalid github action org %q in %q", ErrInvalidOSV, org, name)
+	}
+	// Validate repo
+	repo := parts[1]
+	if !githubRepoRegex.MatchString(repo) || repo == "." || repo == ".." {
+		return fmt.Errorf("%w: invalid github action repo %q in %q", ErrInvalidOSV, repo, name)
+	}
+	// Validate optional subpath segments
+	for _, p := range parts[2:] {
+		if p == "" || p == "." || p == ".." || !githubRepoRegex.MatchString(p) {
 			return fmt.Errorf("%w: invalid path segment %q in action %q", ErrInvalidOSV, p, name)
 		}
 	}
@@ -221,52 +236,49 @@ func validateGitHubActionName(name string) error {
 
 var movingTagRegexes = []*regexp.Regexp{
 	regexp.MustCompile(`^(?i)v?[0-9]+$`),
-	regexp.MustCompile(`^(?i)v?[0-9]+\.[0-9]+$`),
-	regexp.MustCompile(`^(?i)(latest|main|master|head|dev)$`),
-}
-
-// isGitCommitSHA reports whether s is a valid hex-encoded Git commit hash
-// (either 40-character SHA-1 or 64-character SHA-256).
-func isGitCommitSHA(s string) bool {
-	if len(s) != 40 && len(s) != 64 {
-		return false
-	}
-	for _, c := range []byte(s) {
-		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
-			return false
-		}
-	}
-	return true
+	regexp.MustCompile(`^(?i)(latest|main|master|head|dev|nightly|canary|trunk|stable)$`),
 }
 
 // isMovingTag reports whether v is a floating tag or branch name that is not
-// permitted for GitHub Actions advisories (e.g. "v1", "v4", "v4.1", "main").
+// permitted for GitHub Actions advisories (e.g. "v1", "v4", "main", "latest").
 // Git commit hashes are never considered moving tags.
 func isMovingTag(v string) bool {
-	if isGitCommitSHA(v) {
+	if validateGitCommitID(v, false) == nil {
 		return false
 	}
-	trimmed := strings.TrimSpace(v)
 	for _, re := range movingTagRegexes {
-		if re.MatchString(trimmed) {
+		if re.MatchString(v) {
 			return true
 		}
 	}
 	return false
 }
 
+// validateGitHubActionVersion ensures that a version value for GitHub Actions
+// does not contain whitespace, is non-empty, and does not contain moving tags.
+// The introduced event may be "0".
+func validateGitHubActionVersion(val string, allowZero bool) error {
+	if val == "" {
+		return fmt.Errorf("%w: version must not be empty", ErrInvalidOSV)
+	}
+	if hasWhitespace(val) {
+		return fmt.Errorf("%w: version contains whitespace: %q", ErrInvalidOSV, val)
+	}
+	if allowZero && val == "0" {
+		return nil
+	}
+	if isMovingTag(val) {
+		return fmt.Errorf("%w: version %q is a moving tag and not permitted for GitHub Actions", ErrInvalidOSV, val)
+	}
+	return nil
+}
+
 // validateGitHubActionVersions ensures that versions listed for GitHub Actions
 // do not contain moving tags or invalid formatting.
 func validateGitHubActionVersions(versions []string) error {
 	for _, ver := range versions {
-		if ver == "" {
-			return fmt.Errorf("%w: version must not be empty", ErrInvalidOSV)
-		}
-		if strings.TrimSpace(ver) != ver || strings.ContainsAny(ver, " \t\r\n") {
-			return fmt.Errorf("%w: version contains whitespace: %q", ErrInvalidOSV, ver)
-		}
-		if isMovingTag(ver) {
-			return fmt.Errorf("%w: version %q is a moving tag and not permitted for GitHub Actions", ErrInvalidOSV, ver)
+		if err := validateGitHubActionVersion(ver, false); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -275,16 +287,7 @@ func validateGitHubActionVersions(versions []string) error {
 // validateGitHubActionRangeEvent ensures that event values in GitHub Actions ranges
 // do not contain moving tags. The introduced event may be "0".
 func validateGitHubActionRangeEvent(val string, allowZero bool) error {
-	if strings.TrimSpace(val) != val || strings.ContainsAny(val, " \t\r\n") {
-		return fmt.Errorf("%w: range event contains whitespace: %q", ErrInvalidOSV, val)
-	}
-	if allowZero && val == "0" {
-		return nil
-	}
-	if isMovingTag(val) {
-		return fmt.Errorf("%w: range event %q is a moving tag and not permitted for GitHub Actions", ErrInvalidOSV, val)
-	}
-	return nil
+	return validateGitHubActionVersion(val, allowZero)
 }
 
 // semverEcosystem is an allowlist indicating which ecosystems are allowed to
@@ -371,7 +374,7 @@ func validateRange(r *osvschema.Range, ecosystem osvconstants.Ecosystem) error {
 				return err
 			}
 		}
-		if ecosystem == EcosystemGitHubActions {
+		if ecosystem == osvconstants.EcosystemGitHubActions {
 			if err := validateGitHubActionRangeEvent(val, allowZero); err != nil {
 				return err
 			}

@@ -430,9 +430,9 @@ func canonicalizeName(name string, ecosystem osvconstants.Ecosystem) string {
 	case ecosystemGit:
 		// CanonForStorage is called for the name earlier during UnmarshalJSON
 		return name
-	case EcosystemGitHubActions:
+	case osvconstants.EcosystemGitHubActions:
 		name, _ = strings.CutSuffix(name, ".git")
-		return name
+		return strings.ToLower(name)
 	default:
 		// Reasonable default is to do nothing
 		return name
