@@ -34,10 +34,8 @@ import (
 )
 
 func testReport(ecosystem osvconstants.Ecosystem, name string) *report.Report {
-	ver := "0"
-	if ecosystem == report.EcosystemGitHubActions {
-		ver = "1.0.0"
-	}
+	// Use "1.0.0" instead of "0" because GitHub Actions rejects "0" as a moving major tag.
+	ver := "1.0.0"
 	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["%s"]}]}`
 	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name, ver)))
 	if err != nil {
@@ -148,12 +146,12 @@ func TestCanonicalizeName(t *testing.T) {
 			want: "This-is_a1.test_Example",
 		},
 		{
-			eco:  report.EcosystemGitHubActions,
+			eco:  osvconstants.EcosystemGitHubActions,
 			name: "actions/checkout.git",
 			want: "actions/checkout",
 		},
 		{
-			eco:  report.EcosystemGitHubActions,
+			eco:  osvconstants.EcosystemGitHubActions,
 			name: "actions/checkout",
 			want: "actions/checkout",
 		},
@@ -627,17 +625,17 @@ func TestUpdateModified(t *testing.T) {
 }
 
 func TestReportPath_GitHubActions(t *testing.T) {
-	r := testReport(report.EcosystemGitHubActions, "actions/checkout")
+	r := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout")
 	if got := r.Path(); got != "github-actions/actions/checkout" {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
 	}
 
-	rGit := testReport(report.EcosystemGitHubActions, "actions/checkout.git")
+	rGit := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout.git")
 	if got := rGit.Path(); got != "github-actions/actions/checkout" {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
 	}
 
-	rSub := testReport(report.EcosystemGitHubActions, "actions/checkout/subaction")
+	rSub := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout/subaction")
 	if got := rSub.Path(); got != "github-actions/actions/checkout/subaction" {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout/subaction")
 	}

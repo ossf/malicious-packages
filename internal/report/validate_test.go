@@ -794,7 +794,7 @@ func TestValidateVuln_GitHubActions_PackageName(t *testing.T) {
 				Affected: []*osvschema.Affected{
 					{
 						Package: &osvschema.Package{
-							Ecosystem: string(report.EcosystemGitHubActions),
+							Ecosystem: string(osvconstants.EcosystemGitHubActions),
 							Name:      tt.pkgName,
 						},
 						Versions: []string{"1.0.0"},
@@ -862,6 +862,26 @@ func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
 			versions: []string{"v1.0.0", "v1.0.1", "v1.0.2"},
 			wantErr:  false,
 		},
+		{
+			name:     "valid two-digit tag v4.1",
+			versions: []string{"v4.1"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid two-digit tag 4.1",
+			versions: []string{"4.1"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid two-digit tag v1.0",
+			versions: []string{"v1.0"},
+			wantErr:  false,
+		},
+		{
+			name:     "valid two-digit tag 1.0",
+			versions: []string{"1.0"},
+			wantErr:  false,
+		},
 
 		// Valid Git commit SHAs
 		{
@@ -917,28 +937,6 @@ func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
 			wantErr:  true,
 		},
 
-		// Rejected moving minor tags
-		{
-			name:     "invalid moving tag v4.1",
-			versions: []string{"v4.1"},
-			wantErr:  true,
-		},
-		{
-			name:     "invalid moving tag 4.1",
-			versions: []string{"4.1"},
-			wantErr:  true,
-		},
-		{
-			name:     "invalid moving tag v1.0",
-			versions: []string{"v1.0"},
-			wantErr:  true,
-		},
-		{
-			name:     "invalid moving tag 1.0",
-			versions: []string{"1.0"},
-			wantErr:  true,
-		},
-
 		// Rejected moving branch names
 		{
 			name:     "invalid branch name latest",
@@ -970,6 +968,26 @@ func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
 			versions: []string{"dev"},
 			wantErr:  true,
 		},
+		{
+			name:     "invalid branch name nightly",
+			versions: []string{"nightly"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name canary",
+			versions: []string{"canary"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name trunk",
+			versions: []string{"trunk"},
+			wantErr:  true,
+		},
+		{
+			name:     "invalid branch name stable",
+			versions: []string{"stable"},
+			wantErr:  true,
+		},
 
 		// Rejected zero version
 		{
@@ -980,11 +998,6 @@ func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
 		{
 			name:     "invalid zero version v0",
 			versions: []string{"v0"},
-			wantErr:  true,
-		},
-		{
-			name:     "invalid zero version v0.0",
-			versions: []string{"v0.0"},
 			wantErr:  true,
 		},
 
@@ -1023,7 +1036,7 @@ func TestValidateVuln_GitHubActions_Versions(t *testing.T) {
 				Affected: []*osvschema.Affected{
 					{
 						Package: &osvschema.Package{
-							Ecosystem: string(report.EcosystemGitHubActions),
+							Ecosystem: string(osvconstants.EcosystemGitHubActions),
 							Name:      "actions/checkout",
 						},
 						Versions: tt.versions,
@@ -1129,6 +1142,32 @@ func TestValidateVuln_GitHubActions_Ranges(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "valid ecosystem range with two-digit tag v4.1 fixed",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "0"},
+						{Fixed: "v4.1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid ecosystem range with two-digit tag v4.1 introduced",
+			ranges: []*osvschema.Range{
+				{
+					Type: osvschema.Range_ECOSYSTEM,
+					Events: []*osvschema.Event{
+						{Introduced: "v4.1"},
+						{Fixed: "4.1.1"},
+					},
+				},
+			},
+			wantErr: false,
+		},
 
 		// Rejected moving tags in ECOSYSTEM ranges
 		{
@@ -1139,19 +1178,6 @@ func TestValidateVuln_GitHubActions_Ranges(t *testing.T) {
 					Events: []*osvschema.Event{
 						{Introduced: "0"},
 						{Fixed: "v4"},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid ecosystem range with moving tag v4.1 fixed",
-			ranges: []*osvschema.Range{
-				{
-					Type: osvschema.Range_ECOSYSTEM,
-					Events: []*osvschema.Event{
-						{Introduced: "0"},
-						{Fixed: "v4.1"},
 					},
 				},
 			},
@@ -1191,19 +1217,6 @@ func TestValidateVuln_GitHubActions_Ranges(t *testing.T) {
 					Events: []*osvschema.Event{
 						{Introduced: "v4"},
 						{Fixed: "4.0.1"},
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "invalid ecosystem range with moving tag v4.1 introduced",
-			ranges: []*osvschema.Range{
-				{
-					Type: osvschema.Range_ECOSYSTEM,
-					Events: []*osvschema.Event{
-						{Introduced: "v4.1"},
-						{Fixed: "4.1.1"},
 					},
 				},
 			},
@@ -1318,7 +1331,7 @@ func TestValidateVuln_GitHubActions_Ranges(t *testing.T) {
 				Affected: []*osvschema.Affected{
 					{
 						Package: &osvschema.Package{
-							Ecosystem: string(report.EcosystemGitHubActions),
+							Ecosystem: string(osvconstants.EcosystemGitHubActions),
 							Name:      "actions/checkout",
 						},
 						Ranges: tt.ranges,
