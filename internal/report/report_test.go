@@ -34,8 +34,10 @@ import (
 )
 
 func testReport(ecosystem osvconstants.Ecosystem, name string) *report.Report {
-	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["0"]}]}`
-	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name)))
+	// Use "1.0.0" instead of "0" because GitHub Actions rejects "0" as a moving major tag.
+	ver := "1.0.0"
+	rJSON := `{ "schema_version": "1.5.0", "summary": "test report", "affected": [{"package":{"ecosystem": "%s", "name": "%s"}, "versions": ["%s"]}]}`
+	r, err := report.ReadJSON(bytes.NewBufferString(fmt.Sprintf(rJSON, ecosystem, name, ver)))
 	if err != nil {
 		panic(err)
 	}
@@ -57,6 +59,16 @@ func TestPath(t *testing.T) {
 			name:      "ThIs-is-A-Package",
 			ecosystem: "Github Action",
 			want:      "github-action/this-is-a-package",
+		},
+		{
+			name:      "actions/checkout",
+			ecosystem: "GitHub Actions",
+			want:      "github-actions/actions/checkout",
+		},
+		{
+			name:      "actions/checkout/action",
+			ecosystem: "GitHub Actions",
+			want:      "github-actions/actions/checkout/action",
 		},
 		{
 			name:      "vscode.extension",
@@ -132,6 +144,16 @@ func TestCanonicalizeName(t *testing.T) {
 			eco:  osvconstants.EcosystemRubyGems,
 			name: "This-is_a1.test_Example",
 			want: "This-is_a1.test_Example",
+		},
+		{
+			eco:  osvconstants.EcosystemGitHubActions,
+			name: "actions/checkout.git",
+			want: "actions/checkout",
+		},
+		{
+			eco:  osvconstants.EcosystemGitHubActions,
+			name: "actions/checkout",
+			want: "actions/checkout",
 		},
 	}
 
@@ -599,5 +621,22 @@ func TestUpdateModified(t *testing.T) {
 	newModified := r.Vuln().Modified.AsTime()
 	if !newModified.After(oldModified) {
 		t.Errorf("UpdateModified didn't advance modified time: %v <= %v", newModified, oldModified)
+	}
+}
+
+func TestReportPath_GitHubActions(t *testing.T) {
+	r := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout")
+	if got := r.Path(); got != "github-actions/actions/checkout" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
+	}
+
+	rGit := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout.git")
+	if got := rGit.Path(); got != "github-actions/actions/checkout" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
+	}
+
+	rSub := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout/subaction")
+	if got := rSub.Path(); got != "github-actions/actions/checkout/subaction" {
+		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout/subaction")
 	}
 }
