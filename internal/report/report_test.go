@@ -147,8 +147,13 @@ func TestCanonicalizeName(t *testing.T) {
 		},
 		{
 			eco:  osvconstants.EcosystemGitHubActions,
-			name: "actions/checkout.git",
+			name: "Actions/CheckOut",
 			want: "actions/checkout",
+		},
+		{
+			eco:  osvconstants.EcosystemGitHubActions,
+			name: "Actions/CheckOut/SubAction/Deep",
+			want: "actions/checkout/SubAction/Deep",
 		},
 		{
 			eco:  osvconstants.EcosystemGitHubActions,
@@ -630,13 +635,19 @@ func TestReportPath_GitHubActions(t *testing.T) {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
 	}
 
-	rGit := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout.git")
-	if got := rGit.Path(); got != "github-actions/actions/checkout" {
+	rMixed := testReport(osvconstants.EcosystemGitHubActions, "Actions/CheckOut")
+	if got := rMixed.Path(); got != "github-actions/actions/checkout" {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
 	}
+	if rMixed.Name != "actions/checkout" {
+		t.Errorf("Name = %v; want %v", rMixed.Name, "actions/checkout")
+	}
 
-	rSub := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout/subaction")
+	rSub := testReport(osvconstants.EcosystemGitHubActions, "Actions/CheckOut/SubAction")
 	if got := rSub.Path(); got != "github-actions/actions/checkout/subaction" {
 		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout/subaction")
+	}
+	if rSub.Name != "actions/checkout/SubAction" {
+		t.Errorf("Name = %v; want %v", rSub.Name, "actions/checkout/SubAction")
 	}
 }
