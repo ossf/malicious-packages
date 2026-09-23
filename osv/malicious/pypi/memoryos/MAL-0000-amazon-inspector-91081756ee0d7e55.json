@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-23T14:10:14Z",
+  "modified": "2026-09-23T14:10:14Z",
+  "summary": "MemoryOS ships import-time Go payload with hardcoded C2 and home-directory harvest",
+  "details": "On `import memos`, memos/__init__.py invokes configure_logging() which reaches memos._stage0.trigger(). That function locates a per-OS/arch prebuilt Go binary shipped inside the wheel at src/memos/.sckit/{darwin,linux,windows}-{amd64,arm64}/sckit (linux-amd64 is a 7.4MB ELF, sha256 c1b0998347b489582bae7b7f4930f9831d9ef4b6bc150cfd488ee1a43272dd36) and Popen-launches it detached (start_new_session=True, output silenced) with a base64 --config64 payload. The decoded configuration declares campaign_id \"memos-semi-nuclear\", an Ed25519 root_public key, state_dir $HOME/.memos/.cache/runtime, inventory_roots=[\"$HOME\"], and three anonymous hex-subdomain fronts https://c747d139e7e9.skyleen.fr, https://73376a079d87.skyleen.fr and https://d4f77a3a8cb0.skyleen.fr with config/status/batch endpoints — instructing the launched agent to enumerate the installer's home directory and POST batches to attacker-controlled infrastructure. Separately, the package's PEP 517 build backend (sckit_poetry_build.py) wraps poetry.core.masonry and, when GITHUB_ENV is set, appends BASH_ENV=src/memos/_pypi_bridge.sh to $GITHUB_ENV so that any subsequent bash step in the same CI job auto-sources _pypi_bridge.sh; under a twine publish path this invokes _initial_ci_delivery.py to fetch and execute an Ed25519-signed emitter from https://10729e014d0e.skyleen.fr and reads $INPUT_PASSWORD and $PYPI_API_TOKEN before unsetting them, giving the attacker access to downstream publishing credentials. The combination of import-time detached execution of a bundled multi-arch binary, base64-obfuscated runtime manifest, anonymous hex-subdomain C2 fronts, declared $HOME inventory harvest, and a CI-only sideloader that steals publish tokens is a supply-chain implant.",
+  "affected": [
+    {
+      "package": {
+        "name": "MemoryOS",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.0.34"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/memos/_stage0.py",
+              "sha256": "881ea19936b0275f0d77c9d1a669b29595f7e274fef7bb7d82ec1690f8dbc591",
+              "tlsh": "ad41e699cb283f8ca146423152117b6883a7c4437b0754ad34dc4dc8179b4aba0e48ff"
+            },
+            {
+              "path": "sckit_poetry_build.py",
+              "sha256": "497be589f382b321fa08d5583e7c7ff76daca18f988607a0051f8797b046ed86",
+              "tlsh": "5621b734d21426a6a2f101e53922532182f7a06f4e426d28fd8cdd881f4e42a02f247d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "memoryos-2.0.34-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "166972a6cc7f2a7a6ce286631bb176fb575dfd2378c2b74058a3e9b4cd0f1df9",
+                "md5": "3d8db89d9fc419780fa557b5bbb6dd53",
+                "sha256": "39ee644406829a4b630b31759c20478bc22d576d6a59b253ed86f72c360aa5ef"
+              }
+            },
+            {
+              "filename": "memoryos-2.0.34.tar.gz",
+              "hashes": {
+                "blake2b_256": "3e9a4d766a52dcabcbf440aa8f8f1eaf2adca041f93913271d8c342c20ae167c",
+                "md5": "ecac3e301bc0b287fb4f5740a2cd8b8f",
+                "sha256": "92b46d18fc553c494eda714f204459edb74c205bf53b18a9092bcf02c7a6c5be"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/MemoryOS/2.0.34/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020490",
+        "import_time": "2026-09-23T14:19:31.842786769Z",
+        "modified_time": "2026-09-23T14:10:14Z",
+        "sha256": "91081756ee0d7e550180abd300ce4ed9634862248dd07ea9eed5fb740e4aaffc",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.34"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
