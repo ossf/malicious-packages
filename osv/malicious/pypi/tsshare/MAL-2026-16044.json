@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-16044",
   "published": "2026-09-04T00:00:00Z",
-  "modified": "2026-09-10T18:22:47.901336224Z",
+  "modified": "2026-09-23T04:46:32.565025735Z",
   "summary": "Malicious code in tsshare (PyPI)",
   "details": "The PyPI package `tsshare` is malicious. It impersonates the popular Chinese market-data library `tushare` — its docstrings advertise compatibility with `Tushare pro_bar` and it ships `MyShareClient`/`MyShareError` aliases. `tsshare/client.py` conceals its default API endpoint by base64-decoding it at runtime: in 1.0.5–1.0.18 the value decodes to the hardcoded raw IP `https://47.112.191.75` (Alibaba Cloud, China), and in 1.0.19 it rotates to the domain `https://fszzw56.com`. On use, the client builds a persistent cross-platform hardware fingerprint (Windows disk-drive serial via `Win32_DiskDrive`, macOS `Hardware UUID` via `system_profiler`, Linux `/etc/machine-id`) and routes the request — carrying the user's Tushare `auth_code` token — to that hidden endpoint, so the operator receives the paid API token together with a stable machine identifier. There is no install-time hook; exfiltration occurs on API use.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (539c8fdb69887b093801655215f1857f53abb20e6dc763198c543def86c39387)\nThe package presents itself as a drop-in replacement for Tushare's pro_api, but every method call is dispatched through a query() that POSTs to a hardcoded default backend at https://47.112.191.75/api/v1/proxy rather than to tushare.pro. The destination URL is stored base64-encoded (_E = b\"aHR0cHM6Ly80Ny4xMTIuMTkxLjc1\") and decoded at runtime by _default_base_url, and the destination is a bare IP unrelated to the credential's issuer. set_token() stores the caller's Tushare auth_code, and every subsequent proxied call includes {'auth_code': self.auth_code,...} in the POST body to that endpoint, so the paid third-party credential leaves the trust boundary it was issued for and can be logged or replayed by the operator of 47.112.191.75. The client also collects a persistent hardware fingerprint on first use — PowerShell Win32_Processor ProcessorId and Win32_DiskDrive SerialNumber on Windows, system_profiler Hardware UUID on macOS, /etc/machine-id on Linux — SHA-256 hashes it, caches it under ~/.tsshare/device_id.json, and attaches it as meta.device_id to every request, giving the backend operator a stable per-machine identifier unnecessary for the advertised proxy function. TLS certificate verification on the requests.Session is disabled by default (session.verify defaults to false via TSSHARE_SSL_VERIFY/MYSHARE_SSL_VERIFY) and urllib3 InsecureRequestWarning is silenced, so the auth_code and hardware ID are transmitted to the bare-IP HTTPS endpoint without cert validation.\n",
   "affected": [
@@ -37,10 +37,34 @@
         "1.0.4",
         "1.0.15",
         "1.0.17",
-        "1.0.9"
+        "1.0.9",
+        "1.0.3",
+        "1.0.13",
+        "1.0.12",
+        "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -216,6 +240,22 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/tsshare/1.0.9/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.3/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.13/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.12/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/tsshare/1.0.0/"
     }
   ],
   "database_specific": {
@@ -468,6 +508,46 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020437",
+        "import_time": "2026-09-23T04:44:15.396028382Z",
+        "modified_time": "2026-09-23T04:28:37Z",
+        "sha256": "3ac7e671440277f008405ffd44db1b592a280c487ecc5a2b779dc941e147ff95",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020439",
+        "import_time": "2026-09-23T04:44:15.587974234Z",
+        "modified_time": "2026-09-23T04:28:55Z",
+        "sha256": "8cb915e1a9beb577388b20364a023339bf045f5fe846f45da611b1164f84c092",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.13"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020436",
+        "import_time": "2026-09-23T04:44:15.319197723Z",
+        "modified_time": "2026-09-23T04:28:29Z",
+        "sha256": "caf0d9f6e28934e700ad2fe788fb039978dc69d9dae35135f332154a682bdfc0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020435",
+        "import_time": "2026-09-23T04:44:15.241698866Z",
+        "modified_time": "2026-09-23T04:28:18Z",
+        "sha256": "ccbfdecf287ce6f2043f544d4749e09660082ea3932a0668edbc5010703d70b5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
         ]
       }
     ]
