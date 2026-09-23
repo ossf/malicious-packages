@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-09-23T00:00:00Z",
+  "published": "2026-09-23T00:00:00Z",
+  "details": "On September 23, 2026, an attacker published malicious versions of two MemTensor packages. The affected packages are the OpenClaw plugin @memtensor/memos-cloud-openclaw-plugin on npm and the MemOS Python library MemoryOS on PyPI. Both versions contain the same Go implant, sckit. The binary runs in the background each time the package loads. It collects credentials from the home directory and sends them to servers under skyleen[.]fr. It also includes the code it needs to copy itself into other repositories and packages that the stolen credentials can reach.\n\nCredential collection: the implant's `credentialPaths`, `readCredentialFile` and `extractJSONCredentials` functions target `.npmrc`, `.pypirc`, `.git-credentials`, `.netrc`, `id_rsa`, `id_ecdsa`, `id_ed25519`, `.vault-token`, `msal_token_cache`, `access_tokens.json` and `access_tokens.db`. Two regular expressions pick out secrets: one matches secret-like variable names (`token`, `secret`, `password`, `api_key`, `database_url`), the other matches known token formats.\n\nC2 protocol: the `internal/wire` package uses CBOR, X25519 key exchange and XChaCha20-Poly1305 (`sckit/xchacha/v1`), and handles signed leases, manifests and modules. The server delivers the modules at run time, so their contents were not observed. `scheduleSelfDelete` and `deleteExecutable` remove the binary after it runs.\n\nC2 paths: `/<24 hex>/config` (control), `/status` (preflight), `/batch` (results).\n\nPackage archive SHA-256 digests:\n- memos-cloud-openclaw-plugin-0.1.21.tgz: 995a208944176c437a023f4a5c11baad2eb77a91847893c82e5866eaabedb810\n- memos-cloud-openclaw-plugin-0.1.23.tgz: 6caf89b059e9b6c82bb4ac4727816d516753c4d26833434dea0ecda44a346eb3\n- memos-cloud-openclaw-plugin-0.1.25.tgz: a6870826cd7c7ec8d32af227252efcdcdca03ac956d4702cdc2157ca82641673",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@memtensor/memos-cloud-openclaw-plugin"
+      },
+      "versions": [
+        "0.1.21",
+        "0.1.23",
+        "0.1.25"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/memtensor-sckit-worm-npm-pypi/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/MemTensor/MemOS-Cloud-OpenClaw-Plugin/issues/173"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "skyleen.fr",
+        "8a8acaf167b3.skyleen.fr",
+        "0b48fafd6fbe.skyleen.fr",
+        "266297c6df27.skyleen.fr"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "lib/sckit.js",
+            ".sckit/<os>-<arch>/sckit"
+          ],
+          "note": "JavaScript loader and per-platform native sckit implant binary shipped in the package."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "$HOME/.openclaw/.cache/runtime"
+          ],
+          "note": "Implant state directory."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "runtime-update.yml"
+          ],
+          "note": "GitHub Actions workflow written by the worm for persistence; runs 'sckit stage0'."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "sckit_poetry_build.py",
+            "_pypi_bridge.sh",
+            "sckit-publish-bridge.sh"
+          ],
+          "note": "CI tampering scripts; the implant also writes BASH_ENV= to $GITHUB_ENV."
+        }
+      ]
+    }
+  }
+}
