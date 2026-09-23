@@ -202,16 +202,11 @@ func validatePackage(pkg *osvschema.Package) (osvconstants.Ecosystem, error) {
 	return ecosystem, nil
 }
 
-func hasWhitespace(s string) bool {
-	return strings.ContainsFunc(s, unicode.IsSpace)
-}
-
 func validateGitHubActionName(name string) error {
-	if hasWhitespace(name) {
+	if strings.ContainsFunc(name, unicode.IsSpace) {
 		return fmt.Errorf("%w: action name contains whitespace: %q", ErrInvalidOSV, name)
 	}
-	trimmed, _ := strings.CutSuffix(name, ".git")
-	parts := strings.Split(trimmed, "/")
+	parts := strings.Split(name, "/")
 	if len(parts) < 2 {
 		return fmt.Errorf("%w: invalid github action name %q: expected owner/repo", ErrInvalidOSV, name)
 	}
@@ -222,12 +217,15 @@ func validateGitHubActionName(name string) error {
 	}
 	// Validate repo
 	repo := parts[1]
+	if strings.HasSuffix(repo, ".git") {
+		return fmt.Errorf("%w: invalid github action repo %q: .git suffix is not allowed", ErrInvalidOSV, parts[1])
+	}
 	if !githubRepoRegex.MatchString(repo) || repo == "." || repo == ".." {
 		return fmt.Errorf("%w: invalid github action repo %q in %q", ErrInvalidOSV, repo, name)
 	}
 	// Validate optional subpath segments
 	for _, p := range parts[2:] {
-		if p == "" || p == "." || p == ".." || !githubRepoRegex.MatchString(p) {
+		if !githubRepoRegex.MatchString(p) || p == "." || p == ".." {
 			return fmt.Errorf("%w: invalid path segment %q in action %q", ErrInvalidOSV, p, name)
 		}
 	}
@@ -261,7 +259,7 @@ func validateGitHubActionVersion(val string, allowZero bool) error {
 	if val == "" {
 		return fmt.Errorf("%w: version must not be empty", ErrInvalidOSV)
 	}
-	if hasWhitespace(val) {
+	if strings.ContainsFunc(val, unicode.IsSpace) {
 		return fmt.Errorf("%w: version contains whitespace: %q", ErrInvalidOSV, val)
 	}
 	if allowZero && val == "0" {
@@ -282,12 +280,6 @@ func validateGitHubActionVersions(versions []string) error {
 		}
 	}
 	return nil
-}
-
-// validateGitHubActionRangeEvent ensures that event values in GitHub Actions ranges
-// do not contain moving tags. The introduced event may be "0".
-func validateGitHubActionRangeEvent(val string, allowZero bool) error {
-	return validateGitHubActionVersion(val, allowZero)
 }
 
 // semverEcosystem is an allowlist indicating which ecosystems are allowed to
@@ -375,7 +367,7 @@ func validateRange(r *osvschema.Range, ecosystem osvconstants.Ecosystem) error {
 			}
 		}
 		if ecosystem == osvconstants.EcosystemGitHubActions {
-			if err := validateGitHubActionRangeEvent(val, allowZero); err != nil {
+			if err := validateGitHubActionVersion(val, allowZero); err != nil {
 				return err
 			}
 		}

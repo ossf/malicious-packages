@@ -706,8 +706,23 @@ func TestValidateVuln_GitHubActions_PackageName(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid owner/repo with .git suffix",
+			name:    "invalid owner/repo with .git suffix",
 			pkgName: "actions/checkout.git",
+			wantErr: true,
+		},
+		{
+			name:    "invalid owner/repo with .git suffix and subpath",
+			pkgName: "actions/checkout.git/subaction",
+			wantErr: true,
+		},
+		{
+			name:    "valid mixed-case org and repo",
+			pkgName: "Actions/CheckOut",
+			wantErr: false,
+		},
+		{
+			name:    "valid mixed-case org, repo and subpath",
+			pkgName: "Actions/CheckOut/SubAction",
 			wantErr: false,
 		},
 		{
