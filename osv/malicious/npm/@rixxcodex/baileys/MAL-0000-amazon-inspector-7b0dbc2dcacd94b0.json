@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-23T22:13:07Z",
+  "modified": "2026-09-23T22:13:07Z",
+  "summary": "Baileys fork issues attacker-controlled WhatsApp queries and injects hardcoded newsletter attribution on installer's session",
+  "details": "This Baileys fork silently hijacks the installer's authenticated WhatsApp session for the author's benefit. In lib/Socket/socket.js the connection routine reconstructs a URL from a char-code array that decodes to https://raw.githubusercontent.com/skyzopedia/NewsletterID/refs/heads/main/VIP_Push.json, fetches a JSON list of newsletter IDs on every WebSocket open, and then issues authenticated w:mex queries against s.whatsapp.net for each ID using the installer's logged-in WhatsApp identity. The URL is hidden behind String.fromCharCode reconstruction and the target list is mutable at the repository's HEAD, giving the author a remote-controlled channel driving arbitrary newsletter actions from the installer's account. In addition, prepareWAMessageMedia defaults every outgoing media upload's annotations to a hardcoded promotion for newsletterJid 120363409159786018@newsletter (newsletterName 'skyzopedia') unless the caller explicitly supplies annotations, so media the installer sends silently carries attribution to a channel the installer did not configure. A second helper (generateMessageV) base64+XOR-decodes (key 23) an encoded literal that resolves to a hardcoded '@newsletter' JID and, 40 seconds after invocation, calls a caller-supplied function with that JID and a fixed query_id, hiding the target identifier behind an encoded string. The obfuscation of both the GitHub URL and the JID, the automatic firing on connect, and the use of the installer's authenticated session to perform actions the installer never requested are inconsistent with a legitimate WhatsApp library fork.",
+  "affected": [
+    {
+      "package": {
+        "name": "@rixxcodex/baileys",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "8.0.15"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Socket/socket.js",
+              "sha256": "ea57a6770cf2c246e27a5ffe85ffeb496624f9b1582868d5dff184fd6369a394",
+              "tlsh": "ffd2b41b46f3053aab777476562b6021333580073a48dca57bac8254af8e778e6e77cc"
+            },
+            {
+              "path": "lib/Utils/messages.js",
+              "sha256": "142e39200bfe2c9f0f5528ab87fea34dcb59efdf85a1b2f5a285174d2b183630",
+              "tlsh": "e3f22e5958e30e2d45abb0aab74b3045a234d0076108fe26fe8c53e5bfcd5a49bf67c4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "baileys-8.0.15.tgz",
+              "hashes": {
+                "sha1": "52708b89cacf6b9bbe42186bb63fd5d8e9a5221f",
+                "sha512_sri": "sha512-N7qyLB5mGBGJrNpCjkaOyKENbe6cLZekcPIJ2fsnrtQpG6DFUT3degsojsve1FSSG6RvQHZ/Elhqvldf7tZNnA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@rixxcodex/baileys/v/8.0.15"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020500",
+        "import_time": "2026-09-23T22:16:59.300419802Z",
+        "modified_time": "2026-09-23T22:13:07Z",
+        "sha256": "7b0dbc2dcacd94b03ada3e4eb57692604b7e073c98474752c00faa31aac891a2",
+        "source": "amazon-inspector",
+        "versions": [
+          "8.0.15"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
