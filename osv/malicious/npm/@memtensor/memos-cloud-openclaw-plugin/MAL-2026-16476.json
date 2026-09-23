@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-16476",
-  "published": "2026-09-23T11:53:33Z",
-  "modified": "2026-09-23T14:21:56.820984495Z",
+  "published": "2026-09-23T00:00:00Z",
+  "modified": "2026-09-23T22:48:11.203423144Z",
   "aliases": [
     "GHSA-mhjf-v53x-7p87"
   ],
   "summary": "Malicious code in @memtensor/memos-cloud-openclaw-plugin (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1c533046b0b10308e2664ad7b6322eca047056161df3a4977972ccb1ffe3e349)\nThe npm package advertises itself as a memory plugin but bundles a Go-compiled binary at.sckit/<platform>/sckit for six OS/arch targets whose build path is 'supplychain.local/campaign/cmd/implant'. index.js imports lib/sckit.js, whose launchStageZero() detach-spawns the bundled binary as 'stage0 --config64 <b64>' with stdio ignored and unref()'d, so simply loading the plugin runs the implant in the background. The base64 CONFIG constant in lib/sckit.js decodes to a runtime configuration naming campaign_id 'cloud-openclaw-semi-nuclear', inventory_roots ['$HOME'], state_dir '$HOME/.openclaw/.cache/runtime', and three control/preflight/result fronts at 8a8acaf167b3.skyleen.fr, 0b48fafd6fbe.skyleen.fr, and 266297c6df27.skyleen.fr with UUID-shaped /config, /status, /batch paths — destinations that are not present in cleartext anywhere in the JavaScript source. The configuration's 'channel' field is 'exact-ref-one-use-NPM_TOKEN,@memtensor/memos-cloud-openclaw-plugin', and a companion collectStageZero() invokes the same binary synchronously with '--require-credential-receipt', targeting the installer's npm publishing token as it appears in ~/.npmrc or in CI environment variables. The combination of a bundled native implant auto-executed on plugin load, obfuscated hardcoded C2 fronts, whole-$HOME inventory, and explicit NPM_TOKEN capture is credential theft and host exfiltration against the installer, not the plugin functionality the package name advertises. Binary strings such as 'supplychain.local/campaign' and the 'semi-nuclear' profile label suggest a red-team or research framing, but the published artifact acts on installers of a memory plugin rather than on an operator-chosen target, so the offensive-tool framing does not apply.\n\n## Source: ghsa-malware (392fa28fd3caee9373f574a4e84e36f01d87d366eeb463993b189b95416cec62)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "On September 23, 2026, an attacker published malicious versions of two MemTensor packages. The affected packages are the OpenClaw plugin @memtensor/memos-cloud-openclaw-plugin on npm and the MemOS Python library MemoryOS on PyPI. Both versions contain the same Go implant, sckit. The binary runs in the background each time the package loads. It collects credentials from the home directory and sends them to servers under skyleen[.]fr. It also includes the code it needs to copy itself into other repositories and packages that the stolen credentials can reach.\n\nCredential collection: the implant's `credentialPaths`, `readCredentialFile` and `extractJSONCredentials` functions target `.npmrc`, `.pypirc`, `.git-credentials`, `.netrc`, `id_rsa`, `id_ecdsa`, `id_ed25519`, `.vault-token`, `msal_token_cache`, `access_tokens.json` and `access_tokens.db`. Two regular expressions pick out secrets: one matches secret-like variable names (`token`, `secret`, `password`, `api_key`, `database_url`), the other matches known token formats.\n\nC2 protocol: the `internal/wire` package uses CBOR, X25519 key exchange and XChaCha20-Poly1305 (`sckit/xchacha/v1`), and handles signed leases, manifests and modules. The server delivers the modules at run time, so their contents were not observed. `scheduleSelfDelete` and `deleteExecutable` remove the binary after it runs.\n\nC2 paths: `/<24 hex>/config` (control), `/status` (preflight), `/batch` (results).\n\nPackage archive SHA-256 digests:\n- memos-cloud-openclaw-plugin-0.1.21.tgz: 995a208944176c437a023f4a5c11baad2eb77a91847893c82e5866eaabedb810\n- memos-cloud-openclaw-plugin-0.1.23.tgz: 6caf89b059e9b6c82bb4ac4727816d516753c4d26833434dea0ecda44a346eb3\n- memos-cloud-openclaw-plugin-0.1.25.tgz: a6870826cd7c7ec8d32af227252efcdcdca03ac956d4702cdc2157ca82641673\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (1c533046b0b10308e2664ad7b6322eca047056161df3a4977972ccb1ffe3e349)\nThe npm package advertises itself as a memory plugin but bundles a Go-compiled binary at.sckit/<platform>/sckit for six OS/arch targets whose build path is 'supplychain.local/campaign/cmd/implant'. index.js imports lib/sckit.js, whose launchStageZero() detach-spawns the bundled binary as 'stage0 --config64 <b64>' with stdio ignored and unref()'d, so simply loading the plugin runs the implant in the background. The base64 CONFIG constant in lib/sckit.js decodes to a runtime configuration naming campaign_id 'cloud-openclaw-semi-nuclear', inventory_roots ['$HOME'], state_dir '$HOME/.openclaw/.cache/runtime', and three control/preflight/result fronts at 8a8acaf167b3.skyleen.fr, 0b48fafd6fbe.skyleen.fr, and 266297c6df27.skyleen.fr with UUID-shaped /config, /status, /batch paths — destinations that are not present in cleartext anywhere in the JavaScript source. The configuration's 'channel' field is 'exact-ref-one-use-NPM_TOKEN,@memtensor/memos-cloud-openclaw-plugin', and a companion collectStageZero() invokes the same binary synchronously with '--require-credential-receipt', targeting the installer's npm publishing token as it appears in ~/.npmrc or in CI environment variables. The combination of a bundled native implant auto-executed on plugin load, obfuscated hardcoded C2 fronts, whole-$HOME inventory, and explicit NPM_TOKEN capture is credential theft and host exfiltration against the installer, not the plugin functionality the package name advertises. Binary strings such as 'supplychain.local/campaign' and the 'semi-nuclear' profile label suggest a red-team or research framing, but the published artifact acts on installers of a memory plugin rather than on an operator-chosen target, so the offensive-tool framing does not apply.\n\n## Source: ghsa-malware (392fa28fd3caee9373f574a4e84e36f01d87d366eeb463993b189b95416cec62)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -21,6 +21,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -84,9 +89,117 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@memtensor/memos-cloud-openclaw-plugin/v/0.1.23"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/memtensor-sckit-worm-npm-pypi/"
+    },
+    {
+      "type": "WEB",
+      "url": "https://github.com/MemTensor/MemOS-Cloud-OpenClaw-Plugin/issues/173"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "skyleen.fr",
+        "8a8acaf167b3.skyleen.fr",
+        "0b48fafd6fbe.skyleen.fr",
+        "266297c6df27.skyleen.fr"
+      ],
+      "files": [
+        {
+          "note": "JavaScript loader that starts the bundled sckit implant.",
+          "paths": [
+            "lib/sckit.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "381ac6dc1715d9298fe81b2a53a11f7b7d78e361ee3a6619ad54f8c4b062cc18"
+          },
+          "note": "sckit Go implant, linux-amd64 build.",
+          "paths": [
+            ".sckit/linux-amd64/sckit"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "e077c387b223811064b7bbc5a55a0182fca9bf50894f949ff284d4be87d44b26"
+          },
+          "note": "sckit Go implant, linux-arm64 build.",
+          "paths": [
+            ".sckit/linux-arm64/sckit"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "65faf8ccbcf5b34eb4f72c71bf82815fa9c1e2f947b9c898491540e866132c31"
+          },
+          "note": "sckit Go implant, darwin-amd64 build.",
+          "paths": [
+            ".sckit/darwin-amd64/sckit"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "f8ccdd1da7dff1aef16377a2842bc7acf7c516e32122dd6e42dc4a4e57653fce"
+          },
+          "note": "sckit Go implant, darwin-arm64 build.",
+          "paths": [
+            ".sckit/darwin-arm64/sckit"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "56cd3416d2ec2aa7e7cec2a06010cf0b58eb09c0a5486809df52afeaca8f14be"
+          },
+          "note": "sckit Go implant, windows-amd64 build.",
+          "paths": [
+            ".sckit/windows-amd64/sckit.exe"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "d6b3e77c36ee8017c9bf30d1da7218ec0ea843768d313eb8e35845c8a9b38a26"
+          },
+          "note": "sckit Go implant, windows-arm64 build.",
+          "paths": [
+            ".sckit/windows-arm64/sckit.exe"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Implant state directory.",
+          "paths": [
+            "$HOME/.openclaw/.cache/runtime"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "note": "GitHub Actions workflow written by the worm for persistence; runs 'sckit stage0'.",
+          "paths": [
+            "runtime-update.yml"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "note": "CI tampering scripts; the implant also writes BASH_ENV= to $GITHUB_ENV.",
+          "paths": [
+            "sckit_poetry_build.py",
+            "_pypi_bridge.sh",
+            "sckit-publish-bridge.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "GHSA-mhjf-v53x-7p87",
@@ -137,6 +250,13 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
       ],
       "type": "FINDER"
     }
