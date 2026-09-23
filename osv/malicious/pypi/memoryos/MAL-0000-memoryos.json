@@ -1,0 +1,130 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-09-23T00:00:00Z",
+  "published": "2026-09-23T00:00:00Z",
+  "details": "On September 23, 2026, an attacker published malicious versions of two MemTensor packages. The affected packages are the OpenClaw plugin @memtensor/memos-cloud-openclaw-plugin on npm and the MemOS Python library MemoryOS on PyPI. Both versions contain the same Go implant, sckit. The binary runs in the background each time the package loads. It collects credentials from the home directory and sends them to servers under skyleen[.]fr. It also includes the code it needs to copy itself into other repositories and packages that the stolen credentials can reach.\n\nCredential collection: the implant's `credentialPaths`, `readCredentialFile` and `extractJSONCredentials` functions target `.npmrc`, `.pypirc`, `.git-credentials`, `.netrc`, `id_rsa`, `id_ecdsa`, `id_ed25519`, `.vault-token`, `msal_token_cache`, `access_tokens.json` and `access_tokens.db`. Two regular expressions pick out secrets: one matches secret-like variable names (`token`, `secret`, `password`, `api_key`, `database_url`), the other matches known token formats.\n\nC2 protocol: the `internal/wire` package uses CBOR, X25519 key exchange and XChaCha20-Poly1305 (`sckit/xchacha/v1`), and handles signed leases, manifests and modules. The server delivers the modules at run time, so their contents were not observed. `scheduleSelfDelete` and `deleteExecutable` remove the binary after it runs.\n\nC2 paths: `/<24 hex>/config` (control), `/status` (preflight), `/batch` (results).\n\nPackage archive SHA-256 digests:\n- memoryos-2.0.34-py3-none-any.whl: 39ee644406829a4b630b31759c20478bc22d576d6a59b253ed86f72c360aa5ef\n- memoryos-2.0.34.tar.gz: 92b46d18fc553c494eda714f204459edb74c205bf53b18a9092bcf02c7a6c5be",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "memoryos",
+        "purl": "pkg:pypi/memoryos"
+      },
+      "versions": [
+        "2.0.34"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/memtensor-sckit-worm-npm-pypi/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "skyleen.fr",
+        "c747d139e7e9.skyleen.fr",
+        "73376a079d87.skyleen.fr",
+        "d4f77a3a8cb0.skyleen.fr",
+        "10729e014d0e.skyleen.fr"
+      ],
+      "urls": [
+        "https://10729e014d0e.skyleen.fr/eb57efaa7365698fc1e4decc/initial-ci-v2"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "memos/_stage0.py"
+          ],
+          "note": "Stage-0 loader shipped in the package."
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, linux-amd64 build.",
+          "digests": {
+            "sha256": "c1b0998347b489582bae7b7f4930f9831d9ef4b6bc150cfd488ee1a43272dd36"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, linux-arm64 build.",
+          "digests": {
+            "sha256": "8f647f17a1934679c4095e21bee2b9bd83e28476603758bc91408a0c8443e3b4"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, darwin-amd64 build.",
+          "digests": {
+            "sha256": "9de0d5b0ca184f71f630be5781d134998883a02d5d7bc65aeb9559d8f9efb364"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, darwin-arm64 build.",
+          "digests": {
+            "sha256": "5405e330507602e803f7dd6f2a9d4555aec8558ab222b51413594a962da6888a"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, windows-amd64 build.",
+          "digests": {
+            "sha256": "16de381deb978744535b10f68fe15165251374b86eef18ffc2c47f61ea673047"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "note": "sckit Go implant, windows-arm64 build.",
+          "digests": {
+            "sha256": "f7c4014e284f3d56c452b8b222a287c54f73dc4a40a7e022e765ac8376362947"
+          }
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "$HOME/.memos/.cache/runtime"
+          ],
+          "note": "Implant state directory."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "runtime-update.yml"
+          ],
+          "note": "GitHub Actions workflow written by the worm for persistence; runs 'sckit stage0'."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "sckit_poetry_build.py",
+            "_pypi_bridge.sh",
+            "sckit-publish-bridge.sh"
+          ],
+          "note": "CI tampering scripts; the implant also writes BASH_ENV= to $GITHUB_ENV."
+        }
+      ]
+    }
+  }
+}
