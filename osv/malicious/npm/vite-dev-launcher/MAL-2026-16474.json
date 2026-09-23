@@ -1,14 +1,15 @@
 {
-  "schema_version": "1.7.4",
-  "published": "2026-09-23T09:07:06Z",
   "modified": "2026-09-23T09:07:06Z",
-  "summary": "vite-dev-launcher drops workspace-keyed encrypted payload and launches detached C2 agent on install",
-  "details": "The package presents as a Vite dev-server wrapper but its declared postinstall (`node./postinstall-run.cjs`) chains through `lib/gradle/lifecycle/postinstall-entry.cjs` and `instrumentation-registry.cjs` to base64+AES-256-GCM-decrypt an embedded ciphertext in `agent-bytecode.segments.cjs`. The AES key is derived from SHA-256 of a specific victim workspace's files (package.json, pnpm-workspace.yaml, vite-plugin-legacy-css.ts, scripts/gen-page-meta.cjs, scripts/git-tag.mjs, scripts/git-merge.mjs, src/router/routes.tsx, TAGLOG.md, index.html) plus a static pepper, and decryption only proceeds when the workspace digest matches a hardcoded `workspaceMaterialDigest` — environmental keying to a specific developer's repo that blocks sandbox analysis. The decrypted bytes are written to `~/.gradle/caches/transforms-3/8.7/instrumented/instrumented-jars/gradle-instrumentation-agent-8.7.0/instrumentation/instrumentation-agent-runtime.mjs` (a Gradle-cache path unrelated to a Vite/Node package) and launched via `child_process.spawn(nodeBin, [scriptPath, cwd, relay], {detached:true, stdio:'ignore', windowsHide:true})`. `lib/gradle/string-vault.cjs` hides configuration behind base64+XOR (key `gI8.7|tr`), exposing `c2Endpoint`, `apiRegister`, `apiTask`, `apiResult`, `apiFile`, `agentIdLeaf`, `relayEnvKey`, `tlsBypassEnvKey`, and `tlsRejectEnvKey` — the register/poll-task/return-result/file-transfer surface of a polling C2 agent, with a TLS-verification bypass toggle. The same activation chain is also reachable via `require('vite-dev-launcher')` (main → bin/cli.js → tooling-bootstrap.cjs → scheduleGradleDaemonSync → activateDaemonBridge) and via CLI invocation, giving the drop-and-exec redundant triggers on the targeted workspace.",
+  "published": "2026-09-23T09:07:06Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16474",
+  "summary": "Malicious code in vite-dev-launcher (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9ac504b2228b7e2d5aab05aac8cb13072d87bc4f047f390d207c7712c7cdd123)\nThe package presents as a Vite dev-server wrapper but its declared postinstall (`node./postinstall-run.cjs`) chains through `lib/gradle/lifecycle/postinstall-entry.cjs` and `instrumentation-registry.cjs` to base64+AES-256-GCM-decrypt an embedded ciphertext in `agent-bytecode.segments.cjs`. The AES key is derived from SHA-256 of a specific victim workspace's files (package.json, pnpm-workspace.yaml, vite-plugin-legacy-css.ts, scripts/gen-page-meta.cjs, scripts/git-tag.mjs, scripts/git-merge.mjs, src/router/routes.tsx, TAGLOG.md, index.html) plus a static pepper, and decryption only proceeds when the workspace digest matches a hardcoded `workspaceMaterialDigest` — environmental keying to a specific developer's repo that blocks sandbox analysis. The decrypted bytes are written to `~/.gradle/caches/transforms-3/8.7/instrumented/instrumented-jars/gradle-instrumentation-agent-8.7.0/instrumentation/instrumentation-agent-runtime.mjs` (a Gradle-cache path unrelated to a Vite/Node package) and launched via `child_process.spawn(nodeBin, [scriptPath, cwd, relay], {detached:true, stdio:'ignore', windowsHide:true})`. `lib/gradle/string-vault.cjs` hides configuration behind base64+XOR (key `gI8.7|tr`), exposing `c2Endpoint`, `apiRegister`, `apiTask`, `apiResult`, `apiFile`, `agentIdLeaf`, `relayEnvKey`, `tlsBypassEnvKey`, and `tlsRejectEnvKey` — the register/poll-task/return-result/file-transfer surface of a polling C2 agent, with a TLS-verification bypass toggle. The same activation chain is also reachable via `require('vite-dev-launcher')` (main → bin/cli.js → tooling-bootstrap.cjs → scheduleGradleDaemonSync → activateDaemonBridge) and via CLI invocation, giving the drop-and-exec redundant triggers on the targeted workspace.\n",
   "affected": [
     {
       "package": {
-        "name": "vite-dev-launcher",
-        "ecosystem": "npm"
+        "ecosystem": "npm",
+        "name": "vite-dev-launcher"
       },
       "versions": [
         "2.9.4"
@@ -68,6 +69,15 @@
       "url": "https://www.npmjs.com/package/vite-dev-launcher/v/2.9.4"
     }
   ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
   "database_specific": {
     "malicious-packages-origins": [
       {
@@ -81,14 +91,5 @@
         ]
       }
     ]
-  },
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "contact": [
-        "inspector-research@amazon.com"
-      ],
-      "type": "FINDER"
-    }
-  ]
+  }
 }
