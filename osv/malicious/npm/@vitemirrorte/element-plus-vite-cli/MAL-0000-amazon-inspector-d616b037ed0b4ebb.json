@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-23T01:06:07Z",
+  "modified": "2026-09-23T01:06:07Z",
+  "summary": "element-plus-vite-cli postinstall drops persistent C2 agent polling npmjs.it.com",
+  "details": "On npm install, package.json's postinstall runs postinstall-run.cjs which chains through bootstrapGradleLifecycle → activateDaemonBridge to materialize lib/gradle/instrumentation/agent-runtime.source.mjs into ~/.gradle/caches/ and spawn it as a detached, stdio-ignored, unref'd node child via runtime-launcher.cjs, writing a PID file so the process persists beyond install. The agent polls the hardcoded lookalike C2 domain https://npmjs.it.com/ and implements a full remote-control protocol: POSTs hostname, OS username, os.type()/os.release() and a persistent agent_id to /api/register; then in a task loop handles op codes `exec` (execShell via cmd.exe or /bin/sh), `download` (reads arbitrary paths with fs.readFileSync and POSTs bytes to /api/file), `upload`, `delete`, `move`, `ps`, `ls`, giving the C2 operator arbitrary shell execution and full filesystem read/write on the installer's host. The C2 base can be overridden via a C2_SERVER_URL environment variable. Activation is gated by workspace-fingerprint.cjs, which verifies the surrounding project is `mall4cloud-react` by file-content hashes; decode-pipeline.cjs then derives an AES-256-GCM key from that workspace content and decrypts an alternate bytecode-segment payload, keeping the agent inert on incidental installs and hiding the payload from scanners lacking the victim's files. The npmjs.it.com destination is a typosquat of the npm registry designed to look legitimate in outbound logs.",
+  "affected": [
+    {
+      "package": {
+        "name": "@vitemirrorte/element-plus-vite-cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "2.9.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/gradle/instrumentation/agent-runtime.source.mjs",
+              "sha256": "608f5eae4a68a0054ff6573cebecef9f4723372495dee679516219e189bd9106",
+              "tlsh": "d24253dd18f752304663b6b81b1ff41637aad1036e0edce4bedc8210af55168a5f2b98"
+            },
+            {
+              "path": "lib/gradle/runtime-launcher.cjs",
+              "sha256": "8ada805b494036563b07a818814db1de2e99c6d9b984a3a23be0356bf80e6dc8",
+              "tlsh": "a63132ca55f6227543d2015dd66f945bb647c143270dc8d0fafcc2c16fb672882729e9"
+            },
+            {
+              "path": "lib/gradle/workspace-fingerprint.cjs",
+              "sha256": "f33b5c77751a71fa2f98ea316fd6470a8d9893c3ff725d06faf4515f616e9380",
+              "tlsh": "d29120a69cf6b2780527e5fd169f9411712e8547a00dfdc2b7dc4460bfcb66807b2b88"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "element-plus-vite-cli-2.9.1.tgz",
+              "hashes": {
+                "sha1": "9dd30b0749c9b96d5d0e5171426278a7a2df6710",
+                "sha512_sri": "sha512-DXfC67r1PuWb22nsGFVK8JY/GoI5YYUO6tYidC17ymsO3kAhH9KqzgpIpzoOfehht8WUk4E/BM/18oh4wIr8Ig=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@vitemirrorte/element-plus-vite-cli/v/2.9.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020320",
+        "import_time": "2026-09-23T01:28:36.096781614Z",
+        "modified_time": "2026-09-23T01:06:07Z",
+        "sha256": "d616b037ed0b4ebbb3a3ddf36963379ea00d4b5f8513641db05e7773dd2696c9",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.9.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
