@@ -132,7 +132,7 @@ func validateVulnInternal(v *osvschema.Vulnerability, allowMultiple bool) error 
 
 	// Ensure database specific data does not contain unexpected keys.
 	if err := validateDatabaseSpecific(v.DatabaseSpecific, false); err != nil {
-		return fmt.Errorf("%w: affected database_specific invalid: %w", ErrUnexpectedOSV, err)
+		return fmt.Errorf("%w: database_specific invalid: %w", ErrUnexpectedOSV, err)
 	}
 
 	return nil
@@ -349,6 +349,7 @@ var purlEcosystems = map[string]map[string]osvconstants.Ecosystem{
 	"generic":  {"*": osvconstants.EcosystemOSSFuzz},
 	"pypi":     {"*": osvconstants.EcosystemPyPI},
 	"gem":      {"*": osvconstants.EcosystemRubyGems},
+	"vscode":   {"*": osvconstants.EcosystemVSCode},
 }
 
 func getPURLEcosystem(pkgURL packageurl.PackageURL) osvconstants.Ecosystem {
@@ -389,6 +390,9 @@ func purlToPackage(purl string) (*osvschema.Package, error) {
 		case osvconstants.EcosystemMaven:
 			// Maven uses : to separate namespace and package
 			name = parsedPURL.Namespace + ":" + parsedPURL.Name
+		case osvconstants.EcosystemVSCode:
+			// VS Code extensions use . to separate publisher (namespace) and extension name
+			name = parsedPURL.Namespace + "." + parsedPURL.Name
 		case osvconstants.EcosystemDebian, osvconstants.EcosystemAlpine, osvconstants.EcosystemUbuntu:
 			// Debian and Alpine repeats their namespace in PURL, so don't add it to the name
 			name = parsedPURL.Name
