@@ -175,6 +175,14 @@ false-positives, and have them accumulating in a database, we can
 automatically consume them as OSV from a cloud storage
 environment (S3, GCS).
 
+### Consume the Reports
+
+Already using this data to protect your projects? Our
+[consumer guide](docs/consuming.md) covers scanning a project with
+[osv-scanner](https://google.github.io/osv-scanner/), querying
+[osv.dev](https://osv.dev), using the raw reports offline, and wiring
+detection into CI and [Renovate](https://docs.renovatebot.com/).
+
 ### Comms
 
 - Most communication occurs in the [OpenSSF Package Analysis Slack channel](https://openssf.slack.com/archives/package_analysis)
