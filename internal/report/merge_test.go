@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/ossf/malicious-packages/internal/report"
+	mppb "github.com/ossf/malicious-packages/proto"
 )
 
 func TestMerge_MismatchName(t *testing.T) {
@@ -466,7 +467,7 @@ func TestMerge_Details(t *testing.T) {
 	r := testReport(osvconstants.EcosystemNPM, "example")
 	o1 := r.AddOrigin("test-origin", "deadbeef")
 	o2 := r.AddOrigin("another-test-origin", "fffe")
-	r.SetDetails("this is a \nuser contribution", map[*report.OriginRef]string{
+	r.SetDetails("this is a \nuser contribution", map[*mppb.OriginRef]string{
 		o1: "test report 1",
 		o2: "test report 2",
 	})
@@ -475,7 +476,7 @@ func TestMerge_Details(t *testing.T) {
 	other.Vuln().Details = "a longer test report 1"
 
 	wantUser := "this is a \nuser contribution"
-	wantSources := map[*report.OriginRef]string{
+	wantSources := map[*mppb.OriginRef]string{
 		o2: "test report 2",
 		o3: "a longer test report 1",
 	}
@@ -508,7 +509,7 @@ func TestMerge_Origins(t *testing.T) {
 		t.Fatalf("Merge() = %v; want no error", err)
 	}
 
-	want := []*report.OriginRef{o1, o2, o3}
+	want := []*mppb.OriginRef{o1, o2, o3}
 	if got := r.Origins(); !slices.Equal(got, want) {
 		t.Errorf("Origins() = %v; want %v", got, want)
 	}
