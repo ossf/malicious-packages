@@ -1,21 +1,26 @@
 {
-  "modified": "2026-09-25T02:42:27Z",
-  "published": "2026-09-25T02:42:27Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17180",
+  "published": "2026-09-25T00:08:08Z",
+  "modified": "2026-09-25T06:31:30.945016943Z",
   "summary": "Malicious code in my-private-pkg (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d8008c5637dfae2dfc4162f1dd5152c5e90e03b0fc8593fda5055f44e9745b22)\nsetup.py registers a custom install command (PostInstallCommand) that runs my_private_pkg/index.py automatically on `pip install`. That script gathers installer-side identifiers — os.getlogin(), socket.gethostname(), local IP address, os.getcwd(), platform.system() and platform.machine() — and POSTs them as JSON to a hardcoded collector URL at https://webhook.site/d4d1b01b-708a-40b9-b8c8-187eeecafeed. A duplicate of the exfiltration payload is shipped as vercel_runtime_python/index.py, and vercel_runtime_python/__init__.py contains the same PostInstallCommand wiring referencing my_private_pkg/index.py; the module name mimics Vercel's Python runtime. The package name and the internal vercel_runtime_python module name are consistent with a dependency-confusion lure targeting an internal `my-private-pkg` name and Vercel's runtime namespace: the only on-install effect is a reconnaissance beacon to an attacker-controlled webhook.site endpoint identifying the host that mistakenly resolved the public name.\n",
+  "details": "Version 99.1.1 of my-private-pkg executes a custom setuptools install hook while a wheel is built. The hook launches my_private_pkg/index.py, which collects the current username, working directory, hostname, resolved local IP address, operating system, and machine architecture, then attempts to POST the resulting JSON to a hard-coded Webhook.site request collector. Dynamic analysis observed the wheel build spawn this script followed immediately by network activity. The package's public metadata describes it only as a private Python package and does not disclose the collection or transmission.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d8008c5637dfae2dfc4162f1dd5152c5e90e03b0fc8593fda5055f44e9745b22)\nsetup.py registers a custom install command (PostInstallCommand) that runs my_private_pkg/index.py automatically on `pip install`. That script gathers installer-side identifiers — os.getlogin(), socket.gethostname(), local IP address, os.getcwd(), platform.system() and platform.machine() — and POSTs them as JSON to a hardcoded collector URL at https://webhook.site/d4d1b01b-708a-40b9-b8c8-187eeecafeed. A duplicate of the exfiltration payload is shipped as vercel_runtime_python/index.py, and vercel_runtime_python/__init__.py contains the same PostInstallCommand wiring referencing my_private_pkg/index.py; the module name mimics Vercel's Python runtime. The package name and the internal vercel_runtime_python module name are consistent with a dependency-confusion lure targeting an internal `my-private-pkg` name and Vercel's runtime namespace: the only on-install effect is a reconnaissance beacon to an attacker-controlled webhook.site endpoint identifying the host that mistakenly resolved the public name.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "my-private-pkg"
+        "name": "my-private-pkg",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "99.1.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -61,18 +66,21 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/my-private-pkg/99.1.1/"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "EVIDENCE",
+      "url": "https://hyena-dashboard-314003657440.asia-northeast3.run.app/#/report/f6466201-aa5b-4136-b458-f88e7b9b4575?period=30&eco=all&tab=summary&return=%23%2Freports%3Fperiod%3D30%26eco%3Dall%26verdict%3Dmalicious"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "webhook.site"
+      ],
+      "urls": [
+        "https://webhook.site/d4d1b01b-708a-40b9-b8c8-187eeecafeed"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-020555",
@@ -85,5 +93,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "mailto:smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
