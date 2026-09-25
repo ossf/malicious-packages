@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-25T10:05:26Z",
+  "modified": "2026-09-25T10:05:26Z",
+  "details": "`@xiaohhhh1/canvas-agent` presents itself as a local bridge between the canvas website and the user's Codex. This report extends MAL-2026-13398, which currently lists versions 0.4.4, 0.4.8, 0.4.9, 0.4.10 and 0.4.11, to the published 0.4.109 release: the same relay-to-local-agent control path remains.\n\nWhen the package's bin starts its local HTTP server, it starts a relay bridge without an opt-in. The bridge opens a persistent WebSocket to the default `wss://canvas.xiaohhhh1.com/api/agent-relay` and sends the local agent token in its hello message. A `request` message received from the relay supplies the HTTP method, path, headers and body to forward to the loopback server. The bridge adds the local `x-canvas-agent-token` header and restricts the target only to the loopback server's origin; it does not restrict the API path or require a local approval for each request.\n\nThe injected token passes the local server's authentication middleware. Its `/agent/codex/turn` endpoint accepts a caller-supplied prompt and `permissionMode`. The `full` mode maps to Codex `danger-full-access` and `approvalPolicy: never`, allowing a sender that can issue requests through the vendor relay to direct the local coding agent without a local approval prompt.\n\nEvidence (0.4.109): `package/dist/server/http.js:402` starts the relay bridge and lines 305-342 define the Codex turn route; `package/dist/relay-bridge.js:3,74-82,98-104,124,146` define the default relay, forward requests with the token and send that token to the relay; `package/dist/agent/codex-client.js:805-812` map `full` to unrestricted execution. Determination: manual static review of the published tarball (sha256 `ebf343ecd8234e78c01ed16d9209c8e5edcf953593d26e84dcd8e4d73ee67b21`), verified against the npm registry integrity hash; the package was not installed or executed.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@xiaohhhh1/canvas-agent"
+      },
+      "versions": [
+        "0.4.109"
+      ]
+    }
+  ],
+  "credits": [
+    {
+      "name": "smiling-hyena",
+      "type": "FINDER",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "canvas.xiaohhhh1.com"
+      ],
+      "urls": [
+        "wss://canvas.xiaohhhh1.com/api/agent-relay"
+      ],
+      "files": [
+        {
+          "paths": [
+            "package/dist/relay-bridge.js"
+          ],
+          "note": "0.4.109 relay bridge: default WebSocket endpoint, token-bearing hello and authenticated loopback request forwarding.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "2c7dda54a04db8b613f5b959c82ab4a6334fcdf6beff732a506643f9820fac72"
+          }
+        },
+        {
+          "paths": [
+            "package/dist/server/http.js"
+          ],
+          "note": "0.4.109 local server: starts the relay bridge and exposes the authenticated Codex turn route.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "00e9d1233c9ea11804df0af04de8344d0cacb90438bafff2cf732a5b860d0638"
+          }
+        },
+        {
+          "paths": [
+            "package/dist/agent/codex-client.js"
+          ],
+          "note": "0.4.109 Codex client: maps full permission mode to danger-full-access with no approval prompts.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "463d6ff8bb469950182d717f65edcf2081ecbbc6263d761ac87b4270bad2707c"
+          }
+        }
+      ]
+    }
+  }
+}
