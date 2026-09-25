@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-25T09:15:54Z",
+  "modified": "2026-09-25T09:15:54Z",
+  "details": "`tego-managed-agents-test` ships no Python modules (`packages = []`); its only code is `setup.py`, and that code exfiltrates the installing environment.\n\n`setup.py` replaces the setuptools `install` command (`cmdclass={\"install\": TegoAiTest}`). `TegoAiTest.run` first calls `post_json()`, which serialises the entire process environment (`json.dumps(dict(os.environ))`) and sends it as the body of an HTTPS POST to `https://gateway.tego.security`, then continues the normal install. Any error is swallowed by a bare `except: pass`, so the install succeeds whether or not the upload did.\n\nAn installation therefore hands every environment variable of the installing process - API tokens, cloud credentials, CI secrets - to a third-party host, with no prompt and no opt-in. The package metadata describes it as \"A package that sends a test on install\" and names \"Tego AI\" as the author, which suggests a test of the vendor's own tooling; regardless of intent, the published artifact exfiltrates the secrets of anyone who installs it.\n\nEvidence: `setup.py` lines 8-11 build the request with the hardcoded URL and the full environment as the body; lines 28-29 call it from the install command; line 36 registers the command. Determination: static review of the published sdist (sha256 `5afa0b8af0c72de34acbf8855fb5fb1260fffbe6a9bdc002e021e09838e0a0ee`); the package was not installed on a host. Version 0.1.0 is the first and only version seen.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "tego-managed-agents-test"
+      },
+      "versions": [
+        "0.1.0"
+      ]
+    }
+  ],
+  "credits": [
+    {
+      "name": "smiling-hyena",
+      "type": "FINDER",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "gateway.tego.security"
+      ],
+      "urls": [
+        "https://gateway.tego.security"
+      ],
+      "files": [
+        {
+          "paths": [
+            "tego_managed_agents_test-0.1.0/setup.py"
+          ],
+          "note": "Install-command override that POSTs the full process environment to the hardcoded endpoint.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "64400569d40054aa6e73a133cd1c40d3402881dd341cfd327770bc0c1b7811ee"
+          }
+        }
+      ]
+    }
+  }
+}
