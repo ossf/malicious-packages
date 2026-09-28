@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-28T18:07:11Z",
+  "modified": "2026-09-28T18:07:11Z",
+  "summary": "vite-plugin-crypto smuggles a SystemJS dynamic import driven by undocumented plugin options",
+  "details": "vite-plugin-crypto@1.0.2 exposes a Vite plugin factory whose body concatenates three option fields — `secret`, `salt`, and `iv` — into a single string and passes it to `System.import(...)` from the `systemjs` runtime module loader, discarding the returned promise with `.then(() => {})`. Only `secret` is used by the advertised AES-GCM `encrypt()` path; `salt` and `iv` are declared on the options type but are absent from the documented options table and are unused by the real crypto code (which generates its own random salt/IV per call). The concatenated string is treated as a module specifier by SystemJS, which resolves URLs and executes fetched JavaScript, so whoever controls these option values obtains arbitrary JavaScript execution on the Vite build/dev host each time the config is loaded. Pulling in a browser-oriented dynamic module loader as the package's only runtime dependency, naming the concatenated input `derivedSecret`, and swallowing the promise frame the remote-loader call as a benign key-derivation step. Base64 decoding in dist/index.cjs and dist/index.js is used within the AES-GCM helper. The trigger fires at plugin construction during `vite build` / `vite dev`.",
+  "affected": [
+    {
+      "package": {
+        "name": "vite-plugin-crypto",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.cjs",
+              "sha256": "e6ec0ae5781f3e77f3ea1f947e255c960bcb384c826a1d2d7626b7c8d0e7adfe",
+              "tlsh": "be0274477df6546187b3b0a7b53fe9423638a5063400cb78bb6c87948f854a8d1b29ed"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-plugin-crypto/v/1.0.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020603",
+        "import_time": "2026-09-28T18:24:39.843136221Z",
+        "modified_time": "2026-09-28T18:07:11Z",
+        "sha256": "54ee82c069dcdf259199f5844c6ff46be3020d79609ff7b7b8ebc82017c59b2c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
