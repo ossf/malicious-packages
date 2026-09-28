@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-13932",
   "published": "2026-08-10T22:30:00Z",
-  "modified": "2026-08-14T14:53:30.966931400Z",
+  "modified": "2026-09-23T02:27:54.689653310Z",
   "summary": "Malicious code in my-auto-follow (npm)",
-  "details": "npm/my-auto-follow is a Baileys WhatsApp Web API fork that embeds undisclosed, remote-controlled consentless newsletter auto-follow behavior. In lib/Socket/newsletter.js, after a session is established the code waits 120 seconds, fetches a JSON list of WhatsApp newsletter JIDs from https://raw.githubusercontent.com/DGXeon13/strings/refs/heads/main/strings.json (attacker-controlled; observed contents include newsletter JIDs), and silently issues newsletterWMexQuery(..., QueryIds.FOLLOW) for each entry with errors swallowed. There is no caller opt-in. Trigger is runtime (makeNewsletterSocket / normal socket path), not install: preinstall only checks Node >= 20. The package also depends on libsignal via the npm alias npm:@dreamguyxeon/libsignal-node@1.0.1 (separate malicious patcher reported alongside this entry). Related DGXeon campaign packages already in OSV include dgxeon-baileys (MAL-2026-2252) and baileys-dgxeon (MAL-2025-806). Tarball sha256 for 1.0.3: 1332d396a2251692c2654fca52620a433a880551500a567ade040e8f01440e68.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (481bdecc52b4f32afcfd2e6755ef8c74191cc0010714a0403aa93d1bd958369b)\nmy-auto-follow is a Baileys WhatsApp library fork whose `makeWASocket` newsletter socket schedules an undocumented setTimeout (120s after socket creation) that fetches a remote JSON list from https://raw.githubusercontent.com/DGXeon13/strings/refs/heads/main/strings.json and unconditionally force-follows every channel ID in that list via `newsletterWMexQuery(id, QueryIds.FOLLOW)` (lib/Socket/newsletter.js lines 100-122). The fetched list is hosted on a mutable branch under the package author's GitHub account and can be changed at any time without republishing the package. There is no opt-in, no documentation, and no user prompt. Any developer who uses this library to power a WhatsApp bot will have their authenticated WhatsApp account silently issue FOLLOW commands to whatever channel IDs the author chooses to publish — abusing the installer's WhatsApp identity for the author's social-graph manipulation. The behavior matches the package name `my-auto-follow` but is never disclosed to the consumer.\n",
+  "details": "npm/my-auto-follow is a Baileys WhatsApp Web API fork that embeds undisclosed, remote-controlled consentless newsletter auto-follow behavior. In lib/Socket/newsletter.js, after a session is established the code waits 120 seconds, fetches a JSON list of WhatsApp newsletter JIDs from https://raw.githubusercontent.com/DGXeon13/strings/refs/heads/main/strings.json (attacker-controlled; observed contents include newsletter JIDs), and silently issues newsletterWMexQuery(..., QueryIds.FOLLOW) for each entry with errors swallowed. There is no caller opt-in. Trigger is runtime (makeNewsletterSocket / normal socket path), not install: preinstall only checks Node >= 20. The package also depends on libsignal via the npm alias npm:@dreamguyxeon/libsignal-node@1.0.1 (separate malicious patcher reported alongside this entry). Related DGXeon campaign packages already in OSV include dgxeon-baileys (MAL-2026-2252) and baileys-dgxeon (MAL-2025-806). Tarball sha256 for 1.0.3: 1332d396a2251692c2654fca52620a433a880551500a567ade040e8f01440e68.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (983397af6686fd3a8ae5538fbc62139959592c3a7ac24c100055a57ed1fe8f05)\nmy-auto-follow@1.0.6 is a Baileys WhatsApp library fork with two installer-affecting behaviors. First, package.json declares the dependency whatsapp-rust-bridge-baron as git+https://github.com/7ucg/whatsapp-rust-bridge.git with no commit SHA or tag pin; the tarball ships no bundled node_modules for it, so npm install resolves the git URL at install time and executes whatever code and lifecycle hooks the HEAD of that repository contains, entirely outside the installer's version pinning and integrity control. Second, makeNewsletterSocket in the package's default socket construction schedules a 120-second timer that fetches a channel-ID list from https://raw.githubusercontent.com/DGXeon13/strings/refs/heads/main/strings.json (an unpinned mutable branch on a personal GitHub account) and issues WhatsApp newsletter FOLLOW queries for each ID using the caller's authenticated WhatsApp session, inflating the author's channel subscribers using the installer's identity. This behavior is not disclosed in README, and the target list can be changed remotely at any time by whoever controls that repository.\n",
   "affected": [
     {
       "package": {
@@ -15,10 +15,22 @@
         "1.0.0",
         "1.0.1",
         "1.0.2",
-        "1.0.3"
+        "1.0.3",
+        "1.0.6",
+        "1.0.7"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -84,6 +96,14 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/my-auto-follow/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/my-auto-follow/v/1.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/my-auto-follow/v/1.0.7"
     }
   ],
   "database_specific": {
@@ -122,6 +142,26 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020337",
+        "import_time": "2026-09-23T02:26:00.655488314Z",
+        "modified_time": "2026-09-23T02:13:53Z",
+        "sha256": "983397af6686fd3a8ae5538fbc62139959592c3a7ac24c100055a57ed1fe8f05",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020336",
+        "import_time": "2026-09-23T02:26:00.583483247Z",
+        "modified_time": "2026-09-23T02:13:39Z",
+        "sha256": "c854292fe2da23d4d09690d4369d52f9f21779f5d132b090b1b90d8794ab0bd3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.7"
         ]
       }
     ]

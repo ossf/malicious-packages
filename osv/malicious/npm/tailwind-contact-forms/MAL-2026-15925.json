@@ -1,21 +1,27 @@
 {
-  "modified": "2026-09-04T06:48:54Z",
-  "published": "2026-09-04T06:48:54Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-15925",
+  "published": "2026-09-04T06:48:54Z",
+  "modified": "2026-09-23T14:22:02.283684027Z",
   "summary": "Malicious code in tailwind-contact-forms (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0ec029f2c6cc211c953394dfe89a4ba0921f1a526ca2b0235672f6fdeca10c50)\ntailwind-contact-forms ships src/index.js containing the legitimate @tailwindcss/forms plugin source concatenated with an obfuscator.io-style payload (rotating 328-entry string array _0x303e with decoder _0x1574, ~1300 deobfuscation transforms). The obfuscated section decodes to host-reconnaissance strings ('hostname', 'Win64; x64', 'process.env') and to network destinations targeting Ethereum RPC / block-explorer infrastructure ('h.drpc.org', 'pc.io/eth', an 'stapi.io' host, 'ut.com/api', and Etherscan-style query parameters '?module=account\u0026action=txlist\u0026', 'nonce', 'startbloc'). Because src/index.js is the package's main entry, the payload executes on require() in any project that installs this package. The package manifest declares repository = https://github.com/tailwindlabs/tailwindcss-forms (the real Tailwind Labs upstream, whose actual npm name is @tailwindcss/forms) while publishing under the unrelated name tailwind-contact-forms, impersonating the upstream to lure developers who mistype the real package. A CSS/Tailwind plugin has no functional reason to run obfuscated code, read host identifiers and process.env, or contact Ethereum RPC and block-explorer APIs at import time.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (6d82b6065d9e3d4a4ebba479ed42deb342f72c48d2d69d297f3926c0225828aa)\nThe package's main module src/index.js begins with eval(atob(\"...\")) that decodes ~30 KB of obfuscated JavaScript before the genuine plugin code. The decoded loader imports http/https/zlib and child_process.spawn, hoists require and module onto globals (global['r'], global['m']) to escape the module sandbox, and evaluates payloads received from remote endpoints. The loader hardcodes an Ethereum sender address (assembled from fragments including '0xa322E5f3','D311D3080e','6f0121063e') and a set of RPC endpoints on public Ethereum nodes (drpc.org, publicnode.com, blockscout, ethereum-rpc) plus an Etherscan-style indexer queried with 'module=account&action=txlist&address=...&sort=desc'. It polls eth_blockNumber / eth_getBlockByNumber / eth_getTransactionCount to monitor the on-chain address and retrieves payloads carried in x-payload-b64 headers, decompressed through zlib createGunzip/createInflate and executed. The loader fires on any require('tailwind-contact-forms'). The package name mimics @tailwindcss/forms and its package.json repository field points at https://github.com/tailwindlabs/tailwindcss-forms; the obfuscated loader is prepended above a verbatim copy of the legitimate @tailwindcss/forms plugin source so the package appears to work normally after infection.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "tailwind-contact-forms"
+        "name": "tailwind-contact-forms",
+        "ecosystem": "npm"
       },
       "versions": [
-        "0.5.12"
+        "0.5.12",
+        "0.5.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/tailwind-contact-forms/v/0.5.12"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/tailwind-contact-forms/v/0.5.1"
     }
   ],
   "database_specific": {
@@ -74,7 +75,26 @@
         "versions": [
           "0.5.12"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-020492",
+        "import_time": "2026-09-23T14:19:31.892811335Z",
+        "modified_time": "2026-09-23T14:10:59Z",
+        "sha256": "6d82b6065d9e3d4a4ebba479ed42deb342f72c48d2d69d297f3926c0225828aa",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.5.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
