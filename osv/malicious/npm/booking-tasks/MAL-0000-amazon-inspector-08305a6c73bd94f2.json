@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T03:05:04Z",
+  "modified": "2026-09-30T03:05:04Z",
+  "summary": "booking-tasks postinstall executes bundled VBScript that decrypts and runs an embedded PowerShell payload via process hollowing",
+  "details": "The package's package.json declares a postinstall hook `wscript.exe 4444.vbs` that fires automatically on `npm install`. The bundled 4444.vbs contains hand-rolled AES-128 (with XOR-masked forward/inverse S-boxes), a ChaCha20-IETF stream, XOR-masked SHA-256 round constants, a Base64 decoder via MSXML DOM, and a chunked Base64 ciphertext blob (ArtifactBundleHX, ~665 chunks). At install time the VBScript decrypts these chunks into a PowerShell loader, writes it to %TEMP%\\pf<rand>.dat, and hands it to powershell.exe for process hollowing, giving the publisher arbitrary code execution on the installer's Windows host. The shipped library surface (src/index.js) is a small Zod-validated `checkEligibility()` function that never references 4444.vbs, and readme.md states 'No network requests. No personal data storage. No installation scripts.' — a direct contradiction of the declared postinstall hook, indicating the source module is a decoy for the dropper. The multi-primitive crypto and chunked-Base64 encoding of the payload serve only to hide executable content from static inspection.",
+  "affected": [
+    {
+      "package": {
+        "name": "booking-tasks",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "82955201b82d99a4d3d85add5d558db7f3758a0cf1295236f7ada79c5a888429",
+              "tlsh": "fce02213ca549f6722f8a7a2ad354213b2690f0f02614d0b30fb126c4f612b720dfb6c"
+            },
+            {
+              "path": "4444.vbs",
+              "sha256": "89a31ec0719b2137938c892385823ffb993d2d903e1fdfe17b246ba88531609a",
+              "tlsh": "daf4f034658a68abb63bcafeace6c72935147c053040606c35deb6581bfdcd15bda0f8"
+            },
+            {
+              "path": "readme.md",
+              "sha256": "11f2ec1d479385714632f19967af06a5273b66baf7ffab8c9f9e400092735026",
+              "tlsh": "3c3100444c23e37935b1e31bbc90b092e7f4915c0aa60c51b9aa835e1315f62fb7f84e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "booking-tasks-1.0.2.tgz",
+              "hashes": {
+                "sha1": "c2b0bb45d34ea57f155ecdba8396dbf334bf3aee",
+                "sha512_sri": "sha512-7xSqKU/aEEOdTui/UMTLIjVPSfK5qnCBk8J/A27R/Lq8ugHidyT8PzgVDNyP8ix79U/6Y6ousl8ptpBydgDMPQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/booking-tasks/v/1.0.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020796",
+        "import_time": "2026-09-30T03:24:19.763928517Z",
+        "modified_time": "2026-09-30T03:05:04Z",
+        "sha256": "08305a6c73bd94f2983c949316cb78fef7f7169f85523a773c94fb305874e063",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
