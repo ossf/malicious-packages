@@ -1,21 +1,27 @@
 {
-  "modified": "2026-09-28T18:07:55Z",
-  "published": "2026-09-28T18:07:55Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17226",
+  "published": "2026-09-28T18:07:55Z",
+  "modified": "2026-09-30T05:21:35.968418343Z",
   "summary": "Malicious code in figlet-chalk-render (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (992cf49b88be09149971d4ac18fe2a4b61d242186f553cb3283a26970b886d7f)\nThe package is advertised as a chalk+figlet wrapper but index.js contains a top-level IIFE that runs on require. On Windows hosts, it reconstructs the module names 'https', 'os', 'fs', 'path', and 'child_process' and the method name 'spawn' from char-code arrays, hex escapes, and string concatenation to hide the network and execution chain. It then decodes the hardcoded plain-HTTP URL http://104.234.65.75:700/setup.exe and the filename RuntimeBroker.exe (masquerading as a legitimate Windows binary), downloads the payload into the OS temp directory via https.get piped to createWriteStream, and spawns it detached with windowsHide: true and.unref(). Execution is gated to skip environments where CI, SANDBOX, GITHUB_ACTIONS, or TRAVIS are set, evading sandbox and CI analysis. The obfuscation, bare-IP plain-HTTP delivery, RuntimeBroker.exe masquerade, and CI-evasion gate are inconsistent with the package's stated purpose and match an install/require-time Windows dropper.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d5ccd0a988525d8128b520a46c4271e26ae5fe2f99accf28f37d4c7370b66de4)\nOn every `require('figlet-chalk-render')`, a top-level IIFE queries `https://registry.npmjs.org/figlet-chalk-render/latest` and, if a newer version exists, spawns `npm install figlet-chalk-render@<latest>` with cwd set to `path.join(__dirname, '..', '..')` (the consumer project's root) and stdio ignored. The `https`, `child_process`, and `path` core-module names are loaded via hex-escaped string literals (`'\\x63\\x68\\x69\\x6c\\x64\\x5f\\x70\\x72\\x6f\\x63\\x65\\x73\\x73'`, etc.) rather than plain identifiers, deliberately hiding the sensitive requires backing the auto-update. The behavior is undocumented in the README. Every consumer that imports the module receives whatever the latest published version happens to be at that moment, executed with the installer's npm privileges and lifecycle scripts, giving anyone who later controls this package name a silent code-execution channel into every installer's project tree. The hex-obfuscation of the module names is anti-evasion and rebuts a benign-self-update reading: legitimate insecure-update code does not disguise `require('child_process')`.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "figlet-chalk-render"
+        "name": "figlet-chalk-render",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.2.1"
+        "1.2.1",
+        "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +53,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/figlet-chalk-render/v/1.2.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/figlet-chalk-render/v/1.0.0"
     }
   ],
   "database_specific": {
@@ -69,7 +70,26 @@
         "versions": [
           "1.2.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-020818",
+        "import_time": "2026-09-30T05:19:46.619362772Z",
+        "modified_time": "2026-09-30T05:13:52Z",
+        "sha256": "d5ccd0a988525d8128b520a46c4271e26ae5fe2f99accf28f37d4c7370b66de4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
