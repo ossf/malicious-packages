@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T05:29:04Z",
+  "modified": "2026-09-30T05:29:04Z",
+  "summary": "runhelper executes opaque native shellcode from sibling package on require (Windows RCE)",
+  "details": "On `require('runhelper')`, index.js unconditionally loads a payload file staged by its dependency `imgbundle` at `cdn-img-fetch/.runtime/rt.jpg`, allocates executable memory via kernel32 `VirtualAlloc` with `PAGE_EXECUTE_READWRITE` (0x40) and `MEM_COMMIT|MEM_RESERVE` (0x3000) through the `koffi` FFI, copies the file bytes with `RtlMoveMemory`, and executes them with `CreateThread`. The payload file is deleted after launch, and an `fs.watch` waits for it if not yet present. The `.jpg` extension in a hidden `.runtime` directory disguises an executable payload, and all errors are swallowed with empty `catch (_) {}` blocks. The advertised `exec()` spawn wrapper described in the README is a cover story: the module's top-level behavior on load is native shellcode execution. The manifest pins `imgbundle@^1.0.0` (payload source) and `koffi@^2.8.0` (FFI used to run it); the loader/payload split means anything that transitively requires runhelper on Windows fetches and executes attacker-supplied native code in-process.",
+  "affected": [
+    {
+      "package": {
+        "name": "runhelper",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "a0e7dbbef7b47e3f9641ee1896b0a7b0005c66e5b8b3a51fa661cfeffc6816a0",
+              "tlsh": "3a31134606f73671646361e95a1b9449a09bd463326ae570bcdd83802f67254c7329fc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "runhelper-1.0.0.tgz",
+              "hashes": {
+                "sha1": "b10393e9a3abaccc26fba84cfbbffeb3ec22a91a",
+                "sha512_sri": "sha512-acJRuBBDX0AVzguTtk4qcTtQVYo2ngAOQlIdRtb8Lgp7kBtlFLt4paytylSExwrLu+8RIcByIs+8sf0NzlK1vA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/runhelper/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020819",
+        "import_time": "2026-09-30T05:44:17.259385457Z",
+        "modified_time": "2026-09-30T05:29:04Z",
+        "sha256": "3b30a78c30f51a72d8501b77d0cf6190319b8876ed7a119cc2f885adc3618212",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
