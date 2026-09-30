@@ -1,0 +1,88 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T19:36:51Z",
+  "modified": "2026-09-30T19:36:51Z",
+  "summary": "Package masquerading as a greeting utility harvests Snowflake/dbt credentials and exfiltrates data to attacker-controlled S3",
+  "details": "The package advertises itself as a hello-world greeting tool but its public `run_demo()` API (and `--run-demo` CLI) decodes a gzip+base64 blob (`DEMO_EN`) stored in `main.py` and executes it via `exec(gzip.decompress(base64.b64decode(...)).decode('utf-8'))`. The decoded payload reads Snowflake and data-tooling credential files — `/snowflake/session/token`, `/root/.snowflake/connections.toml`, `/root/.dbt/profiles.yml`, and `/snowflake/secrets/pip.conf` — encrypts them under a hardcoded RSA public key, and writes ciphertext to `/workspace/*.enc` for attacker retrieval. A second embedded blob (`DEMO_ST`) and a shipped helper `tools/snowflake_query.py` use the current Snowflake session's OAuth token to `CREATE STORAGE INTEGRATION` bound to the AWS IAM role `arn:aws:iam::631484165566:role/pentests_s3_role` and `COPY INTO` an external stage at `s3://pkusinski-external/`, exfiltrating table rows to an attacker-owned S3 bucket. The obfuscated encrypted-exec pattern, cover-story name, hardcoded RSA public key, and hardcoded attacker AWS role together form a Snowflake-targeted credential-theft and data-exfiltration payload.",
+  "affected": [
+    {
+      "package": {
+        "name": "friendly-greeting-tools",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/friendly_greeting/main.py",
+              "sha256": "9d04582bbf04c56903a67fc0924c265b745471e188db53264b00f152a6819214",
+              "tlsh": "2751097ac8052fd7afce847d2c6d69d0da2a39c77580c0203e5c65493f3d6b98db2292"
+            },
+            {
+              "path": "tools/snowflake_query.py",
+              "sha256": "7e0a1ee6a49de1a04fbb28fd3a388d7073a59e94708d574ca06f7d1f6bb3e02a",
+              "tlsh": "a511280e85171a3152473e20c058e1651851e7979f8d3594bf4dca468f355684fb0bfa"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "friendly_greeting_tools-0.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "478ae2807c840aa83f993acd38f919b681b36c3657f55990572a121c3672d265",
+                "md5": "c7936cdc8970605811e1dfe47b365066",
+                "sha256": "d36d7fb5cd4b622fa10fffcb7da5037a275621b3f02c656917cdd0e6e5bf5306"
+              }
+            },
+            {
+              "filename": "friendly_greeting_tools-0.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "abeba2b6967cc06d85dd34f95f1a4887942843823cfd32d0f4d3e6d34c13e7a4",
+                "md5": "c53e684ab75396ae89dffe0c2940d04a",
+                "sha256": "0ab881538efe4314b4b385b48f48485b339f7209ed72898fb4a5a3358039a85e"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-greeting-tools/0.2/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020857",
+        "import_time": "2026-09-30T19:40:11.921616388Z",
+        "modified_time": "2026-09-30T19:36:51Z",
+        "sha256": "ff10efdd483caa8717a7e8dc98c44dbb79bffde734e2a1181c28f25e9c522b8a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

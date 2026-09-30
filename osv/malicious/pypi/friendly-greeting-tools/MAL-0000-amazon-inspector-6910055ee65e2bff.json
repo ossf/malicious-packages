@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T19:37:00Z",
+  "modified": "2026-09-30T19:37:00Z",
+  "summary": "friendly-greeting-tools ships gzip+base64 payloads that encrypt Snowflake/dbt credentials and exfiltrate warehouse data to an attacker S3 bucket",
+  "details": "The package presents itself as a hello-world greeting library, but its advertised public API `run_demo()` (imported by `__init__.py` and exposed through a `--run-demo` CLI flag) decodes three hardcoded gzip+base64 constants (DEMO_EN, DEMO_ST, DEMO_SC) in `main.py` and executes them via `exec()`. The decoded payloads perform two distinct installer-side attacks. DEMO_EN reads `/snowflake/session/token`, `/root/.snowflake/connections.toml`, `/root/.dbt/profiles.yml`, and `/snowflake/secrets/pip.conf`, then encrypts each file in place under `/workspace/` using a hardcoded attacker-controlled RSA public key wrapping a Fernet key — a ransomware-style staging pattern that leaves credentials recoverable only by the holder of the matching private key. DEMO_ST reads the Snowflake session token, authenticates as ACCOUNTADMIN via OAuth, provisions a storage integration bound to attacker AWS role `arn:aws:iam::631484165566:role/pentests_s3_role`, creates an external stage at `s3://pkusinski-external/`, and issues `COPY INTO` against `ROGUE.ROGUE.TEST_USERS` to pipe warehouse table data out of the installer's Snowflake tenant into the attacker's S3 bucket. The gzip+base64 encoding, the `run_demo` docstring claiming a 'harmless greeting payload', and the hello-world README are cover for these payloads.",
+  "affected": [
+    {
+      "package": {
+        "name": "friendly-greeting-tools",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.3.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/friendly_greeting/main.py",
+              "sha256": "7d6806ac624a20670848cf3a54d12c92afb33b6092fe12adadf00e275e803dcf",
+              "tlsh": "d6814b79d412cfd1a396097e5c4837cc5b39380b1984d07439ec56943faa879cef2684"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "friendly_greeting_tools-0.3.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "8833af1b6313f43675f6ac9e7b867ddc52bf283a30366e458b8265caa63c731a",
+                "md5": "94e4a280c272d10e9f4a4d18f92d02c2",
+                "sha256": "4ae86a864ce153d94ccc8e9fef6b39e8ba828a8e2b6ccddf286a4dc51b9a0665"
+              }
+            },
+            {
+              "filename": "friendly_greeting_tools-0.3.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "dc7d629f96ad1f5d5c07bd562a614991d58bf09435a5568733b89c818d075814",
+                "md5": "7af579f9836351ccbb1a069adeb5b0de",
+                "sha256": "4e0c64771cff787f0fe4fe05c31e78d18372c80909a17693ec60f923367bafc3"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-greeting-tools/0.3.2/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020858",
+        "import_time": "2026-09-30T19:40:12.013554499Z",
+        "modified_time": "2026-09-30T19:37:00Z",
+        "sha256": "6910055ee65e2bff5537ae2ea1a9b669608e10c459151c3a100dd50c5c4c4538",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T19:37:46Z",
+  "modified": "2026-09-30T19:37:46Z",
+  "summary": "friendly-greeting-tools exfiltrates Snowflake data to hardcoded S3 bucket via obfuscated exec payload",
+  "details": "friendly-greeting-tools 0.3.6 advertises itself as a hello-world greeting utility whose README instructs callers to invoke run_demo(). run_demo() in friendly_greeting/main.py decodes base64+gzip-wrapped constants named DEMO_EN, DEMO_ST, and DEMO_SC and passes them to exec(). The decoded payloads are not greetings: they read /snowflake/session/token, authenticate to Snowflake as ACCOUNTADMIN using that OAuth token, create a STORAGE INTEGRATION with STORAGE_AWS_ROLE_ARN=arn:aws:iam::631484165566:role/pentests_s3_role and STORAGE_ALLOWED_LOCATIONS=('s3://pkusinski-external/'), create an external STAGE against that bucket, and COPY INTO the stage from ROGUE.ROGUE.TEST_USERS — a bulk export of Snowflake table contents to a hardcoded non-first-party S3 destination. A third decoded payload (DEMO_SC) queries ROGUE.ROGUE.TEST_USERS, appends the returned rows into a README, copies the installed module tree into /workspace/friendly-greeting-tools, and writes a pyproject.toml naming the package friendly-greeting-tools at version 0.4 — scaffolding a same-named, version-bumped sdist whose README embeds the exfiltrated rows. The plaintext tools/pack_payload.py ships a decoy DEFAULT_SOURCE_CODE of print(\"Hello from the encoded greeting demo!\") that does not match the shipped constants, establishing the greeting cover story. The combination of cover-story naming, base64+gzip wrapping, exec sink, installer-token reuse against an attacker-controlled destination, and republish-scaffolding is a Snowflake data-exfiltration and supply-chain-propagation payload.",
+  "affected": [
+    {
+      "package": {
+        "name": "friendly-greeting-tools",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.3.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/friendly_greeting/main.py",
+              "sha256": "cdd340ec4f015f5475c7c2a5846b4df1b3282ec6266839fae58060ea76e9563a",
+              "tlsh": "22816d2bd4490ea2629905bc9c5c92e49f3539171908e0b43d6c83bc3fbe5bac9f3128"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "friendly_greeting_tools-0.3.6-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "3e68c0344311846e3f9bf81769b52a6e156793c19926b6be5b804c6d70f1c6fd",
+                "md5": "c0bab9afc53c901a5780dae9f08de9e3",
+                "sha256": "29ab7c3f5a4427afaa58ca321bd4bd219a01e6cedf7bf836a0e3089fb6afd66e"
+              }
+            },
+            {
+              "filename": "friendly_greeting_tools-0.3.6.tar.gz",
+              "hashes": {
+                "blake2b_256": "aa9130431e028a91c18a6aed99051acec883562e997f317dccefb4df8a765c3e",
+                "md5": "7414af4b389cf06bb4fbc7992e85f51a",
+                "sha256": "097f265481136ee001e647a8975c9bb76cf1f64017caec59ab716b206e9ab306"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-greeting-tools/0.3.6/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020863",
+        "import_time": "2026-09-30T19:40:12.489110993Z",
+        "modified_time": "2026-09-30T19:37:46Z",
+        "sha256": "7267dc5d46a78f954abb2b67991884f4aca3c0c87f06021b458e8dbc2771495d",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.3.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
