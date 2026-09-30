@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-30T04:37:46Z",
+  "modified": "2026-09-30T04:37:46Z",
+  "summary": "Trivial string utility ships a VMProtect-packed Windows.pyd executed on import",
+  "details": "The package advertises itself as a pure-Python string helper (strip, slugify, case conversion, whitespace collapse) and its README states the implementation is standard-library only. However, `cleanup_string/__init__.py` performs `from._impl import cleanup`, which loads a 1.3 MB Windows-only native extension `cleanup_string/_impl.cp313-win_amd64.vmp.pyd` (sha256 980ae204f04f9a7e68666670eb5b236bc7347d0111697df1015de665fd1a1712). The filename embeds the VMProtect convention `.vmp` and the binary matches that packer's signature: the only readable strings are Win32 API imports (LoadLibraryA, GetModuleHandleA, HeapAlloc, DisableThreadLibraryCalls, ExitProcess, KERNEL32.dll, VCRUNTIME140.dll) and the remaining ~1.3 MB is high-entropy virtualized code. VMProtect exists to defeat static and dynamic analysis; the trivial advertised functionality has no legitimate need for a virtualized native module. Any Windows Python 3.13 environment that imports `cleanup_string` executes this opaque, anti-analysis-protected code with the privileges of the importing process.",
+  "affected": [
+    {
+      "package": {
+        "name": "cleanup-string",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "cleanup_string/_impl.cp313-win_amd64.vmp.pyd",
+              "sha256": "980ae204f04f9a7e68666670eb5b236bc7347d0111697df1015de665fd1a1712",
+              "tlsh": "3855f100f4e5e625ef6ef8798f43045816869504aba77a01fe543fcb0ecbb3a06c565b"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cleanup_string-1.0.0-cp313-cp313-win_amd64.whl",
+              "hashes": {
+                "blake2b_256": "b728699edebad4cf7516b3b978ba753f05f25760785aee7744194595226b3394",
+                "md5": "f1b3e7e4a11860fe4cdde51b88328b41",
+                "sha256": "a186a4c89a535e129c757fd9b4d8d280e0691d9d2baa290f5a4f9ec22a194696"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/cleanup-string/1.0.0/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020805",
+        "import_time": "2026-09-30T04:46:52.43035141Z",
+        "modified_time": "2026-09-30T04:37:46Z",
+        "sha256": "844c5afa9f00c02149f4f6314447c5738e04ed419014809c1df83f31aa012525",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
