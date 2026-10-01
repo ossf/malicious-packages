@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17196",
   "published": "2026-09-27T08:55:47Z",
-  "modified": "2026-09-28T22:20:19.633510677Z",
+  "modified": "2026-10-01T03:38:35.192343837Z",
   "summary": "Malicious code in donutpromotion (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ada85a54b2cc7d9770d7276da4b2e9983c29ad0e8e2187737415073b4f80d947)\nsetup.py imports donutpromotion.telemetry and invokes check() during pip install. check() fetches a JSON manifest from the hardcoded non-publisher domain https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json, extracts an 'r' field, and if the fetch fails falls back to a ~4.4KB base64-encoded encrypted PAYLOAD embedded in _payload.py. The bytes are decrypted with ChaCha20+HMAC using a hardcoded passphrase from security.py and passed to exec(), granting the domain operator (or the shipped fallback) arbitrary code execution on the installer's machine. Detonation is gated: check() only proceeds when Documents or Downloads directories exist under the user home (via _is_real()) and aborts when DAS_STAGED=1 or DONUTPROMOTION_TELEMETRY=0 is set, evading build farms and analysis sandboxes while firing on developer workstations. setup.py wraps the whole invocation in a bare try/except pass to suppress errors. The README advertises offline Minecraft helper functionality, which is inconsistent with install-time network fetch and exec of remote content.\n\n## Source: kam193 (26201e7959d7a736440fa6fb22ba7b9911c269b08460374d0a2db307ba6b0273)\nDuring installation, obfuscated code is used to fetch code hidden in an image containing a Python application with a native extension module. This module holds an obfuscated infostealer which collects sensitive data and exfiltrates them to a C2 server retrieved from transaction history in the Polygon blockchain.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-donutautosellsrc\n\n\nReasons (based on the campaign):\n\n\n - infostealer\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - malware\n\n\n - native-extension\n\n\n - steganography\n\n\n - c2-in-blockchain\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
+  "details": "`donutpromotion` presents itself as a Minecraft SMP donation and rank-promotion helper. The published 0.1.0 sdist instead executes an encrypted downloader before setuptools processes the package.\n\nThe automated package report identified a critical `py-download-and-execute` signal at `donutpromotion/telemetry.py:99`: downloaded or embedded bytes are decrypted and passed to `exec()` with unrestricted builtins. Review of the cited path confirms the install trigger. When `setup.py` runs during build or installation, lines 6-7 import and call `donutpromotion.telemetry.check()` before `setup()` runs.\n\n`telemetry.py:19` hardcodes `https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json`. The loader skips obvious staging environments and hosts without a normal user profile, accepts a directive returned by that endpoint, and otherwise falls back to the encrypted blob shipped in `donutpromotion/_payload.py`. Lines 91-99 derive keys from a hardcoded seed, authenticate and decrypt the selected blob, and execute the resulting Python source. The authentication only restricts execution to publisher-controlled directives; it does not make the directive safe.\n\nOffline static decryption of the embedded fallback, without executing it, reveals a second-stage downloader. It checks Windows BIOS strings for VMware, VirtualBox, QEMU, Xen and other virtualisation products; searches the process list for Wireshark, Procmon, Process Hacker, IDA, x64dbg and other analysis tools; calls `IsDebuggerPresent`; creates a one-time marker; and sleeps for a random interval. If those checks pass, it downloads `https://thisisafalsepositive.st/cdn/v2/9f4e7a2c1b8d.png`, treats compressed data hidden inside PNG chunks as a ZIP archive, extracts it, and starts the included `python.exe AppHost/main.py` as a detached, hidden background process.\n\nThe automated sandbox completed without observing the second-stage request; the source explicitly avoids staged environments and hosts without a normal user profile. The cited static `py-download-and-execute` path and the decrypted fallback establish the install-time chain independently.\n\nEvidence: `setup.py:6-7` calls the loader during build/install; `donutpromotion/telemetry.py:19` sets the manifest endpoint; lines 62-99 select, authenticate, decrypt and execute the directive; `donutpromotion/_payload.py` contains the encrypted fallback.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ada85a54b2cc7d9770d7276da4b2e9983c29ad0e8e2187737415073b4f80d947)\nsetup.py imports donutpromotion.telemetry and invokes check() during pip install. check() fetches a JSON manifest from the hardcoded non-publisher domain https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json, extracts an 'r' field, and if the fetch fails falls back to a ~4.4KB base64-encoded encrypted PAYLOAD embedded in _payload.py. The bytes are decrypted with ChaCha20+HMAC using a hardcoded passphrase from security.py and passed to exec(), granting the domain operator (or the shipped fallback) arbitrary code execution on the installer's machine. Detonation is gated: check() only proceeds when Documents or Downloads directories exist under the user home (via _is_real()) and aborts when DAS_STAGED=1 or DONUTPROMOTION_TELEMETRY=0 is set, evading build farms and analysis sandboxes while firing on developer workstations. setup.py wraps the whole invocation in a bare try/except pass to suppress errors. The README advertises offline Minecraft helper functionality, which is inconsistent with install-time network fetch and exec of remote content.\n\n## Source: kam193 (26201e7959d7a736440fa6fb22ba7b9911c269b08460374d0a2db307ba6b0273)\nDuring installation, obfuscated code is used to fetch code hidden in an image containing a Python application with a native extension module. This module holds an obfuscated infostealer which collects sensitive data and exfiltrates them to a C2 server retrieved from transaction history in the Polygon blockchain.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-donutautosellsrc\n\n\nReasons (based on the campaign):\n\n\n - infostealer\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - malware\n\n\n - native-extension\n\n\n - steganography\n\n\n - c2-in-blockchain\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n",
   "affected": [
     {
       "package": {
@@ -73,6 +73,45 @@
         "thisisafalsepositive.st",
         "sltnnt.ru"
       ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "934ba2a727952739b09c3eb9bd39db3d5c26fde77e676977ea61d64ba2c92d22"
+          },
+          "note": "Build/install entry point that imports and calls the encrypted directive loader before setuptools setup.",
+          "paths": [
+            "setup.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "0820d2a5923f919ce1c5c99d21fb2e6ba6ea3fe16cc46f3ba148b36c861fd73e"
+          },
+          "note": "Manifest client and loader that decrypts and executes publisher-controlled Python with unrestricted builtins.",
+          "paths": [
+            "donutpromotion/telemetry.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "dd624a9189bbbd75b4ba20d9b288e68643ecc60133c78e2ce0daa9fa5082403e"
+          },
+          "note": "Encrypted fallback directive containing the anti-analysis second-stage downloader.",
+          "paths": [
+            "donutpromotion/_payload.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "fef7d9f5cd1285efd8911dbdab62eb6339d92071c0e4515c7ae1b2bef11bccfe"
+          },
+          "note": "Offline-decrypted in-memory directive: anti-analysis checks, PNG/ZIP second-stage download, extraction and hidden detached execution.",
+          "source": "IN_MEMORY"
+        }
+      ],
       "urls": [
         "https://thisisafalsepositive.st/cdn/v2/9f4e7a2c1b8d.png",
         "https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json"
@@ -126,6 +165,13 @@
         "https://bad-packages.kam193.eu/"
       ],
       "type": "REPORTER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
     }
   ]
 }
