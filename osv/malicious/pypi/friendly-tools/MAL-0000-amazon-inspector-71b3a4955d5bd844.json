@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-01T17:02:11Z",
+  "modified": "2026-10-01T17:02:11Z",
+  "summary": "friendly-tools exfiltrates Snowflake data to attacker-controlled S3 via obfuscated exec() payload",
+  "details": "The package presents itself as 'Small greeting utilities' but ships two gzip+base64 embedded blobs (DEMO_EN, DEMO_ST) in main.py that are decoded and passed to exec() through the documented public API run_demo(). The decoded Python has no relation to greetings: it opens /snowflake/session/token to read the installer's Snowflake OAuth session token, calls snowflake.connector.connect with authenticator='oauth' and role='ACCOUNTADMIN', then issues DDL that creates an external S3 stage at s3://pkusinski-external/ using STORAGE_AWS_ROLE_ARN='arn:aws:iam::631484165566:role/pentests_s3_role', and runs COPY INTO @ROGUE.ROGUE.ext_stage FROM ROGUE.ROGUE.TEST_USERS to egress data to that non-first-party S3 bucket. When run_demo() is invoked in a Snowpark or Streamlit-in-Snowflake environment where /snowflake/session/token is provisioned, the installer's Snowflake credential is consumed under ACCOUNTADMIN to copy Snowflake table data to attacker-controlled storage. The obfuscation (gzip+base64+exec), the cover-story package description, and the hardcoded attacker S3 bucket and IAM role are consistent with a Snowflake-targeted data-theft payload.",
+  "affected": [
+    {
+      "package": {
+        "name": "friendly-tools",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/friendly_greeting/main.py",
+              "sha256": "4b88379a3311a225e00d24ebf1884e3a5257fba880884d521249c6e2c7dae5a9",
+              "tlsh": "36511c31644e0eb36b5b08bc1c6db6948e36391b2014ad307d5c53b53f2dabe84b76a4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "friendly_tools-0.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "07bae7351f120d71bbfb59ebd09a9f092bcca4b2c95a84d90f8be7d3767e6cc4",
+                "md5": "2170b8bb1747b00f4cdb4a25f5f5cbd9",
+                "sha256": "82eacfa153a3c966bbf615207925bdc511f67fbe61db7f4820edbc4302f62965"
+              }
+            },
+            {
+              "filename": "friendly_tools-0.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "c24818dc9616b8eb916d17f568123e450b4c06f17a86469029b5e2a47b547cfe",
+                "md5": "ec41e35954b4b34135be284731c9a4db",
+                "sha256": "a563e95fe3e3da943045bfbd58ef30ca39e2a8fbb2f3b868e0c0fc31b276c904"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-tools/0.2/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020866",
+        "import_time": "2026-10-01T17:18:04.161966185Z",
+        "modified_time": "2026-10-01T17:02:11Z",
+        "sha256": "71b3a4955d5bd8448f0a56c843936702bb1f09eb8acbb9b468a5a337f8761b7f",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
