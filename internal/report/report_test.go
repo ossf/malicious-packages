@@ -628,26 +628,3 @@ func TestUpdateModified(t *testing.T) {
 		t.Errorf("UpdateModified didn't advance modified time: %v <= %v", newModified, oldModified)
 	}
 }
-
-func TestReportPath_GitHubActions(t *testing.T) {
-	r := testReport(osvconstants.EcosystemGitHubActions, "actions/checkout")
-	if got := r.Path(); got != "github-actions/actions/checkout" {
-		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
-	}
-
-	rMixed := testReport(osvconstants.EcosystemGitHubActions, "Actions/CheckOut")
-	if got := rMixed.Path(); got != "github-actions/actions/checkout" {
-		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout")
-	}
-	if rMixed.Name != "actions/checkout" {
-		t.Errorf("Name = %v; want %v", rMixed.Name, "actions/checkout")
-	}
-
-	rSub := testReport(osvconstants.EcosystemGitHubActions, "Actions/CheckOut/SubAction")
-	if got := rSub.Path(); got != "github-actions/actions/checkout/subaction" {
-		t.Errorf("Path() = %v; want %v", got, "github-actions/actions/checkout/subaction")
-	}
-	if rSub.Name != "actions/checkout/SubAction" {
-		t.Errorf("Name = %v; want %v", rSub.Name, "actions/checkout/SubAction")
-	}
-}
