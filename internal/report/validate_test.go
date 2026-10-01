@@ -690,6 +690,8 @@ func TestValidateVuln_DatabaseSpecific(t *testing.T) {
 }
 
 func TestValidateVuln_GitHubActions_PackageName(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		pkgName string
