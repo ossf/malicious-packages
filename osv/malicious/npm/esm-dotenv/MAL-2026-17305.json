@@ -1,0 +1,85 @@
+{
+  "modified": "2026-09-30T01:28:18Z",
+  "published": "2026-09-30T01:28:18Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17305",
+  "summary": "Malicious code in esm-dotenv (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (55c5c67c48596e011158554f8b5ea57d65a8a8dc3b5f4120d3c9c4d1cf961da2)\nThe package advertises itself as a zero-dependency dotenv parser but its main entry `dist/index.cjs` and CLI bin `dist/cli.cjs` both invoke `dispatchAnalytics()` at top-level module load. That function reads `dist/stest.jpg`, walks the JPEG marker structure to extract the APP13 (0xED) segment as UTF-8, treats those bytes as a base64-encoded PowerShell command, writes a `relay_*.vbs` wrapper into `os.tmpdir()`, and spawns `wscript.exe` detached with `windowsHide:true` to launch `powershell.exe -NoProfile -NonInteractive -EncodedCommand \u003cpayload\u003e`. The `powershell.exe` and `-EncodedCommand` strings are assembled from split-array joins (`[\"power\",\"shell\",\".exe\"].join(\"\")`) to evade static keyword scanners, and the payload bytes are hidden inside a JPEG segment rather than in JavaScript source. A second shipped loader, `dist/decode.js`, is heavily obfuscated (string-array + numeric-id lookup) and reconstructs code via RC4-style XOR of a base64 blob (~8 KB decoded) before executing it through `new Function('require','module','__filename','__dirname', \u003cdecoded\u003e)`, providing an additional dynamic-code sink. The dropper fires the moment any Windows host imports the package.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "esm-dotenv"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/index.cjs",
+              "sha256": "97fa0d7666e80c68a3cd4f3326dc31bd9203619d6bbae7449efe62de15c4e815",
+              "tlsh": "4262f784b3dcb03617eb62e190ab4407e9f5da95408c1418f294e4bb35e46db42fbf79"
+            },
+            {
+              "path": "dist/stest.jpg",
+              "sha256": "68602ff5f85537f922b186ed58fb25316168e9c5d5d37a6bfa7c5f14de82ac07",
+              "tlsh": "8454232d75839b3497acc0ec32c275958f3c29b3f05dc61b8336b6744ea22179e99da1"
+            },
+            {
+              "path": "dist/decode.js",
+              "sha256": "6c38f6aea6e7951d53b92d7f947ece0d69a7114d1f4abf8d7196a6a21439f1a6",
+              "tlsh": "9a427c4cbd1a305bcb7ed3d336453395a1ac8a802b2e145cb27605e36fb3d8a95532ac"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "esm-dotenv-1.0.1.tgz",
+              "hashes": {
+                "sha1": "e0413be76a0f39c3c0c6bf483bdd100e8da652ae",
+                "sha512_sri": "sha512-f3lZW/iPHV6Ggsh/Lt1qFqrtRyihg7SpK2hu9DnEd73m21OOcU3usLdR+pZLX6FSuqUWvp8YonlmHgc5TAkbKg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/esm-dotenv/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020787",
+        "import_time": "2026-09-30T01:36:51.511384896Z",
+        "modified_time": "2026-09-30T01:28:18Z",
+        "sha256": "55c5c67c48596e011158554f8b5ea57d65a8a8dc3b5f4120d3c9c4d1cf961da2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
