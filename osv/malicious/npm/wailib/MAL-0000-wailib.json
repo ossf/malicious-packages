@@ -1,0 +1,61 @@
+{
+  "modified": "2026-10-01T22:59:28Z",
+  "schema_version": "1.7.4",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Socket/messages-recv.js` lines 45-72 define a char-code decoder (`qvnr`) and use it to build two channel JIDs, `120363428355171197@newsletter` and `120363425751417260@newsletter`, and the method names `newsletterFollow` (`pzha`, cited line 62: `const pzha = qvnr([`) and `newsletterMute` (`wjcf`, line 68), so neither the JIDs nor the method names appear in the source as text. Lines 1125-1140, in the `connection.update` handler, wait 30 seconds after the connection opens and then, for each JID, call `sock[pzha](id)` to follow the channel and, 3 seconds later, `sock[wjcf](id)` to mute it, so the victim is not notified of the channel's posts. There is no opt-out. The README (Portuguese) states \"Sem auto-follow de canais — removida a rotina que seguia canais automaticamente apos conectar\" (\"No channel auto-follow — the routine that followed channels automatically after connecting was removed\"), which the shipped code contradicts. The code is derived from `noxleyss` (MAL-2026-17402), whose name it still uses in `package/lib/Utils/generics.js`.\n\nLine numbers refer to version 1.0.0.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `e762bd70253081e1f523e929509e8bd5ff005feaaec6580f8f8b95ee84085920`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "wailib"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/wailib"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Jay Maier",
+      "contact": [
+        "https://github.com/jaym2026"
+      ],
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "paths": [
+            "package/lib/Socket/messages-recv.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "digests": {
+            "sha256": "78d97509d434448b19761c6ddee6ed704381c00090eaa62dace5bca6d9e27be2"
+          }
+        }
+      ]
+    }
+  }
+}
