@@ -1,36 +1,75 @@
 {
-  "modified": "2026-10-01T12:08:07Z",
-  "published": "2026-10-01T12:08:07Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17419",
+  "published": "2026-10-01T12:08:07Z",
+  "modified": "2026-10-01T17:20:30.080191740Z",
   "summary": "Malicious code in friendly-tools (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (969afb49a1e59fa643e9d90d07745e3957906cc9603c4e5643e5760d5f254381)\nThe package contains obfuscated code to exfiltrate data from the environment, targeting primarily Snowflake databases and credentials to them. Some tracks suggest it may be part of a pentest.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-friendly-greeting-tools\n\n\nReasons (based on the campaign):\n\n\n - exfiltration-generic\n\n\n - obfuscation\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (71b3a4955d5bd8448f0a56c843936702bb1f09eb8acbb9b468a5a337f8761b7f)\nThe package presents itself as 'Small greeting utilities' but ships two gzip+base64 embedded blobs (DEMO_EN, DEMO_ST) in main.py that are decoded and passed to exec() through the documented public API run_demo(). The decoded Python has no relation to greetings: it opens /snowflake/session/token to read the installer's Snowflake OAuth session token, calls snowflake.connector.connect with authenticator='oauth' and role='ACCOUNTADMIN', then issues DDL that creates an external S3 stage at s3://pkusinski-external/ using STORAGE_AWS_ROLE_ARN='arn:aws:iam::631484165566:role/pentests_s3_role', and runs COPY INTO @ROGUE.ROGUE.ext_stage FROM ROGUE.ROGUE.TEST_USERS to egress data to that non-first-party S3 bucket. When run_demo() is invoked in a Snowpark or Streamlit-in-Snowflake environment where /snowflake/session/token is provisioned, the installer's Snowflake credential is consumed under ACCOUNTADMIN to copy Snowflake table data to attacker-controlled storage. The obfuscation (gzip+base64+exec), the cover-story package description, and the hardcoded attacker S3 bucket and IAM role are consistent with a Snowflake-targeted data-theft payload.\n\n## Source: kam193 (969afb49a1e59fa643e9d90d07745e3957906cc9603c4e5643e5760d5f254381)\nThe package contains obfuscated code to exfiltrate data from the environment, targeting primarily Snowflake databases and credentials to them. Some tracks suggest it may be part of a pentest.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-friendly-greeting-tools\n\n\nReasons (based on the campaign):\n\n\n - exfiltration-generic\n\n\n - obfuscation\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "friendly-tools"
+        "name": "friendly-tools",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1",
         "0.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/friendly_greeting/main.py",
+              "sha256": "4b88379a3311a225e00d24ebf1884e3a5257fba880884d521249c6e2c7dae5a9",
+              "tlsh": "36511c31644e0eb36b5b08bc1c6db6948e36391b2014ad307d5c53b53f2dabe84b76a4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "friendly_tools-0.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "07bae7351f120d71bbfb59ebd09a9f092bcca4b2c95a84d90f8be7d3767e6cc4",
+                "md5": "2170b8bb1747b00f4cdb4a25f5f5cbd9",
+                "sha256": "82eacfa153a3c966bbf615207925bdc511f67fbe61db7f4820edbc4302f62965"
+              }
+            },
+            {
+              "filename": "friendly_tools-0.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "c24818dc9616b8eb916d17f568123e450b4c06f17a86469029b5e2a47b547cfe",
+                "md5": "ec41e35954b4b34135be284731c9a4db",
+                "sha256": "a563e95fe3e3da943045bfbd58ef30ca39e2a8fbb2f3b868e0c0fc31b276c904"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/friendly-tools"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-tools/0.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/friendly-tools/0.1/"
     }
   ],
   "database_specific": {
@@ -45,7 +84,44 @@
           "0.1",
           "0.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-020866",
+        "import_time": "2026-10-01T17:18:04.161966185Z",
+        "modified_time": "2026-10-01T17:02:11Z",
+        "sha256": "71b3a4955d5bd8448f0a56c843936702bb1f09eb8acbb9b468a5a337f8761b7f",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020865",
+        "import_time": "2026-10-01T17:18:04.004604796Z",
+        "modified_time": "2026-10-01T17:02:00Z",
+        "sha256": "6b9e176dd869e9177dc1a282626cb40f2bb3eac2822fda39e29ef4bd19db79f8",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
