@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-09-27T09:18:38Z",
+  "modified": "2026-09-27T09:18:38Z",
+  "details": "`donutpromotion` presents itself as a Minecraft SMP donation and rank-promotion helper. The published 0.1.0 sdist instead executes an encrypted downloader before setuptools processes the package.\n\nThe automated package report identified a critical `py-download-and-execute` signal at `donutpromotion/telemetry.py:99`: downloaded or embedded bytes are decrypted and passed to `exec()` with unrestricted builtins. Review of the cited path confirms the install trigger. When `setup.py` runs during build or installation, lines 6-7 import and call `donutpromotion.telemetry.check()` before `setup()` runs.\n\n`telemetry.py:19` hardcodes `https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json`. The loader skips obvious staging environments and hosts without a normal user profile, accepts a directive returned by that endpoint, and otherwise falls back to the encrypted blob shipped in `donutpromotion/_payload.py`. Lines 91-99 derive keys from a hardcoded seed, authenticate and decrypt the selected blob, and execute the resulting Python source. The authentication only restricts execution to publisher-controlled directives; it does not make the directive safe.\n\nOffline static decryption of the embedded fallback, without executing it, reveals a second-stage downloader. It checks Windows BIOS strings for VMware, VirtualBox, QEMU, Xen and other virtualisation products; searches the process list for Wireshark, Procmon, Process Hacker, IDA, x64dbg and other analysis tools; calls `IsDebuggerPresent`; creates a one-time marker; and sleeps for a random interval. If those checks pass, it downloads `https://thisisafalsepositive.st/cdn/v2/9f4e7a2c1b8d.png`, treats compressed data hidden inside PNG chunks as a ZIP archive, extracts it, and starts the included `python.exe AppHost/main.py` as a detached, hidden background process.\n\nThe automated sandbox completed without observing the second-stage request; the source explicitly avoids staged environments and hosts without a normal user profile. The cited static `py-download-and-execute` path and the decrypted fallback establish the install-time chain independently.\n\nEvidence: `setup.py:6-7` calls the loader during build/install; `donutpromotion/telemetry.py:19` sets the manifest endpoint; lines 62-99 select, authenticate, decrypt and execute the directive; `donutpromotion/_payload.py` contains the encrypted fallback.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "donutpromotion"
+      },
+      "versions": [
+        "0.1.0"
+      ]
+    }
+  ],
+  "credits": [
+    {
+      "name": "smiling-hyena",
+      "type": "FINDER",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "thisisafalsepositive.st"
+      ],
+      "urls": [
+        "https://thisisafalsepositive.st/cdn/v2/promotion/manifest.json",
+        "https://thisisafalsepositive.st/cdn/v2/9f4e7a2c1b8d.png"
+      ],
+      "files": [
+        {
+          "paths": [
+            "setup.py"
+          ],
+          "note": "Build/install entry point that imports and calls the encrypted directive loader before setuptools setup.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "934ba2a727952739b09c3eb9bd39db3d5c26fde77e676977ea61d64ba2c92d22"
+          }
+        },
+        {
+          "paths": [
+            "donutpromotion/telemetry.py"
+          ],
+          "note": "Manifest client and loader that decrypts and executes publisher-controlled Python with unrestricted builtins.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "0820d2a5923f919ce1c5c99d21fb2e6ba6ea3fe16cc46f3ba148b36c861fd73e"
+          }
+        },
+        {
+          "paths": [
+            "donutpromotion/_payload.py"
+          ],
+          "note": "Encrypted fallback directive containing the anti-analysis second-stage downloader.",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "dd624a9189bbbd75b4ba20d9b288e68643ecc60133c78e2ce0daa9fa5082403e"
+          }
+        },
+        {
+          "note": "Offline-decrypted in-memory directive: anti-analysis checks, PNG/ZIP second-stage download, extraction and hidden detached execution.",
+          "source": "IN_MEMORY",
+          "digests": {
+            "sha256": "fef7d9f5cd1285efd8911dbdab62eb6339d92071c0e4515c7ae1b2bef11bccfe"
+          }
+        }
+      ]
+    }
+  }
+}
