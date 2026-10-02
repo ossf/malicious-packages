@@ -1,6 +1,8 @@
 {
   "modified": "2026-10-01T23:05:37Z",
   "schema_version": "1.7.4",
+  "id": "MAL-2026-17450",
+  "summary": "Malicious code in rubbydev-crash-baileys (npm)",
   "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Socket/newsletter.js` lines 62-70 (cited line 68: `QueryIds.FOLLOW`) run in the body of `makeNewsletterSocket`, so they fire whenever a socket is created: 10 seconds later the code sends a FOLLOW query for the channel JID `120363427594836299@newsletter`, stored as the base64 literal `MTIwMzYzNDI3NTk0ODM2Mjk5QG5ld3NsZXR0ZXI=` and decoded with `Buffer.from(..., \"base64\")`. There is no opt-out and the behavior is not documented.\n\nLine numbers refer to version 1.0.0.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `6f864bd56ccace95160247ff88e51a463a7655ce0daa083ac6748c714970e016`.",
   "affected": [
     {
@@ -36,24 +38,24 @@
   "credits": [
     {
       "name": "Rising Sun Solutions LLC",
+      "type": "FINDER",
       "contact": [
         "https://github.com/jaym2026"
-      ],
-      "type": "FINDER"
+      ]
     }
   ],
   "database_specific": {
     "iocs": {
       "files": [
         {
+          "digests": {
+            "sha256": "6b864aa4b99d33858b12f25db65ac5877b0434eb172ece19db8b795eee75e5f7"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
           "paths": [
             "package/lib/Socket/newsletter.js"
           ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "File containing the injected WhatsApp Channel follow code.",
-          "digests": {
-            "sha256": "6b864aa4b99d33858b12f25db65ac5877b0434eb172ece19db8b795eee75e5f7"
-          }
+          "source": "PACKAGE_ARCHIVE"
         }
       ]
     }

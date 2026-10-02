@@ -1,6 +1,8 @@
 {
   "modified": "2026-10-01T23:05:37Z",
   "schema_version": "1.7.4",
+  "id": "MAL-2026-17445",
+  "summary": "Malicious code in ichigo-baileys (npm)",
   "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Socket/messages-recv.js` lines 45-67 define a char-code decoder (`qvnr`) and use it to build the channel JID `120363428355171197@newsletter` and the method names `newsletterFollow` and `newsletterMute` (cited line 56: `const pzha = qvnr([`), so neither the JID nor the method names appear in the source as text. Lines 1119-1134, in the `connection.update` handler, wait 30 seconds after the connection opens, then call `sock[pzha](id)` (follow) and, 3 seconds later, `sock[wjcf](id)` (mute) for the JID.\n\n`package/lib/Socket/newsletter.js` lines 86-112 add a second routine, `autoJoinChannels`, that 30 seconds after the connection opens sends FOLLOW and then MUTE for the plain-literal JID `120363402057133599@newsletter`. The code is derived from `noxleyss` (MAL-2026-17402), whose name it still uses in `package/lib/Utils/generics.js`.\n\nLine numbers refer to version 1.0.5; the same code is present in every published version listed under `affected`.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `5fe50ba443b5033315bdec46b80ea41bb3894e83f8d2f3343233cd0cbaacee16`; 1.0.5: `67e493bf91f61995c79592a4148f290339ef16910f3a5417d2d7d2b47ef36a65`.",
   "affected": [
     {
@@ -37,34 +39,34 @@
   "credits": [
     {
       "name": "Rising Sun Solutions LLC",
+      "type": "FINDER",
       "contact": [
         "https://github.com/jaym2026"
-      ],
-      "type": "FINDER"
+      ]
     }
   ],
   "database_specific": {
     "iocs": {
       "files": [
         {
+          "digests": {
+            "sha256": "ea7db91458653aabf50f3687c48d4421f272ca5813810c2f158d3c6da81b7caa"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
           "paths": [
             "package/lib/Socket/messages-recv.js"
           ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "File containing the injected WhatsApp Channel follow code.",
-          "digests": {
-            "sha256": "ea7db91458653aabf50f3687c48d4421f272ca5813810c2f158d3c6da81b7caa"
-          }
+          "source": "PACKAGE_ARCHIVE"
         },
         {
+          "digests": {
+            "sha256": "8bb8c9b9671dfba9c7dfe90aa89169af844b87e90d88ec5605cff46d1a22fb20"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
           "paths": [
             "package/lib/Socket/newsletter.js"
           ],
-          "source": "PACKAGE_ARCHIVE",
-          "note": "File containing the injected WhatsApp Channel follow code.",
-          "digests": {
-            "sha256": "8bb8c9b9671dfba9c7dfe90aa89169af844b87e90d88ec5605cff46d1a22fb20"
-          }
+          "source": "PACKAGE_ARCHIVE"
         }
       ]
     }
