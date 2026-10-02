@@ -1,0 +1,62 @@
+{
+  "modified": "2026-10-01T23:05:37Z",
+  "schema_version": "1.7.4",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Socket/newsletter.js` lines 62-90 (cited line 68: `QueryIds.FOLLOW`) run in the body of `makeNewsletterSocket`, so they fire whenever a socket is created: 10 seconds later, and then at 3-second intervals, the code sends FOLLOW queries for three channel JIDs, each stored as a base64 literal decoded with `Buffer.from(..., \"base64\")`: `120363424403369453@newsletter`, `120363423038562425@newsletter` and `120363427530519865@newsletter`. There is no option to turn this off and the README does not mention it.\n\nSeparately, `package/lib/Socket/danz-auto-follow.js` follows the channel behind invite code `0029VbD7H6m9MF9ALdskro07` on connect. That one is documented in the 1.1.0 README with a `danzAutoFollowChannel: false` opt-out; the base64-hidden follow of the three JIDs above is not.\n\nLine numbers refer to version 1.1.0; the same code is present in every published version listed under `affected`.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `1b568e46aa2ffbb186319e72b9fed52dde060f99319a82003d9d2ac15410dbbd`; 1.1.0: `7370d73e2e5a0434fe41fc033ba9fc91d624a8a9461188fda82e04e3873e6d26`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "danz-bails"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0",
+        "1.1.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/danz-bails"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "contact": [
+        "https://github.com/jaym2026"
+      ],
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "digests": {
+            "sha256": "f638ea09996c7c80cbf6456963f3b4792295234036c2067d3db3106a5fbb9693"
+          }
+        }
+      ]
+    }
+  }
+}
