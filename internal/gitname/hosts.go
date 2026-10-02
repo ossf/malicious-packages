@@ -2,6 +2,7 @@ package gitname
 
 import (
 	"net/url"
+	"slices"
 	"strings"
 )
 
@@ -117,18 +118,13 @@ func checkPathParts(path string, count int) bool {
 	if len(parts) != count {
 		return false
 	}
-	for _, p := range parts {
-		if p == "" {
-			return false
-		}
-	}
-	return true
+	return !slices.Contains(parts, "")
 }
 
 // canonLowerOrgPath lowercases the first path component in the supplied path.
 func canonLowerOrgPath(path string) string {
 	parts := strings.Split(path, "/")
-	for i := 0; i < len(parts); i++ {
+	for i := range parts {
 		p := parts[i]
 		if len(p) == 0 {
 			// Skip empty parts.
