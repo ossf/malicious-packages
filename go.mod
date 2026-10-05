@@ -3,14 +3,14 @@ module github.com/ossf/malicious-packages
 go 1.25.8
 
 require (
-	cloud.google.com/go/storage v1.67.1
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.1
+	cloud.google.com/go/storage v1.68.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.2
 	github.com/go-git/go-git/v5 v5.19.2
 	github.com/google/go-cmp v0.7.0
 	github.com/google/renameio v1.0.1
 	github.com/ossf/osv-schema/bindings/go v0.0.0-20260716013833-d4a00c3e2a47
 	github.com/package-url/packageurl-go v0.1.7
-	github.com/urfave/cli/v3 v3.12.0
+	github.com/urfave/cli/v3 v3.13.0
 	gocloud.dev v0.46.0
 	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
