@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-05T15:57:56Z",
+  "modified": "2026-10-05T15:57:56Z",
+  "summary": "ethereum-tx-helper gem drops and executes remote payload from bare-IP C2 during gem install",
+  "details": "The gem advertises Ethereum transaction helpers but ships only an empty C stub (ext/ethereum-tx-helper/ethereum-tx-helper.c: Init_EthereumTxHelper(){}) and a tiny BIP39 word-list helper in lib. All real behavior lives in ext/ethereum-tx-helper/extconf.rb, which runs during `gem install` as the native-extension build step. extconf.rb executes an eval() of a base64-encoded Ruby payload that first fingerprints the host for analysis/CI/sandbox markers and for developer-machine signals (~/.ssh, ~/.gem/credentials, ~/.gitconfig, ~/.npmrc, ~/.bundle); on a host that looks like a real developer workstation it double-forks a detached background process, sleeps 20-40 minutes to evade sandbox timing, then curls a tarball from a bare-IP endpoint at http://45.138.122.177:8092/wgkit.tar.gz into /tmp/.w1.tgz and executes bash /tmp/.w1/wg_install.sh. The destination URL is not present in cleartext — it is reconstructed at runtime by XOR-decoding a hex blob against the 4-byte key \"usv\\x9a\", specifically to defeat static URL extraction. The package name and homepage (ethereum-tx-helper.dev) impersonate a crypto-developer utility to attract installs by developers whose machines are the exact targets the dropper's gating selects for.",
+  "affected": [
+    {
+      "package": {
+        "name": "ethereum-tx-helper",
+        "ecosystem": "RubyGems"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/ethereum-tx-helper/extconf.rb",
+              "sha256": "63170907925f629e3a593c16e2cd8b118f2c226b446c0866729f96b515bfbf40",
+              "tlsh": "e451ba568b8395f54db1d0d044795413fb66bb0d6068a864f3de0868ab5af2ac4f02fd"
+            },
+            {
+              "path": "ext/ethereum-tx-helper/ethereum-tx-helper.c",
+              "sha256": "a5b3504cda43f8faddc744096668b67ac526c9830d8879e1deb3157e0619128a",
+              "tlsh": "4e900281d13820814000a3e15335924a4190b9141f15b14869071252e6657843a7f570"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/ethereum-tx-helper/versions/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021057",
+        "import_time": "2026-10-05T16:22:55.372931914Z",
+        "modified_time": "2026-10-05T15:57:56Z",
+        "sha256": "e870b276b866298ef1e57e1ceff7ef4e253cb43055d0163572e25646be7b8791",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

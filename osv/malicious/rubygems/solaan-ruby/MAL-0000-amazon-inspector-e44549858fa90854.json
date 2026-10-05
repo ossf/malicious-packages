@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-05T15:55:36Z",
+  "modified": "2026-10-05T15:55:36Z",
+  "summary": "solaan-ruby ships install-time dropper fetching remote payload from 45.138.12.177",
+  "details": "The gem's native-extension build script (extconf.rb) carries a base64-encoded Ruby payload that executes at `gem install` time via the standard mkmf build hook. The accompanying C source is a 2-line empty stub, so building a native extension is not the real purpose of the file — the gem exists to run the embedded payload. The payload XOR-reconstructs a URL pointing at the hardcoded bare-IP endpoint http://45.138.12.177:8092/wgkit.tar.gz, curls the tarball to /tmp/.w1.tgz with no integrity check, extracts it to /tmp/.w1, and runs `bash /tmp/.w1/wg_install.sh`, giving the operator of that IP arbitrary code execution on the installer's host. Execution is gated by evasion checks that abort on CI environments, hostnames matching uvm/firecracker/sandbox/vagrant, usernames matching scanner patterns, working directories under /tmp or /opt/rubygems, and `/proc/uptime` under 1800 seconds, and only proceeds when developer artifacts are present on disk (~/.ssh, ~/.gitconfig, ~/.gem/credentials, ~/.bundle). The dropper additionally forks a detached child and sleeps a randomized 20–40 minutes before the fetch to evade install-time observation. The combination of obfuscated remote URL, bare-IP HTTP source, pipe-to-bash execution, sandbox evasion, and developer-workstation targeting is an install-time remote code execution attack against developer machines that install the gem.",
+  "affected": [
+    {
+      "package": {
+        "name": "solaan-ruby",
+        "ecosystem": "RubyGems"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/solaan-ruby/extconf.rb",
+              "sha256": "7039cb4b1c039e5317401f416c15d1e740bbe425cd509c6deefc52fd62562ba9",
+              "tlsh": "2151cb568b8395f54db1d0d044395412fb667b0d6068ac64f3de0868bb5af2ac4f02fd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/solaan-ruby/versions/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021041",
+        "import_time": "2026-10-05T16:22:54.225505831Z",
+        "modified_time": "2026-10-05T15:55:36Z",
+        "sha256": "e44549858fa90854aa5c3acae5440714ef5271cabb67243d4c82713ca3c108f7",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
