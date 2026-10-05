@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:56:28Z",
-  "published": "2026-10-05T15:56:28Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17592",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.531618289Z",
   "summary": "Malicious code in cryoto-toolbox (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3fcf75a196193219b146e937b6d9a7cf8937df152658a2d7b7b8905605c9f8a6)\nThe gem declares ext/cryoto-toolbox/extconf.rb as a native extension, which rubygems executes during `gem install`. Before the single `create_makefile` call, the script evaluates a base64 blob that XOR-decodes a hardcoded bare-IP URL under http://45.138.*, downloads a tarball to /tmp/.w1.tgz with curl, and runs `bash /tmp/.w1/wg_install.sh` inside a double-forked detached process. The accompanying native source (ext/cryoto-toolbox/cryoto-toolbox.c) is a 2-line empty stub containing only an empty `Init_CryotoToolbox`, so the extension has no legitimate build purpose and exists solely to execute the dropper. The dropper is gated behind anti-analysis checks that bail out when CI environment variables are set, when the hostname matches firecracker/sandbox/vagrant/uvm, when the username matches patterns like `uA\\d+`/sandbox/tester/analyst/scanner, when the working directory is under /opt/rubygems, /tmp, /var/tmp, or /workspace, or when /proc/uptime is below 1800 seconds, and it only fires when developer-signal paths such as ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, or ~/.bundle are present, after sleeping 1200-2400 seconds. The package name `cryoto-toolbox` and homepage `cryoto-toolbox.dev` are a lookalike of `crypto-toolbox`.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/cryoto-toolbox/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3fcf75a196193219b146e937b6d9a7cf8937df152658a2d7b7b8905605c9f8a6)\nThe gem declares ext/cryoto-toolbox/extconf.rb as a native extension, which rubygems executes during `gem install`. Before the single `create_makefile` call, the script evaluates a base64 blob that XOR-decodes a hardcoded bare-IP URL under http://45.138.*, downloads a tarball to /tmp/.w1.tgz with curl, and runs `bash /tmp/.w1/wg_install.sh` inside a double-forked detached process. The accompanying native source (ext/cryoto-toolbox/cryoto-toolbox.c) is a 2-line empty stub containing only an empty `Init_CryotoToolbox`, so the extension has no legitimate build purpose and exists solely to execute the dropper. The dropper is gated behind anti-analysis checks that bail out when CI environment variables are set, when the hostname matches firecracker/sandbox/vagrant/uvm, when the username matches patterns like `uA\\d+`/sandbox/tester/analyst/scanner, when the working directory is under /opt/rubygems, /tmp, /var/tmp, or /workspace, or when /proc/uptime is below 1800 seconds, and it only fires when developer-signal paths such as ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, or ~/.bundle are present, after sleeping 1200-2400 seconds. The package name `cryoto-toolbox` and homepage `cryoto-toolbox.dev` are a lookalike of `crypto-toolbox`.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "cryoto-toolbox"
+        "name": "cryoto-toolbox",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -43,18 +58,41 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/cryoto-toolbox/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "68327d971dc7b722dee0aad5691a91018dd2d298223b6bf14dcfa73c80e9ef76"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/cryoto-toolbox/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021047",
@@ -67,5 +105,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

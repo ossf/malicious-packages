@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:58:49Z",
-  "published": "2026-10-05T15:58:49Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17590",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.529395125Z",
   "summary": "Malicious code in coinmarket-utils (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7ace1863ec858e5931ba2848276c14fb050fff204b2fbea82e2f64ae3f9a0ffc)\nThe gem's native extension build script ext/coinmarket-utils/extconf.rb contains a base64-encoded Ruby payload that is decoded and eval'd inside a double-forked, setsid, FD-detached child process at `gem install` time. The payload XOR-decodes a hardcoded destination URL (http://45.138.12.177:8092/wgkit.tar.gz) from a hex blob, shells out to curl to download the tarball to /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes wg_install.sh via bash. Execution is gated by sandbox-evasion checks that skip CI environments, ephemeral VMs, analysis paths, generated usernames, and hosts with uptime under 30 minutes, and that require developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) to be present on disk — firing only on real developer workstations. The accompanying C source ext/coinmarket-utils/coinmarket-utils.c is an empty stub (`Init_CoinmarketUtils(void) {}`) with no real native code to compile, and the lib entry only returns a hardcoded wordlist; the native extension exists solely to cause extconf.rb to run on install. Combined fingerprints: install-time fetch-and-execute from a hardcoded bare-IP C2 on a non-standard port, multi-layer obfuscation (base64 + XOR + eval), process detachment to orphan the dropper from the install process, developer-workstation targeting with explicit sandbox evasion, and a cover-story extension with no legitimate build purpose.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/coinmarket-utils/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7ace1863ec858e5931ba2848276c14fb050fff204b2fbea82e2f64ae3f9a0ffc)\nThe gem's native extension build script ext/coinmarket-utils/extconf.rb contains a base64-encoded Ruby payload that is decoded and eval'd inside a double-forked, setsid, FD-detached child process at `gem install` time. The payload XOR-decodes a hardcoded destination URL (http://45.138.12.177:8092/wgkit.tar.gz) from a hex blob, shells out to curl to download the tarball to /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes wg_install.sh via bash. Execution is gated by sandbox-evasion checks that skip CI environments, ephemeral VMs, analysis paths, generated usernames, and hosts with uptime under 30 minutes, and that require developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) to be present on disk — firing only on real developer workstations. The accompanying C source ext/coinmarket-utils/coinmarket-utils.c is an empty stub (`Init_CoinmarketUtils(void) {}`) with no real native code to compile, and the lib entry only returns a hardcoded wordlist; the native extension exists solely to cause extconf.rb to run on install. Combined fingerprints: install-time fetch-and-execute from a hardcoded bare-IP C2 on a non-standard port, multi-layer obfuscation (base64 + XOR + eval), process detachment to orphan the dropper from the install process, developer-workstation targeting with explicit sandbox evasion, and a cover-story extension with no legitimate build purpose.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "coinmarket-utils"
+        "name": "coinmarket-utils",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -43,18 +58,41 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/coinmarket-utils/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "e3b5ab92539635406020e682f27e78369fe2ddb6133ce2fd672b88c6a132f56d"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/coinmarket-utils/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021063",
@@ -67,5 +105,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

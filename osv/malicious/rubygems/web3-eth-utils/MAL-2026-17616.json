@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:55:16Z",
-  "published": "2026-10-05T15:55:16Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17616",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.609959920Z",
   "summary": "Malicious code in web3-eth-utils (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (248aba9be7a8bfbd125b43640f1c52007358e34078b3bfec5430933c996b8666)\nThe gem declares a native extension at ext/req_throttle_mini/extconf.rb but ships no C/C++/Rust sources, so the extension entry exists solely to force extconf.rb to run during `gem install`. Before calling mkmf/create_makefile, extconf.rb executes sandbox-evasion checks (CI env vars, generated usernames, hostname patterns, /tmp working directories, uptime under 30 minutes, absence of ~/.ssh, ~/.gitconfig, and ~/.gem/credentials) and only proceeds on hosts that look like real developer workstations. It then base64-decodes an opaque Ruby payload and, inside a double-forked detached child that sleeps for a randomized 20-40 minute delay, passes the decoded string to eval(). The decoded payload opens a TCP socket to 45.138.12.177:8089, spawns /bin/sh, and bridges the socket to the shell in a reconnect loop, yielding a persistent reverse shell under the installing user. The package name mimics the web3/eth ecosystem and lib/web3_eth_utils.rb is a trivial stub, consistent with a typosquat lure whose only functional effect is the install-time hook.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8089. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (248aba9be7a8bfbd125b43640f1c52007358e34078b3bfec5430933c996b8666)\nThe gem declares a native extension at ext/req_throttle_mini/extconf.rb but ships no C/C++/Rust sources, so the extension entry exists solely to force extconf.rb to run during `gem install`. Before calling mkmf/create_makefile, extconf.rb executes sandbox-evasion checks (CI env vars, generated usernames, hostname patterns, /tmp working directories, uptime under 30 minutes, absence of ~/.ssh, ~/.gitconfig, and ~/.gem/credentials) and only proceeds on hosts that look like real developer workstations. It then base64-decodes an opaque Ruby payload and, inside a double-forked detached child that sleeps for a randomized 20-40 minute delay, passes the decoded string to eval(). The decoded payload opens a TCP socket to 45.138.12.177:8089, spawns /bin/sh, and bridges the socket to the shell in a reconnect loop, yielding a persistent reverse shell under the installing user. The package name mimics the web3/eth ecosystem and lib/web3_eth_utils.rb is a trivial stub, consistent with a typosquat lure whose only functional effect is the install-time hook.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "web3-eth-utils"
+        "name": "web3-eth-utils",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -43,18 +58,30 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/web3-eth-utils/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "49fe0b7cf32fcb9d056017ff6f382621e0567d837c4c1b88270d4b8d792f2f9a"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021039",
@@ -67,5 +94,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:56:21Z",
-  "published": "2026-10-05T15:56:21Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17611",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.584310299Z",
   "summary": "Malicious code in tron-rb (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a483b2d8f8273b5dca3a95d449d762cdfe9d79e8aea485cb89673c469e4cda6f)\nThe gem advertises TRON protocol helpers but ships only a 45-byte empty C stub (ext/tron-rb/tron-rb.c) and a hardcoded word-list library module; its sole operative code path is in ext/tron-rb/extconf.rb. On gem install, extconf.rb base64-decodes and eval's a Ruby payload that reconstructs a destination URL by XOR'ing a hex byte array against a 4-byte key, resolving to http://45.138.17.177:8092/wgkit.tar.gz. Before firing, the payload applies sandbox/analysis evasion: it bails out on CI environment variables, ephemeral hostnames matching uvm/firecracker/sandbox/vagrant, generated-looking usernames (uA\\d+/sandbox/tester/analys/scanner), analysis working-directory prefixes (/opt/rubygems, /tmp/, /workspace/), machine uptime under 30 minutes, and hosts missing developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle). If the gating passes, it double-forks a detached, I/O-nulled process that sleeps 20-40 minutes, then runs curl against the bare-IP URL to download /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes bash /tmp/.w1/wg_install.sh - all before create_makefile is called. The declared native extension is a cover story: there is no real C source for the stub to build, so the extension exists solely to trigger extconf.rb execution during install. Indicators: 45.138.17.177:8092, /tmp/.w1.tgz, /tmp/.w1/wg_install.sh.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/tron-rb/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a483b2d8f8273b5dca3a95d449d762cdfe9d79e8aea485cb89673c469e4cda6f)\nThe gem advertises TRON protocol helpers but ships only a 45-byte empty C stub (ext/tron-rb/tron-rb.c) and a hardcoded word-list library module; its sole operative code path is in ext/tron-rb/extconf.rb. On gem install, extconf.rb base64-decodes and eval's a Ruby payload that reconstructs a destination URL by XOR'ing a hex byte array against a 4-byte key, resolving to http://45.138.17.177:8092/wgkit.tar.gz. Before firing, the payload applies sandbox/analysis evasion: it bails out on CI environment variables, ephemeral hostnames matching uvm/firecracker/sandbox/vagrant, generated-looking usernames (uA\\d+/sandbox/tester/analys/scanner), analysis working-directory prefixes (/opt/rubygems, /tmp/, /workspace/), machine uptime under 30 minutes, and hosts missing developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle). If the gating passes, it double-forks a detached, I/O-nulled process that sleeps 20-40 minutes, then runs curl against the bare-IP URL to download /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes bash /tmp/.w1/wg_install.sh - all before create_makefile is called. The declared native extension is a cover story: there is no real C source for the stub to build, so the extension exists solely to trigger extconf.rb execution during install. Indicators: 45.138.17.177:8092, /tmp/.w1.tgz, /tmp/.w1/wg_install.sh.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "tron-rb"
+        "name": "tron-rb",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -42,18 +57,41 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/tron-rb/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "e920e8ae6d987cb6d519af8bbc0fef81b6ff1ce1719b3001008337675f44d74a"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/tron-rb/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021046",
@@ -66,5 +104,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

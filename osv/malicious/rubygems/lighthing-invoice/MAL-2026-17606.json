@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:56:03Z",
-  "published": "2026-10-05T15:56:03Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17606",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.554855996Z",
   "summary": "Malicious code in lighthing-invoice (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (206884c57f9427c6952744828fa53861634d5451b97ba86885c701ee47ef5012)\nThe gem's native-extension script ext/lighthing-invoice/extconf.rb, which executes during `gem install`, base64-decodes and evals a Ruby payload. The payload reconstructs an XOR-obfuscated URL (http://45.138.132.177:8092/wgkit.tar.gz), downloads a tarball to /tmp/.w1.tgz, extracts it, and runs `bash /tmp/.w1/wg_install.sh`. The declared native source (ext/lighthing-invoice/lighthing-invoice.c) is a 55-byte empty stub with no real code, so the extension slot exists only to run the dropper. Before firing, the script applies targeting and evasion checks (CI detection, ephemeral/sandbox hostname patterns, generated analyst usernames, analysis paths, uptime threshold, presence of developer artifacts such as ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle), then sleeps 1200-2400 seconds and double-forks (Process.setsid, std streams redirected to /dev/null) to detach from the install process. The package name 'lighthing-invoice' is a misspelling of 'lightning-invoice' and the public Ruby API is an inert BIP-39 word-list stub, consistent with a typosquat lure whose only functional behavior is the install-time dropper. The destination is a bare IP unrelated to any declared publisher, the fetched bash is unpinned and unverified, and the URL is obfuscated to evade static detection — installing this gem executes attacker-controlled shell on the host.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/lighthing-invoice/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (206884c57f9427c6952744828fa53861634d5451b97ba86885c701ee47ef5012)\nThe gem's native-extension script ext/lighthing-invoice/extconf.rb, which executes during `gem install`, base64-decodes and evals a Ruby payload. The payload reconstructs an XOR-obfuscated URL (http://45.138.132.177:8092/wgkit.tar.gz), downloads a tarball to /tmp/.w1.tgz, extracts it, and runs `bash /tmp/.w1/wg_install.sh`. The declared native source (ext/lighthing-invoice/lighthing-invoice.c) is a 55-byte empty stub with no real code, so the extension slot exists only to run the dropper. Before firing, the script applies targeting and evasion checks (CI detection, ephemeral/sandbox hostname patterns, generated analyst usernames, analysis paths, uptime threshold, presence of developer artifacts such as ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle), then sleeps 1200-2400 seconds and double-forks (Process.setsid, std streams redirected to /dev/null) to detach from the install process. The package name 'lighthing-invoice' is a misspelling of 'lightning-invoice' and the public Ruby API is an inert BIP-39 word-list stub, consistent with a typosquat lure whose only functional behavior is the install-time dropper. The destination is a bare IP unrelated to any declared publisher, the fetched bash is unpinned and unverified, and the URL is obfuscated to evade static detection — installing this gem executes attacker-controlled shell on the host.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "lighthing-invoice"
+        "name": "lighthing-invoice",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -43,18 +58,41 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/lighthing-invoice/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "c1c702672141bb84dfd9e582acab6f85ce4934759e296f661eb8d9c614067e33"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/lighthing-invoice/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021044",
@@ -67,5 +105,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

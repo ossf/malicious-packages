@@ -1,21 +1,36 @@
 {
-  "modified": "2026-10-05T15:56:13Z",
-  "published": "2026-10-05T15:56:13Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17600",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.541170417Z",
   "summary": "Malicious code in etheremu.rb (RubyGems)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a82ac5d3f021ab23f4f461181f4150c12d672ef421b6f80c10dd8a307178442e)\nThe gem's extconf.rb, executed automatically during `gem install`, contains a base64-encoded Ruby payload that is decoded and eval'd inside a detached forked process. The payload XOR-decodes a hardcoded bare-IP URL (http://45.138.12.177:8092/wgkit.tar.gz), downloads a tarball to /tmp/.w1.tgz over plain HTTP with no pinning or verification, extracts it, and executes the enclosed wg_install.sh via bash. The accompanying native extension C source is an empty stub whose Init function is a no-op, so the extension exists solely as a vehicle to trigger the dropper at install time. The dropper is wrapped in extensive anti-analysis gating: it exits early if CI environment variables are set, if the hostname matches sandbox/firecracker/vagrant patterns, if the username looks auto-generated or contains strings like 'sandbox', 'tester', 'analys', or 'scanner', if the current working directory is under /tmp, /var/tmp, /opt/rubygems, or /workspace, if machine uptime is under 1800 seconds, or if no developer dot-files are present. It further sleeps 20-40 minutes before firing. Execution is gated on the presence of ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, or ~/.bundle in the installer's home directory, selecting victims whose machines hold SSH keys and rubygems/npm/git publisher credentials for downstream harvesting by the fetched wg_install.sh stage.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/etheremu.rb/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a82ac5d3f021ab23f4f461181f4150c12d672ef421b6f80c10dd8a307178442e)\nThe gem's extconf.rb, executed automatically during `gem install`, contains a base64-encoded Ruby payload that is decoded and eval'd inside a detached forked process. The payload XOR-decodes a hardcoded bare-IP URL (http://45.138.12.177:8092/wgkit.tar.gz), downloads a tarball to /tmp/.w1.tgz over plain HTTP with no pinning or verification, extracts it, and executes the enclosed wg_install.sh via bash. The accompanying native extension C source is an empty stub whose Init function is a no-op, so the extension exists solely as a vehicle to trigger the dropper at install time. The dropper is wrapped in extensive anti-analysis gating: it exits early if CI environment variables are set, if the hostname matches sandbox/firecracker/vagrant patterns, if the username looks auto-generated or contains strings like 'sandbox', 'tester', 'analys', or 'scanner', if the current working directory is under /tmp, /var/tmp, /opt/rubygems, or /workspace, if machine uptime is under 1800 seconds, or if no developer dot-files are present. It further sleeps 20-40 minutes before firing. Execution is gated on the presence of ~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, or ~/.bundle in the installer's home directory, selecting victims whose machines hold SSH keys and rubygems/npm/git publisher credentials for downstream harvesting by the fetched wg_install.sh stage.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "RubyGems",
-        "name": "etheremu.rb"
+        "name": "etheremu.rb",
+        "ecosystem": "RubyGems"
       },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -38,18 +53,41 @@
     {
       "type": "PACKAGE",
       "url": "https://rubygems.org/gems/etheremu.rb/versions/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "48d687a03ac64325c90b0071590658efa3ca57227db9cc70b5bdb779ce0f8201"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/etheremu.rb/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021045",
@@ -62,5 +100,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
