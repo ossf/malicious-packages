@@ -1,0 +1,70 @@
+{
+  "modified": "2026-10-05T15:56:21Z",
+  "published": "2026-10-05T15:56:21Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17611",
+  "summary": "Malicious code in tron-rb (RubyGems)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a483b2d8f8273b5dca3a95d449d762cdfe9d79e8aea485cb89673c469e4cda6f)\nThe gem advertises TRON protocol helpers but ships only a 45-byte empty C stub (ext/tron-rb/tron-rb.c) and a hardcoded word-list library module; its sole operative code path is in ext/tron-rb/extconf.rb. On gem install, extconf.rb base64-decodes and eval's a Ruby payload that reconstructs a destination URL by XOR'ing a hex byte array against a 4-byte key, resolving to http://45.138.17.177:8092/wgkit.tar.gz. Before firing, the payload applies sandbox/analysis evasion: it bails out on CI environment variables, ephemeral hostnames matching uvm/firecracker/sandbox/vagrant, generated-looking usernames (uA\\d+/sandbox/tester/analys/scanner), analysis working-directory prefixes (/opt/rubygems, /tmp/, /workspace/), machine uptime under 30 minutes, and hosts missing developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle). If the gating passes, it double-forks a detached, I/O-nulled process that sleeps 20-40 minutes, then runs curl against the bare-IP URL to download /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes bash /tmp/.w1/wg_install.sh - all before create_makefile is called. The declared native extension is a cover story: there is no real C source for the stub to build, so the extension exists solely to trigger extconf.rb execution during install. Indicators: 45.138.17.177:8092, /tmp/.w1.tgz, /tmp/.w1/wg_install.sh.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "RubyGems",
+        "name": "tron-rb"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/tron-rb/extconf.rb",
+              "sha256": "e920e8ae6d987cb6d519af8bbc0fef81b6ff1ce1719b3001008337675f44d74a",
+              "tlsh": "ec51ba568b8395f54db1d0d044355412fb667b0d6068a864f3ee0868ab5af2ac4f02fd"
+            },
+            {
+              "path": "ext/tron-rb/tron-rb.c",
+              "sha256": "da0da6a8def3bfbd7144b10cbb9064fb9868a1d058903acf723cdd08b8b87598"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/tron-rb/versions/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021046",
+        "import_time": "2026-10-05T16:22:54.616860405Z",
+        "modified_time": "2026-10-05T15:56:21Z",
+        "sha256": "a483b2d8f8273b5dca3a95d449d762cdfe9d79e8aea485cb89673c469e4cda6f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

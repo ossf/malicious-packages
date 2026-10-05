@@ -1,0 +1,71 @@
+{
+  "modified": "2026-10-05T15:58:49Z",
+  "published": "2026-10-05T15:58:49Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17590",
+  "summary": "Malicious code in coinmarket-utils (RubyGems)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7ace1863ec858e5931ba2848276c14fb050fff204b2fbea82e2f64ae3f9a0ffc)\nThe gem's native extension build script ext/coinmarket-utils/extconf.rb contains a base64-encoded Ruby payload that is decoded and eval'd inside a double-forked, setsid, FD-detached child process at `gem install` time. The payload XOR-decodes a hardcoded destination URL (http://45.138.12.177:8092/wgkit.tar.gz) from a hex blob, shells out to curl to download the tarball to /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes wg_install.sh via bash. Execution is gated by sandbox-evasion checks that skip CI environments, ephemeral VMs, analysis paths, generated usernames, and hosts with uptime under 30 minutes, and that require developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) to be present on disk — firing only on real developer workstations. The accompanying C source ext/coinmarket-utils/coinmarket-utils.c is an empty stub (`Init_CoinmarketUtils(void) {}`) with no real native code to compile, and the lib entry only returns a hardcoded wordlist; the native extension exists solely to cause extconf.rb to run on install. Combined fingerprints: install-time fetch-and-execute from a hardcoded bare-IP C2 on a non-standard port, multi-layer obfuscation (base64 + XOR + eval), process detachment to orphan the dropper from the install process, developer-workstation targeting with explicit sandbox evasion, and a cover-story extension with no legitimate build purpose.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "RubyGems",
+        "name": "coinmarket-utils"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/coinmarket-utils/extconf.rb",
+              "sha256": "e3b5ab92539635406020e682f27e78369fe2ddb6133ce2fd672b88c6a132f56d",
+              "tlsh": "a551ba568b8395f54db1d0d044395412fb667b0d6068ad64f3de0868ab5af2ac4f02fd"
+            },
+            {
+              "path": "ext/coinmarket-utils/coinmarket-utils.c",
+              "sha256": "718cc42c3c53f2cf795c0e5785366239d7062cb11cfd39a6b27ed94f0f415f9c",
+              "tlsh": "9a900295c57958c15004a3e65339464954d0b5140d697655aa0311d1a5e02a43d66a70"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/coinmarket-utils/versions/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021063",
+        "import_time": "2026-10-05T16:22:55.846725424Z",
+        "modified_time": "2026-10-05T15:58:49Z",
+        "sha256": "7ace1863ec858e5931ba2848276c14fb050fff204b2fbea82e2f64ae3f9a0ffc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}
