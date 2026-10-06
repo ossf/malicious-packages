@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17613",
+  "published": "2026-10-05T07:32:14Z",
+  "modified": "2026-10-06T00:52:42.062223674Z",
+  "summary": "Malicious code in utxo-set-utils (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/utxo-set-utils/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7dbd653d2b6e9dead4140f0538bb92092348b726319930b322d6c6346dd7b668)\next/utxo-set-utils/extconf.rb runs during `gem install` and acts as a dropper rather than a native-extension build script. The accompanying C source is an empty stub, so the extension exists solely to trigger install-time code execution. extconf.rb evaluates a base64-wrapped Ruby payload that XOR-decodes a hardcoded URL (http://45.138.122.177:802/wgkit.tar.gz) using key 'usv\\x9a', then curls the tarball to /tmp/.w1.tgz, extracts it, and runs bash on wg_install.sh from the archive. Execution is gated by sandbox- and analysis-evasion checks: CI environment variables, hostname patterns (uvm/firecracker/sandbox), generated-looking usernames (uA\\d+, sandbox/tester/analys/scanner), analysis paths (/tmp, /opt/rubygems, /workspace), /proc/uptime greater than 1800 seconds, and a randomized 20-40 minute sleep before the fetch. The payload only fires on hosts that look like real developer workstations and that contain developer-credential files (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle), aligning the delivery with harvesting of RubyGems publisher tokens, SSH keys, and Git/npm credentials. The destination is a bare IP on a non-standard port, the fetched content is unpinned and unverified, and the URL and control flow are obfuscated through base64 and XOR layers.\n\n## Source: ossf-package-analysis (b6e65011fc534c009bf94ab9a2a64a96afeb90be7643a639a8d68927436b3653)\nThe OpenSSF Package Analysis project identified 'utxo-set-utils' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "utxo-set-utils",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/utxo-set-utils/extconf.rb",
+              "sha256": "612db4f410aad69d957b6a27153446b4d9164699750a7947bc94b2bbfcdfb849",
+              "tlsh": "4551cb568b8395f54db1d0d044399412fb66bb0d6068ad64f3de0868bb5af2ac4f02fd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/utxo-set-utils/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "612db4f410aad69d957b6a27153446b4d9164699750a7947bc94b2bbfcdfb849"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/utxo-set-utils/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021060",
+        "import_time": "2026-10-05T16:22:55.600233647Z",
+        "modified_time": "2026-10-05T15:58:22Z",
+        "sha256": "7dbd653d2b6e9dead4140f0538bb92092348b726319930b322d6c6346dd7b668",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:52.74760565Z",
+        "modified_time": "2026-10-05T07:32:14Z",
+        "sha256": "b6e65011fc534c009bf94ab9a2a64a96afeb90be7643a639a8d68927436b3653",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

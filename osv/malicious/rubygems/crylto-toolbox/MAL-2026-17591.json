@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17591",
+  "published": "2026-10-05T08:35:38Z",
+  "modified": "2026-10-06T00:52:42.007118907Z",
+  "summary": "Malicious code in crylto-toolbox (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/crylto-toolbox/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4362469cec139567ebe3c986d7f2eca2dda837ecff87373d14d9cfbedf81e6b0)\nThe gem's extconf.rb is not a native-extension build script. It contains a base64-encoded Ruby payload that, after gating on anti-analysis checks, downloads and executes an attacker-controlled shell script at install time. The anti-analysis gate inspects CI environment variables, hostname patterns (uvm/firecracker/sandbox/vagrant), username patterns (uA\\d+, sandbox/tester/analys/scanner), working-directory prefixes (/tmp, /var/tmp, /opt/rubygems, /workspace), /proc/uptime (>1800s), and the presence of developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) to restrict execution to real developer machines. When the gate passes, extconf.rb forks a detached process that sleeps 20-40 minutes, then reconstructs a URL by XOR-decoding a hex blob with key 'usv\\x9a' resolving to http://45.138.12.177:8092/wgkit.tar.gz, downloads the archive to /tmp/.w1.tgz with no TLS and no integrity check, extracts it, and runs bash /tmp/.w1/wg_install.sh via system(). The package name is a typo of 'crypto-toolbox'. The combination of obfuscated URL reconstruction, bare-IP plaintext HTTP delivery, detached delayed execution, sandbox-evasion gating keyed on developer-only artifacts, and execution of arbitrary attacker-supplied bash during `gem install` is an install-time dropper on the installer's host.\n\n## Source: ossf-package-analysis (3202a12a5302c89013a6b4b22726af5dd42abec20dc0d594f008f9da72913e6b)\nThe OpenSSF Package Analysis project identified 'crylto-toolbox' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "crylto-toolbox",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/crylto-toolbox/extconf.rb",
+              "sha256": "3ff1c72958a7d17e086f83a72087093c06bd38c9602b6e202a6424ee6ff59c27",
+              "tlsh": "c351cb56cb8395f54db1d0d044355412fb667b0d6068ac64f3de0868bb5af2ac4f02fd"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/crylto-toolbox/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "3ff1c72958a7d17e086f83a72087093c06bd38c9602b6e202a6424ee6ff59c27"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/crylto-toolbox/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021048",
+        "import_time": "2026-10-05T16:22:54.762337895Z",
+        "modified_time": "2026-10-05T15:56:37Z",
+        "sha256": "4362469cec139567ebe3c986d7f2eca2dda837ecff87373d14d9cfbedf81e6b0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:47.911750446Z",
+        "modified_time": "2026-10-05T08:35:38Z",
+        "sha256": "3202a12a5302c89013a6b4b22726af5dd42abec20dc0d594f008f9da72913e6b",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

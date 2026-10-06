@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17615",
+  "published": "2026-10-05T07:30:45Z",
+  "modified": "2026-10-06T00:52:42.066858220Z",
+  "summary": "Malicious code in wallet-crypto-utils (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8089. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5d4c36227c90b4747bc37eb95200ddf64c2875dd153138bc496b39c1dda564f7)\nThe gem declares a native extension (ext/req_throttle_mini/extconf.rb) that ships no C/C++/Rust sources; the extconf.rb only calls create_makefile('wallet_crypto_utils_native') after a hostile preamble. That preamble decodes a base64 blob and passes the result to eval inside a double-forked detached child. The decoded payload opens a TCP socket to the hardcoded bare IP 45.138.12.177 on port 8089, spawns /bin/sh via IO.popen, and bridges the shell's stdio over the socket with IO.copy_stream in a reconnect loop, yielding an interactive remote shell on the installer's host. Execution is gated behind sandbox/analysis-evasion checks: it skips CI environments, ephemeral/sandbox hostnames, generated analyst usernames, analysis path prefixes, and hosts with short uptime, and only fires when developer artifacts are present on disk (~/.ssh, ~/.gitconfig, ~/.gem/credentials, ~/.bundle, ~/.npmrc). The library file lib/wallet_crypto_utils.rb contains ~707 bytes of base58 helpers that do not require any native code, confirming the extension exists solely to auto-execute the install-time payload. The name suggests a cryptocurrency-wallet utility and the targeted artifact list (SSH keys, git config, gem/bundler/npm credentials) indicates developer-workstation compromise and credential theft follow-on.\n\n## Source: ossf-package-analysis (72473b2a14ffaf787cd40e01df2b9d217f13b607debe0564a6a5f7942079bc75)\nThe OpenSSF Package Analysis project identified 'wallet-crypto-utils' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "wallet-crypto-utils",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/req_throttle_mini/extconf.rb",
+              "sha256": "eaf172229a8a05cfcf384e1b2d84ee7a2b81f512f08e7fdeecab4b49715b737a",
+              "tlsh": "bf517856cfc359e51ae1c0c045799012faa3ab0a50646875f3ee0868ff59b66c1f12fe"
+            },
+            {
+              "path": "metadata.yaml",
+              "sha256": "d6caa3733a6412c205c0c646e044de4d13981dd45f3fd31418f32cb4d16deb9f",
+              "tlsh": "a721ce80bbc7fd27f601d2e554a03663e3a3d50cbe952a2187d7518103c98a9af071a2"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/wallet-crypto-utils/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "eaf172229a8a05cfcf384e1b2d84ee7a2b81f512f08e7fdeecab4b49715b737a"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021036",
+        "import_time": "2026-10-05T16:22:53.863762151Z",
+        "modified_time": "2026-10-05T15:54:46Z",
+        "sha256": "5d4c36227c90b4747bc37eb95200ddf64c2875dd153138bc496b39c1dda564f7",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:53.213407798Z",
+        "modified_time": "2026-10-05T07:30:45Z",
+        "sha256": "72473b2a14ffaf787cd40e01df2b9d217f13b607debe0564a6a5f7942079bc75",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

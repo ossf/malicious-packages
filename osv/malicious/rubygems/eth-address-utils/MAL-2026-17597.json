@@ -1,0 +1,126 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17597",
+  "published": "2026-10-05T07:10:37Z",
+  "modified": "2026-10-06T00:52:42.018490109Z",
+  "summary": "Malicious code in eth-address-utils (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8ed9d372d4fc694697be41c22e7c4d02d873e53e16bde2336069787b7b961ce2)\nThe gem advertises itself as an Ethereum address utility library but its extconf.rb (auto-executed by `gem install`) carries a base64-encoded payload that is decoded and passed to `eval` inside a double-forked, detached background process. The decoded payload sleeps 20-40 minutes and then opens a TCPSocket to the hardcoded remote host 45.138.12.177 on port 8090, bridging the socket to `IO.popen(['/bin/sh'],'r+')` — a reverse shell giving the operator of that IP full remote code execution on the installer's host under the installing user's privileges. The extension declares a native component named `req_throttle_mini` but ships no corresponding C sources; `create_makefile` is appended only as camouflage. Payload execution is gated by anti-analysis checks that skip CI environments, ephemeral/sandbox hostnames (uvm/firecracker/sandbox/vagrant), synthetic analyst usernames (sandbox/tester/analys/scanner), build paths under /tmp, /opt/rubygems, /workspace, systems with uptime under 1800 seconds, and hosts lacking developer-identity artifacts such as ~/.ssh, ~/.gitconfig, ~/.gem/credentials, or ~/.bundle — so only real developer workstations are compromised. The library name, the fake native-extension stub, and the sandbox evasion together confirm this is a disguised remote-access implant, not a build helper.\n\n## Source: ossf-package-analysis (2d6b96d2707269b1c88df08e31f5d6837db240448d2181dbd85258ffab364c58)\nThe OpenSSF Package Analysis project identified 'eth-address-utils' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "eth-address-utils",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/req_throttle_mini/extconf.rb",
+              "sha256": "76b5351cf8c341b13fb7b11f20ab8625051cab459ec83c73848cf4f438e60b2d",
+              "tlsh": "6e518855cf8359e516a1c0c0457d8012faa3ab0a50646875f3ee0868ff59b76c1f12fe"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/eth-address-utils/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "76b5351cf8c341b13fb7b11f20ab8625051cab459ec83c73848cf4f438e60b2d"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021073",
+        "import_time": "2026-10-05T16:22:56.645614866Z",
+        "modified_time": "2026-10-05T16:00:11Z",
+        "sha256": "8ed9d372d4fc694697be41c22e7c4d02d873e53e16bde2336069787b7b961ce2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:50.451912328Z",
+        "modified_time": "2026-10-05T07:10:37Z",
+        "sha256": "2d6b96d2707269b1c88df08e31f5d6837db240448d2181dbd85258ffab364c58",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
