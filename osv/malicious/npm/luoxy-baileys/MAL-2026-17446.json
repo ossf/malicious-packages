@@ -1,0 +1,78 @@
+{
+  "modified": "2026-10-01T23:05:37Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17446",
+  "summary": "Malicious code in luoxy-baileys (npm)",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Defaults/index.js` lines 78-80 ship the defaults `autoFollowNewsletterOnConnect: true`, `autoFollowNewsletterDelayMs: 90000` and `autoFollowNewsletterJid: \"120363400911374213@newsletter\"`. `package/lib/Socket/newsletter.js` lines 12-30 additionally fetch `https://raw.githubusercontent.com/iyedahruss/all-public-db/refs/heads/main/newsletter.json` at runtime and add every `@newsletter` id in it to the follow list, so the targets can change without a new npm release. `package/lib/Socket/index.js` line 11 calls `triggerAutoFollow` (`newsletter.js` line 484) on every socket; 90 seconds after the connection opens, `runAutoFollow` (line 108) sends a raw `w:mex` IQ with `query_id: QueryIds.FOLLOW` (line 139) for each target, retrying up to three times. On 2026-10-01 the remote list contained `120363418964199743@newsletter`, `120363410316899314@newsletter`, `120363429190136593@newsletter` and `120363429068662026@newsletter` (under the key `saurus`). The README lists \"Auto-follow\" only as a feature in a comparison table; it does not say that the library follows the publisher's channels by default.\n\nLine numbers refer to version 7.1.3; the same code is present in every published version listed under `affected`.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 7.1.1: `37550f81f18467c3378bd7c402813841f2696372fba50a03a22fff0e21115984`; 7.1.2: `139dddeb58e8a04b9c6f4def85f759768b27de217cde6b577b262b5fe297fed3`; 7.1.3: `6adfeb716809fa59638b6476fca8cc6ef8c8a0fdb7fc9a54390d403879bb111e`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "luoxy-baileys"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "7.1.1",
+        "7.1.2",
+        "7.1.3"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/luoxy-baileys"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/jaym2026"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "14a87657ed1373e366200c5c467f95eeb692df5978c6712fffb15f20916c3f9e"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Defaults/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "5d8971285cbc5ce1b14e2166ab46e5563479f2a9cc627f0c6b48285f6b08c2fb"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://raw.githubusercontent.com/iyedahruss/all-public-db/refs/heads/main/newsletter.json"
+      ]
+    }
+  }
+}

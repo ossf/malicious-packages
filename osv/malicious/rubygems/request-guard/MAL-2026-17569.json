@@ -1,0 +1,110 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17569",
+  "published": "2026-10-05T06:48:11Z",
+  "modified": "2026-10-05T23:31:21.571891591Z",
+  "summary": "Malicious code in request-guard (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5724f6df96af48a04d14a3a986d2ea3b31c90a66e68cfde9e116adf187e42964)\nThe gem's native-extension build script ext/req_throttle_mini/extconf.rb base64-decodes a Ruby payload, writes it to a random file under Dir.tmpdir, and spawns it with the Ruby interpreter before calling create_makefile. The decoded payload opens a TCP connection to the hardcoded bare IP 45.138.12.177 on port 8090 and bridges /bin/sh to the socket in a persistent reconnect loop, giving a remote party interactive shell access on the installer's host. No C/C++ source files are shipped in the gem, so the create_makefile('request-guard_native') call is cover: the extension exists solely to execute the hidden payload at install time. Installing this gem auto-executes the extension and triggers the reverse shell on the installing machine.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "request-guard",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0",
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/req_throttle_mini/extconf.rb",
+              "sha256": "a3804debb75baa8b6a2034b6178abf1850b57debace6737444044840ba55477d",
+              "tlsh": "150170530783190e23c182ed6b3d51508c6aceca532105774281c0f5c28c9b98f27cb2"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/request-guard/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "053e2e8c1e280f978b6afc9c369f78e09c99f663adc86f5367eaa96fccef0e5a"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021035",
+        "import_time": "2026-10-05T07:42:32.744973757Z",
+        "modified_time": "2026-10-05T06:48:11Z",
+        "sha256": "5724f6df96af48a04d14a3a986d2ea3b31c90a66e68cfde9e116adf187e42964",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

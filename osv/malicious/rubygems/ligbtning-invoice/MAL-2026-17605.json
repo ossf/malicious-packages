@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17605",
+  "published": "2026-10-05T08:10:30Z",
+  "modified": "2026-10-06T00:52:42.036488516Z",
+  "summary": "Malicious code in ligbtning-invoice (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/ligbtning-invoice/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (86fdee6169e308a4849aae46edf725272a04cc0fe706f18006dcde8f54f86e2a)\nThe gem's native extension script extconf.rb, which RubyGems executes automatically during `gem install`, base64-decodes an embedded Ruby payload and evaluates it inside a double-forked, detached background process. The payload XOR-decodes a hardcoded plain-HTTP URL at 45.138.<redacted>:8092/wgkit.tar.gz, downloads the tarball to /tmp/.w1.tgz, extracts it, and executes the embedded wg_install.sh via bash, then removes traces. The payload is gated by environment fingerprinting that suppresses execution in CI, sandbox, and analysis environments: it checks CI env vars, hostnames matching firecracker/sandbox/vagrant/uvm, auto-generated usernames, analysis working-directory prefixes (/opt/rubygems, /tmp, /workspace), machine uptime, and the presence of developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle), then sleeps a randomized 20-40 minutes before firing. The shipped library is a hollow stub exposing only a trivial word list (LigbtningInvoice.words/word_at/index_of) and an empty C extension (Init_LigbtningInvoice is a no-op), while the gem name transposes letters relative to a legitimate Lightning/BOLT11 package, indicating a typosquat lure whose sole purpose is delivering the extconf.rb dropper.\n\n## Source: ossf-package-analysis (3c9674944c77b8c371e9f2aad6933c99db3f3ccc19e8b2e9a28f8ef1c7d681c3)\nThe OpenSSF Package Analysis project identified 'ligbtning-invoice' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "ligbtning-invoice",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/ligbtning-invoice/extconf.rb",
+              "sha256": "ebfa766d3d15b80768b9eae8eac52cc868b421f14478c6144a2aa0e92ea24747",
+              "tlsh": "1451db568b8355f64db1d0d004355412fb667b0d60689864f3de0868bb55f2ac0f02fd"
+            },
+            {
+              "path": "metadata.yaml",
+              "sha256": "9effdd63a4a0e0632d7f534006ae09ec633591733b9907e682bab61f8ee4a826",
+              "tlsh": "ea21cdc6f682f877f845f2da5cb1b302f362d548ba562aa59ca34192078516a3e6f011"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/ligbtning-invoice/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "ebfa766d3d15b80768b9eae8eac52cc868b421f14478c6144a2aa0e92ea24747"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/ligbtning-invoice/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021052",
+        "import_time": "2026-10-05T16:22:55.035676463Z",
+        "modified_time": "2026-10-05T15:57:13Z",
+        "sha256": "86fdee6169e308a4849aae46edf725272a04cc0fe706f18006dcde8f54f86e2a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:49.019793394Z",
+        "modified_time": "2026-10-05T08:10:30Z",
+        "sha256": "3c9674944c77b8c371e9f2aad6933c99db3f3ccc19e8b2e9a28f8ef1c7d681c3",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

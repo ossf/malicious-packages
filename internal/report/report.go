@@ -430,6 +430,14 @@ func canonicalizeName(name string, ecosystem osvconstants.Ecosystem) string {
 	case ecosystemGit:
 		// CanonForStorage is called for the name earlier during UnmarshalJSON
 		return name
+	case osvconstants.EcosystemGitHubActions:
+		parts := strings.Split(name, "/")
+		if len(parts) < 2 {
+			return strings.ToLower(name)
+		}
+		parts[0] = strings.ToLower(parts[0])
+		parts[1] = strings.ToLower(parts[1])
+		return strings.Join(parts, "/")
 	default:
 		// Reasonable default is to do nothing
 		return name
