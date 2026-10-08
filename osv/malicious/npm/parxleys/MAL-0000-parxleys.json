@@ -1,0 +1,75 @@
+{
+  "modified": "2026-10-08T12:54:56Z",
+  "schema_version": "1.7.4",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID, and then MUTES each channel so the victim is not notified of its posts.\n\nThe package carries two independent follow routines, both unconditional and undocumented (the package ships no README):\n\n1. `package/lib/Socket/messages-recv.js` lines 45-66 build three values at runtime from char-code arrays through a helper `qvnr = a => a.map(v => String.fromCharCode(v)).join('')`: the channel JID `120363428355171197@newsletter` (`xkmt`) and the socket method names `newsletterFollow` (`pzha`) and `newsletterMute` (`wjcf`). Lines 1119-1137, in a `connection.update` handler: 30 seconds after the connection opens, for each JID it calls `sock[pzha](id)` (FOLLOW), waits 3 seconds, calls `sock[wjcf](id)` (MUTE), and swallows every error.\n\n2. `package/lib/Socket/newsletter.js` lines 86-116: `autoJoinChannels` fetches `https://raw.githubusercontent.com/noxXza/data/refs/heads/main/noxleys.json` 30 seconds after the connection opens and, for every `@newsletter` id it lists, sends `QueryIds.FOLLOW`, waits 3 seconds, and sends `QueryIds.MUTE`, so the target list can change without a new npm release. On 2026-10-08 the list contained `120363428355171197@newsletter`, `120363428984357510@newsletter` and `120363425751417260@newsletter`.\n\nThe char-code block and target JID `120363428355171197` are the same as in ichigo-baileys and wailib (both derived from noxleyss, MAL-2026-17402) and in cantarella-baileys (MAL-2026-17390); the remote list's file name, `noxleys.json`, points the same way.\n\nLine numbers refer to versions 1.0.0 and 1.0.1, whose two cited files are byte-identical.\n\nStatic review of the published tarballs found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`; `prepare` and `prepack` only echo a banner), and no persistence. `package/lib/Utils/messages-media.js` exports an `uploadFile(buffer)` helper that posts a caller-supplied buffer to public file hosts (qu.ax, uguu.se, tmpfiles.org); nothing inside the library calls it. The payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `35f3dadb31ae670f801e0f98f6ca49d0b54ae5aca49c220d6abe3053799025f6`; 1.0.1: `ca15841d74670172731929a694aa5d8bb3c6d8c8a12b58f80729c50093b938c6`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "parxleys"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0",
+        "1.0.1"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/parxleys"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "contact": [
+        "https://github.com/jaym2026"
+      ],
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "paths": [
+            "package/lib/Socket/messages-recv.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "File containing the injected WhatsApp Channel follow-and-mute code (char-code obfuscated).",
+          "digests": {
+            "sha256": "ea7db91458653aabf50f3687c48d4421f272ca5813810c2f158d3c6da81b7caa"
+          }
+        },
+        {
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "File containing the remote-list WhatsApp Channel follow-and-mute code.",
+          "digests": {
+            "sha256": "d9082d5c090ce66d2a150a52e5fe4bd806b077226e8aac11452e921715167263"
+          }
+        }
+      ],
+      "urls": [
+        "https://raw.githubusercontent.com/noxXza/data/refs/heads/main/noxleys.json"
+      ]
+    }
+  }
+}
