@@ -1,0 +1,77 @@
+{
+  "modified": "2026-10-01T23:05:37Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17438",
+  "summary": "Malicious code in @celestial-community/baileys (npm)",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\nThe package carries three independent follow routines, all unconditional and undocumented:\n\n1. `package/lib/Socket/socket.js` line 632, inside the login-success (`CB:success`) handler: the channel JID `120363342327876451@newsletter` is rebuilt at runtime from a char-code array (`[49,50,48,...].map(c=\u003eString.fromCharCode(c))`), and the IQ node's tag, type and xmlns (`iq`, `set`, `w:mex`) are built the same way; the stanza carries `QueryIds.FOLLOW` and fires after a random delay of roughly 4 seconds to 2 minutes.\n\n2. `package/lib/Socket/socket.js` lines 633-652: fetches `https://raw.githubusercontent.com/Denzy-Lawrence/anu/refs/heads/main/anu.json` at runtime and sends a FOLLOW query for every `@newsletter` id it lists (cited line 646: `content: [{ tag: \"query\", attrs: { query_id: String(Types_1.QueryIds.FOLLOW) }, ... newsletter_id: _id ...`), so the target list can change without a new npm release. On 2026-10-01 the list contained `120363342327876451@newsletter`.\n\n3. `package/lib/Socket/newsletter.js` lines 156-164: a `new Function(...)` whose body is a base64 string; decoded, it fetches the same `anu.json` list 30 seconds after the connection opens and, for each id, sends FOLLOW and then, 3 seconds later, MUTE, so the victim is not notified of the channel's posts. Line 165 onward adds a second `connection.update` handler that fetches a base64-encoded URL, `https://raw.githubusercontent.com/Denvy-Lawrence/anu/refs/heads/main/anu.json` (HTTP 404 on 2026-10-01), and FOLLOWs each id it returns.\n\n`package/lib/index.js` line 7 also `eval`s a base64 string on import; decoded, it only prints a \"Baileys Custom By Denzy ZeroDay\" banner.\n\nLine numbers refer to version 1.0.0.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `7145cc1447909b6e0d14a0743f1cc5a4072303add062bfb7cb9cccee3b032620`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@celestial-community/baileys"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@celestial-community/baileys"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/jaym2026"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "5ce761409be45fdcd1fb8b4960481b68e03b02720fa2b0948c1c8c94fcad2597"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Socket/socket.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "7302c519fc3dffff2950b93c24e937dfd95d12e7f14aed12b6ac3f378fe3aa35"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://raw.githubusercontent.com/Denzy-Lawrence/anu/refs/heads/main/anu.json",
+        "https://raw.githubusercontent.com/Denvy-Lawrence/anu/refs/heads/main/anu.json"
+      ]
+    }
+  }
+}

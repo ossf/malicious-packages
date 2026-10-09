@@ -1,0 +1,75 @@
+{
+  "modified": "2026-09-28T19:36:11Z",
+  "published": "2026-09-28T19:36:11Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17230",
+  "summary": "Malicious code in llm-nebula (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0eee293a9973027154eea71635c14e8a4cb2ad8a1e4f80a65399ad874afcb669)\nPackage presents itself as an LLM SDK (nebula.js exposes a small client stub) but declares `preinstall: node preinstall.cjs` in package.json, and preinstall.cjs is a ~232KB single-line obfuscated blob that runs automatically on `npm install`. The script wraps its body in a `Function(...)` constructor and uses a custom PRNG-based string decoder (TEA/xorshift-style constants 0x9e3779b9 / 0x243f6a88 / 0x6a09e667) over a packed printable-ASCII string plus a hex-int array to reconstruct characters via `String.fromCharCode`, driving a control-flow-flattened switch dispatcher. Node builtins and method names are resolved dynamically at runtime (e.g. `Ooa8zU[\"Bd5Wj1\"](\"fs\")`) so module ids, filesystem paths, network destinations, and command strings are not visible without executing the decoder. This obfuscation-plus-lifecycle-hook composition is the canonical install-time dropper / RCE shape: the benign-looking library entry serves as a cover story while the hidden preinstall payload runs on any consumer's machine at install time with the user's privileges, capable of arbitrary filesystem, process, and network operations.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "llm-nebula"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "preinstall.cjs",
+              "sha256": "5c8e0e83983ba18c900dc18b67c6e6aa1eff939c0a107f2cbc4d4967f392ebaa",
+              "tlsh": "07342ac8920e2e45e6228f1b40ddfc8efd20545345ba4efafd66520ad9670e293fbd11"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "llm-nebula-1.0.0.tgz",
+              "hashes": {
+                "sha1": "b88f909b3890d518bd049b975757380ae59242f7",
+                "sha512_sri": "sha512-/937+hoW4m97kLwTsLfJDFKo/RNcsNFyFh2LnnId7vAG5mQEgC7fAjO2eUc41WmLMN16HYnO8MfwCMLXkotNdg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/llm-nebula/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020610",
+        "import_time": "2026-09-28T19:40:23.367064504Z",
+        "modified_time": "2026-09-28T19:36:11Z",
+        "sha256": "0eee293a9973027154eea71635c14e8a4cb2ad8a1e4f80a65399ad874afcb669",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17598",
+  "published": "2026-10-05T07:10:38Z",
+  "modified": "2026-10-06T00:52:42.019822745Z",
+  "summary": "Malicious code in eth-keystore-utils (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (cd660255e3a3483ed89e81f30c696390f8b182a891f8f1fb7e4c1cbb3b52eb32)\nThe gem advertises itself as an Ethereum keystore helper but ships a native extension (ext/req_throttle_mini/extconf.rb) whose sole purpose is to execute a malicious payload during `gem install`. The extconf script base64-decodes an embedded Ruby payload and `eval`s it inside a double-forked, detached child process, then writes an empty Makefile via create_makefile with no C sources present. The decoded payload opens a TCP connection to the hardcoded bare-IP C2 at 45.138.12.177:8090, pipes the socket to `/bin/sh` via IO.popen and IO.copy_stream in both directions, and reconnects on failure in a loop, giving the operator a persistent remote shell on the installer's host. The dropper is gated by anti-analysis checks: it refuses to fire inside CI, ephemeral or sandbox-shaped hostnames, generated usernames, or analysis path prefixes, requires the presence of developer secrets (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) and sufficient machine uptime, and sleeps 20–40 minutes after detaching before executing to evade install-time scanners. The lib/ module is a thin JSON reader that serves as cover; the native extension ships no real build sources. Package naming targets Ethereum developers likely to hold wallet material and cloud/VCS credentials on their workstations.\n\n## Source: ossf-package-analysis (24855124a1e81763ace3dc2ea6da80577a86158593ae236f9d6764eabfd80fa8)\nThe OpenSSF Package Analysis project identified 'eth-keystore-utils' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "eth-keystore-utils",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/req_throttle_mini/extconf.rb",
+              "sha256": "6e2d9cf381d1bab758fc524de1754c8a4cff0bdd8754091156143a38fadcef2d",
+              "tlsh": "6a518855cf8359e51ae1c0c0457d8012faa3ab0a50646875f3ee0868ff59b6ac1f12fe"
+            },
+            {
+              "path": "metadata.yaml",
+              "sha256": "c0e649a652846494a52e0342daaf13c0a3162103be4183e194da9a89fc95803a",
+              "tlsh": "18217fc1a6c7fc37fd05e1d5a4402343a7b3d50c7e692901699741c5039a1e9a71b161"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/eth-keystore-utils/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "6e2d9cf381d1bab758fc524de1754c8a4cff0bdd8754091156143a38fadcef2d"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021071",
+        "import_time": "2026-10-05T16:22:56.506545449Z",
+        "modified_time": "2026-10-05T15:59:56Z",
+        "sha256": "cd660255e3a3483ed89e81f30c696390f8b182a891f8f1fb7e4c1cbb3b52eb32",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:50.664780349Z",
+        "modified_time": "2026-10-05T07:10:38Z",
+        "sha256": "24855124a1e81763ace3dc2ea6da80577a86158593ae236f9d6764eabfd80fa8",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

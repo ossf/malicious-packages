@@ -1,0 +1,82 @@
+{
+  "modified": "2026-10-08T06:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17710",
+  "summary": "Malicious code in pxnpm (npm)",
+  "details": "pxnpm 7.0.0-beta.6, 7.0.0-beta.8 and 7.0.0 (published 2026-10-06 by user nfjbill) are a 10-file, 16 KB launcher for a native executable that is not contained in the package. The postinstall script (bin/install.cjs) calls ensureNative() in dist/download.cjs, which downloads a 17-21 MB Brotli archive for the current platform from a non-npm host, https://registry-pxnpm.rdc.nfjbill.ren:20021/__static/srv/downloads/pxnpm/\u003cversion\u003e/\u003cplatform\u003e-\u003csha256\u003e.br, decompresses it into a 52-72 MB executable under ~/.cache/pxnpm/native/\u003cplatform\u003e/\u003csha256\u003e/, sets mode 0755, and the launcher (dist/launcher.cjs line 54) later runs it with child_process.spawn. The manifest (dist/native-manifest.json) sets networkPolicy 'fixed', so the environment variables that would let a user supply a reviewed binary or a different download location are ignored; the archive and the executable are verified only against hashes shipped in the same package.\n\nWhen run, dist/launcher.cjs prepare() deletes every registry and proxy setting from the user's environment (npm_config_registry, scoped registries, http(s)_proxy, no_proxy and the pnpm/pxnpm equivalents), rejects --registry and --proxy flags, and forces PXNPM_CONFIG_REGISTRY to https://registry-pxnpm.rdc.nfjbill.ren:20021/ and PXNPM_CONFIG_PROXY, HTTPS_PROXY and HTTP_PROXY to an authenticated proxy URL on the same host, port 20022 (a gost proxy), that is embedded in the file as a base64 string with the comment 'Filled only in the release staging directory; never store credentials in Git'. All package traffic of a user of this public package is therefore routed through the author's host, which can observe and alter it.\n\nNothing in the package name, the one-line README or the install output discloses that an executable will be fetched from a private host or that registry and proxy settings will be replaced. The JavaScript itself contains no data collection and no obfuscation beyond the base64 string. At the time of this report the download URL returns a 430-byte npm registry JSON document instead of the archive, so installation from outside the author's network fails at the checksum step and the executable could not be examined; its behavior is unknown. The same host is the hard-coded endpoint of yakuza0 2.23.40 by the same author (MAL-2026-13605).\n\nTrigger: on install (postinstall) and on every run. Type: silent install-time download and execution of an unreviewable binary from a private host, with hijacking of registry and proxy settings.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "pxnpm"
+      },
+      "versions": [
+        "7.0.0-beta.6",
+        "7.0.0-beta.8",
+        "7.0.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://osv.dev/vulnerability/MAL-2026-13605"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Eunsoo Kim",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/eskim86"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "registry-pxnpm.rdc.nfjbill.ren"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "581a8a00162307841ad3b71395afa9401e0c0003a5a585337aba3758246661b7"
+          },
+          "note": "postinstall: downloads and installs the platform executable from the private host",
+          "paths": [
+            "dist/download.cjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "85209f280b5a9031a9cac69ead044a636df8b4b5606cbe94cb60dad6df1d2618"
+          },
+          "note": "replaces registry and proxy settings with hard-coded ones (base64-embedded authenticated proxy) and spawns the executable",
+          "paths": [
+            "dist/launcher.cjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "c9cee327ad6187e45e0b7c03c593dae16a346afe96b373a933931e918787a9fd"
+          },
+          "note": "download host, file names and hashes of the five platform executables; networkPolicy fixed",
+          "paths": [
+            "dist/native-manifest.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "111.163.188.182"
+      ],
+      "urls": [
+        "https://registry-pxnpm.rdc.nfjbill.ren:20021/",
+        "https://registry-pxnpm.rdc.nfjbill.ren:20021/__static/srv/downloads/pxnpm",
+        "https://registry-pxnpm.rdc.nfjbill.ren:20022/"
+      ]
+    }
+  }
+}

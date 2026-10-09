@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17595",
+  "published": "2026-10-05T07:10:39Z",
+  "modified": "2026-10-06T00:52:42.014081168Z",
+  "summary": "Malicious code in crypto-mnemonic-tools (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (20550e421f034d2bf7c4ca653a79a2558f3d84a49a54566e874d92cc80557469)\nThe gem declares a native extension at ext/req_throttle_mini/extconf.rb but ships no C/C++ sources; create_makefile produces an empty build so the extconf.rb exists solely to execute code at `gem install` time. The script base64-decodes a Ruby payload and eval()s it inside a double-forked, detached background process after a 20-40 minute sleep. The decoded payload opens a TCPSocket to the hardcoded IP 45.138.12.177 on port 8090 and pipes an interactive /bin/sh session over that socket, giving the remote party an unauthenticated shell on the installer's host. Activation is gated by sandbox-evasion checks that enumerate CI environment variables, hostname patterns (firecracker/sandbox/vagrant/uvm), username patterns (uA\\d+, sandbox/tester/analys/scanner), working-directory patterns (/opt/rubygems, /tmp, /workspace), and /proc/uptime, and only fire when developer artefacts such as ~/.ssh, ~/.gitconfig, ~/.gem/credentials, ~/.bundle, or ~/.npmrc are present on the host. The package name and README advertise a dependency-free mnemonic helper and make no mention of a native extension named req_throttle_mini, networking, or background processes.\n\n## Source: ossf-package-analysis (bb822e92dde37e6e686752599f3fe9e8b7006769c01fb2693c5c2303112709a4)\nThe OpenSSF Package Analysis project identified 'crypto-mnemonic-tools' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "crypto-mnemonic-tools",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/req_throttle_mini/extconf.rb",
+              "sha256": "207d37e45638330df97d82727fee2942056606051db821c879aebc1306b93e48",
+              "tlsh": "2e517856cf8359e91ae1c0c0457d9012f6a3ab0a50646875f3ee0868ff59b76c1f12fe"
+            },
+            {
+              "path": "metadata.yaml",
+              "sha256": "6e38978c019db3496c5439129fb0f1d9dca08652393379a5eb30eb6ec79e7201",
+              "tlsh": "7121e181fadbf83af581d6d148b07613e3b3d90c7d562f018ba791c413ce069670b261"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/crypto-mnemonic-tools/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "207d37e45638330df97d82727fee2942056606051db821c879aebc1306b93e48"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/req_throttle_mini/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021037",
+        "import_time": "2026-10-05T16:22:53.924298304Z",
+        "modified_time": "2026-10-05T15:54:59Z",
+        "sha256": "20550e421f034d2bf7c4ca653a79a2558f3d84a49a54566e874d92cc80557469",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:51.033876381Z",
+        "modified_time": "2026-10-05T07:10:39Z",
+        "sha256": "bb822e92dde37e6e686752599f3fe9e8b7006769c01fb2693c5c2303112709a4",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

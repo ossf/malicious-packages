@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16410",
+  "published": "2026-09-22T20:59:00Z",
+  "modified": "2026-09-23T02:27:56.405590203Z",
+  "summary": "Malicious code in auclean (PyPI)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (535d1083af63653f3cc6befeffe23a6fd97cea9b183b95eac92779a5abcdcd9d)\nThe pip install of auclean 0.4.2 runs a custom setup.py build_py command that chmod 0755's and executes a 1.8MB bundled Rust ELF binary `auclean/_auclean_native` with `--init`, output suppressed. The package's stated purpose is pure-Python audio DSP (numpy/wave/soundfile) and no C/Rust source is shipped, so the binary is opaque and its execution is unrelated to any advertised functionality. Strings inside the binary reveal a full HTTPS client stack (ureq 2.12.1, rustls 0.23.45), DNS/socket primitives, hardcoded references to container-secret and system paths (`/var/run/secrets`, `/etc/resolv.conf`, `/dev/shm`, `/tmp/_ac`), and process-manipulation primitives (posix_spawn, setuid, setgid, chroot, execvp) — none of which are consistent with audio normalization, and all of which are consistent with harvesting Kubernetes/CI service-account tokens and other credentials from build/CI environments. The same install-time path also calls `auclean._bootstrap.fetch_assets`, which downloads a manifest and referenced files from `https://auclean-cdn.alcoholpepsi.workers.dev/dl/auclean/0.4.2` — an anonymous free `workers.dev` subdomain under an unrelated handle with no tie to the stated publisher; the manifest determines which files are written under `~/.cache/auclean/` at install time, so the fetched content is attacker-controlled. The README advertises a `from auclean import AudioPipeline; pipeline.run()` API that does not exist in the shipped Python source, indicating the Python surface is a cover story for the install-time payload delivered by the native binary and the CDN channel.\n\n## Source: kam193 (c765ad2add74061fa0012c7328f5655ef07dbdf800e6da3802dc0d8de0ad7cea)\nDuring installation, the package executes an embedded malicious executable. It then fingerprints the environment and network, looks for specific files, attempts to collect cloud credentials, and eventually attempts to exfiltrate collected information.\n\nThe package seems to be targeting the infrastructure of an AI audio competition https://dacon.io/competitions/official/236749\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-09-auclean\n\n\nReasons (based on the campaign):\n\n\n - files-exfiltration\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-cloud-tokens\n\n\n - malware\n\n\n - exfiltration-credentials\n\n\n - targetted-attack\n\n\n - network-scan\n",
+  "affected": [
+    {
+      "package": {
+        "name": "auclean",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.4.2",
+        "0.4.3",
+        "0.4.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "aec2c9e1c3042af7c14e62fa9e396658b635fc8b1bdf622b0246476e230c0e2e",
+              "tlsh": "6c110eb5c46679a6d383d3a01db791d54f706523ad02b89d38ec42040f8e4b8c33a2ba"
+            },
+            {
+              "path": "auclean/_auclean_native",
+              "sha256": "01dcf43b28b01aac0127e8f704f3ed1bd1876a1e997955fa8f4055d6617fff5d",
+              "tlsh": "ae859d03f67188ecdbaacc78c75fe433d615b899436266e72bd06b002a27e909f1d751"
+            },
+            {
+              "path": "auclean/_bootstrap.py",
+              "sha256": "0aa205184f70544a0b1d85b47116752d979030533bd30fa65574697e626d134f",
+              "tlsh": "e241009aed4a35c6d687469a6d66c062731abe172902d1b8b9fc23943fcd530c13127d"
+            },
+            {
+              "path": "README.md",
+              "sha256": "fd5193810e41764d51539e87691743afacb456222f47f924c841c7dbb50aa3f9",
+              "tlsh": "4de0f82e895224e810e3887336fc80c58a35cb3308860cc2c006ac301f93af2b832b03"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "auclean-0.4.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "6c1eee7e6e7c6096bb9b1757ba2d85d8aeea199e1797fc86ae3aedeb2c3f5122",
+                "md5": "ed3a5f3243ede770450762c3a324bcd2",
+                "sha256": "1e9fac507af8ad6fe363da85a4d89806d92be6af309f66a9ab31625dc8cacbed"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/2a2212676b699cdd44b480d8ac44a4ea0e9887c8ea43b8a531d4ac7279ac2526/detection"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://tria.ge/260922-zncd8sw14q/behavioral1"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/auclean"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://tria.ge/260922-zve4pssdmf/behavioral1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/auclean/0.4.2/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "auclean-cdn.alcoholpepsi.workers.dev"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "pypi/2026-09-auclean/auclean",
+        "import_time": "2026-09-22T21:15:32.580132339Z",
+        "modified_time": "2026-09-22T20:59:00.784279Z",
+        "sha256": "b337040219fb9c972fb5437f3546e662ba42d292657ad100b875c6224f152e71",
+        "source": "kam193",
+        "versions": [
+          "0.4.2",
+          "0.4.3",
+          "0.4.4"
+        ]
+      },
+      {
+        "id": "pypi/2026-09-auclean/auclean",
+        "import_time": "2026-09-22T22:16:13.992027682Z",
+        "modified_time": "2026-09-22T20:59:00.784279Z",
+        "sha256": "c765ad2add74061fa0012c7328f5655ef07dbdf800e6da3802dc0d8de0ad7cea",
+        "source": "kam193",
+        "versions": [
+          "0.4.2",
+          "0.4.3",
+          "0.4.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020332",
+        "import_time": "2026-09-23T02:26:00.353667107Z",
+        "modified_time": "2026-09-23T01:51:36Z",
+        "sha256": "535d1083af63653f3cc6befeffe23a6fd97cea9b183b95eac92779a5abcdcd9d",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "ANALYST"
+    }
+  ]
+}
