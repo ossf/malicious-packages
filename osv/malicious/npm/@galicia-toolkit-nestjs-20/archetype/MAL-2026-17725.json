@@ -1,0 +1,151 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17725",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:54.076371233Z",
+  "summary": "Malicious code in @galicia-toolkit-nestjs-20/archetype (npm)",
+  "details": "@galicia-toolkit-nestjs-20/archetype is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (662603823964bdbc871f386498e949d768c84d99645690ee3b5e904b458536db)\nOn module load, index.js unconditionally require()s a bundled native binary at prebuilds/<platform>-<arch>/metrics.node inside a try/catch that swallows errors. The ELF reads installer-side credential-grade environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN) along with hostname, uid, cwd, and uname, and POSTs a JSON payload to the hardcoded host oob.s4yhii.com via a raw 'POST /native HTTP/1.0' request. The binary calls fork+setsid to detach from the host process. The exfiltration destination is embedded inside the compiled addon rather than exposed in JavaScript, placing it beyond source-level inspection. The declared package scope (NestJS archetype toolkit) has no relationship to the destination host or to native-code execution, and the package ships no C/C++ sources corresponding to the shipped.node binary.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "@galicia-toolkit-nestjs-20/archetype",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "999.0.2",
+        "999.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "prebuilds/linux-x64/metrics.node",
+              "sha256": "daedefd6a8a02449e29a163a1a92edc0859c0cdb814ec1024b6615fa78bdd375",
+              "tlsh": "8272641bb261ce3bc4dc4278015b5ab0b1b25474e77353231b10a1ba3e927485ebaf9a"
+            },
+            {
+              "path": "index.js",
+              "sha256": "52f3f903b905bf2929b75451304159ead06d7a7f6393c3089e2acaa574f568bb",
+              "tlsh": "4af005dc7fa5b35a52663568d65f010564fbc0f0041cb684c04dcad127f0dc809539fc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "archetype-999.0.2.tgz",
+              "hashes": {
+                "sha1": "fd4aeb49fe0bd80aee85b6885e4973f3f8d71a12",
+                "sha512_sri": "sha512-xI9mlJ467qRiB54OnOfL7cVO/M1RINoV1tFssJIPSZg0R3LYR85zf16VSN6jHXt1S/SO0Ni8LhhxIx+mwqT2rA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs-20/archetype/v/999.0.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs-20/archetype/v/999.0.1"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs-20/archetype"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021307",
+        "import_time": "2026-10-09T13:46:18.664626227Z",
+        "modified_time": "2026-10-09T13:38:48Z",
+        "sha256": "662603823964bdbc871f386498e949d768c84d99645690ee3b5e904b458536db",
+        "source": "amazon-inspector",
+        "versions": [
+          "999.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021323",
+        "import_time": "2026-10-09T13:46:19.895701822Z",
+        "modified_time": "2026-10-09T13:41:12Z",
+        "sha256": "b494c2f9dc32618d0dc946ba4570f3fe98475a4f32d29a3996ae0a2f8b2271ac",
+        "source": "amazon-inspector",
+        "versions": [
+          "999.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

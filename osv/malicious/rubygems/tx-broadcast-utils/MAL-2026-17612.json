@@ -1,0 +1,125 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17612",
+  "published": "2026-10-05T09:30:00Z",
+  "modified": "2026-10-05T23:31:21.585819766Z",
+  "summary": "Malicious code in tx-broadcast-utils (RubyGems)",
+  "details": "RubyGems runs this gem's native extension script `ext/tx-broadcast-utils/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload and forks twice into a detached process. After 20 to 40 minutes the payload downloads `http://45.138.12.177:8092/wgkit.tar.gz` to `/tmp/.w1.tgz` with `curl`, extracts it to `/tmp/.w1/`, runs `wg_install.sh` with `bash` and deletes both. The payload stores the URL XOR-encoded with the key `usv\\x9a`. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (60efdf159c3ce8550c985b3f19cbe72f2bfcae0266cb63fb8c0dd458b56b9901)\nThe gem's native-extension script (ext/.../extconf.rb) embeds a base64-encoded Ruby payload that is eval'd at `gem install` time. The payload double-forks and detaches a background process which sleeps 20-40 minutes, reconstructs a C2 URL by XOR-decoding a hex blob to http://45.138.17.70:809/wgkit.tar.gz, downloads the tarball to /tmp/.w1.tgz, extracts it to /tmp/.w1, and executes wg_install.sh as the installing user. Execution is gated on anti-analysis checks that suppress the payload in CI, ephemeral/sandbox hostnames, generated usernames matching /uA\\d+/, paths under /tmp or /opt/rubygems, and hosts with short uptime, and requires developer-machine signals such as ~/.ssh, ~/.gitconfig, and ~/.gem/credentials before firing. The advertised purpose (Bitcoin transaction broadcast helpers over public esplora endpoints) is a decoy: the shipped library only exposes a truncated BIP39 word list with no broadcast code, and the native extension's C source is an empty Init_ stub. The extconf.rb dropper is the gem's only functional component.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "tx-broadcast-utils",
+        "ecosystem": "RubyGems"
+      },
+      "ranges": [
+        {
+          "type": "ECOSYSTEM",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/tx-broadcast-utils/extconf.rb",
+              "sha256": "a7a8eba595c9fafeac87123622ac4721f3f40fb8baf2dbcf24e0bbab77e0dc15",
+              "tlsh": "8a51ba568b8395f54db1d0d044355412fb667b0e6068ac64f3de0868ab5af2ac4f02fd"
+            },
+            {
+              "path": "lib/tx-broadcast-utils.rb",
+              "sha256": "457fa727375c1a101018e7c4839f2d4f5a0780c67e2db34b6a9d258467f72fd8",
+              "tlsh": "3701a25da10a8490ffd16db27223dc467e4a4a3311092cf0f1bc42915feb8e98a7f954"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/tx-broadcast-utils/versions/1.0.0"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "a7a8eba595c9fafeac87123622ac4721f3f40fb8baf2dbcf24e0bbab77e0dc15"
+          },
+          "note": "Native extension script that RubyGems runs at install time. It gates on the environment and starts the payload.",
+          "paths": [
+            "ext/tx-broadcast-utils/extconf.rb"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Second-stage archive and install script downloaded and run by the payload.",
+          "paths": [
+            "/tmp/.w1.tgz",
+            "/tmp/.w1/wg_install.sh"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "45.138.12.177"
+      ],
+      "urls": [
+        "http://45.138.12.177:8092/wgkit.tar.gz"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021072",
+        "import_time": "2026-10-05T16:22:56.571110292Z",
+        "modified_time": "2026-10-05T16:00:05Z",
+        "sha256": "60efdf159c3ce8550c985b3f19cbe72f2bfcae0266cb63fb8c0dd458b56b9901",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
