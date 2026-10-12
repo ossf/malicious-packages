@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-17691",
-  "published": "2026-10-08T16:23:00Z",
-  "modified": "2026-10-08T17:19:01.518064498Z",
+  "published": "2026-10-08T15:19:15Z",
+  "modified": "2026-10-12T05:54:43.805505876Z",
   "aliases": [
     "GHSA-q3gj-mpgg-cqpv"
   ],
   "summary": "Malicious code in @galicia-toolkit/tag-manager (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5e2accc91beaa067ef442b5dbedf2fb823cea321757875bff9f4cad10532c093)\n@galicia-toolkit/tag-manager@999.0.6 is a scoped dependency-confusion squat whose entire payload runs from a postinstall hook. On npm install, postinstall.js reads a curated list of credential-grade environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN), enumerates the full process.env key list, and collects host reconnaissance (hostname, username, platform, arch, kernel, cwd, uid, external IPs, CPU/memory). The collected data is exfiltrated over two channels to a hardcoded external host: an HTTP POST to oob.s4yhii.com:9999/dep-confusion, and DNS beacons encoding hostname/username under *.dc.oob.s4yhii.com. index.js is empty — the package has no library functionality; its only effect is the install-time exfiltration. The package.json uses an inflated 999.0.6 version consistent with winning resolution against an internal @galicia-toolkit scope. A self-label as a bug-bounty PoC in the description does not change the behavior: any installer that resolves this scoped name has its cloud and CI credentials sent to a non-first-party host.\n\n## Source: ghsa-malware (2ad7348fe8e55e4f3f4a46ff9c190cb6b4cca4aba9870af85feeec4e4ee3acaa)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "@galicia-toolkit/tag-manager claims the `@galicia-toolkit` scope and describes itself as a dependency-confusion PoC. Its postinstall hook runs `node postinstall.js || true` on npm install; the script collects host, platform, runtime, network, and environment data, then sends it over HTTP to `oob.s4yhii.com:9999` and encodes hostname, username, platform, and architecture in DNS queries to subdomains of `oob.s4yhii.com`. The npm account s4yhii_ published versions 999.0.3 and 999.0.5 on 2026-10-08; 999.0.6 runs the same `node postinstall.js || true` command on install, sends the same DNS queries, and connects to `66.94.100.203:9999`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5e2accc91beaa067ef442b5dbedf2fb823cea321757875bff9f4cad10532c093)\n@galicia-toolkit/tag-manager@999.0.6 is a scoped dependency-confusion squat whose entire payload runs from a postinstall hook. On npm install, postinstall.js reads a curated list of credential-grade environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN), enumerates the full process.env key list, and collects host reconnaissance (hostname, username, platform, arch, kernel, cwd, uid, external IPs, CPU/memory). The collected data is exfiltrated over two channels to a hardcoded external host: an HTTP POST to oob.s4yhii.com:9999/dep-confusion, and DNS beacons encoding hostname/username under *.dc.oob.s4yhii.com. index.js is empty — the package has no library functionality; its only effect is the install-time exfiltration. The package.json uses an inflated 999.0.6 version consistent with winning resolution against an internal @galicia-toolkit scope. A self-label as a bug-bounty PoC in the description does not change the behavior: any installer that resolves this scoped name has its cloud and CI credentials sent to a non-first-party host.\n\n## Source: ghsa-malware (2ad7348fe8e55e4f3f4a46ff9c190cb6b4cca4aba9870af85feeec4e4ee3acaa)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -31,6 +31,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -94,9 +99,66 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@galicia-toolkit/tag-manager/v/999.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit/tag-manager"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com",
+        "h.dc.oob.s4yhii.com",
+        "u.dc.oob.s4yhii.com",
+        "m.dc.oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "26ab4a653578335510833f9164c074867c5926f110340d98fbf91d1a5ee169ca"
+          },
+          "note": "postinstall script: node postinstall.js || true",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "14f11babedc67602e606cd4433febbb8a2b45da061a382bfa3f4bba1810e5a3e"
+          },
+          "note": "Executed by the postinstall script of @galicia-toolkit/tag-manager@999.0.3.",
+          "paths": [
+            "postinstall.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "27b6e3149cd84958edcf264c714c920c89917c88c045243bd21dc8b1c30598ed"
+          },
+          "note": "postinstall script: node postinstall.js || true",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "8f594ecf273949f1dbbc8d4cd90f3133b191c05cf3162a50e934c13d48565f5f"
+          },
+          "note": "Executed by the postinstall script of @galicia-toolkit/tag-manager@999.0.5.",
+          "paths": [
+            "postinstall.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "66.94.100.203"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "GHSA-q3gj-mpgg-cqpv",
@@ -152,6 +214,14 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "InvisiRisk, Inc.",
+      "contact": [
+        "https://www.invisirisk.com",
+        "mailto:research@invisirisk.com"
       ],
       "type": "FINDER"
     }
