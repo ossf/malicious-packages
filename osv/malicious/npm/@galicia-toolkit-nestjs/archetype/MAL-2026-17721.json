@@ -1,16 +1,26 @@
 {
-  "modified": "2026-10-09T13:48:11Z",
-  "published": "2026-10-09T13:38:22Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17721",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:54.070429895Z",
   "summary": "Malicious code in @galicia-toolkit-nestjs/archetype (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (63cdc34da85584342e27bc84d22c01a826c71020b7bf07987626cbe457e2e560)\nThe package ships a minimal index.js stub that loads a prebuilt native ELF addon at prebuilds/linux-x64/metrics.node on require(). The addon reads CI/CD and cloud credentials from the environment (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, GITHUB_REPOSITORY) along with host identifiers (hostname, uid/pwuid, cwd, uname) and POSTs them as JSON to oob.s4yhii.com via a raw socket (POST /native HTTP/1.0). The addon also imports fork and setsid from libc and detaches as a background process on load, giving the payload a lifetime beyond the Node parent. The scoped name combined with a 999.0.5 version and UNLICENSED metadata fits the dependency-confusion shape intended to beat an internal package's version during resolution, meaning any CI pipeline that resolves this scope will leak long-lived cloud, npm, and GitHub Actions tokens to an attacker-controlled out-of-band host.\n",
+  "details": "@galicia-toolkit-nestjs/archetype is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (63cdc34da85584342e27bc84d22c01a826c71020b7bf07987626cbe457e2e560)\nThe package ships a minimal index.js stub that loads a prebuilt native ELF addon at prebuilds/linux-x64/metrics.node on require(). The addon reads CI/CD and cloud credentials from the environment (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, GITHUB_REPOSITORY) along with host identifiers (hostname, uid/pwuid, cwd, uname) and POSTs them as JSON to oob.s4yhii.com via a raw socket (POST /native HTTP/1.0). The addon also imports fork and setsid from libc and detaches as a background process on load, giving the payload a lifetime beyond the Node parent. The scoped name combined with a 999.0.5 version and UNLICENSED metadata fits the dependency-confusion shape intended to beat an internal package's version during resolution, meaning any CI pipeline that resolves this scope will leak long-lived cloud, npm, and GitHub Actions tokens to an attacker-controlled out-of-band host.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@galicia-toolkit-nestjs/archetype"
+        "name": "@galicia-toolkit-nestjs/archetype",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "999.0.6",
         "999.0.5",
@@ -18,6 +28,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,18 +87,38 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs/archetype/v/999.0.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs/archetype"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021304",
@@ -116,5 +151,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
