@@ -1,15 +1,15 @@
 {
-  "modified": "2026-10-08T03:38:22Z",
-  "published": "2026-10-08T03:38:22Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17655",
+  "published": "2026-10-08T03:38:22Z",
+  "modified": "2026-10-08T22:41:53.910278499Z",
   "summary": "Malicious code in css-flow-render-shim (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f008c8756b09bb1840b05eafe5a30432475f6cc2d5a10064a42920059e8784fd)\nThe package publishes an empty index.js stub but ships Thunderbolt manifests that register payload.bundle.min.js as the bundle for core Wix components across the thunderbolt/wixui and thunderbolt/dsgnsys namespaces (Container, MasterPage, Section, StylableButton, WRichText, and others), and the bundle exports factories under names like thunderboltRegistry, editorRegistry, and corvidRegistry. When a Wix Thunderbolt build pipeline resolves this name from the public registry instead of the intended internal package, payload.bundle.min.js is loaded and its top-level IIFE executes immediately. The IIFE uses child_process.execSync to run whoami, id, uname -a, env | head -100, ifconfig/ip addr, and cat /etc/hosts, then URL-encodes each output along with hostname, node version, platform, and pid and sends it via https.get to a hardcoded collector at https://webhook.site/69bcd627-1871-4dda-b880-83b37ceac418. The payload also iterates require.cache and deletes every entry whose path contains payload, rb_wixui, or rb_dsgnsys so the recon routine re-fires on each subsequent require within a long-running build process. The combination of a hollow public package impersonating an internal Wix shim, Thunderbolt-shaped manifests, host and environment reconnaissance via shell commands, exfiltration to an attacker-controlled webhook.site endpoint, and require.cache tampering is a dependency-confusion attack against Wix build systems.\n",
+  "details": "css-flow-render-shim@1.0.0 was published to npm on 2026-10-06 22:49 UTC by user brahimhamidi (the account's only package). It is described as a CSS polyfill but contains none: index.js is an empty module (byte-identical to the index.js of css-jptvix-polyfill@1.0.0) and payload.min.css is 15 bytes. payload.bundle.min.js carries the payload and runs at require time as a top-level IIFE; it first deletes its own require.cache entries so that it runs again on every require.\n\nBehavior: (1) obtains child_process through require('child_process'), require('node:child_process') or a freshly constructed Module instance if both are blocked (lines 29-31); (2) runs whoami, id, uname -a, env (first 100 lines, 2,000 characters sent), ifconfig || ip addr, and cat /etc/hosts with execSync and sends each output, together with os.hostname() and the tag vector=registryLibrariesTopology, to https://webhook.site/69bcd627-1871-4dda-b880-83b37ceac418 through both fetch and https.get (lines 12-56); the env step exfiltrates the host's environment variables, including any tokens; (3) sends a beacon tagged topology-rce with the Node version, platform, process id and package name (line 60); (4) exports Proxy objects under Wix-internal module names (thunderboltRegistry, siteAssetsRegistry, documentManagementRegistry, editorRegistry, corvidRegistry, dataBindingRegistry, autoCompleteRegistry, thunderboltBuilderRegistry, thunderboltPreviewRegistry), and the two rb_*.thunderbolt.manifest.min.json files list the payload under https://unpkg.com/css-flow-render-shim@1.0.0/, which indicates a dependency-confusion attempt against that organization's private packages (lines 65-98).\n\nTrigger: on import (require). Type: information stealer (host identity, network configuration and environment variables). Same collector path as wix-ssr-thunderbolt-grid-polyfill@0.1.0 (published 2026-10-06 20:21 UTC by user hissakdx92), which performs port scanning and host reconnaissance for the same target, and same payload family as css-jptvix-polyfill@1.0.0 and css-eqxcdx-polyfill.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f008c8756b09bb1840b05eafe5a30432475f6cc2d5a10064a42920059e8784fd)\nThe package publishes an empty index.js stub but ships Thunderbolt manifests that register payload.bundle.min.js as the bundle for core Wix components across the thunderbolt/wixui and thunderbolt/dsgnsys namespaces (Container, MasterPage, Section, StylableButton, WRichText, and others), and the bundle exports factories under names like thunderboltRegistry, editorRegistry, and corvidRegistry. When a Wix Thunderbolt build pipeline resolves this name from the public registry instead of the intended internal package, payload.bundle.min.js is loaded and its top-level IIFE executes immediately. The IIFE uses child_process.execSync to run whoami, id, uname -a, env | head -100, ifconfig/ip addr, and cat /etc/hosts, then URL-encodes each output along with hostname, node version, platform, and pid and sends it via https.get to a hardcoded collector at https://webhook.site/69bcd627-1871-4dda-b880-83b37ceac418. The payload also iterates require.cache and deletes every entry whose path contains payload, rb_wixui, or rb_dsgnsys so the recon routine re-fires on each subsequent require within a long-running build process. The combination of a hollow public package impersonating an internal Wix shim, Thunderbolt-shaped manifests, host and environment reconnaissance via shell commands, exfiltration to an attacker-controlled webhook.site endpoint, and require.cache tampering is a dependency-confusion attack against Wix build systems.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "css-flow-render-shim"
+        "name": "css-flow-render-shim",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.0.0"
@@ -54,16 +54,37 @@
       "url": "https://www.npmjs.com/package/css-flow-render-shim/v/1.0.0"
     }
   ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
-    }
-  ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "webhook.site"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "2579c09d078991532f03cec0d53c7182ea1426a0faf465d7a9a93827b247578e"
+          },
+          "note": "payload: runs on require, executes whoami/id/uname/env/ifconfig/cat /etc/hosts and sends the output to webhook.site",
+          "paths": [
+            "payload.bundle.min.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "58554c599280f131f74397c7630b5ab297891c73544d8f33748cde5e2c78dfc6"
+          },
+          "note": "manifest in Wix thunderbolt format pointing at this package on unpkg (dependency confusion)",
+          "paths": [
+            "rb_wixui.thunderbolt.manifest.min.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://webhook.site/69bcd627-1871-4dda-b880-83b37ceac418"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021116",
@@ -76,5 +97,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Eunsoo Kim",
+      "contact": [
+        "https://github.com/eskim86"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

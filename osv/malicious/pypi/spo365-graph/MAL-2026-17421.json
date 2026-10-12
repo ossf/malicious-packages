@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17421",
   "published": "2026-10-01T18:58:14Z",
-  "modified": "2026-10-02T15:21:30.430755130Z",
+  "modified": "2026-10-08T20:22:25.200636356Z",
   "summary": "Malicious code in spo365-graph (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (ea8dd7600717964f4ca8f8b1134f867f4bf69f1538243d5c7da752eefed99fe1)\nDuring installation, the package deploys a rogue AWS Lambda function to collect credentials from Secret Manager as well as collect other data. Data are then exfiltrated. The malicious code was introduced in version 1.1.2.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-10-spo365-graph\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-cloud-tokens\n\n\n - targetted-attack\n\n\n - exfiltration-credentials\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (091649f7b927b27a5bd7a35b53784433050bf58e0dc11acc95316b650a13f60b)\nSPO365-GRAPH presents itself as a SharePoint Online Graph client, but the shipped library module SPO365_GRAPH/SPO365_GRAPH.py consists entirely of stub methods returning placeholder values; all real logic lives in setup.py and executes at install time. On `pip install`, setup.py decodes a zlib+base64 blob (_SERVICE_CONFIG) into a configuration dict holding an AWS STS endpoint, a hardcoded RoleArn, an RSA public key, upload/webhook URLs, a proxy host, and an embedded Lambda source. It then reads ACTIONS_ID_TOKEN_REQUEST_URL and ACTIONS_ID_TOKEN_REQUEST_TOKEN from the environment, requests a GitHub Actions OIDC JWT with audience sts.amazonaws.com, and calls STS AssumeRoleWithWebIdentity against the attacker's hardcoded RoleArn to obtain temporary credentials under the attacker's trust policy. Using those credentials it submits a CloudFormation CreateStack request whose TemplateBody embeds an AWS::Lambda::Function with Code.ZipFile sourced from the obfuscated config (_cfg['vs']) and a hardcoded role/function name, polls DescribeStacks for Outputs, then base64-decodes the collected outputs, wraps them with hybrid RSA-OAEP + AES-256-CBC using the embedded public key, and uploads the ciphertext via PUT to _cfg['ru'] with a POST fallback to _cfg['fu'], optionally through a hardcoded HTTP proxy at _cfg['px']. Author metadata is a disposable proton.me address. The naming, stub library, and obfuscation of every operational parameter are a cover story for a CI/CD-targeted OIDC-to-AWS credential abuse and remote-code-execution dropper.\n\n## Source: kam193 (ea8dd7600717964f4ca8f8b1134f867f4bf69f1538243d5c7da752eefed99fe1)\nDuring installation, the package deploys a rogue AWS Lambda function to collect credentials from Secret Manager as well as collect other data. Data are then exfiltrated. The malicious code was introduced in version 1.1.2.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-10-spo365-graph\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-cloud-tokens\n\n\n - targetted-attack\n\n\n - exfiltration-credentials\n",
   "affected": [
     {
       "package": {
@@ -16,13 +16,50 @@
         "1.1.0",
         "1.1.1",
         "1.1.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "setup.py",
+              "sha256": "ed2469abf06d19196b03a57344881b9df243a77cc8471d136149ac53f5eafca6",
+              "tlsh": "1282c89ad9986ce3c74b846a88d78551b33a790b340528387eac539c1f8cd7dd3b729c"
+            },
+            {
+              "path": "SPO365_GRAPH/SPO365_GRAPH.py",
+              "sha256": "1880d732fd191f07399729990017f332ad311ad2e7227933b84742fcc3c54547",
+              "tlsh": "f351204bd5521dd3e25ace33b3a6ec403615965f4443352c7deca0cc1f1182d9aeaac6"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "spo365_graph-1.1.2.tar.gz",
+              "hashes": {
+                "blake2b_256": "b6b83ff1e471cf3911711d530fa6eced94c554b4515fb72a311a971eb1f84773",
+                "md5": "967a63273068104ac04af88367fa74b4",
+                "sha256": "7acebd82867d0cbd20b951a1e4dd383935116b99c29959853fdded797cd5042d"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/spo365-graph"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/SPO365-GRAPH/1.1.2/"
     }
   ],
   "database_specific": {
@@ -70,10 +107,27 @@
           "1.1.1",
           "1.1.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-021232",
+        "import_time": "2026-10-08T20:20:20.308907984Z",
+        "modified_time": "2026-10-08T20:02:15Z",
+        "sha256": "091649f7b927b27a5bd7a35b53784433050bf58e0dc11acc95316b650a13f60b",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
       }
     ]
   },
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
     {
       "name": "Kamil Mańkowski (kam193)",
       "contact": [

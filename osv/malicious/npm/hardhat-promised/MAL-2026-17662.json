@@ -1,15 +1,15 @@
 {
-  "modified": "2026-10-08T03:44:05Z",
-  "published": "2026-10-08T03:44:05Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17662",
+  "published": "2026-10-08T03:44:05Z",
+  "modified": "2026-10-08T22:41:54.561612269Z",
   "summary": "Malicious code in hardhat-promised (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (306eed59a2a4d15563101a3bfde19c1d6d5e0c9152cb0f3d0f421331e075ef4e)\nThe npm package hardhat-promised impersonates the pino logger: it ships pino's README (with pino shields.io badges linking to npmjs.com/package/pino), LICENSE, docs/, index.d.ts, and lib/ directory layout verbatim, while publishing under an unrelated name. index.js is a thin cover-story stub mirroring pino's public API and, at module top level, executes `require('./lib/config')`. lib/config.js is a 4,373,384-byte obfuscator.io-packed script (26,185-entry rotating string array, ~134k deobfuscation transforms, hex-escaped bootstrapper of the form `(function(a,z){const kb={...}})`) with no relation to the small constants module it replaces in real pino. Any consumer that requires this package executes the opaque 4.3MB blob on the installer's host at library load. The combination of unrelated-package impersonation, injected multi-megabyte obfuscated code where a trivial config module is advertised, and top-level execution on import is the trojanized-logger shape used to smuggle installer-harm code into dependency trees.\n",
+  "details": "hardhat-promised@2.21.0 was published to npm on 2026-10-06 13:59 UTC by user ryan.danial915 (account's only package, created the same day). The name targets the Ethereum development tool hardhat. The package is a verbatim copy of the pino logger (README, docs, lib/*.js, SECURITY.md; the README badges still point to pino) with one file added that pino does not contain: lib/config.js, a single-line 4,373,384-byte obfuscated script (javascript-obfuscator style, hex-escaped string table, control-flow flattening). index.js requires ./lib/config on line 6, so the payload runs as soon as the package is required; the exported 'middleware' is a no-op. The dependency axios, which pino does not use, was added for the payload. package.json carries a fake author (Robert King <hello@jsonspack.com>) and no repository.\n\nBehavior observed when lib/config.js is loaded in an instrumented sandbox: (1) child_process.spawn of a detached node process (node --max-old-space-size=4096 --no-warnings -, script fed over stdin, stdout and stderr ignored, windowsHide: true, detached: true), i.e. a hidden background process that outlives the parent; (2) code construction through the Function constructor; (3) axios.post of JSON to http://167.88.172.33:8087/api/log containing os.hostname(), os.platform()/release()/type() and os.userInfo().username, with a fixed key ukey=301, a tag t=3, a timestamp and a SHA-256 'validation' header. The messages posted are 'Starting client', 'Spawning autoUploadScript', 'Spawning ldbScript', 'Spawning socketScript' and the matching 'Failed to spawn ...' errors, which name three stealer modules: automatic file upload, LevelDB (browser extension / wallet storage) reading, and a persistent socket connection to the operator.\n\nTrigger: on import (require). Type: trojanized copy of a popular library acting as an information-stealer loader with a hard-coded C2 at 167.88.172.33:8087.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (306eed59a2a4d15563101a3bfde19c1d6d5e0c9152cb0f3d0f421331e075ef4e)\nThe npm package hardhat-promised impersonates the pino logger: it ships pino's README (with pino shields.io badges linking to npmjs.com/package/pino), LICENSE, docs/, index.d.ts, and lib/ directory layout verbatim, while publishing under an unrelated name. index.js is a thin cover-story stub mirroring pino's public API and, at module top level, executes `require('./lib/config')`. lib/config.js is a 4,373,384-byte obfuscator.io-packed script (26,185-entry rotating string array, ~134k deobfuscation transforms, hex-escaped bootstrapper of the form `(function(a,z){const kb={...}})`) with no relation to the small constants module it replaces in real pino. Any consumer that requires this package executes the opaque 4.3MB blob on the installer's host at library load. The combination of unrelated-package impersonation, injected multi-megabyte obfuscated code where a trivial config module is advertised, and top-level execution on import is the trojanized-logger shape used to smuggle installer-harm code into dependency trees.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "hardhat-promised"
+        "name": "hardhat-promised",
+        "ecosystem": "npm"
       },
       "versions": [
         "2.21.0"
@@ -54,16 +54,37 @@
       "url": "https://www.npmjs.com/package/hardhat-promised/v/2.21.0"
     }
   ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
-    }
-  ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "7e4c6d76f1d845f752e37876a2d3f773996719f33c2d1c282e0a84b04444efeb"
+          },
+          "note": "obfuscated payload, required by index.js line 6; spawns detached node, posts host identity to 167.88.172.33:8087",
+          "paths": [
+            "lib/config.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "4e6c4e61a7019ab0affe9c2d20e36701b330ec357be205930355bac1464f9316"
+          },
+          "note": "replaced pino entry point that loads lib/config.js",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "ips": [
+        "167.88.172.33"
+      ],
+      "urls": [
+        "http://167.88.172.33:8087/api/log"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021134",
@@ -76,5 +97,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Eunsoo Kim",
+      "contact": [
+        "https://github.com/eskim86"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
