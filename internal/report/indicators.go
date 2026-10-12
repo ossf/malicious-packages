@@ -201,8 +201,8 @@ func isDomainValid(d string) bool {
 		// Contains a invalid character.
 		return false
 	}
-	labels := strings.Split(d, ".")
-	for _, l := range labels {
+	labels := strings.SplitSeq(d, ".")
+	for l := range labels {
 		if len(l) > maxLabelLength {
 			return false
 		}
