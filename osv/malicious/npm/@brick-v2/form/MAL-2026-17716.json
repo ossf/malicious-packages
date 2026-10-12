@@ -1,22 +1,37 @@
 {
-  "modified": "2026-10-09T13:48:11Z",
-  "published": "2026-10-09T13:36:18Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17716",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:53.958207710Z",
   "summary": "Malicious code in @brick-v2/form (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (61727d51587469176de52cbc3c82a53b4572ecfc6c7f7b4c7edf534950b0f536)\nThe package ships a tiny JavaScript stub at index.js that silently require()s a compiled native addon at prebuilds/linux-x64/metrics.node inside a try/catch that suppresses errors. On load, the addon reads a hardcoded list of credential-bearing environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS session token, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, SYSTEM_ACCESSTOKEN) along with hostname, user, cwd, and OS/arch, and sends them as a JSON body via a raw TCP socket (gethostbyname/socket/connect/send) in a 'POST /native HTTP/1.0' request to the hardcoded external host oob.s4yhii.com. The addon also imports fork and setsid, consistent with detaching into a background process so the exfiltration channel survives beyond the host Node process. The compiled ELF is the entire payload; the JS wrapper exposes no form-related functionality matching the stated 'form module' description. The package manifest (scoped name @brick-v2/form, inflated version 999.0.1, UNLICENSED, minimal metadata) matches the dependency-confusion shape used to outrank an internal private-registry package of the same scope.\n",
+  "details": "@brick-v2/form is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (61727d51587469176de52cbc3c82a53b4572ecfc6c7f7b4c7edf534950b0f536)\nThe package ships a tiny JavaScript stub at index.js that silently require()s a compiled native addon at prebuilds/linux-x64/metrics.node inside a try/catch that suppresses errors. On load, the addon reads a hardcoded list of credential-bearing environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS session token, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, SYSTEM_ACCESSTOKEN) along with hostname, user, cwd, and OS/arch, and sends them as a JSON body via a raw TCP socket (gethostbyname/socket/connect/send) in a 'POST /native HTTP/1.0' request to the hardcoded external host oob.s4yhii.com. The addon also imports fork and setsid, consistent with detaching into a background process so the exfiltration channel survives beyond the host Node process. The compiled ELF is the entire payload; the JS wrapper exposes no form-related functionality matching the stated 'form module' description. The package manifest (scoped name @brick-v2/form, inflated version 999.0.1, UNLICENSED, minimal metadata) matches the dependency-confusion shape used to outrank an internal private-registry package of the same scope.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@brick-v2/form"
+        "name": "@brick-v2/form",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "999.0.1",
         "999.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -67,18 +82,38 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@brick-v2/form/v/999.0.3"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@brick-v2/form"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021310",
@@ -101,5 +136,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
