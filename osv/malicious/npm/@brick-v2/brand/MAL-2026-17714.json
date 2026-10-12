@@ -1,16 +1,26 @@
 {
-  "modified": "2026-10-09T13:48:11Z",
-  "published": "2026-10-09T13:35:10Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17714",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:53.951098629Z",
   "summary": "Malicious code in @brick-v2/brand (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a194395a620ef40055a22d7beccbab1e1ca0c662afe83b9ee2fb23d07ebaedc5)\npackage.json declares a preinstall hook `node index.js || true` that loads a prebuilt native addon at prebuilds/\u003cplatform\u003e-\u003carch\u003e/metrics.node. The addon reads credential-grade environment variables (AWS_SECRET_ACCESS_KEY and other AWS_*, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AZURE_DEVOPS_EXT_PAT) and host identifiers (hostname via gethostname/GetComputerNameA, username via getpwuid/GetUserNameA, uname release, cwd, package name), serializes them into a JSON payload of shape `{\"src\":\"native\",\"pkg\":...,\"h\":...,\"u\":...,\"os\":...,\"arch\":...,\"rel\":...,\"cwd\":...,\"e\":{...}}`, and transmits it via a raw TCP socket (socket/connect/send, with setsid+fork daemonization on Linux) to the hardcoded host oob.s4yhii.com using `POST /native HTTP/1.0`. The same exfiltration behavior is present in both the linux-x64 and win32-x64 prebuilt binaries. The JavaScript entry point exports only inert NestJS-style `forRoot` / `createLogger` placeholders; the entire operational behavior resides in the opaque native binary. The package is published under the private-looking scope `@brick-v2` at version `999.0.3`, a version-inflation shape consistent with dependency-confusion resolution against an internal `@brick-v2` scope.\n",
+  "details": "@brick-v2/brand is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a194395a620ef40055a22d7beccbab1e1ca0c662afe83b9ee2fb23d07ebaedc5)\npackage.json declares a preinstall hook `node index.js || true` that loads a prebuilt native addon at prebuilds/<platform>-<arch>/metrics.node. The addon reads credential-grade environment variables (AWS_SECRET_ACCESS_KEY and other AWS_*, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AZURE_DEVOPS_EXT_PAT) and host identifiers (hostname via gethostname/GetComputerNameA, username via getpwuid/GetUserNameA, uname release, cwd, package name), serializes them into a JSON payload of shape `{\"src\":\"native\",\"pkg\":...,\"h\":...,\"u\":...,\"os\":...,\"arch\":...,\"rel\":...,\"cwd\":...,\"e\":{...}}`, and transmits it via a raw TCP socket (socket/connect/send, with setsid+fork daemonization on Linux) to the hardcoded host oob.s4yhii.com using `POST /native HTTP/1.0`. The same exfiltration behavior is present in both the linux-x64 and win32-x64 prebuilt binaries. The JavaScript entry point exports only inert NestJS-style `forRoot` / `createLogger` placeholders; the entire operational behavior resides in the opaque native binary. The package is published under the private-looking scope `@brick-v2` at version `999.0.3`, a version-inflation shape consistent with dependency-confusion resolution against an internal `@brick-v2` scope.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@brick-v2/brand"
+        "name": "@brick-v2/brand",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "999.0.1",
         "999.0.3",
@@ -18,6 +28,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,18 +87,38 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@brick-v2/brand/v/999.0.2"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@brick-v2/brand"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021313",
@@ -116,5 +151,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

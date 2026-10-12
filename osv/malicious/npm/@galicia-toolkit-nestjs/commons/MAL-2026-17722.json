@@ -1,16 +1,26 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-17722",
-  "published": "2026-10-09T13:36:09Z",
-  "modified": "2026-10-09T17:18:12.909672073Z",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:54.072076538Z",
   "summary": "Malicious code in @galicia-toolkit-nestjs/commons (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (eae27acb3901d275439e482d51a1451df67c1a6b2011f35881253a3fa8d2456b)\nThe package ships a tiny index.js that require()s a bundled ELF at prebuilds/linux-x64/metrics.node inside a swallow-all try/catch on module load. No C/C++ source, binding.gyp, or node-gyp/prebuild tooling is present, so the native binary cannot be rebuilt from source and its behavior is opaque to consumers. Strings extracted from the binary show it reads CI and cloud credential environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN) along with hostname, username and cwd, then opens a raw socket to the hardcoded host oob.s4yhii.com and issues POST /native HTTP/1.0 with a JSON body of the collected values. The addon daemonizes via fork+setsid to persist beyond the parent process. The destination host is unrelated to NestJS or any plausible publisher of a 'commons' utility. The package name mimics an internal-looking org scope and is published at version 999.0.6 with no repository and an UNLICENSED field, matching the dependency-confusion lure shape intended to win resolution against a private internal package of a similarly-named scope.\n",
+  "details": "@galicia-toolkit-nestjs/commons is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (eae27acb3901d275439e482d51a1451df67c1a6b2011f35881253a3fa8d2456b)\nThe package ships a tiny index.js that require()s a bundled ELF at prebuilds/linux-x64/metrics.node inside a swallow-all try/catch on module load. No C/C++ source, binding.gyp, or node-gyp/prebuild tooling is present, so the native binary cannot be rebuilt from source and its behavior is opaque to consumers. Strings extracted from the binary show it reads CI and cloud credential environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN) along with hostname, username and cwd, then opens a raw socket to the hardcoded host oob.s4yhii.com and issues POST /native HTTP/1.0 with a JSON body of the collected values. The addon daemonizes via fork+setsid to persist beyond the parent process. The destination host is unrelated to NestJS or any plausible publisher of a 'commons' utility. The package name mimics an internal-looking org scope and is published at version 999.0.6 with no repository and an UNLICENSED field, matching the dependency-confusion lure shape intended to win resolution against a private internal package of a similarly-named scope.\n",
   "affected": [
     {
       "package": {
         "name": "@galicia-toolkit-nestjs/commons",
         "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "999.0.7",
         "999.0.1",
@@ -20,6 +30,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -92,9 +107,38 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs/commons/v/3.0.1"
+    },
+    {
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@galicia-toolkit-nestjs/commons"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021302",
@@ -153,6 +197,13 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
       ],
       "type": "FINDER"
     }
