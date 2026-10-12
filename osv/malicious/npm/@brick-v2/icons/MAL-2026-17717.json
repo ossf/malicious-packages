@@ -1,16 +1,26 @@
 {
-  "modified": "2026-10-09T13:48:11Z",
-  "published": "2026-10-09T13:35:02Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17717",
+  "published": "2026-10-09T00:00:00Z",
+  "modified": "2026-10-12T05:15:53.959721613Z",
   "summary": "Malicious code in @brick-v2/icons (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (915977ddb276c313e2977875d853dfba4eebd12f75ad0826008866b5059c68a8)\n@brick-v2/icons@999.0.3 is a dependency-confusion credential stealer. The package's package.json declares a preinstall script `node index.js`, and index.js's only behavior is to require a platform-specific prebuilt native addon from `prebuilds/\u003cplatform\u003e-\u003carch\u003e/metrics.node`. The native binary reads a curated list of CI and cloud secrets from the environment — AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AZURE_DEVOPS_EXT_PAT, and similar — along with hostname, username, cwd, and OS fields, and POSTs them as JSON to the hardcoded attacker endpoint `oob.s4yhii.com` at path `/native`. The JS shim presents a benign Angular-style facade (`forRoot`, `createLogger`, `version` exports) under a plausible scoped name, while the real behavior lives in the opaque native binary; no build system, binding.gyp, or source is shipped. The inflated version `999.0.3` is designed to win semver resolution against any legitimate internal `@brick-v2/icons` package, targeting private registries via dependency confusion. Harm is auto-executed on `npm install` via the preinstall hook, before any user code runs.\n",
+  "details": "@brick-v2/icons is a dependency confusion package published to npm on 2026-10-09 by the account s4yhii__, targeting the internal @galicia-toolkit-* / @brick-v2 package namespaces with inflated versions (e.g. 999.0.x). Early versions resolve <hostname>.<tag>.dc.oob.s4yhii.com via DNS to beacon the victim's hostname. Later versions run `node index.js` from a preinstall hook, which loads a bundled native addon (prebuilds/<platform>-<arch>/metrics.node, Linux and Windows builds). The addon forks a detached process that collects hostname, username, OS/arch, cwd and the full values of CI/cloud secrets from environment variables (NPM_TOKEN, NODE_AUTH_TOKEN, GITHUB_TOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, SYSTEM_ACCESSTOKEN, AZURE_DEVOPS_EXT_PAT and others) and sends them as JSON via HTTP POST /native to oob.s4yhii.com:9999.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (915977ddb276c313e2977875d853dfba4eebd12f75ad0826008866b5059c68a8)\n@brick-v2/icons@999.0.3 is a dependency-confusion credential stealer. The package's package.json declares a preinstall script `node index.js`, and index.js's only behavior is to require a platform-specific prebuilt native addon from `prebuilds/<platform>-<arch>/metrics.node`. The native binary reads a curated list of CI and cloud secrets from the environment — AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN, GITHUB_TOKEN, NPM_TOKEN, NODE_AUTH_TOKEN, SYSTEM_ACCESSTOKEN, ACTIONS_RUNTIME_TOKEN, ACTIONS_ID_TOKEN_REQUEST_TOKEN, AZURE_DEVOPS_EXT_PAT, and similar — along with hostname, username, cwd, and OS fields, and POSTs them as JSON to the hardcoded attacker endpoint `oob.s4yhii.com` at path `/native`. The JS shim presents a benign Angular-style facade (`forRoot`, `createLogger`, `version` exports) under a plausible scoped name, while the real behavior lives in the opaque native binary; no build system, binding.gyp, or source is shipped. The inflated version `999.0.3` is designed to win semver resolution against any legitimate internal `@brick-v2/icons` package, targeting private registries via dependency confusion. Harm is auto-executed on `npm install` via the preinstall hook, before any user code runs.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@brick-v2/icons"
+        "name": "@brick-v2/icons",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "999.0.1",
         "999.0.3",
@@ -18,6 +28,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,18 +87,38 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@brick-v2/icons/v/999.0.2"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "WEB",
+      "url": "https://www.npmjs.com/package/@brick-v2/icons"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob.s4yhii.com"
+      ],
+      "files": [
+        {
+          "note": "Loader: DNS hostname beacon to *.dc.oob.s4yhii.com, or loads the native exfiltration addon (run via preinstall).",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Native addon that exfiltrates host info and CI/cloud secret env vars to oob.s4yhii.com:9999.",
+          "paths": [
+            "prebuilds/linux-x64/metrics.node",
+            "prebuilds/win32-x64/metrics.node"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "http://oob.s4yhii.com:9999/native"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-021308",
@@ -116,5 +151,21 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "SafeDep",
+      "contact": [
+        "https://safedep.io"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
