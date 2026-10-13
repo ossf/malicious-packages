@@ -176,7 +176,7 @@ PathLoop:
 		id := strings.TrimSuffix(base, filepath.Ext(base))
 		idNoPrefix := strings.TrimPrefix(id, fmt.Sprintf("%s-", prefix))
 		var parts []int
-		for _, part := range strings.Split(idNoPrefix, "-") {
+		for part := range strings.SplitSeq(idNoPrefix, "-") {
 			i, err := strconv.Atoi(part)
 			if err != nil {
 				continue PathLoop
@@ -194,7 +194,7 @@ PathLoop:
 			continue
 		}
 		limit := min(len(earliestParts), len(parts))
-		for i := 0; i < limit; i++ {
+		for i := range limit {
 			if parts[i] < earliestParts[i] {
 				earliest = p
 				earliestParts = parts
