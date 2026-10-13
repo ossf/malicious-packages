@@ -1,23 +1,29 @@
 {
-  "modified": "2026-10-11T14:19:56Z",
-  "published": "2026-10-11T13:51:50Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17768",
+  "published": "2026-10-11T13:51:50Z",
+  "modified": "2026-10-11T17:17:45.393219629Z",
   "summary": "Malicious code in cloudflare_module (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (14316e66f8d8eeb53b5fd4850537ac5398947feaf88f3837e39bfa587f60a0fb)\ncloudflare_module@1.0.1 is a typosquat of Cloudflare branding whose only functional code is an install- and import-time beacon. beacon.cjs defines BEACON = \"http://185.158.107.175:8787/_ah/dc\" and a fire() function that POSTs a JSON payload containing os.hostname(), __dirname (installPath), process.cwd(), process.version and the package name to that hardcoded bare-IP HTTP endpoint. fire() is invoked from the package's postinstall script, so it runs automatically on `npm install`, and from the main module, so it also runs on `require('cloudflare_module')`. The package's main entry exports a Proxy of no-op functions (`module.exports = new Proxy({}, { get:... return _noop; })`) with a generic \"Compatibility shim\" description, so the package provides no legitimate functionality — the exfil beacon is its sole behavior. The destination is a bare IPv4 address on a non-standard port over cleartext HTTP, with no relationship to Cloudflare or any documented publisher. Host identity, install path and working directory shipped to an attacker-controlled collector constitute reconnaissance of installer environments suitable for targeted follow-on supply-chain exploitation.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f3a545e1e930894c3320e68c2aee17dd2cec7f20ed03b2e882905056d0eee242)\nPackage `cloudflare_module@99.0.1` is a dependency-confusion lure targeting the `cloudflare_*` namespace. `package.json` declares `scripts.postinstall: \"node beacon.cjs\"`, and `beacon.cjs` POSTs a JSON payload containing `os.hostname()`, the install path (`__dirname`), `process.cwd()`, and `process.version` to the hardcoded bare-IP endpoint `http://185.158.107.175:8787/_ah/dc` over plain HTTP. The package `main` (`index.js`) additionally calls `require('./beacon.cjs').fire()` at top level inside a try/catch, so the same host-identifier POST also fires whenever a downstream bundler or application `require()`s the package. The default export is a Proxy that returns a no-op for every property access, allowing bundlers that resolve an internal `cloudflare_module` name to complete the build cleanly so the beacon callback fires without producing errors. The package is published at version `99.0.1` with a generic \"Compatibility shim.\" description, consistent with version-bumping to beat an internal registry during resolution. The README self-labels the package as an \"authorized dependency-confusion test,\" but the beacon targets any machine that resolves the name — the installer never consents to the exfiltration — and the destination is an unattributed bare-IP collector, not infrastructure of the targeted namespace.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "cloudflare_module"
+        "name": "cloudflare_module",
+        "ecosystem": "npm"
       },
       "versions": [
         "3.0.0",
         "1.0.1",
-        "1.0.0"
+        "1.0.0",
+        "99.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,15 +78,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/cloudflare_module/v/1.0.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/cloudflare_module/v/99.0.1"
     }
   ],
   "database_specific": {
@@ -114,7 +115,26 @@
         "versions": [
           "1.0.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-021448",
+        "import_time": "2026-10-11T17:15:51.556858866Z",
+        "modified_time": "2026-10-11T16:53:13Z",
+        "sha256": "f3a545e1e930894c3320e68c2aee17dd2cec7f20ed03b2e882905056d0eee242",
+        "source": "amazon-inspector",
+        "versions": [
+          "99.0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

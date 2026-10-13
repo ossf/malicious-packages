@@ -1,8 +1,8 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-17744",
-  "published": "2026-10-09T15:55:48Z",
-  "modified": "2026-10-11T14:19:58.631832814Z",
+  "published": "2026-10-09T15:49:57Z",
+  "modified": "2026-10-12T05:46:34.600138097Z",
   "summary": "Malicious code in kmf-vendor-pack (npm)",
   "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c6e1c289f2890e0e06ab31a8d6cf5dbc8deabc26054cb44a0c60295c29a74506)\nkmf-vendor-pack@100.100.100 is a dependency-confusion lure. package.json declares `postinstall: node postinstall.js`, which require()s a shipped prebuilt Linux x64 N-API addon at prebuilds/linux-x64/addon.node. The addon's napi_register_module_v1 Init routine calls fork(), opens a socket, connects to the hardcoded bare IP 64.181.165.115, and sends `POST /dc HTTP/1.0` with body `h=<HOSTNAME>&p=<npm_package_name>&u=<user>&r=<npm_config_registry>`, leaking the installing host's name, the resolved package name, and the configured npm registry URL to attacker infrastructure over plain TCP. The native binary ships with no accompanying C/C++ sources, no binding.gyp, and no legitimate functionality matching the stated `Frontend utilities` purpose; the JS entry point is an empty `module.exports = {}`. The version number 100.100.100 is implausibly high and consistent with resolution-winning against an internal package of the same name. Installing this package causes immediate outbound disclosure of install-environment and internal-registry metadata to the attacker.\n\n## Source: ossf-package-analysis (90252f22765869df637f77df2754cd36724812550151c9c7c53926bc83daad2e)\nThe OpenSSF Package Analysis project identified 'kmf-vendor-pack' @ 99.0.0 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package communicates with a domain associated with malicious activity.\n",
   "affected": [
@@ -19,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -77,9 +82,33 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/kmf-vendor-pack/v/100.100.106"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/kmf-vendor-pack"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "db4fe7a2e2lvaraia8k0n4amgw4ir83az.oast.pro"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "c00f5e4b31d7ff303956007a49d6758283a750fa6cb3a0a49eaa7cd330c0078a"
+          },
+          "note": "postinstall script sends the hostname and OS username to an oast.pro out-of-band collector.",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://db4fe7a2e2lvaraia8k0n4amgw4ir83az.oast.pro/dc?pkg=kmf-vendor-pack&h="
+      ]
+    },
     "malicious-packages-origins": [
       {
         "import_time": "2026-10-09T16:20:00.871582705Z",
@@ -137,6 +166,13 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "InvisiRisk, Inc.",
+      "contact": [
+        "https://www.invisirisk.com/"
       ],
       "type": "FINDER"
     },
