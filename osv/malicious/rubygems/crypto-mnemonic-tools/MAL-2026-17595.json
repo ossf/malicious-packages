@@ -1,10 +1,10 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-17595",
-  "published": "2026-10-05T09:30:00Z",
-  "modified": "2026-10-05T23:31:21.534550159Z",
+  "published": "2026-10-05T07:10:39Z",
+  "modified": "2026-10-11T14:20:02.617428423Z",
   "summary": "Malicious code in crypto-mnemonic-tools (RubyGems)",
-  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (20550e421f034d2bf7c4ca653a79a2558f3d84a49a54566e874d92cc80557469)\nThe gem declares a native extension at ext/req_throttle_mini/extconf.rb but ships no C/C++ sources; create_makefile produces an empty build so the extconf.rb exists solely to execute code at `gem install` time. The script base64-decodes a Ruby payload and eval()s it inside a double-forked, detached background process after a 20-40 minute sleep. The decoded payload opens a TCPSocket to the hardcoded IP 45.138.12.177 on port 8090 and pipes an interactive /bin/sh session over that socket, giving the remote party an unauthenticated shell on the installer's host. Activation is gated by sandbox-evasion checks that enumerate CI environment variables, hostname patterns (firecracker/sandbox/vagrant/uvm), username patterns (uA\\d+, sandbox/tester/analys/scanner), working-directory patterns (/opt/rubygems, /tmp, /workspace), and /proc/uptime, and only fire when developer artefacts such as ~/.ssh, ~/.gitconfig, ~/.gem/credentials, ~/.bundle, or ~/.npmrc are present on the host. The package name and README advertise a dependency-free mnemonic helper and make no mention of a native extension named req_throttle_mini, networking, or background processes.\n",
+  "details": "RubyGems runs this gem's native extension script `ext/req_throttle_mini/extconf.rb` during `gem install`. The script exits without action on CI runners and sandboxes, based on CI environment variables, the hostname, the username and the working directory. It continues if the system uptime is over 30 minutes and the home directory holds `.ssh`, `.gitconfig`, `.npmrc`, `.gem/credentials` or `.bundle`. It then decodes a Base64 Ruby payload, forks twice into a detached process, waits 20 to 40 minutes and opens a reverse shell that connects `/bin/sh` to 45.138.12.177 on TCP port 8090. The shell reconnects every 30 seconds. The Ruby code in `lib/` is a decoy. The RubyGems account `reqthrottle_3474` published this gem and 41 others with the same loader on 2026-10-05.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (44e296902c4b40fc0d6e6c2e431aa5e2a6e60002ddb1c6cb7619d3c4da5854f3)\nThe gem advertises itself as a BIP-39 mnemonic helper but ships an `ext/req_throttle_mini/extconf.rb` native-extension script with no C sources alongside it. On `gem install`, the extconf.rb decodes a base64 Ruby payload and `eval`s it inside a detached, double-forked daemon that opens a TCPSocket to 45.138.12.177:8090 and bridges it to `/bin/sh` via `IO.popen(['/bin/sh'], 'r+')` and an `IO.copy_stream` loop, giving a remote operator interactive shell on the installer's host. Process.setsid, double fork, Process.detach, and reopening std streams to /dev/null background the shell so the install completes normally. Execution is gated by anti-analysis checks that skip CI environments (CI, GITHUB_ACTIONS, TRAVIS, JENKINS_URL, GITLAB_CI, CODESPACES), ephemeral/sandbox hostnames (uvm, firecracker, sandbox, vagrant), generated/analyst usernames, analysis working directories (/opt/rubygems, /tmp, /var/tmp, /workspace), and hosts with uptime under 1800 seconds, and additionally requires developer artifacts (~/.ssh, ~/.gitconfig, ~/.npmrc, ~/.gem/credentials, ~/.bundle) to be present before firing. The script then sleeps 1200+rand(1200) seconds before connecting to delay the egress past install-time monitoring. The extconf.rb calls `create_makefile('crypto_mnemonic_tools_native')` as a stub with no accompanying native source, so the extension exists solely as an install-time execution vector. The lure name targets developers handling crypto wallet mnemonics, whose workstations are the gated-for target.\n\n## Source: ossf-package-analysis (bb822e92dde37e6e686752599f3fe9e8b7006769c01fb2693c5c2303112709a4)\nThe OpenSSF Package Analysis project identified 'crypto-mnemonic-tools' @ 1.0.0 (rubygems) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -22,10 +22,16 @@
         }
       ],
       "versions": [
-        "1.0.0"
+        "1.0.0",
+        "1.0.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -62,6 +68,10 @@
     {
       "type": "REPORT",
       "url": "https://safedep.io/rubygems-crypto-gems-install-time-reverse-shell/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/crypto-mnemonic-tools/versions/1.0.3"
     }
   ],
   "database_specific": {
@@ -92,6 +102,25 @@
         "versions": [
           "1.0.0"
         ]
+      },
+      {
+        "import_time": "2026-10-06T00:50:51.033876381Z",
+        "modified_time": "2026-10-05T07:10:39Z",
+        "sha256": "bb822e92dde37e6e686752599f3fe9e8b7006769c01fb2693c5c2303112709a4",
+        "source": "ossf-package-analysis",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021374",
+        "import_time": "2026-10-11T14:18:00.33032129Z",
+        "modified_time": "2026-10-11T13:49:39Z",
+        "sha256": "44e296902c4b40fc0d6e6c2e431aa5e2a6e60002ddb1c6cb7619d3c4da5854f3",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
       }
     ]
   },
@@ -100,6 +129,14 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OpenSSF: Package Analysis",
+      "contact": [
+        "https://github.com/ossf/package-analysis",
+        "https://openssf.slack.com/channels/package_analysis"
       ],
       "type": "FINDER"
     },

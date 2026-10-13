@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17712",
+  "published": "2026-10-09T02:53:23Z",
+  "modified": "2026-10-12T04:50:43.495332958Z",
+  "summary": "Malicious code in ig-gox (PyPI)",
+  "details": "Importing ig_gox runs ig_gox/__init__.py, which decodes a blob (base64, XOR, zlib) after a few anti-debugging checks and execs it as __main__. The decoded loader only goes on if it looks like a physical Android device running Termux (it turns away x86, emulators and VMs), installs requests and cryptography if they are missing, downloads encrypted code from https://goxtools.shop/api/admin/storage.php, decrypts it with AES-256-CBC and runs it in memory. The README only calls it a runtime engine for Termux. I decoded the loader statically and did not see what the downloaded code does. I read 1.0.0 and did not run it.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9b31f8ba5b2167be45b02cd3bbf840873adf76369e3ac472f1cccfc4a0579fff)\nThe pypi package ig-gox ships a top-level ig_gox/__init__.py that, on import (the README's documented usage), base64-decodes a ~5 KB embedded blob, XOR-decrypts it with a hardcoded key, zlib-decompresses it, HMAC-verifies it, then exec/compiles the resulting Python under __name__='__main__'. The visible wrapper has no other functionality; all actual behavior of the package is contained in that concealed blob. Before decoding, the module performs anti-analysis checks: it calls sys.exit(0) if sys.gettrace() returns a tracer, if the process environment/cwd/argv contain substrings such as 'uncompyle', 'pycdc', 'decompyle', 'deobfuscate', 'hook', or 'frida', and it tampers with references to builtins.exec/eval/compile. The combination of a hidden exec-of-decoded-payload reached automatically on import and explicit evasions against debuggers and decompilers is deliberate concealment of code execution from the installer and from reviewers.\n\n## Source: kam193 (780638a0747103eb44a85312a2cfb552981e498655f638c5baf86eb4a5f74042)\nPackage hides obfuscated code aimed to avoid analysis and downloading the remote stage. The remote code is used to abuse Instagram service for mass fake account registration.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-10-ig-gox\n\n\nReasons (based on the campaign):\n\n\n - The package contains code to detect if it is running in a sandbox environment.\n\n\n - obfuscation\n\n\n - Downloads and executes a remote malicious script.\n\n\n - abusing-3rd-api\n",
+  "affected": [
+    {
+      "package": {
+        "name": "ig-gox",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ig_gox/__init__.py",
+              "sha256": "ba63e096bf53afc4bfe19863d767f2afda3f280b484614926ed54bfa4fc5bc5a",
+              "tlsh": "26029d000d8b18ac772854ed1206d96ce642d6cff0572a58bd9e2492afe1439d0a6ebf"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "ig_gox-1.0.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "7c1c65aded3ec369d1885c71531f9036d854a4cc868bc2a349f1e0b5469cb8a8",
+                "md5": "1db069868ae2beaed5135de236f62fcb",
+                "sha256": "60c9d54df93424745b88a586d2ee7e0e6bb4eb537c247e4cc60cfd435d67053a"
+              }
+            },
+            {
+              "filename": "ig_gox-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "34ab4a8fc7060909dc964e3c5858f7b4ec7faad0c9b0948fcc9ac4801cc15b87",
+                "md5": "69929f48eb26864f5f9ef4a1cc8ebabb",
+                "sha256": "abbc60f89180a06b6a1a25d8dbf53b41c74eded9a1a78cd1b7933c0e71044146"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/ig-gox"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/ig-gox/1.0.0/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "goxtools.shop"
+      ],
+      "urls": [
+        "https://goxtools.shop/api/admin/storage.php"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "pypi/2026-10-ig-gox/ig-gox",
+        "import_time": "2026-10-09T09:47:28.468553955Z",
+        "modified_time": "2026-10-09T09:21:11.264724Z",
+        "sha256": "780638a0747103eb44a85312a2cfb552981e498655f638c5baf86eb4a5f74042",
+        "source": "kam193",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021430",
+        "import_time": "2026-10-11T14:18:04.946361312Z",
+        "modified_time": "2026-10-11T13:58:22Z",
+        "sha256": "9b31f8ba5b2167be45b02cd3bbf840873adf76369e3ac472f1cccfc4a0579fff",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
