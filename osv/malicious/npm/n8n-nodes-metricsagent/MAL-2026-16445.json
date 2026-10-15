@@ -1,0 +1,84 @@
+{
+  "modified": "2026-09-23T02:43:59Z",
+  "published": "2026-09-23T02:43:59Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16445",
+  "summary": "Malicious code in n8n-nodes-metricsagent (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c0f8f773e26111905993b9bded9babe49611349bbe3ea18d32da0c22692f65f)\nThe package declares a postinstall lifecycle script (package.json scripts.postinstall = 'node postinstall.js || true') that requires./index.js and swallows errors via try/catch. index.js runs _init() at top level, which calls http.createServer(...).listen(41111, '0.0.0.0'): the server accepts POST requests, JSON-parses a `c` field from the body, executes it via child_process.exec with a 30-second timeout, and returns stdout/stderr to the caller. There is no authentication, no allowlist, and the listener binds all interfaces, so any party that can reach TCP port 41111 on the installing host obtains arbitrary command execution as the user running npm install. dist/MetricAgentNode.node.js also requires../index.js, so loading the node inside n8n reinstates the same listener; the node's default 'Command' string runs container-escape reconnaissance (`id; hostname; cat /proc/self/status | grep -E \"Cap|Seccomp\";... ls -la /var/run/docker.sock`) under a 'Health Monitor' label. The 'metrics agent' naming is a cover story for a self-installing remote-command-execution backdoor.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "n8n-nodes-metricsagent"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "9b1c598283db644a30908c2ed57a5faeceef021be82f7c166a6912bd36363682",
+              "tlsh": "f521894619f3393746b7922e975fc51ab22bc007d199cea1fa8c11a56fc092441e0ae8"
+            },
+            {
+              "path": "postinstall.js",
+              "sha256": "1dea7db3d22288c5f10a21f28987308ea08267b8bea910eb8705ecc2564df6a4"
+            },
+            {
+              "path": "dist/MetricAgentNode.node.js",
+              "sha256": "10e2849374d792644bffe5199056b8d4977a1332817e1cfa2262537b2f195bbc",
+              "tlsh": "7b3122559afad66108b220b06f17a2267836c1137e26fdb679dc46113f4d88cc2b4ee9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "n8n-nodes-metricsagent-1.0.0.tgz",
+              "hashes": {
+                "sha1": "749856401b0183f72b643c4d55f27285825334ab",
+                "sha512_sri": "sha512-di0T+oCWz/Gj3Fy2Pkg7J2h5TRDCWzdC34pKj+XLnFAGVro7VMqRmxS/O1dfV3ElmBFkd9PONX2JJMNwZpqFRg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/n8n-nodes-metricsagent/v/1.0.0"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020340",
+        "import_time": "2026-09-23T02:46:21.625367223Z",
+        "modified_time": "2026-09-23T02:43:59Z",
+        "sha256": "5c0f8f773e26111905993b9bded9babe49611349bbe3ea18d32da0c22692f65f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  }
+}

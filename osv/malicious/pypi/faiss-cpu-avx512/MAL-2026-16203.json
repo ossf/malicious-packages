@@ -1,0 +1,64 @@
+{
+  "modified": "2026-09-14T00:00:00Z",
+  "published": "2026-09-14T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16203",
+  "summary": "Malicious code in faiss-cpu-avx512 (PyPI)",
+  "details": "faiss-cpu-avx512@1.9.0 through 1.9.7 on PyPI impersonates faiss-cpu and ships no FAISS code: faiss_cpu_avx512/__init__.py _fetch_native() downloads an xz-compressed binary from https://files.catbox.moe/ (ffoa50.xz in 1.9.0 to 1.9.3, 0oreqo.xz in 1.9.4, vwfr94.xz in 1.9.5, 3l3x0v.xz in 1.9.6, weu5u2.xz in 1.9.7), writes it to ~/.cache/faiss_cpu_avx512/bin/indexwrm with mode 0755 and runs it through subprocess.Popen(start_new_session=True), restarting it every 5 seconds for the life of the process. It triggers on a call to warmup() or start(); nothing runs on install or import, and the ARTIFACT_SHA256 constant is the string PENDING_BUILD so the advertised checksum check never executes. 1.9.0 to 1.9.3 reach the download only on hosts whose nvidia-smi reports compute capability 9 or 10; 1.9.4 onward download on every host and start one worker per GPU, and the code comments describe the binary as carrying a baked-in pool, wallet and relay and renaming its process to a vllm serve command line. We read all eight wheels between 2026-09-11 and 2026-09-14 and did not retrieve or run the binary.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "faiss-cpu-avx512"
+      },
+      "versions": [
+        "1.9.0",
+        "1.9.1",
+        "1.9.2",
+        "1.9.3",
+        "1.9.4",
+        "1.9.5",
+        "1.9.6",
+        "1.9.7"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "WEB",
+      "url": "https://pkgwarden.com/incidents/faiss-cpu-avx512-pypi-september-2026/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "pkgwarden",
+      "type": "FINDER",
+      "contact": [
+        "https://pkgwarden.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "6d0f6a6d7aeba0cb59a6ea53847c0c1328a3cb538632433ad85936350a9fc42e"
+          },
+          "note": "_fetch_native() downloads and decompresses the binary; _supervise_one() (1.9.4 to 1.9.7) or _supervise() (1.9.0 to 1.9.3) runs it with Popen and restarts it every 5 seconds",
+          "paths": [
+            "faiss_cpu_avx512/__init__.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://files.catbox.moe/ffoa50.xz",
+        "https://files.catbox.moe/0oreqo.xz",
+        "https://files.catbox.moe/vwfr94.xz",
+        "https://files.catbox.moe/3l3x0v.xz",
+        "https://files.catbox.moe/weu5u2.xz"
+      ]
+    }
+  }
+}

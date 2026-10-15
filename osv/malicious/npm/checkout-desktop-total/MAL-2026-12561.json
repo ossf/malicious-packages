@@ -1,21 +1,26 @@
 {
-  "modified": "2026-08-05T14:13:12Z",
-  "published": "2026-08-05T14:13:12Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-12561",
+  "published": "2026-08-05T13:20:15Z",
+  "modified": "2026-08-17T05:22:39.091009059Z",
   "summary": "Malicious code in checkout-desktop-total (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4b44040d21c83b93de2969a5a19e4180519e6bf99acc1d39476087a31379cc0b)\nOn require of index.js, _platform.js runs a setup() routine that unconditionally downloads a platform-specific binary from Cloudflare Workers hosts (oob-worker.cf102-baf.workers.dev, oob-worker.cf99-9b3.workers.dev, oob-worker.cf100-416.workers.dev) with a DNS-TXT fallback channel under *.dl.wel1.ru (c.\u003cdomain\u003e returns a chunk count, N.\u003cdomain\u003e returns base64 chunks that are concatenated and decoded). Host literals are split into arrays and joined at runtime to evade grep-based scanning. The downloaded bytes are written to a disguised path — '.cache_\u003crand\u003e' under /tmp on Unix, 'dotnet_diag_\u003crand\u003e.exe' under %TEMP% on Windows — chmodded 0755, and spawned detached via /bin/sh -c or cmd.exe /c start /b with windowsHide:true. An on-disk marker '.analytics_state' is written. The package name and its deceptive filenames impersonate benign tooling; there is no legitimate reason for a 'checkout-desktop-total' library entry to fetch and execute an opaque binary from a Cloudflare Workers host on import.\n",
+  "details": "The package executes a hidden loader when it is imported. The loader downloads and runs a platform-specific native payload from attacker-controlled Cloudflare Workers hosts, or reconstructs the payload from DNS TXT records under `wel1.ru` if HTTPS delivery fails. Systems that imported this package should be considered compromised; rotate accessible secrets and investigate temporary-file execution and DNS activity to the listed infrastructure.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (4b44040d21c83b93de2969a5a19e4180519e6bf99acc1d39476087a31379cc0b)\nOn require of index.js, _platform.js runs a setup() routine that unconditionally downloads a platform-specific binary from Cloudflare Workers hosts (oob-worker.cf102-baf.workers.dev, oob-worker.cf99-9b3.workers.dev, oob-worker.cf100-416.workers.dev) with a DNS-TXT fallback channel under *.dl.wel1.ru (c.<domain> returns a chunk count, N.<domain> returns base64 chunks that are concatenated and decoded). Host literals are split into arrays and joined at runtime to evade grep-based scanning. The downloaded bytes are written to a disguised path — '.cache_<rand>' under /tmp on Unix, 'dotnet_diag_<rand>.exe' under %TEMP% on Windows — chmodded 0755, and spawned detached via /bin/sh -c or cmd.exe /c start /b with windowsHide:true. An on-disk marker '.analytics_state' is written. The package name and its deceptive filenames impersonate benign tooling; there is no legitimate reason for a 'checkout-desktop-total' library entry to fetch and execute an opaque binary from a Cloudflare Workers host on import.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "checkout-desktop-total"
+        "name": "checkout-desktop-total",
+        "ecosystem": "npm"
       },
       "versions": [
         "35.6.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -49,16 +54,18 @@
       "url": "https://www.npmjs.com/package/checkout-desktop-total/v/35.6.1"
     }
   ],
-  "credits": [
-    {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
-    }
-  ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "oob-worker.cf100-416.workers.dev",
+        "oob-worker.cf102-baf.workers.dev",
+        "oob-worker.cf99-9b3.workers.dev",
+        "sdk.dl.wel1.ru",
+        "ext.dl.wel1.ru",
+        "pkg.dl.wel1.ru",
+        "net.dl.wel1.ru"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-015213",
@@ -71,5 +78,18 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "skb1209",
+      "type": "FINDER"
+    }
+  ]
 }

@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17389",
+  "published": "2026-10-09T17:50:23Z",
+  "modified": "2026-10-09T18:25:24.442167434Z",
+  "summary": "Malicious code in bungoma (npm)",
+  "details": "This package is part of a large family (100+ identified as of September 2026) of near-identical\nforks of the Baileys WhatsApp Web library that inject a covert channel-subscription action into\nthe WhatsApp socket layer. On connect, the injected code issues an authenticated `w:mex` FOLLOW\nquery (query_id 7871414976211147) against one or more attacker-chosen WhatsApp Channel/Newsletter\nJIDs, using the installer's own authenticated WhatsApp session -- silently subscribing the\nvictim's account to channels it never asked to join.\n\nThe target JID(s) are hidden from casual source review via one of several obfuscation techniques\nobserved across the family: a plain string literal, base64 encoding, base64+XOR, or a char-code\narray reconstructed at runtime. Some variants instead fetch a mutable, attacker-controlled remote\nJSON/JS list of target JIDs from GitHub or another host at runtime, letting the target list change\nafter installation without a new npm publish. Every sample in the family shares the same underlying\nmechanism (a wrapped/patched socket-connect routine that fires the FOLLOW query some seconds after\nconnect), even though the package name, JID value(s), and obfuscation/delivery method differ per\nfork.\n\nThe malicious action abuses the installer's own authenticated WhatsApp session to gain reach and\nsubscribers for attacker-controlled channels; it does not exfiltrate credentials, establish\npersistence, or execute arbitrary remote code.\n\nAffected package: bungoma (npm), version(s): 1.1.0, 1.0.1.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c67fa681909df2317f4cee0a0e79ece5108d5cd6b50c2511c34372a87d208ed4)\nThe package presents as a drop-in Baileys fork. Inside makeWASocket(), a setTimeout runs ~90 seconds after init, decodes a base64-obfuscated URL (https://main.bwmxmd.co.ke/xmd.json), fetches a JSON list of WhatsApp JIDs, and issues 'follow newsletter' mex queries against each JID using the installer's authenticated WhatsApp session. The destination is not a plain literal — it is reconstructed from Buffer.from(<base64>,'base64').toString() to hide it from static inspection. The list of followed accounts is author-controlled and can be rotated at any time without a package update. No user opt-in, no documentation of this behavior. There is no credential exfiltration, no RCE, no filesystem persistence — the covert action is limited to reach/subscriber padding for author-chosen targets using the installer's identity.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "bungoma",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.1.0",
+        "1.0.1",
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Socket/newsletter.js",
+              "sha256": "cf12176532ada9539e43806ff361e644d9763b4632ab2845dea50a3a67884a53",
+              "tlsh": "2412d1a599f6966007a77468962f70e1b225f1433d29ac52ff8cd0120f4e19cedb27c9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "bungoma-1.0.0.tgz",
+              "hashes": {
+                "sha1": "6c579d2121f0d3599e165c38e654091db230887b",
+                "sha512_sri": "sha512-Qg+Efo1HUYsjE3vNF4gUp2tnA7OQu047cYRFy1NecGna7pWXrVoVGT2/UZ7ndygxOBHB7AtqVA+pxJTkgkc4ug=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/bungoma/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021344",
+        "import_time": "2026-10-09T18:23:32.809280801Z",
+        "modified_time": "2026-10-09T17:50:23Z",
+        "sha256": "c67fa681909df2317f4cee0a0e79ece5108d5cd6b50c2511c34372a87d208ed4",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "OX Security",
+      "type": "FINDER"
+    }
+  ]
+}

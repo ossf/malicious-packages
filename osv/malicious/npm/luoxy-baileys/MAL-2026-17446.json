@@ -1,0 +1,167 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17446",
+  "published": "2026-10-11T16:54:06Z",
+  "modified": "2026-10-11T17:17:46.750950024Z",
+  "summary": "Malicious code in luoxy-baileys (npm)",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\n`package/lib/Defaults/index.js` lines 78-80 ship the defaults `autoFollowNewsletterOnConnect: true`, `autoFollowNewsletterDelayMs: 90000` and `autoFollowNewsletterJid: \"120363400911374213@newsletter\"`. `package/lib/Socket/newsletter.js` lines 12-30 additionally fetch `https://raw.githubusercontent.com/iyedahruss/all-public-db/refs/heads/main/newsletter.json` at runtime and add every `@newsletter` id in it to the follow list, so the targets can change without a new npm release. `package/lib/Socket/index.js` line 11 calls `triggerAutoFollow` (`newsletter.js` line 484) on every socket; 90 seconds after the connection opens, `runAutoFollow` (line 108) sends a raw `w:mex` IQ with `query_id: QueryIds.FOLLOW` (line 139) for each target, retrying up to three times. On 2026-10-01 the remote list contained `120363418964199743@newsletter`, `120363410316899314@newsletter`, `120363429190136593@newsletter` and `120363429068662026@newsletter` (under the key `saurus`). The README lists \"Auto-follow\" only as a feature in a comparison table; it does not say that the library follows the publisher's channels by default.\n\nLine numbers refer to version 7.1.3; the same code is present in every published version listed under `affected`.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 7.1.1: `37550f81f18467c3378bd7c402813841f2696372fba50a03a22fff0e21115984`; 7.1.2: `139dddeb58e8a04b9c6f4def85f759768b27de217cde6b577b262b5fe297fed3`; 7.1.3: `6adfeb716809fa59638b6476fca8cc6ef8c8a0fdb7fc9a54390d403879bb111e`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (04ce355b05eb705838b671992fa04458058a3f6c098b03acc077e7abd63dee3b)\nluoxy-baileys is a fork of the Baileys WhatsApp library. Its default export makeWASocket unconditionally invokes triggerAutoFollow, which — 90 seconds after a successful WhatsApp connection — issues FOLLOW iq stanzas from the installer's connected WhatsApp account. The targets are a hardcoded newsletter JID (120363400911374213@newsletter) plus a mutable list of JIDs fetched at runtime from https://raw.githubusercontent.com/iyedahruss/all-public-db/refs/heads/main/newsletter.json. The behavior is enabled by default (DEFAULT_CONNECTION_CONFIG.autoFollowNewsletterOnConnect: true) and is not documented; an opt-out exists via autoFollowNewsletterOnConnect:false. Because the followed-JID list is fetched at runtime from an author-controlled GitHub raw URL, the set of channels the installer's account subscribes to can be changed by the author after install. No installer credentials, filesystem data, or environment variables are read; no remote code is fetched or executed; no persistence or backdoor is installed. The static match on lib/Utils/generics.js referencing ping/GET is a standard HTTP GET performing the newsletter.json fetch, not exfiltration. The ping static hit relates to a generic keepalive/utility, not command execution against the installer.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "luoxy-baileys",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "7.1.1",
+        "7.1.2",
+        "7.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Utils/generics.js",
+              "sha256": "0352bd10650bb8c8b7f5f6b5d6275a1cf52568fa5dbf568610bb54180157db82",
+              "tlsh": "3a52c6516df3513906b3f1ea6b5fe01ab335a4233a49cd94bd2c83204f814a8d6e77d9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "luoxy-baileys-7.1.2.tgz",
+              "hashes": {
+                "sha1": "210819228626792065a0dc6dddacb0b30d6183e9",
+                "sha512_sri": "sha512-AXLkrb2Cdj5wjNYOCZAB/AnVMymiHx+t9W/AOMXFLUsvAO+iqguF5u8V8RHdJAv8nGx51o/pOZ/SfNdRsU1NWw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/luoxy-baileys"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/luoxy-baileys/v/7.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/luoxy-baileys/v/7.1.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/luoxy-baileys/v/7.1.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "14a87657ed1373e366200c5c467f95eeb692df5978c6712fffb15f20916c3f9e"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Defaults/index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "5d8971285cbc5ce1b14e2166ab46e5563479f2a9cc627f0c6b48285f6b08c2fb"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://raw.githubusercontent.com/iyedahruss/all-public-db/refs/heads/main/newsletter.json"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021453",
+        "import_time": "2026-10-11T17:15:51.963662937Z",
+        "modified_time": "2026-10-11T16:54:14Z",
+        "sha256": "04ce355b05eb705838b671992fa04458058a3f6c098b03acc077e7abd63dee3b",
+        "source": "amazon-inspector",
+        "versions": [
+          "7.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021452",
+        "import_time": "2026-10-11T17:15:51.905080409Z",
+        "modified_time": "2026-10-11T16:54:06Z",
+        "sha256": "1a7563a4ea5fb51bd670d4c38192b1774d9c5c3912c154fd58f215d1bbfec24d",
+        "source": "amazon-inspector",
+        "versions": [
+          "7.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021455",
+        "import_time": "2026-10-11T17:15:52.17216637Z",
+        "modified_time": "2026-10-11T16:54:30Z",
+        "sha256": "74a48f6e743086151a6bcae265a3216eb89e3f863a3963053fdd3a17e401e16f",
+        "source": "amazon-inspector",
+        "versions": [
+          "7.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Rising Sun Solutions LLC",
+      "contact": [
+        "https://github.com/jaym2026"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
