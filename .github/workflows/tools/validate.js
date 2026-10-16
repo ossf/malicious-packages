@@ -15,6 +15,7 @@
 
 "use strict";
 
+const core = require('@actions/core');
 const fs = require("node:fs");
 const Ajv2020 = require("ajv/dist/2020").default;
 const draft6MetaSchema = require("ajv/dist/refs/json-schema-draft-06.json");
@@ -24,11 +25,6 @@ const { default: betterAjvErrors } = require("better-ajv-errors");
 const OUTPUT_FORMAT_JS = "js";
 const PARSE_ERROR_TITLE = "JSON Parse Error";
 const SCHEMA_ERROR_TITLE = "JSON Schema Validation Error";
-
-function log(msg) {
-  process.stdout.write(msg);
-  process.stdout.write("\n");
-}
 
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -55,15 +51,6 @@ function createValidator() {
   return ajv;
 }
 
-// GitHub Actions workflow commands truncate anything after a literal newline,
-// so percent-encode %, \r, and \n in the message payload.
-function escapeWorkflowMessage(message) {
-  return message
-    .replace(/%/g, "%25")
-    .replace(/\r/g, "%0D")
-    .replace(/\n/g, "%0A");
-}
-
 function validateFile(dataPath, schema, validate) {
   // Keep the raw JSON string so better-ajv-errors can parse the original AST
   // and report exact line, column, and byte offset locations from dataPath.
@@ -75,16 +62,23 @@ function validateFile(dataPath, schema, validate) {
   } catch (err) {
     // Output a helpful GitHub error if the message cannot be parsed.
     const posMatch = err.message.match(/(?:at )?position (\d+)/);
-    const msg = escapeWorkflowMessage(err.message);
     if (err instanceof SyntaxError && posMatch) {
       const pos = parseInt(posMatch[1], 10);
       // Split all text prior to the error location by line breaks.
       const textUpToError = rawData.substring(0, pos);
       const lines = textUpToError.split("\n");
       const col = lines[lines.length - 1].length + 1;
-      log(`::error file=${dataPath},line=${lines.length},col=${col},title=${PARSE_ERROR_TITLE}::${msg}`);
+      core.error(err.message, {
+        title: PARSE_ERROR_TITLE,
+        file: dataPath,
+        startLine: lines.length,
+        startColumn: col,
+      })
     } else {
-      log(`::error file=${dataPath},title=${PARSE_ERROR_TITLE}::${msg}`);
+      core.error(err.message, {
+        title: PARSE_ERROR_TITLE,
+        file: dataPath,
+      })
     }
     return false;
   }
@@ -103,7 +97,10 @@ function validateFile(dataPath, schema, validate) {
 
   // Ensure that at least one error is output if validation failed.
   if (errors.length === 0) {
-    log(`::error file=${dataPath},title=${SCHEMA_ERROR_TITLE}::invalid json`);
+    core.error("invalid json", {
+      title: SCHEMA_ERROR_TITLE,
+      file: dataPath,
+    });
     return false;
   }
 
@@ -114,12 +111,17 @@ function validateFile(dataPath, schema, validate) {
       ? `${baseMessage}. ${error.suggestion.trim()}`
       : baseMessage;
     const start = error.start
-      ? `,line=${error.start.line},col=${error.start.column}`
-      : "";
+      ? { startLine: error.start.line, startColumn: error.start.column }
+      : {};
     const end = error.end
-      ? `,endLine=${error.end.line},endColumn=${error.end.column}`
-      : "";
-    log(`::error file=${dataPath}${start}${end},title=${SCHEMA_ERROR_TITLE}::${escapeWorkflowMessage(message)}`);
+      ? { endLine: error.end.line, endColumn: error.end.column }
+      : {};
+    core.error(message, {
+      title: SCHEMA_ERROR_TITLE,
+      file: dataPath,
+      ...start,
+      ...end
+    });
   });
 
   return false;
@@ -138,7 +140,7 @@ function main() {
   );
 
   if (!results.every(Boolean)) {
-    process.exit(1);
+    core.setFailed()
   }
 }
 
