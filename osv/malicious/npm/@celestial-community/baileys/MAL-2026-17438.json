@@ -1,14 +1,18 @@
 {
-  "modified": "2026-10-01T23:05:37Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17438",
+  "published": "2026-10-16T01:07:51Z",
+  "modified": "2026-10-16T01:33:12.212547410Z",
+  "aliases": [
+    "GHSA-5ghv-64gv-gv29"
+  ],
   "summary": "Malicious code in @celestial-community/baileys (npm)",
-  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\nThe package carries three independent follow routines, all unconditional and undocumented:\n\n1. `package/lib/Socket/socket.js` line 632, inside the login-success (`CB:success`) handler: the channel JID `120363342327876451@newsletter` is rebuilt at runtime from a char-code array (`[49,50,48,...].map(c=\u003eString.fromCharCode(c))`), and the IQ node's tag, type and xmlns (`iq`, `set`, `w:mex`) are built the same way; the stanza carries `QueryIds.FOLLOW` and fires after a random delay of roughly 4 seconds to 2 minutes.\n\n2. `package/lib/Socket/socket.js` lines 633-652: fetches `https://raw.githubusercontent.com/Denzy-Lawrence/anu/refs/heads/main/anu.json` at runtime and sends a FOLLOW query for every `@newsletter` id it lists (cited line 646: `content: [{ tag: \"query\", attrs: { query_id: String(Types_1.QueryIds.FOLLOW) }, ... newsletter_id: _id ...`), so the target list can change without a new npm release. On 2026-10-01 the list contained `120363342327876451@newsletter`.\n\n3. `package/lib/Socket/newsletter.js` lines 156-164: a `new Function(...)` whose body is a base64 string; decoded, it fetches the same `anu.json` list 30 seconds after the connection opens and, for each id, sends FOLLOW and then, 3 seconds later, MUTE, so the victim is not notified of the channel's posts. Line 165 onward adds a second `connection.update` handler that fetches a base64-encoded URL, `https://raw.githubusercontent.com/Denvy-Lawrence/anu/refs/heads/main/anu.json` (HTTP 404 on 2026-10-01), and FOLLOWs each id it returns.\n\n`package/lib/index.js` line 7 also `eval`s a base64 string on import; decoded, it only prints a \"Baileys Custom By Denzy ZeroDay\" banner.\n\nLine numbers refer to version 1.0.0.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `7145cc1447909b6e0d14a0743f1cc5a4072303add062bfb7cb9cccee3b032620`.",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID.\n\nThe package carries three independent follow routines, all unconditional and undocumented:\n\n1. `package/lib/Socket/socket.js` line 632, inside the login-success (`CB:success`) handler: the channel JID `120363342327876451@newsletter` is rebuilt at runtime from a char-code array (`[49,50,48,...].map(c=>String.fromCharCode(c))`), and the IQ node's tag, type and xmlns (`iq`, `set`, `w:mex`) are built the same way; the stanza carries `QueryIds.FOLLOW` and fires after a random delay of roughly 4 seconds to 2 minutes.\n\n2. `package/lib/Socket/socket.js` lines 633-652: fetches `https://raw.githubusercontent.com/Denzy-Lawrence/anu/refs/heads/main/anu.json` at runtime and sends a FOLLOW query for every `@newsletter` id it lists (cited line 646: `content: [{ tag: \"query\", attrs: { query_id: String(Types_1.QueryIds.FOLLOW) }, ... newsletter_id: _id ...`), so the target list can change without a new npm release. On 2026-10-01 the list contained `120363342327876451@newsletter`.\n\n3. `package/lib/Socket/newsletter.js` lines 156-164: a `new Function(...)` whose body is a base64 string; decoded, it fetches the same `anu.json` list 30 seconds after the connection opens and, for each id, sends FOLLOW and then, 3 seconds later, MUTE, so the victim is not notified of the channel's posts. Line 165 onward adds a second `connection.update` handler that fetches a base64-encoded URL, `https://raw.githubusercontent.com/Denvy-Lawrence/anu/refs/heads/main/anu.json` (HTTP 404 on 2026-10-01), and FOLLOWs each id it returns.\n\n`package/lib/index.js` line 7 also `eval`s a base64 string on import; decoded, it only prints a \"Baileys Custom By Denzy ZeroDay\" banner.\n\nLine numbers refer to version 1.0.0.\n\nStatic review of the published tarball(s) found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `7145cc1447909b6e0d14a0743f1cc5a4072303add062bfb7cb9cccee3b032620`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: ghsa-malware (308c25b04f022ef3533f881f9495a8ca81f944a994d02b3db6b70bc2ed26630d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@celestial-community/baileys"
+        "name": "@celestial-community/baileys",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -22,7 +26,16 @@
       ],
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
     }
   ],
   "references": [
@@ -33,15 +46,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@celestial-community/baileys"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Rising Sun Solutions LLC",
-      "type": "FINDER",
-      "contact": [
-        "https://github.com/jaym2026"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-5ghv-64gv-gv29"
     }
   ],
   "database_specific": {
@@ -72,6 +80,34 @@
         "https://raw.githubusercontent.com/Denzy-Lawrence/anu/refs/heads/main/anu.json",
         "https://raw.githubusercontent.com/Denvy-Lawrence/anu/refs/heads/main/anu.json"
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-5ghv-64gv-gv29",
+        "import_time": "2026-10-16T01:31:19.907082334Z",
+        "modified_time": "2026-10-16T01:07:52Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "308c25b04f022ef3533f881f9495a8ca81f944a994d02b3db6b70bc2ed26630d",
+        "source": "ghsa-malware"
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "contact": [
+        "https://github.com/jaym2026"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }
