@@ -1,27 +1,68 @@
 {
-  "modified": "2026-10-12T09:59:21Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17866",
+  "published": "2026-10-16T15:57:23Z",
+  "modified": "2026-10-16T16:21:25.579116980Z",
   "summary": "Malicious code in pyyi (PyPI)",
-  "details": "The verified PyPI wheel declares a console command named python2 (pyyi.cli:main). For commands other than the local REPL, help, version, unlock, or uninstall paths, it obtains configuration and calls run_payload(). Registration sends the hostname and OS to a configured space-z.ai server and stores the returned apiKey in ~/.python2/config.json. The REPL presents a normal Python banner but silently sends eligible single-token inputs to /api/cli/unlock as the password field, subject to filtering and attempt limits. run_payload() fetches code from /api/cli/payload, base64-decodes and gzip-decompresses it, then executes it in memory using exec(compile(src, '\u003cadv\u003e', 'exec'), g) at pyyi/cli.py:640 and calls its main function. Loader failures are disguised as Python's can't open file error. The malicious assessment is based on the combination of interpreter impersonation, concealed input transmission, remote code execution, and deliberate failure concealment, rather than encoding or exec alone. Static review and isolated, network-disabled mock tests confirmed the input-to-request and response-to-execution data flows using synthetic canaries and payloads. No live endpoint was contacted, and the actual server-supplied payload and its subsequent behavior remain unknown. Wheel SHA-256: 003828175a747a9a3de8029e6a028ad2c3739abf1dad7b468b25636e391e91f4.",
+  "details": "The verified PyPI wheel declares a console command named python2 (pyyi.cli:main). For commands other than the local REPL, help, version, unlock, or uninstall paths, it obtains configuration and calls run_payload(). Registration sends the hostname and OS to a configured space-z.ai server and stores the returned apiKey in ~/.python2/config.json. The REPL presents a normal Python banner but silently sends eligible single-token inputs to /api/cli/unlock as the password field, subject to filtering and attempt limits. run_payload() fetches code from /api/cli/payload, base64-decodes and gzip-decompresses it, then executes it in memory using exec(compile(src, '<adv>', 'exec'), g) at pyyi/cli.py:640 and calls its main function. Loader failures are disguised as Python's can't open file error. The malicious assessment is based on the combination of interpreter impersonation, concealed input transmission, remote code execution, and deliberate failure concealment, rather than encoding or exec alone. Static review and isolated, network-disabled mock tests confirmed the input-to-request and response-to-execution data flows using synthetic canaries and payloads. No live endpoint was contacted, and the actual server-supplied payload and its subsequent behavior remain unknown. Wheel SHA-256: 003828175a747a9a3de8029e6a028ad2c3739abf1dad7b468b25636e391e91f4.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7ac60870a568a1e1336d1d1696b9129a0f8bc13da7395fc24ed23ec4e8bf791e)\nThe package registers a console_scripts entry named `python2` and presents a convincing fake 'Python <version> on <platform>' REPL banner so the shell is indistinguishable from the real CPython 2 interpreter. On first invocation it POSTs the machine hostname and OS/platform to a hardcoded server at https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai (and https://b196q82k8891-d.space-z.ai) under /api/cli/init to enroll the host and receive an apiKey stored in ~/.python2/state.json. The CLI then fetches a payload from /api/cli/payload on the same server, base64-decodes and gzip-decompresses the response, and runs it with exec(compile(src, '<adv>', 'exec'), g) followed by g['main'](argv) — arbitrary Python chosen by whoever controls the server runs on the installer's host, with no pinning, hash, or signature. The fake REPL puts the TTY in cbreak/no-echo mode via _quiet_read so typed characters are not displayed; any single-token line is forwarded to /api/cli/unlock as a `password` field alongside the apiKey, and is additionally persisted XOR-scrambled under ~/.python2/. In-source comments describe the Python interpreter facade as deliberate cover ('that is the whole cover', 'the boring cover for every failure'), and the README states the package 'intentionally contains no working commands' — all behavior is server-delivered. Attacker-controlled destinations: preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai, b196q82k8891-d.space-z.ai.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "pyyi"
+        "name": "pyyi",
+        "ecosystem": "PyPI"
       },
       "versions": [
-        "2.4.1"
-      ]
+        "2.4.1",
+        "2.4.2",
+        "2.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyyi/cli.py",
+              "sha256": "e14690c4732c299897958337c1330b3bf8cd75b6c329ad093a6c68c155f66ab5",
+              "tlsh": "c4b2d6239e055437c783c56d4c9bd281f32abc5326096438beddc2983f9953681bebd9"
+            },
+            {
+              "path": "pyyi-2.4.2.dist-info/entry_points.txt",
+              "sha256": "5822a9732e210360670b95de5c8b01bb8c6c40d66b781d7be1b4a679a0ba9ac8"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pyyi-2.4.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "3d71fd5974df97a8e42c99d004aef168b69066be8e08f61c7e86d8b71a45f826",
+                "md5": "6738ab195bc9c4e5df9e40c2d3c092f9",
+                "sha256": "6248e67aa2d1755c9844f299f71948904eaa92fd4bfea324a4ef3ac938603fec"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
-  "credits": [
+  "references": [
     {
-      "name": "smiling-hyena",
-      "type": "FINDER",
-      "contact": [
-        "smilinghyena4@gmail.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.4.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.4/"
     }
   ],
   "database_specific": {
@@ -35,6 +76,44 @@
         "https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai/api/cli/unlock",
         "https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai/api/cli/payload"
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021509",
+        "import_time": "2026-10-16T16:19:24.528469088Z",
+        "modified_time": "2026-10-16T15:57:32Z",
+        "sha256": "7c36f3b8e69fc44eadb3a47bbb2b8a46d7beb8802aab88ca009b05d601d45fd0",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.4.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021508",
+        "import_time": "2026-10-16T16:19:24.323941235Z",
+        "modified_time": "2026-10-16T15:57:23Z",
+        "sha256": "7ac60870a568a1e1336d1d1696b9129a0f8bc13da7395fc24ed23ec4e8bf791e",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }
