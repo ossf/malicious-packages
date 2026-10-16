@@ -25,6 +25,11 @@ const OUTPUT_FORMAT_JS = "js";
 const PARSE_ERROR_TITLE = "JSON Parse Error";
 const SCHEMA_ERROR_TITLE = "JSON Schema Validation Error";
 
+function log(msg) {
+  process.stdout.write(msg);
+  process.stdout.write("\n");
+}
+
 function parseArgs(argv) {
   const args = argv.slice(2);
   if (args.length < 2) {
@@ -77,13 +82,9 @@ function validateFile(dataPath, schema, validate) {
       const textUpToError = rawData.substring(0, pos);
       const lines = textUpToError.split("\n");
       const col = lines[lines.length - 1].length + 1;
-      console.error(
-        `::error file=${dataPath},line=${lines.length},col=${col},title=${PARSE_ERROR_TITLE}::${msg}`
-      );
+      log(`::error file=${dataPath},line=${lines.length},col=${col},title=${PARSE_ERROR_TITLE}::${msg}`);
     } else {
-      console.error(
-        `::error file=${dataPath},title=${PARSE_ERROR_TITLE}::${msg}`
-      );
+      log(`::error file=${dataPath},title=${PARSE_ERROR_TITLE}::${msg}`);
     }
     return false;
   }
@@ -102,9 +103,7 @@ function validateFile(dataPath, schema, validate) {
 
   // Ensure that at least one error is output if validation failed.
   if (errors.length === 0) {
-    console.error(
-      `::error file=${dataPath},title=${SCHEMA_ERROR_TITLE}::invalid json`
-    );
+    log(`::error file=${dataPath},title=${SCHEMA_ERROR_TITLE}::invalid json`);
     return false;
   }
 
@@ -120,9 +119,7 @@ function validateFile(dataPath, schema, validate) {
     const end = error.end
       ? `,endLine=${error.end.line},endColumn=${error.end.column}`
       : "";
-    console.error(
-      `::error file=${dataPath}${start}${end},title=${SCHEMA_ERROR_TITLE}::${escapeWorkflowMessage(message)}`
-    );
+    log(`::error file=${dataPath}${start}${end},title=${SCHEMA_ERROR_TITLE}::${escapeWorkflowMessage(message)}`);
   });
 
   return false;
