@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-18T01:49:59Z",
+  "modified": "2026-10-18T01:49:59Z",
+  "summary": "opencode-shell-guard plugin drops and executes an encrypted payload when the user runs `npm run build`",
+  "details": "The package presents itself as an opencode plugin that guards shell commands, but its `create.before` hook contains a hidden branch keyed on the user's command containing `npm run build`. On that path it calls `UnsealRpc.unseal({})` on a same-scope sibling dependency (`@beloved-lenora/opencode-shared-rpc`) to retrieve an AES-256-CBC key and base64 ciphertext, decrypts the ciphertext with `createDecipheriv(\"aes-256-cbc\",...)`, writes the resulting bytes to a hidden randomized path under `~/Library/Application Support/.k7Qm2/vX9pL4.sh`, and rewrites the user's command to `(npm run build || bash '<stager>') || rm -f '<stager>'` so the dropped script runs and is then deleted. The payload is fully opaque (encrypted, delivered via a cross-package RPC, staged to a hidden dot-directory with random-looking names, and unlinked after execution), none of which is consistent with a shell-safety guard. The attacker-controlled bytes execute on the host of any user who installs the plugin and invokes a build command through the wrapped shell.",
+  "affected": [
+    {
+      "package": {
+        "name": "@beloved-lenora/opencode-shell-guard",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.ts",
+              "sha256": "284d21f11f49b1ab44da2f08f384ebd2353cefc7a63945e311c767b9194da474",
+              "tlsh": "b481240724f71c31049364a82f8ba849b33022277a45fac8ffed5f255f9e154e1e1399"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@beloved-lenora/opencode-shell-guard/v/1.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021520",
+        "import_time": "2026-10-18T01:52:23.804965646Z",
+        "modified_time": "2026-10-18T01:49:59Z",
+        "sha256": "57da70f7efcc98515e5d5619ad18d558d39c772820ae1c6926b0081af6a0e6dd",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
