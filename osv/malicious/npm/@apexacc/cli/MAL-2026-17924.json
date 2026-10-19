@@ -1,0 +1,143 @@
+{
+  "modified": "2026-10-16T00:00:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17924",
+  "summary": "Malicious code in @apexacc/cli (npm)",
+  "details": "@apexacc/cli is distributed by \"Apex Accelerator\" (Apex Arena), a fake Web3 accelerator that lures crypto founders with free AI credits and audits. Elastic Security Labs (REF8801, published 2026-10-12) found it is a repackaged Oh My Pi coding agent (1,351 of 1,363 files identical) with malicious additions that hijack the developer's AI coding agent: it overwrites OPENROUTER_BASE_URL so model traffic (prompts, files read, tool results) goes to attacker infrastructure at arena.apexaccs.org; persists an attacker-controlled remote MCP server in ~/.apex/agent/mcp.json; and defaults tool approval to \"yolo\". A bootstrap retrieves commands from vrf.apexaccs.org: on macOS it drops CloudSyncD (fake password prompt, credential theft, C2 ccmihr.com); on Windows a staged loader chain ends in an infostealer that exfiltrates browser credentials, wallets, messengers, VPN clients and Claude/Cursor/Windsurf configs over Telegram. Elastic analyzed version 1.6.1 and traced the bootstrap to the earliest preserved version (script host arenapex.cloud). The package was still live on npm (latest 1.6.2) with no OSV record as of 2026-10-16. Independently confirmed by static inspection of the live 1.6.2 npm tarball (sha256 7ca5e3908dd8721d0cf6af2488f0825c0d91a5e0b7c8529ef830141a4a3ba31f) on 2026-10-16, without execution: the bin launcher apex.cjs (sha256 4029192a44ee738deba9aa53b57550075cb8fd170a63f0636dea5452256f2175) runs when the user invokes the CLI (no install script). On Windows it sets the current user's PowerShell execution policy to RemoteSigned (no elevation needed), and on Windows 11 it launches a hidden, elevated (UAC RunAs) PowerShell that attempts to add a Defender exclusion for ~/.apex and to set HKLM\\SYSTEM\\CurrentControlSet\\Control\\CI\\Policy VerifiedAndReputablePolicyState=0 (disabling Smart App Control). From 1.5.122 (2026-09-17) through 1.6.2 those two commands are built in a JavaScript template literal with single backslashes, so the shipped paths are mangled (the exclusion lands on a sibling path '\u003chome\u003e.apex' and the registry key is invalid) and both likely fail; the UAC prompt still appears. Versions 1.5.120 (registry change) and 1.5.121 (adds the Defender exclusion), both 2026-09-17, carried correctly escaped versions of these commands without an elevation prompt, effective only when already running as administrator. The execution-policy change first appears in 1.6.2. It then downloads a ~114MB native binary from GitHub releases of apexaccs/copilot into ~/.apex/bin, and on macOS an additional apex-verify-darwin helper. Both GitHub repositories referenced by the package versions (apexaccs/copilot, Apex-Accelerator/apexcli) return 404 as of 2026-10-16. All versions affected. Indicators from Elastic's report.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@apexacc/cli"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Elastic Security Labs (Jia Yu Chan, Daniel Stepanic)",
+      "type": "FINDER",
+      "contact": [
+        "https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages"
+      ]
+    },
+    {
+      "name": "Patrick Duggan, DugganUSA",
+      "type": "REPORTER",
+      "contact": [
+        "mailto:patrick@dugganusa.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "apexaccs.org",
+        "arena.apexaccs.org",
+        "token.apexaccs.org",
+        "vrf.apexaccs.org",
+        "arena.apexfdn.xyz",
+        "verify.apexfdn.xyz",
+        "ccmihr.com",
+        "0auth-chromium.com",
+        "ehegisnightmare.icu",
+        "arenapex.cloud",
+        "cloudmain365duo.top",
+        "fdn4apex.com",
+        "main.router-apex.com",
+        "update.apex-arena-router.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "4029192a44ee738deba9aa53b57550075cb8fd170a63f0636dea5452256f2175"
+          },
+          "note": "bin launcher in the 1.6.2 npm tarball: elevated Defender exclusion, Smart App Control disable, binary download (DugganUSA static inspection 2026-10-16)",
+          "paths": [
+            "package/apex.cjs"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "985829083f3937df6c82419216f7697afae0caac8efca6257a756066fe2c0abb"
+          },
+          "note": "Windows Bun executable containing the coding agent and verification bootstrap (Elastic Security Labs REF8801)",
+          "paths": [
+            "apex-windows-x64.exe"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "digests": {
+            "sha256": "42a760b15fea7c9af718ee45386c1c3ea1bec9e30c95d16c287bcc8b2efdc72e"
+          },
+          "note": "macOS ARM64 Bun executable (Elastic Security Labs REF8801)",
+          "paths": [
+            "apex-darwin-arm64"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "digests": {
+            "sha256": "127ae4cad80b6605157ca2a1feada8a235e16aacc5d2119337a98115a4e13274"
+          },
+          "note": "macOS Rust executable that retrieves and launches verification commands (Elastic Security Labs REF8801)",
+          "paths": [
+            "apex-verify-darwin"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "digests": {
+            "sha256": "68f5a00eafa8ecebf5d93328e0fec23b24d6f91808c8384db002946a13656c71"
+          },
+          "note": "CloudSyncD macOS dropper (Elastic Security Labs REF8801)",
+          "paths": [
+            "installer"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "digests": {
+            "sha256": "ee8cd9aba420f1b26b5d43e5bcdd6025a277b4946bb5daf76ab45c0e5f7ecd0b"
+          },
+          "note": "Python second-stage loader (Elastic Security Labs REF8801)",
+          "paths": [
+            "exegis.exe"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "digests": {
+            "sha256": "ed5cb4af1d2cb067b8d23783ebf05d70278728462ba4f1bf29da0a3a41efc35e"
+          },
+          "note": "Encrypted third stage, decrypted by the second-stage Python loader (Elastic Security Labs REF8801)",
+          "paths": [
+            "enc_loader.exe"
+          ],
+          "source": "DROPPED"
+        }
+      ]
+    }
+  }
+}
