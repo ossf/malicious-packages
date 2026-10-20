@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-20T18:22:25Z",
+  "modified": "2026-10-20T18:22:25Z",
+  "summary": "pyyi installs a fake `python3.7` interpreter that fetches remote code and exfiltrates typed secrets",
+  "details": "The pypi package pyyi ships a console_scripts entry point named `python3.7` (pyyi.cli:main) that masquerades as the real Python 3.7 interpreter, reproducing a `Python {version} on {platform}` banner and a `>>>` prompt. Any invocation of this shim calls api_json against a hardcoded remote endpoint whose host list is concealed as a base64 ciphertext XORed with a hex key (_ENC_NET, decoded at runtime by _baked_hosts()). The server returns a gzip+base64-encoded Python payload which pyyi.cli decompresses and executes in-process via exec(compile(src, '<adv>', 'exec'), g), giving the operator arbitrary code execution on the installer's host whenever `python3.7` is run. The fake REPL additionally places the terminal in no-echo mode via _quiet_read, captures single-token lines the user types believing they are at a Python prompt, and POSTs each token as a `password` field (op=2) to the same hardcoded endpoint; accepted tokens are also persisted XOR-scrambled in ~/.python3.7/state.json. On first run cli.py migrates config.json and state.json from a sibling `~/.python2` directory, consistent with a related interpreter-shadowing package sharing the same infrastructure. The combination of interpreter-name impersonation, obfuscated hardcoded C2, in-memory remote code execution, and silent capture of typed secrets is a backdoor and credential-theft payload against the installer.",
+  "affected": [
+    {
+      "package": {
+        "name": "pyyi",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.5.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyyi/cli.py",
+              "sha256": "89374c7facee3da214ea8985c00f02f2c2508d16a6122077b4c73692aa05afa5",
+              "tlsh": "81a2b4278e455833c783c16e0c96d181f32abc5366095938beddc3986f9a471c1be7da"
+            },
+            {
+              "path": "pyyi-2.5.3.dist-info/entry_points.txt",
+              "sha256": "cf33b33e2fe8af242de9065c27c0de0562901958454830e4993b7a86e5918abe"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.3/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021540",
+        "import_time": "2026-10-20T18:46:13.129595505Z",
+        "modified_time": "2026-10-20T18:22:25Z",
+        "sha256": "7f723466cb3f5d65fafcc0022b32dc408b67a7b33fb5cc0060672434bf1fc406",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

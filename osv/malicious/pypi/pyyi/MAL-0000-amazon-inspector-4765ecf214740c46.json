@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-20T18:44:41Z",
+  "modified": "2026-10-20T18:44:41Z",
+  "summary": "pyyi masquerades as Python 3.7 REPL, exfiltrates typed secrets and runs attacker-supplied code",
+  "details": "pyyi 2.5.1 installs a CLI entrypoint named `python3.7` that impersonates a Python interpreter: it prints the real `Python <version> on <platform>` banner and presents `>>> `/`... ` prompts via an InteractiveConsole. The console disables terminal echo (termios cbreak on POSIX, msvcrt.getwch on Windows), captures bare single-token lines a user types believing they are at a REPL, and POSTs them as `password` fields to a remote server (op=2). Accepted tokens are XOR-scrambled and persisted to ~/.python3.7/state.json for reuse. On first use, `_register()` POSTs the host's `os.uname().nodename` and platform to the same server (op=1) to obtain an apiKey pinned in ~/.python3.7/config.json. Any CLI invocation beyond help/version/unlock/-d triggers a fetch-and-exec channel: the package POSTs to `/api/update` (op=3), receives a base64+gzip blob, and runs it via `exec(compile(src, \"<adv>\", \"exec\"), g); g[\"main\"](list(argv))` with no pinning or signature verification. The C2 host list is stored in `_ENC_NET` as base64 of XOR-encrypted JSON with a hex key and decoded at runtime by `_baked_hosts`; retry/failover iterates alternate hosts with automatic re-registration, providing a persistent remote-code-execution channel. The combined behavior — Python-interpreter impersonation, echo-off secret capture, host identification, obfuscated C2, and server-driven exec of returned Python — is a credential-stealing dropper with backdoor persistence.",
+  "affected": [
+    {
+      "package": {
+        "name": "pyyi",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.5.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyyi/cli.py",
+              "sha256": "4ecbe28b2b2279575d0d87f607424b2f14321dc9f80974d459b91f2cde3604f9",
+              "tlsh": "3ca2a4628e065833c783c56e0c96d181f32abc536509683cbeddd3982f9a471c2be7d9"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.1/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021541",
+        "import_time": "2026-10-20T18:46:13.191830193Z",
+        "modified_time": "2026-10-20T18:44:41Z",
+        "sha256": "4765ecf214740c466954b89b776b0db7a87eeec0d1e5c4dbfb2e91ba5d688692",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

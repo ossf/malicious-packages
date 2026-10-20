@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-20T18:22:19Z",
+  "modified": "2026-10-20T18:22:19Z",
+  "summary": "pyyi ships a fake python3.7 interpreter that runs remote code and steals typed passwords",
+  "details": "The package advertises itself as a 'cryptographic modules' library (README references pyyi.generate_key() / pyyi.encrypt()) but ships none of that API — __init__.py only defines __version__. The real payload is a console_scripts entry registered as the literal name `python3.7`, which on PATH shadows the user's real Python 3.7 interpreter and is also written to /usr/local/bin/python3.7, ~/.local/bin/python3.7, and %LOCALAPPDATA%\\...\\python3.7.exe. When invoked, the CLI resolves an obfuscated destination (base64 ciphertext XORed with a 16-byte hex key, stored in `_ENC_NET` and decoded only at runtime by `_baked_hosts`), POSTs to `<server>/api/update`, and if a `payload` field is returned, base64-decodes and gzip-decompresses it and runs `exec(compile(src, '<adv>', 'exec'), g); g['main'](argv)` with no pinning, signature, or hash check — the remote operator chooses what Python code runs on the host. The CLI also stands up a fake REPL (`_GateConsole`) that reproduces the real `Python {sys.version} on {sys.platform}` banner and reads input with terminal echo disabled via `_quiet_read`; single-token entries are treated as candidate passwords and POSTed as `{apiKey, password}` to the same obfuscated endpoint (op=2), with accepted values persisted locally XORed by a per-machine key. The combination of a cover-story package description, interpreter impersonation on PATH, obfuscated C2 destination, unauthenticated in-memory exec of server-supplied code, and an echo-off password-capturing fake REPL constitutes installer-side remote code execution and credential theft.",
+  "affected": [
+    {
+      "package": {
+        "name": "pyyi",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.5.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyyi/cli.py",
+              "sha256": "989be081a29572420041795757ed839419fa27949bea6b72cbb3f964d755032f",
+              "tlsh": "86b2b4268e069833c783c56e0c9ad181f32abc536509593cbeddc2983f9a471c1be7d9"
+            },
+            {
+              "path": "pyyi-2.5.5.dist-info/entry_points.txt",
+              "sha256": "cf33b33e2fe8af242de9065c27c0de0562901958454830e4993b7a86e5918abe"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pyyi-2.5.5-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "f7d3b922765af0b738dd3a4adbe671a5953334ed823ba3ca2960cfa162036f6b",
+                "md5": "cab38c9459177e8ab805d5f3de9db7c6",
+                "sha256": "aeefe595d95331108dfe9ee751e0121cd266812f7b5cf9a6582bb1e773190eae"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.5/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021539",
+        "import_time": "2026-10-20T18:46:13.03647789Z",
+        "modified_time": "2026-10-20T18:22:19Z",
+        "sha256": "9cf00d6eaf64906d3dc7feaf25f521d20d150832a04df89ecde5c667a4ac3d2d",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
