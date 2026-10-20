@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17866",
   "published": "2026-10-16T15:57:23Z",
-  "modified": "2026-10-16T16:21:25.579116980Z",
+  "modified": "2026-10-20T18:48:10.388699863Z",
   "summary": "Malicious code in pyyi (PyPI)",
-  "details": "The verified PyPI wheel declares a console command named python2 (pyyi.cli:main). For commands other than the local REPL, help, version, unlock, or uninstall paths, it obtains configuration and calls run_payload(). Registration sends the hostname and OS to a configured space-z.ai server and stores the returned apiKey in ~/.python2/config.json. The REPL presents a normal Python banner but silently sends eligible single-token inputs to /api/cli/unlock as the password field, subject to filtering and attempt limits. run_payload() fetches code from /api/cli/payload, base64-decodes and gzip-decompresses it, then executes it in memory using exec(compile(src, '<adv>', 'exec'), g) at pyyi/cli.py:640 and calls its main function. Loader failures are disguised as Python's can't open file error. The malicious assessment is based on the combination of interpreter impersonation, concealed input transmission, remote code execution, and deliberate failure concealment, rather than encoding or exec alone. Static review and isolated, network-disabled mock tests confirmed the input-to-request and response-to-execution data flows using synthetic canaries and payloads. No live endpoint was contacted, and the actual server-supplied payload and its subsequent behavior remain unknown. Wheel SHA-256: 003828175a747a9a3de8029e6a028ad2c3739abf1dad7b468b25636e391e91f4.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7ac60870a568a1e1336d1d1696b9129a0f8bc13da7395fc24ed23ec4e8bf791e)\nThe package registers a console_scripts entry named `python2` and presents a convincing fake 'Python <version> on <platform>' REPL banner so the shell is indistinguishable from the real CPython 2 interpreter. On first invocation it POSTs the machine hostname and OS/platform to a hardcoded server at https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai (and https://b196q82k8891-d.space-z.ai) under /api/cli/init to enroll the host and receive an apiKey stored in ~/.python2/state.json. The CLI then fetches a payload from /api/cli/payload on the same server, base64-decodes and gzip-decompresses the response, and runs it with exec(compile(src, '<adv>', 'exec'), g) followed by g['main'](argv) — arbitrary Python chosen by whoever controls the server runs on the installer's host, with no pinning, hash, or signature. The fake REPL puts the TTY in cbreak/no-echo mode via _quiet_read so typed characters are not displayed; any single-token line is forwarded to /api/cli/unlock as a `password` field alongside the apiKey, and is additionally persisted XOR-scrambled under ~/.python2/. In-source comments describe the Python interpreter facade as deliberate cover ('that is the whole cover', 'the boring cover for every failure'), and the README states the package 'intentionally contains no working commands' — all behavior is server-delivered. Attacker-controlled destinations: preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai, b196q82k8891-d.space-z.ai.\n",
+  "details": "The verified PyPI wheel declares a console command named python2 (pyyi.cli:main). For commands other than the local REPL, help, version, unlock, or uninstall paths, it obtains configuration and calls run_payload(). Registration sends the hostname and OS to a configured space-z.ai server and stores the returned apiKey in ~/.python2/config.json. The REPL presents a normal Python banner but silently sends eligible single-token inputs to /api/cli/unlock as the password field, subject to filtering and attempt limits. run_payload() fetches code from /api/cli/payload, base64-decodes and gzip-decompresses it, then executes it in memory using exec(compile(src, '<adv>', 'exec'), g) at pyyi/cli.py:640 and calls its main function. Loader failures are disguised as Python's can't open file error. The malicious assessment is based on the combination of interpreter impersonation, concealed input transmission, remote code execution, and deliberate failure concealment, rather than encoding or exec alone. Static review and isolated, network-disabled mock tests confirmed the input-to-request and response-to-execution data flows using synthetic canaries and payloads. No live endpoint was contacted, and the actual server-supplied payload and its subsequent behavior remain unknown. Wheel SHA-256: 003828175a747a9a3de8029e6a028ad2c3739abf1dad7b468b25636e391e91f4.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9cf00d6eaf64906d3dc7feaf25f521d20d150832a04df89ecde5c667a4ac3d2d)\nThe package advertises itself as a 'cryptographic modules' library (README references pyyi.generate_key() / pyyi.encrypt()) but ships none of that API — __init__.py only defines __version__. The real payload is a console_scripts entry registered as the literal name `python3.7`, which on PATH shadows the user's real Python 3.7 interpreter and is also written to /usr/local/bin/python3.7, ~/.local/bin/python3.7, and %LOCALAPPDATA%\\...\\python3.7.exe. When invoked, the CLI resolves an obfuscated destination (base64 ciphertext XORed with a 16-byte hex key, stored in `_ENC_NET` and decoded only at runtime by `_baked_hosts`), POSTs to `<server>/api/update`, and if a `payload` field is returned, base64-decodes and gzip-decompresses it and runs `exec(compile(src, '<adv>', 'exec'), g); g['main'](argv)` with no pinning, signature, or hash check — the remote operator chooses what Python code runs on the host. The CLI also stands up a fake REPL (`_GateConsole`) that reproduces the real `Python {sys.version} on {sys.platform}` banner and reads input with terminal echo disabled via `_quiet_read`; single-token entries are treated as candidate passwords and POSTed as `{apiKey, password}` to the same obfuscated endpoint (op=2), with accepted values persisted locally XORed by a per-machine key. The combination of a cover-story package description, interpreter impersonation on PATH, obfuscated C2 destination, unauthenticated in-memory exec of server-supplied code, and an echo-off password-capturing fake REPL constitutes installer-side remote code execution and credential theft.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,46 @@
       "versions": [
         "2.4.1",
         "2.4.2",
-        "2.4"
+        "2.4",
+        "2.5.5",
+        "2.5.2",
+        "2.5.0",
+        "2.5.1",
+        "2.5.4",
+        "2.5.3"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -63,6 +99,30 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/pyyi/2.4/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.5/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.4/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pyyi/2.5.3/"
     }
   ],
   "database_specific": {
@@ -96,6 +156,66 @@
         "source": "amazon-inspector",
         "versions": [
           "2.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021539",
+        "import_time": "2026-10-20T18:46:13.03647789Z",
+        "modified_time": "2026-10-20T18:22:19Z",
+        "sha256": "9cf00d6eaf64906d3dc7feaf25f521d20d150832a04df89ecde5c667a4ac3d2d",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021543",
+        "import_time": "2026-10-20T18:46:13.337143615Z",
+        "modified_time": "2026-10-20T18:44:55Z",
+        "sha256": "9f5a8173a4900be512c6a66fd0eb76e30d1bd55f60b9ed931107447070d9d6e0",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021545",
+        "import_time": "2026-10-20T18:46:13.471084573Z",
+        "modified_time": "2026-10-20T18:45:09Z",
+        "sha256": "c2b987db2bc9b14bd26856280ea2a0ef32b6d5f168cee211959dc9aadc7dcbbf",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021541",
+        "import_time": "2026-10-20T18:46:13.191830193Z",
+        "modified_time": "2026-10-20T18:44:41Z",
+        "sha256": "4765ecf214740c466954b89b776b0db7a87eeec0d1e5c4dbfb2e91ba5d688692",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021538",
+        "import_time": "2026-10-20T18:46:12.919153311Z",
+        "modified_time": "2026-10-20T18:22:10Z",
+        "sha256": "79b1360595b32736c76d9cb0ee954382456bf44a18af80dbe78d84884ba0e0cc",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021540",
+        "import_time": "2026-10-20T18:46:13.129595505Z",
+        "modified_time": "2026-10-20T18:22:25Z",
+        "sha256": "7f723466cb3f5d65fafcc0022b32dc408b67a7b33fb5cc0060672434bf1fc406",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.5.3"
         ]
       }
     ]
