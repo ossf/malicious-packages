@@ -1,0 +1,73 @@
+{
+  "modified": "2026-10-21T12:23:26Z",
+  "published": "2026-10-21T12:23:26Z",
+  "schema_version": "1.7.4",
+  "details": "litellm 1.107.0, uploaded to PyPI on 2026-10-21 between 11:39 and 11:40 UTC, contains a credential stealer and a remote code execution backdoor that are not in the upstream source (the v1.107.0 git tag of BerriAI/litellm does not contain them): they were injected at build or upload time. Every wheel ships three extra files under litellm-1.107.0.data/purelib/, which pip installs at the site-packages root, so the payload is triggered at every Python interpreter start, without importing litellm.\n\n- cook.pth contains `import cook`.\n- cook.py runs `exec(zlib.decompress(base64.b64decode(...)))`, an info stealer (self-named \"privcollect\") that collects browser passwords and history, SSH keys, shell history, AWS/GCP/Azure credentials and cloud instance metadata (169.254.169.254, 169.254.170.2), Kubernetes, Docker, Vault and CI secrets, AI developer tool configurations (~/.cursor, ~/.claude, ~/.kiro, Windsurf), GPG and TLS private keys, .npmrc, .pypirc, .git-credentials and environment variables, encrypts them with an embedded RSA-4096 key and POSTs them to http://www.litellm.dev/healthcheck. It leaves the marker /tmp/.pc_once_72129118c59f5636c0bb.\n- sitecustomize.py daemonizes at interpreter start and, every hour, fetches a domain list from https://raw.githubusercontent.com/letters9813/pythonclient-test/main/domain.txt, then downloads and executes code from http://<domain>/codepy (remote shell / dropper).\n\nThe same mechanism (a .pth file run at interpreter start) was used in litellm 1.82.7 and 1.82.8 (MAL-2026-2144). Releases 1.106.2 and 1.107.0rc1/rc2 are not affected. Any environment where 1.107.0 was installed should be treated as compromised and its credentials rotated.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "litellm"
+      },
+      "versions": [
+        "1.107.0"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://github.com/BerriAI/litellm/issues/47826"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/litellm/1.107.0/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Timothe Boulet",
+      "type": "REPORTER",
+      "contact": [
+        "https://github.com/tboulet"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "litellm.dev",
+        "www.litellm.dev"
+      ],
+      "urls": [
+        "http://www.litellm.dev/healthcheck",
+        "https://raw.githubusercontent.com/letters9813/pythonclient-test/main/domain.txt"
+      ],
+      "files": [
+        {
+          "paths": ["litellm-1.107.0.data/purelib/cook.pth"],
+          "note": "Runs `import cook` at every Python interpreter start",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {"sha256": "7f191632e7320705d154b85204f1ae546b543acbd7e8861229b76f5042b92bdb"}
+        },
+        {
+          "paths": ["litellm-1.107.0.data/purelib/cook.py"],
+          "note": "zlib+base64 encoded credential stealer (privcollect)",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {"sha256": "9dd0a3926f96a37eb86cf1ee2310d9be93139cc4ebef3ef9e2efe9531390be25"}
+        },
+        {
+          "paths": ["litellm-1.107.0.data/purelib/sitecustomize.py"],
+          "note": "Hourly remote code loader, plus a copy of the encoded stealer",
+          "source": "PACKAGE_ARCHIVE",
+          "digests": {"sha256": "34bef04fe88ac9d0aae0475630b1738681d15b94f233ac8aa46eacf5968305fa"}
+        },
+        {
+          "paths": ["/tmp/.pc_once_72129118c59f5636c0bb"],
+          "note": "Marker written by the stealer after its first run",
+          "source": "DROPPED"
+        }
+      ]
+    }
+  }
+}
