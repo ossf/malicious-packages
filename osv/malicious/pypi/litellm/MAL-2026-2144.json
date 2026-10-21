@@ -1,5 +1,5 @@
 {
-  "modified": "2026-03-26T09:53:17Z",
+  "modified": "2026-10-21T00:00:00Z",
   "published": "2026-03-24T11:15:14Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-2144",
@@ -7,7 +7,7 @@
     "PYSEC-2026-2"
   ],
   "summary": "Malicious code in litellm (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: google-open-source-security (6a89401cbf53902e8374fbf3b424a77bb5e5f8c437176232eab7c3237d10ecbe)\nLiteLLM was compromised through trivy security scan in a GitHub workflow.\nAttackers uploaded malicious versions of LiteLLM to PyPI. The malicious\ncode would exfiltrate sensitive secrets to an attcker controlled domain.\n\n## Source: ossf-package-analysis (c1d5a2e721c5f8b33b0530ddf98150cadf034a8cd16483e143fc2925b2cfa70c)\nThe OpenSSF Package Analysis project identified 'litellm' @ 1.82.8 (pypi) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "details": "litellm 1.107.0 was published to PyPI with an implant that is not in the upstream GitHub source. An injected `data = \"cook\"` line in the maturin build configuration makes every wheel install `cook.pth`, `cook.py` and `sitecustomize.py` into site-packages, so both payloads run on every Python interpreter start.\n\n`cook.pth` imports `cook.py`, a zlib and base64 obfuscated credential stealer. It collects SSH keys, cloud, Kubernetes and CI/CD credentials, AI tool tokens, browser passwords, environment variables, AWS instance metadata credentials, and the provider keys in the LiteLLM proxy database. It encrypts the data with AES-256 and RSA and sends it to `http://www.litellm.dev/healthcheck`.\n\n`sitecustomize.py` forks a detached daemon. Every hour it reads a domain from a GitHub file, runs the same stealer, downloads `http://<domain>/codepy` and runs it with `exec()`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: google-open-source-security (6a89401cbf53902e8374fbf3b424a77bb5e5f8c437176232eab7c3237d10ecbe)\nLiteLLM was compromised through trivy security scan in a GitHub workflow.\nAttackers uploaded malicious versions of LiteLLM to PyPI. The malicious\ncode would exfiltrate sensitive secrets to an attcker controlled domain.\n\n## Source: ossf-package-analysis (c1d5a2e721c5f8b33b0530ddf98150cadf034a8cd16483e143fc2925b2cfa70c)\nThe OpenSSF Package Analysis project identified 'litellm' @ 1.82.8 (pypi) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -16,8 +16,18 @@
       },
       "versions": [
         "1.82.7",
-        "1.82.8"
-      ]
+        "1.82.8",
+        "1.107.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
     }
   ],
   "references": [
@@ -40,6 +50,10 @@
     {
       "type": "ARTICLE",
       "url": "https://futuresearch.ai/blog/litellm-pypi-supply-chain-attack/"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://safedep.io/litellm-pypi-compromise-credential-stealer-backdoor/"
     }
   ],
   "credits": [
@@ -50,15 +64,101 @@
         "https://github.com/ossf/package-analysis",
         "https://openssf.slack.com/channels/package_analysis"
       ]
+    },
+    {
+      "name": "SafeDep",
+      "type": "FINDER",
+      "contact": [
+        "https://safedep.io"
+      ]
     }
   ],
   "database_specific": {
     "iocs": {
       "domains": [
-        "litellm.cloud"
+        "litellm.cloud",
+        "www.litellm.dev"
       ],
       "urls": [
-        "https://models.litellm.cloud/"
+        "https://models.litellm.cloud/",
+        "http://www.litellm.dev/healthcheck",
+        "https://raw.githubusercontent.com/letters9813/pythonclient-test/main/domain.txt"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/cook.pth"
+          ],
+          "note": "Imports cook at interpreter start. Linux and macOS wheels.",
+          "digests": {
+            "sha256": "7f191632e7320705d154b85204f1ae546b543acbd7e8861229b76f5042b92bdb"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/cook.pth"
+          ],
+          "note": "Imports cook at interpreter start. Windows wheels.",
+          "digests": {
+            "sha256": "84dc8c82c0a4a4a62552ef826b49fcc86d1a5c4a5d0f2c06665723f93d129d7d"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/cook.py"
+          ],
+          "note": "Obfuscated credential stealer. Linux and macOS wheels.",
+          "digests": {
+            "sha256": "9dd0a3926f96a37eb86cf1ee2310d9be93139cc4ebef3ef9e2efe9531390be25"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/cook.py"
+          ],
+          "note": "Obfuscated credential stealer. Windows wheels.",
+          "digests": {
+            "sha256": "03ac2a8b752605d1d7710979c17ff18b03dd978203ba23ba97fd8ce3d6f897ea"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/sitecustomize.py"
+          ],
+          "note": "Remote code loader daemon with embedded stealer. Linux and macOS wheels.",
+          "digests": {
+            "sha256": "34bef04fe88ac9d0aae0475630b1738681d15b94f233ac8aa46eacf5968305fa"
+          }
+        },
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "litellm-1.107.0.data/purelib/sitecustomize.py"
+          ],
+          "note": "Remote code loader daemon with embedded stealer. Windows wheels.",
+          "digests": {
+            "sha256": "b6122440d0d9cb1eb1ade9933f49214da8c31288de7710c076c2680dfa528465"
+          }
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "/tmp/.pc_once_72129118c59f5636c0bb"
+          ],
+          "note": "Marker written after the stealer uploads data."
+        },
+        {
+          "source": "DROPPED",
+          "paths": [
+            "/tmp/remote_code_loader.lock"
+          ],
+          "note": "Lock file of the backdoor daemon."
+        }
       ]
     },
     "malicious-packages-origins": [
