@@ -1,15 +1,15 @@
 {
-  "modified": "2026-10-21T18:00:00Z",
-  "published": "2026-10-21T18:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18181",
+  "published": "2026-10-21T18:00:00Z",
+  "modified": "2026-10-22T06:32:17.647041737Z",
   "summary": "Malicious code in test-brotli-testmetest (npm)",
-  "details": "test-brotli-testmetest 1.0.0 ships a rebuild of the data-pipeline-testmetest 2.0.1 credential stealer and runs it on `npm install`: its `install` script runs `node-gyp rebuild`, and the `binding.gyp` source `\u003c!(env node index.js \u003e/dev/null 2\u003e\u00261; echo stub.c)` makes node-gyp run `index.js`, an obfuscated loader that decrypts a Brotli-compressed payload and pipes it into Bun. Published by npm account `testnewtestme2` on 2026-10-21.",
+  "details": "test-brotli-testmetest 1.0.0 ships a rebuild of the data-pipeline-testmetest 2.0.1 credential stealer and runs it on `npm install`: its `install` script runs `node-gyp rebuild`, and the `binding.gyp` source `<!(env node index.js >/dev/null 2>&1; echo stub.c)` makes node-gyp run `index.js`, an obfuscated loader that decrypts a Brotli-compressed payload and pipes it into Bun. Published by npm account `testnewtestme2` on 2026-10-21.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d79f43824b57545810f0628c311b37ec5640a6c969053057d0158f46af613b33)\nThe package ships a binding.gyp whose sources field uses GYP command expansion `<!(env node index.js...; echo stub.c)` to shell out and run `node index.js` during node-gyp rebuild. The gyp target type is `none` and no C/C++ sources are shipped, so the file has no legitimate native-build purpose; its only effect is to invoke index.js at install time. index.js is a ~586KB char-code array decoded via a Caesar-shift substitution and passed to eval. The decoded body uses node:crypto createDecipheriv(\"aes-128-gcm\") with hardcoded hex key/IV/AAD to decrypt a large hex ciphertext, wrapped in a self-executing async IIFE with a swallowed catch. The combination of a build-config command-expansion execution vector, absence of any real native source, and a multi-layer obfuscated/encrypted opaque payload executed at install is the canonical install-time dropper shape — the installer runs attacker-supplied code on `npm install` with no visibility into what the decrypted payload does.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "test-brotli-testmetest"
+        "name": "test-brotli-testmetest",
+        "ecosystem": "npm"
       },
       "versions": [
         "1.0.0"
@@ -20,8 +20,36 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "9a876c0a21782b54495d13be1db41e55da1a386c01a3f8dcd15643c609056663",
+              "tlsh": "d3c08c3cb4380a453ad8082490e8840264b202a3081a2440e6da60286fb841f2449b9e"
+            },
+            {
+              "path": "index.js",
+              "sha256": "13762599a19f5b7133be0b6fda57c20857654c9a42df805eb0325a0c4f2c1a3a",
+              "tlsh": "32c408d3578c1beda6944cea520c3617a4f2c17b3c6e228dfae24617f43ee217925670"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "test-brotli-testmetest-1.0.0.tgz",
+              "hashes": {
+                "sha1": "e768c2ac5612164acdbae55e1c636b7b9392b5c8",
+                "sha512_sri": "sha512-U/nCnVhBrlknwyvYqoYKKRTP7DWFBmZ8QInGRflLI6gh+vglA7qOo05A5M/g+wvEzIIm6cQjHlNVP/+p/e2/MQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -29,16 +57,6 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/test-brotli-testmetest/v/1.0.0"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Robin Frehner, Protet",
-      "type": "FINDER",
-      "contact": [
-        "https://protet.io",
-        "mailto:hello@protet.io"
-      ]
     }
   ],
   "database_specific": {
@@ -72,6 +90,35 @@
           "source": "IN_MEMORY"
         }
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021571",
+        "import_time": "2026-10-22T06:30:24.123303019Z",
+        "modified_time": "2026-10-22T06:10:57Z",
+        "sha256": "d79f43824b57545810f0628c311b37ec5640a6c969053057d0158f46af613b33",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Robin Frehner, Protet",
+      "contact": [
+        "https://protet.io",
+        "mailto:hello@protet.io"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }

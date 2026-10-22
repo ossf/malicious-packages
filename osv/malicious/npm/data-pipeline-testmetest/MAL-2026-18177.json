@@ -1,15 +1,15 @@
 {
-  "modified": "2026-10-21T16:00:00Z",
-  "published": "2026-10-21T16:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18177",
+  "published": "2026-10-21T16:00:00Z",
+  "modified": "2026-10-22T06:32:14.195191889Z",
   "summary": "Malicious code in data-pipeline-testmetest (npm)",
-  "details": "data-pipeline-testmetest 2.0.1 is a self-spreading credential stealer that runs on `npm install` without an install script: its `binding.gyp` source `\u003c!(env node index.js \u003e/dev/null 2\u003e\u00261; echo stub.c)` makes node-gyp run `index.js`, an obfuscated loader that decrypts a 939 KB payload and pipes it into Bun (downloaded from GitHub if missing). The payload steals GitHub, npm, PyPI, RubyGems and cloud credentials, commits them to a public repository it creates in the victim's GitHub account (description `project-utils`), and republishes the victim's packages with the same hook. Published by npm account `testnewtestme2` on 2026-10-21.\n\nIf it finds a GitHub token it installs a `net-health-checker` user service that runs `rm -rf ~/` once the token is revoked. Remove `~/.local/bin/net-health-checker.sh` and its systemd unit or LaunchAgent before revoking the token, then rotate all reachable credentials.",
+  "details": "data-pipeline-testmetest 2.0.1 is a self-spreading credential stealer that runs on `npm install` without an install script: its `binding.gyp` source `<!(env node index.js >/dev/null 2>&1; echo stub.c)` makes node-gyp run `index.js`, an obfuscated loader that decrypts a 939 KB payload and pipes it into Bun (downloaded from GitHub if missing). The payload steals GitHub, npm, PyPI, RubyGems and cloud credentials, commits them to a public repository it creates in the victim's GitHub account (description `project-utils`), and republishes the victim's packages with the same hook. Published by npm account `testnewtestme2` on 2026-10-21.\n\nIf it finds a GitHub token it installs a `net-health-checker` user service that runs `rm -rf ~/` once the token is revoked. Remove `~/.local/bin/net-health-checker.sh` and its systemd unit or LaunchAgent before revoking the token, then rotate all reachable credentials.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8975c3fc55ad84db15b5c688966a64a3befb41447d1c6c1ad0acf50df93fe409)\nThe package ships a binding.gyp whose target type is `none` with no C/C++ sources, and whose `sources` field uses GYP command expansion `<!(env node index.js...; echo stub.c)` to invoke the package's own index.js during the implicit `node-gyp rebuild` that npm runs whenever a binding.gyp is present. This provides install-time code execution without declaring a lifecycle script. index.js is not readable source for the advertised 'test pipeline utilities' purpose: its top-level body is `eval(ROT13(charCodeArray))`, where the decoded code constructs an AES-128-GCM decipher with hardcoded hex key/IV/authTag and executes the resulting ~1.8MB plaintext. The package also declares `bun ^1.2.18` as a runtime dependency, pulling in the Bun runtime installer alongside the obfuscated loader. The combination of a binding.gyp whose only purpose is to run an embedded obfuscated loader, a multi-layer ROT13+AES-GCM-wrapped eval payload with no legible source, and an unrelated alternate-runtime dependency is a loader/dropper structure, not a utility library.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "data-pipeline-testmetest"
+        "name": "data-pipeline-testmetest",
+        "ecosystem": "npm"
       },
       "versions": [
         "2.0.1"
@@ -20,8 +20,41 @@
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "fda4df745212660faa56de9d1f20739402b418aab082401c38a4d3c1304123d3",
+              "tlsh": "e9c08c2cb838094539d91c3491a88402a4b242a3485a2d41fade60286fb841f288cb9d"
+            },
+            {
+              "path": "index.js",
+              "sha256": "da7dd0aba3db723f5e30ef7962a3e3f50a91944d533ae320bccb36d3419caf5b",
+              "tlsh": "fa565162eb8a0760d5c80cf6b399f61be490e99f38b173a8fbd25667fd25211c4257c0"
+            },
+            {
+              "path": "package.json",
+              "sha256": "91be20ca60b2a23f1b6cc54bf1e4b773d1399ee2de50d51f2bb461c09a447c2e",
+              "tlsh": "70c022309812d07310c902a02cb6400366524d2b0104bc18a3833818495d2b7b4ff30f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "data-pipeline-testmetest-2.0.1.tgz",
+              "hashes": {
+                "sha1": "3f27638f0400e6e4fcbb6c4656142d976d68a671",
+                "sha512_sri": "sha512-hUYVvLAMaS76quS0nWuZ478Q1Z22BcXwMIf6Qa6S/xS8cBnf432gQBlY1Vikkc5DPpeq00OMGKzUwVzPpA6IDQ=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -29,16 +62,6 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/data-pipeline-testmetest/v/2.0.1"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Robin Frehner, Protet",
-      "type": "FINDER",
-      "contact": [
-        "https://protet.io",
-        "mailto:hello@protet.io"
-      ]
     }
   ],
   "database_specific": {
@@ -82,6 +105,35 @@
           "source": "DROPPED"
         }
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021565",
+        "import_time": "2026-10-22T06:30:23.383601196Z",
+        "modified_time": "2026-10-22T06:10:06Z",
+        "sha256": "8975c3fc55ad84db15b5c688966a64a3befb41447d1c6c1ad0acf50df93fe409",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Robin Frehner, Protet",
+      "contact": [
+        "https://protet.io",
+        "mailto:hello@protet.io"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }
