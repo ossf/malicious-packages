@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-26T18:36:36Z",
+  "modified": "2026-10-26T18:36:36Z",
+  "summary": "ionic-insta-api-wrapper exfiltrates Instagram credentials and executes server-directed account actions",
+  "details": "ionic-insta-api-wrapper@1.2.2 is presented as a generic Instagram API client but silently routes caller-supplied Instagram credentials and sessions to a hardcoded author-controlled backend at reelsaver.appit-online.de, and uses the resulting authenticated session to perform remotely-chosen follow/like actions on the caller's Instagram account.\n\nSpecific behaviors in the shipped code:\n- getCookie()/getCookies posts the caller-supplied Instagram username and password together with the full Instagram login response (session cookies, user id) to https://reelsaver.appit-online.de/v2/insta/check in addition to Instagram itself, moving the credentials and session outside Instagram's trust boundary without disclosure.\n- LoginService.loginViaBackend sends the Instagram username, password, and 2FA code to https://reelsaver.appit-online.de/v2/insta/login as a fallback login path, so the author's server performs the login and retains the credentials and resulting session.\n- After login, verifyAccount fetches a user/post list from https://reelsaver.appit-online.de/v2/insta/verify and uses the installer's authenticated Instagram session to call friendships/create and media/like on each returned target, giving the author runtime control over actions performed from the installer's account.\n- fetchAPI issues an analytics GET to {analyticsBaseUrl}/v2/insta/{username}/{target}/{type} on every library call, leaking the installer's Instagram identity and the identifiers of profiles/stories/posts being queried to the same author host.\n\nThe destination host is hardcoded, not configurable to Instagram directly, and the credential relay, server-directed account actions, and per-call activity logging are not described in the library's advertised purpose. Installing applications therefore disclose end-user Instagram credentials, sessions, and account activity to the package author, and the author can direct follows and likes from any authenticated session.",
+  "affected": [
+    {
+      "package": {
+        "name": "ionic-insta-api-wrapper",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.2.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/lib/handler.js",
+              "sha256": "2569999371e8a0862105562de826d5baaed348187ab93ff0b9457bffa97ab1f6",
+              "tlsh": "07610ea574fa313a155125c24617140238a4a20331caeca8befd97365fc9c0fca796df"
+            },
+            {
+              "path": "lib/lib/login.service.js",
+              "sha256": "db94cce7644d4bf914f9720fe70128c0c4e0a43a46c50b5eba83aaabb3a5635b",
+              "tlsh": "d50201b547ef24117622d1dddf2b1020a139b80b3199c864baad73495fcd02886b3bf7"
+            },
+            {
+              "path": "lib/lib/client.service.js",
+              "sha256": "f550dfa6fe70bd82c8c10c5ee5ddb26df4b1f793bcae4c7d1ab01155b552d06a",
+              "tlsh": "0da2a76591ff282b0503a498df2b5424b224e50732d4ec68fafd47182f49658cab77fb"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/ionic-insta-api-wrapper/v/1.2.2"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021812",
+        "import_time": "2026-10-26T18:56:20.253454076Z",
+        "modified_time": "2026-10-26T18:36:36Z",
+        "sha256": "f5690c0264c0d5ebde1623336e358b4eb60fa2e9fa2f9d26e5ef81d93a40678c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
