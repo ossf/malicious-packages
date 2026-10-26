@@ -1,14 +1,15 @@
 {
-  "modified": "2026-10-16T00:00:00Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17924",
+  "published": "2026-10-26T05:25:19Z",
+  "modified": "2026-10-26T05:48:45.502311061Z",
   "summary": "Malicious code in @apexacc/cli (npm)",
-  "details": "@apexacc/cli is distributed by \"Apex Accelerator\" (Apex Arena), a fake Web3 accelerator that lures crypto founders with free AI credits and audits. Elastic Security Labs (REF8801, published 2026-10-12) found it is a repackaged Oh My Pi coding agent (1,351 of 1,363 files identical) with malicious additions that hijack the developer's AI coding agent: it overwrites OPENROUTER_BASE_URL so model traffic (prompts, files read, tool results) goes to attacker infrastructure at arena.apexaccs.org; persists an attacker-controlled remote MCP server in ~/.apex/agent/mcp.json; and defaults tool approval to \"yolo\". A bootstrap retrieves commands from vrf.apexaccs.org: on macOS it drops CloudSyncD (fake password prompt, credential theft, C2 ccmihr.com); on Windows a staged loader chain ends in an infostealer that exfiltrates browser credentials, wallets, messengers, VPN clients and Claude/Cursor/Windsurf configs over Telegram. Elastic analyzed version 1.6.1 and traced the bootstrap to the earliest preserved version (script host arenapex.cloud). The package was still live on npm (latest 1.6.2) with no OSV record as of 2026-10-16. Independently confirmed by static inspection of the live 1.6.2 npm tarball (sha256 7ca5e3908dd8721d0cf6af2488f0825c0d91a5e0b7c8529ef830141a4a3ba31f) on 2026-10-16, without execution: the bin launcher apex.cjs (sha256 4029192a44ee738deba9aa53b57550075cb8fd170a63f0636dea5452256f2175) runs when the user invokes the CLI (no install script). On Windows it sets the current user's PowerShell execution policy to RemoteSigned (no elevation needed), and on Windows 11 it launches a hidden, elevated (UAC RunAs) PowerShell that attempts to add a Defender exclusion for ~/.apex and to set HKLM\\SYSTEM\\CurrentControlSet\\Control\\CI\\Policy VerifiedAndReputablePolicyState=0 (disabling Smart App Control). From 1.5.122 (2026-09-17) through 1.6.2 those two commands are built in a JavaScript template literal with single backslashes, so the shipped paths are mangled (the exclusion lands on a sibling path '\u003chome\u003e.apex' and the registry key is invalid) and both likely fail; the UAC prompt still appears. Versions 1.5.120 (registry change) and 1.5.121 (adds the Defender exclusion), both 2026-09-17, carried correctly escaped versions of these commands without an elevation prompt, effective only when already running as administrator. The execution-policy change first appears in 1.6.2. It then downloads a ~114MB native binary from GitHub releases of apexaccs/copilot into ~/.apex/bin, and on macOS an additional apex-verify-darwin helper. Both GitHub repositories referenced by the package versions (apexaccs/copilot, Apex-Accelerator/apexcli) return 404 as of 2026-10-16. All versions affected. Indicators from Elastic's report.",
+  "details": "@apexacc/cli is distributed by \"Apex Accelerator\" (Apex Arena), a fake Web3 accelerator that lures crypto founders with free AI credits and audits. Elastic Security Labs (REF8801, published 2026-10-12) found it is a repackaged Oh My Pi coding agent (1,351 of 1,363 files identical) with malicious additions that hijack the developer's AI coding agent: it overwrites OPENROUTER_BASE_URL so model traffic (prompts, files read, tool results) goes to attacker infrastructure at arena.apexaccs.org; persists an attacker-controlled remote MCP server in ~/.apex/agent/mcp.json; and defaults tool approval to \"yolo\". A bootstrap retrieves commands from vrf.apexaccs.org: on macOS it drops CloudSyncD (fake password prompt, credential theft, C2 ccmihr.com); on Windows a staged loader chain ends in an infostealer that exfiltrates browser credentials, wallets, messengers, VPN clients and Claude/Cursor/Windsurf configs over Telegram. Elastic analyzed version 1.6.1 and traced the bootstrap to the earliest preserved version (script host arenapex.cloud). The package was still live on npm (latest 1.6.2) with no OSV record as of 2026-10-16. Independently confirmed by static inspection of the live 1.6.2 npm tarball (sha256 7ca5e3908dd8721d0cf6af2488f0825c0d91a5e0b7c8529ef830141a4a3ba31f) on 2026-10-16, without execution: the bin launcher apex.cjs (sha256 4029192a44ee738deba9aa53b57550075cb8fd170a63f0636dea5452256f2175) runs when the user invokes the CLI (no install script). On Windows it sets the current user's PowerShell execution policy to RemoteSigned (no elevation needed), and on Windows 11 it launches a hidden, elevated (UAC RunAs) PowerShell that attempts to add a Defender exclusion for ~/.apex and to set HKLM\\SYSTEM\\CurrentControlSet\\Control\\CI\\Policy VerifiedAndReputablePolicyState=0 (disabling Smart App Control). From 1.5.122 (2026-09-17) through 1.6.2 those two commands are built in a JavaScript template literal with single backslashes, so the shipped paths are mangled (the exclusion lands on a sibling path '<home>.apex' and the registry key is invalid) and both likely fail; the UAC prompt still appears. Versions 1.5.120 (registry change) and 1.5.121 (adds the Defender exclusion), both 2026-09-17, carried correctly escaped versions of these commands without an elevation prompt, effective only when already running as administrator. The execution-policy change first appears in 1.6.2. It then downloads a ~114MB native binary from GitHub releases of apexaccs/copilot into ~/.apex/bin, and on macOS an additional apex-verify-darwin helper. Both GitHub repositories referenced by the package versions (apexaccs/copilot, Apex-Accelerator/apexcli) return 404 as of 2026-10-16. All versions affected. Indicators from Elastic's report.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (c174007782646e1fdfd9806ecd699e427fd36661dd7137fa462672f41aee6e79)\nOn CLI startup (invoked via npx per the package README), apex.cjs unconditionally detects Windows 11 and launches a hidden, UAC-elevated PowerShell via Start-Process -Verb RunAs -WindowStyle Hidden with a UTF-16LE base64 -EncodedCommand payload. The elevated payload (a) calls Add-MpPreference -ExclusionPath on %USERPROFILE%\\.apex to whitelist the package directory in Windows Defender, and (b) writes HKLM\\SYSTEM\\CurrentControlSet\\Control\\CI\\Policy VerifiedAndReputablePolicyState=0 via reg add, disabling Smart App Control / Code Integrity enforcement machine-wide. The elevation path uses underscore-prefixed identifiers (_ps, _enc, _sp, _osv, _isWin11, _home), a hidden window, base64 command encoding, and a broad try/catch that silently swallows errors. After weakening the host, the CLI downloads a ~105MB apex-<platform>.exe (and an optional native.node addon) from the publisher's GitHub Releases with no hash or signature verification, chmods 0755, and executes it via spawnSync with inherited stdio and the full process.env. The security-policy downgrade is not consistent with any documented function of an AI CLI and converts an otherwise routine publisher-pinned binary fetch into execution of unverified code under a machine-wide-weakened Windows security posture.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@apexacc/cli"
+        "name": "@apexacc/cli",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -19,7 +20,55 @@
             }
           ]
         }
-      ]
+      ],
+      "versions": [
+        "1.5.121",
+        "1.6.0",
+        "1.6.2",
+        "1.5.122"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "apex.cjs",
+              "sha256": "6af132fdb24feb1efe781a90e4ee3229a98a7a0f9a152f700890622064f67bbc",
+              "tlsh": "cd8183c507f4a3644b916099d18f252bb96ba0237104d9c4bd2c9758fb936748337dfb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-1.5.121.tgz",
+              "hashes": {
+                "sha1": "c7ee06fd17b919926d785b8beef88e8677debb65",
+                "sha512_sri": "sha512-1tvCMWzOCxCx/bqHCEphYWCF56YhIGRtiOk15IBixMyvhOGfm1lSFm3TdPlhEwgLy+ez0WwdOXMGx5ej1U+NIw=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -30,22 +79,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@apexacc/cli"
-    }
-  ],
-  "credits": [
-    {
-      "name": "Elastic Security Labs (Jia Yu Chan, Daniel Stepanic)",
-      "type": "FINDER",
-      "contact": [
-        "https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages"
-      ]
     },
     {
-      "name": "Patrick Duggan, DugganUSA",
-      "type": "REPORTER",
-      "contact": [
-        "mailto:patrick@dugganusa.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli/v/1.5.121"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli/v/1.6.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli/v/1.6.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli/v/1.5.122"
     }
   ],
   "database_specific": {
@@ -138,6 +187,71 @@
           "source": "DROPPED"
         }
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021714",
+        "import_time": "2026-10-26T05:46:51.924994062Z",
+        "modified_time": "2026-10-26T05:25:44Z",
+        "sha256": "220b2bfd948cbd511add6ba3b2a2ea467defeb99a6855ed9ee0690891cedee5d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.5.121"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021711",
+        "import_time": "2026-10-26T05:46:51.792226934Z",
+        "modified_time": "2026-10-26T05:25:19Z",
+        "sha256": "3af6be5dcde1648332ab0eb8b252bb90e33bc2b39452e5b83042b0481bfed5ed",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.6.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021712",
+        "import_time": "2026-10-26T05:46:51.826689409Z",
+        "modified_time": "2026-10-26T05:25:29Z",
+        "sha256": "42f41fbd2bc4a7faba3977f190eb65c22f835f8a3b073be64d0d9c0c95a9c747",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.6.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021713",
+        "import_time": "2026-10-26T05:46:51.870027938Z",
+        "modified_time": "2026-10-26T05:25:36Z",
+        "sha256": "c174007782646e1fdfd9806ecd699e427fd36661dd7137fa462672f41aee6e79",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.5.122"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Elastic Security Labs (Jia Yu Chan, Daniel Stepanic)",
+      "contact": [
+        "https://www.elastic.co/security-labs/threat-command/apex-accelerator-malicious-npm-packages"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Patrick Duggan, DugganUSA",
+      "contact": [
+        "mailto:patrick@dugganusa.com"
+      ],
+      "type": "REPORTER"
     }
-  }
+  ]
 }
