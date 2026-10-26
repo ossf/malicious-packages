@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-26T06:30:45Z",
+  "modified": "2026-10-26T06:30:45Z",
+  "summary": "orderly-plugin-liquidity-heatmap postinstall performs GitHub Actions CI reconnaissance and OIDC probe",
+  "details": "Package advertises an Orderly orderbook liquidity-heatmap plugin, but the shipped main (`dist/index.js`) exports a no-op `registerLiquidityHeatmapPlugin` that returns an empty function. The only substantive code in the tarball is a postinstall script gated on `CI && GITHUB_WORKSPACE` that collects a targeting profile of the GitHub Actions runner: host/user, repo and workflow identity, enumerated `GITHUB_*` / `ACTIONS_*` / `RUNNER_*` environment variable names, `GITHUB_TOKEN` presence and length, `ACTIONS_ID_TOKEN_REQUEST_URL` and token presence, npm registry, egress reachability to github and npm, and installed tool versions. The script actively exercises the runner's OIDC minting capability by curling `${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api.github.com` with the runner's `ACTIONS_ID_TOKEN_REQUEST_TOKEN` as a bearer. The collected JSON snapshot is written to `heatmap-setup-report.json` in the repo workspace, appended in full to `GITHUB_STEP_SUMMARY`, and summarized through a `::notice::[liquidity-heatmap]...` log line, each of which is readable through the public GitHub workflow API — a side channel that externalizes the reconnaissance without a direct outbound POST. The stub implementation, mismatched README, CI-only gating, OIDC probe, and workflow-summary exfiltration together form a targeted dependency-confusion / CI reconnaissance payload against installers whose builds resolve this name.",
+  "affected": [
+    {
+      "package": {
+        "name": "orderly-plugin-liquidity-heatmap",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/setup.js",
+              "sha256": "ef6413b0617623a5302ec74a086de20b59bc60da939cc85a6a165630b7fbf474",
+              "tlsh": "e69142f907f9593007a326902e9fa142766bed573704fdf071bd81641f0ea24c2b3259"
+            },
+            {
+              "path": "dist/index.js",
+              "sha256": "f24472cd201156b32c8a473b5dd99fe9c5abb27710fefcc6f830aa7274e977e5",
+              "tlsh": "33a0222ebbebaba20302b208220f880ab02c0000822a8e00c02832a808c203cc282c8c"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/orderly-plugin-liquidity-heatmap/v/1.0.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021771",
+        "import_time": "2026-10-26T06:39:41.536805Z",
+        "modified_time": "2026-10-26T06:30:45Z",
+        "sha256": "59631d08454bde8e4948884dec8b7fe67df589cdcf36a8a521db13fbab81dfa2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

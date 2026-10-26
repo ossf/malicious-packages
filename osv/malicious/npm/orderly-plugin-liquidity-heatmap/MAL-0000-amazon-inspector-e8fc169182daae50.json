@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-26T06:30:27Z",
+  "modified": "2026-10-26T06:30:27Z",
+  "summary": "Postinstall abuses CI GITHUB_TOKEN to commit to installer repo, force-push tags, and probe OIDC",
+  "details": "On install, scripts/setup.js executes a postinstall routine that, when it detects GitHub Actions, uses the workflow's GITHUB_TOKEN to PUT a file (heatmap-setup-report.json) into the installer's own repository via api.github.com's Contents API and runs `git push -f origin <tag>` against the installer's repo using actions/checkout's persisted credentials. The script also enumerates CI identity (hostname, user, cwd, every environment variable whose key begins with GITHUB_/ACTIONS_/RUNNER_, GITHUB_TOKEN presence and length, OIDC request URL, npm registry, tool versions) and writes the resulting snapshot both into GITHUB_STEP_SUMMARY (visible to anyone with workflow-run read access) and into the committed JSON file (visible in git history). The script additionally reads ACTIONS_ID_TOKEN_REQUEST_TOKEN and ACTIONS_ID_TOKEN_REQUEST_URL and performs an authenticated curl against the OIDC token endpoint with audience=api.github.com, exercising the installer's OIDC-mint capability from an install-time hook. The README advertises the postinstall as 'pre-cache asset paths' for a UI plugin and the shipped main (dist/index.js) is a one-line no-op stub, so the lifecycle script is the entire payload and its real behavior contradicts the documented purpose.",
+  "affected": [
+    {
+      "package": {
+        "name": "orderly-plugin-liquidity-heatmap",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "scripts/setup.js",
+              "sha256": "6084592cd6948afb3b45bbeca20f9c9e5364961cf4bb522366d15ce6db2f33eb",
+              "tlsh": "15e195a94bbb193006b35640395fa052367bf94b3704edf076bd81691f4a928c3b369e"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/orderly-plugin-liquidity-heatmap/v/1.0.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021768",
+        "import_time": "2026-10-26T06:39:41.349869516Z",
+        "modified_time": "2026-10-26T06:30:27Z",
+        "sha256": "e8fc169182daae50f5503f261d95cf7c6e291e08fb4398cd2ecb7b11b2230165",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
