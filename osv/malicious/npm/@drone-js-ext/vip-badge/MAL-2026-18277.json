@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-18277",
-  "published": "2026-10-25T04:50:18Z",
-  "modified": "2026-10-26T16:33:55.127207228Z",
+  "published": "2026-10-25T04:47:18Z",
+  "modified": "2026-10-28T06:17:31.023773775Z",
   "aliases": [
     "GHSA-h7v8-65vw-r7wh"
   ],
   "summary": "Malicious code in @drone-js-ext/vip-badge (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (914f57c3481f23f4682ff7bdd7b9849865531023c6d547ed76d42e9da6bbd8dc)\n@drone-js-ext/vip-badge is a functionless stub whose only behavior is a phone-home beacon. The package.json postinstall script runs `node beacon.cjs`, and `index.js` fires the same beacon on `require()` while exporting a Proxy that returns no-ops for every property access. beacon.cjs collects the installer's hostname (`os.hostname()`), install path (`__dirname`), current working directory (`process.cwd()`), Node.js version, and package coordinate, then POSTs them as JSON to the hardcoded bare-IP endpoint http://185.158.107.175:8787/_ah/dc over plain HTTP. The destination is not the npm registry, not a publisher-owned domain, and is reached automatically at install time and on module load without any caller invocation. The scope name mimics a plausible internal/vendor namespace, and the shipped contents match the dependency-confusion beacon pattern — a stub published to prove install on target networks and disclose host identity to an uncontrolled third party.\n\n## Source: ghsa-malware (db67ee02c834274d865c0db6b49793d2c7785a0cab810bbb7a4256757712c75b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "@drone-js-ext/vip-badge is a dependency-confusion package: it squats the `@drone-js-ext` scope, which matches a private internal package scope, and was published on 2026-10-25 in versions 0.0.1, 1.0.1, 2.0.0, 99.0.1 (up to 99.0.1) so that builds resolving the internal name from the public registry install it instead. Its `postinstall` script runs `node beacon.cjs`, which sends an HTTP POST over cleartext HTTP to the hardcoded IP endpoint `http://185.158.107.175:8787/_ah/dc` with the package name, the machine's hostname, the install directory, the current working directory and the Node.js version, tagged with an `x-beacon-package` header. The entry point `index.js` sends the same request again whenever the package is loaded and otherwise exports a Proxy whose every property is a no-op function, so it has no legitimate functionality and hides the missing API from bundlers. The README calls it an \"authorized dependency-confusion test\"; that does not change what it does to an installer. The same beacon code and endpoint appear in other dependency-confusion packages from the same publisher. The inert `0.0.0-stage` and `0.1.0` placeholder versions carry no install script and are not affected. Any machine that installed an affected version has disclosed its hostname and filesystem layout to a third party; remove the package, pin or scope internal package names to the internal registry, and block 185.158.107.175 on build hosts.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (914f57c3481f23f4682ff7bdd7b9849865531023c6d547ed76d42e9da6bbd8dc)\n@drone-js-ext/vip-badge is a functionless stub whose only behavior is a phone-home beacon. The package.json postinstall script runs `node beacon.cjs`, and `index.js` fires the same beacon on `require()` while exporting a Proxy that returns no-ops for every property access. beacon.cjs collects the installer's hostname (`os.hostname()`), install path (`__dirname`), current working directory (`process.cwd()`), Node.js version, and package coordinate, then POSTs them as JSON to the hardcoded bare-IP endpoint http://185.158.107.175:8787/_ah/dc over plain HTTP. The destination is not the npm registry, not a publisher-owned domain, and is reached automatically at install time and on module load without any caller invocation. The scope name mimics a plausible internal/vendor namespace, and the shipped contents match the dependency-confusion beacon pattern — a stub published to prove install on target networks and disclose host identity to an uncontrolled third party.\n\n## Source: ghsa-malware (db67ee02c834274d865c0db6b49793d2c7785a0cab810bbb7a4256757712c75b)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -32,6 +32,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -289,6 +294,14 @@
       "contact": [
         "https://www.invisirisk.com",
         "mailto:research@invisirisk.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Robin Frehner, Protet",
+      "contact": [
+        "https://protet.io",
+        "mailto:hello@protet.io"
       ],
       "type": "FINDER"
     }
