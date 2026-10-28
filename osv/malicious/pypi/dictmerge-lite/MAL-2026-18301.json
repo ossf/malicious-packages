@@ -1,41 +1,90 @@
 {
-  "modified": "2026-10-26T00:00:52Z",
-  "published": "2026-10-26T00:00:52Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18301",
+  "published": "2026-10-26T00:00:52Z",
+  "modified": "2026-10-26T03:36:17.667120229Z",
   "summary": "Malicious code in dictmerge-lite (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (86ffa17e6ebc93b9c0509a6f6ec0f11a17bc79eec75d4fecf0f0b9520c3b93c5)\nDuring installation or import, the package executes infostealer code and exfiltrates cryptocurrency wallet, browsers' data, SSH keys and development credential files.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-10-dictmerge-lite\n\n\nReasons (based on the campaign):\n\n\n - infostealer\n\n\n - exfiltration-crypto\n\n\n - exfiltration-browser-data\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-credentials\n",
+  "details": "dictmerge-lite 1.0.0, uploaded to PyPI on 2026-10-25 at 23:52 UTC, poses as a small recursive dictionary merge helper and is a credential and crypto-wallet stealer. Importing the package runs the payload: `dictmerge_lite/__init__.py` imports `_telemetry` and starts `_telemetry.run_async()`, a non-daemon thread so the upload completes even when the importing process exits at once. `setup.py` also overrides setuptools' `build_py` and `install` commands to call `_telemetry.run()`, so builds from the source distribution can trigger it too. All errors are swallowed.\n\n`dictmerge_lite/_telemetry.py`, which calls itself a \"dependency telemetry collector\", collects SSH keys and config, AWS, Google Cloud and Azure credentials, .npmrc, .pypirc, .git-credentials, .gitconfig, .netrc, .pgpass, .my.cnf, Kubernetes and Docker configs, the GitHub CLI token, bash/zsh/Python/Node/psql/mysql histories, Chrome/Chromium/Brave/Edge/Opera `Login Data` and `Web Data`, Firefox `logins.json`/`key4.db`/`cert9.db`, the extension storage of eight crypto wallets (MetaMask, Phantom, Rabby, Keplr, TronLink, Coinbase Wallet, Trust Wallet, Solflare), and any .env, secrets.*, credentials.json, service-account*.json, *.pem, *.key, *.p12, *.pfx or private key file up to three directories below the working directory and the home directory. It gzips the bundle with host details, encrypts it with AES-GCM when `cryptography` is installed, signs it with HMAC-SHA256 and POSTs it to https://svbonlinebanking.com/v1/beacon with `x-dw-campaign`, `x-dw-ts`, `x-dw-sig` and `x-dw-enc` headers. It runs on Linux, macOS and Windows, writes a /tmp/.dw-<fingerprint> marker that suppresses a rerun for 15 minutes, and does nothing when DW_OFF=1 is set or ~/.dw_off exists.\n\nBitbison caught the release stealing credentials at 23:55:36 UTC, 3 minutes 20 seconds after publication: on import the payload read credential files and uploaded them to svbonlinebanking.com (209.99.190.173) within 0.45 seconds. Any environment that imported or built 1.0.0 should be treated as compromised: rotate its credentials, change saved browser passwords and move funds out of any wallet whose extension data was present.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (86ffa17e6ebc93b9c0509a6f6ec0f11a17bc79eec75d4fecf0f0b9520c3b93c5)\nDuring installation or import, the package executes infostealer code and exfiltrates cryptocurrency wallet, browsers' data, SSH keys and development credential files.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-10-dictmerge-lite\n\n\nReasons (based on the campaign):\n\n\n - infostealer\n\n\n - exfiltration-crypto\n\n\n - exfiltration-browser-data\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-ssh-keys\n\n\n - exfiltration-credentials\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "dictmerge-lite"
+        "name": "dictmerge-lite",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "1.0.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
     }
   ],
   "references": [
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/dictmerge-lite"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "REPORT",
+      "url": "https://registry.bitbison.io/pypi/dictmerge-lite#review"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dictmerge-lite/1.0.0/"
     }
   ],
   "database_specific": {
     "iocs": {
       "domains": [
         "svbonlinebanking.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "3d6e0a92f51d601e9b26135eafcc4512994cb658b5f87539ccfb0c6158ba42c3"
+          },
+          "note": "Credential, browser login and crypto-wallet stealer; uploads to svbonlinebanking.com",
+          "paths": [
+            "dictmerge_lite/_telemetry.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "76689ccdd6b9b6a739b62613e5d68b29b704ab12a57e54d2c97ab8329a119f59"
+          },
+          "note": "Starts the stealer in a background thread on import",
+          "paths": [
+            "dictmerge_lite/__init__.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "4b24f9a3277801c4e17f273faee90cf22fb092bcf0ac164a9c56a225f03c8b6f"
+          },
+          "note": "build_py and install overrides that run the stealer when built from the source distribution",
+          "paths": [
+            "setup.py"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "Marker written before collection; the suffix is a per-host fingerprint",
+          "paths": [
+            "/tmp/.dw-c00ffc8c67acc982"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "ips": [
+        "209.99.190.173"
       ],
       "urls": [
         "https://svbonlinebanking.com/v1/beacon"
@@ -53,5 +102,22 @@
         ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Bitbison",
+      "contact": [
+        "mailto:hello@bitbison.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
