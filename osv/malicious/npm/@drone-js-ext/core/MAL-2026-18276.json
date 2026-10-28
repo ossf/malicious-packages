@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-18276",
-  "published": "2026-10-25T04:52:18Z",
-  "modified": "2026-10-26T16:33:55.122857288Z",
+  "published": "2026-10-25T04:49:18Z",
+  "modified": "2026-10-28T06:17:31.019019951Z",
   "aliases": [
     "GHSA-938p-x8vr-2r33"
   ],
   "summary": "Malicious code in @drone-js-ext/core (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9173b1e0c1d01cafb58dfbcad8b59a50f49700cc911e22df2787f5a92b4c6e43)\nThe package ships a `beacon.cjs` that collects host identifiers (hostname, install path, current working directory, Node version) and POSTs them in cleartext to the hardcoded bare-IP endpoint http://185.158.107.175:8787/_ah/dc. This beacon is wired to run automatically in two places: `package.json` declares `scripts.postinstall = \"node beacon.cjs\"`, so it executes on `npm install`, and `index.js` also invokes the same `fire()` function at module load, so it executes again on `require()`. The remainder of the package is a no-op Proxy shim with no functional code matching the stated `Compatibility shim` description. The scope-and-version shape (`@drone-js-ext/core` at version 99.0.1 against a plausibly internal `@drone-js-ext/*` namespace) matches a dependency-confusion lure designed to be resolved in place of a private internal package. A README self-label of `dependency-confusion test` does not change the behavior: any installer that resolves this package has host-identifying data sent to a non-vendor, non-registry, bare-IP, plaintext-HTTP collector controlled by a third party.\n\n## Source: ghsa-malware (338c919fc73c66cb9bd18fa251359467039387724d1f8f41e6d3bb88f52ddc6f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "@drone-js-ext/core is a dependency-confusion package: it squats the `@drone-js-ext` scope, which matches a private internal package scope, and was published on 2026-10-25 in versions 1.0.0, 2.0.1, 3.0.0, 99.0.1 (up to 99.0.1) so that builds resolving the internal name from the public registry install it instead. Its `postinstall` script runs `node beacon.cjs`, which sends an HTTP POST over cleartext HTTP to the hardcoded IP endpoint `http://185.158.107.175:8787/_ah/dc` with the package name, the machine's hostname, the install directory, the current working directory and the Node.js version, tagged with an `x-beacon-package` header. The entry point `index.js` sends the same request again whenever the package is loaded and otherwise exports a Proxy whose every property is a no-op function, so it has no legitimate functionality and hides the missing API from bundlers. The README calls it an \"authorized dependency-confusion test\"; that does not change what it does to an installer. The same beacon code and endpoint appear in other dependency-confusion packages from the same publisher. The inert `0.0.0-stage` and `0.1.0` placeholder versions carry no install script and are not affected. Any machine that installed an affected version has disclosed its hostname and filesystem layout to a third party; remove the package, pin or scope internal package names to the internal registry, and block 185.158.107.175 on build hosts.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9173b1e0c1d01cafb58dfbcad8b59a50f49700cc911e22df2787f5a92b4c6e43)\nThe package ships a `beacon.cjs` that collects host identifiers (hostname, install path, current working directory, Node version) and POSTs them in cleartext to the hardcoded bare-IP endpoint http://185.158.107.175:8787/_ah/dc. This beacon is wired to run automatically in two places: `package.json` declares `scripts.postinstall = \"node beacon.cjs\"`, so it executes on `npm install`, and `index.js` also invokes the same `fire()` function at module load, so it executes again on `require()`. The remainder of the package is a no-op Proxy shim with no functional code matching the stated `Compatibility shim` description. The scope-and-version shape (`@drone-js-ext/core` at version 99.0.1 against a plausibly internal `@drone-js-ext/*` namespace) matches a dependency-confusion lure designed to be resolved in place of a private internal package. A README self-label of `dependency-confusion test` does not change the behavior: any installer that resolves this package has host-identifying data sent to a non-vendor, non-registry, bare-IP, plaintext-HTTP collector controlled by a third party.\n\n## Source: ghsa-malware (338c919fc73c66cb9bd18fa251359467039387724d1f8f41e6d3bb88f52ddc6f)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -32,6 +32,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -289,6 +294,14 @@
       "contact": [
         "https://www.invisirisk.com",
         "mailto:research@invisirisk.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Robin Frehner, Protet",
+      "contact": [
+        "https://protet.io",
+        "mailto:hello@protet.io"
       ],
       "type": "FINDER"
     }
