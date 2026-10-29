@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-29T13:38:32Z",
+  "modified": "2026-10-29T13:38:32Z",
+  "summary": "@testsecuiitytestme/cache-helper ships native-addon dropper that decrypts and executes opaque payload at install and on require",
+  "details": "The package advertises itself as a cache helper but ships no readable JavaScript logic — index.js and _setup.js are one-line stubs that unconditionally load a prebuilt N-API native addon from prebuilds/<platform>-<arch>/node.napi.node, and module.exports is empty. The addon is paired with a 2,397,565-byte sibling file named.napi_cache that contains no printable strings and is identical across linux-x64 and win32-x64 (sha256 c14dae93...4a57). Strings inside the native addon show it reads %s\\.napi_cache, writes a decoded %s.nc%lu.js to the OS temp directory (GetTempPathA), and spawns node on it (CreateProcessA, \"node \\\"%s\\\"\"). This decrypt-drop-and-exec chain runs both from the postinstall hook (node _setup.js) and from the main entrypoint, so every npm install and every require()/import of the package triggers execution of attacker-controlled code whose content cannot be inspected from the shipped source. The native addon additionally performs anti-analysis gating before executing the payload: enumeration of CI environment variables (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, APPVEYOR, NETLIFY, VERCEL, SANDBOX), checks for analysis tools (wireshark, procmon, procexp, x64dbg, ollydbg, fiddler, httpdebug), Windows debugger checks (IsDebuggerPresent, CheckRemoteDebuggerPresent), and Linux sandbox/container detection (/proc/self/status TracerPid, /proc/1/cgroup, dockerinit). The combination of an empty public API, an opaque 2.4 MB encrypted blob, a native loader that decrypts-writes-execs it to temp, and layered anti-analysis gating has no legitimate caching purpose and matches a classic alternate-execution dropper designed to bypass JavaScript-only scanners.",
+  "affected": [
+    {
+      "package": {
+        "name": "@testsecuiitytestme/cache-helper",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "_setup.js",
+              "sha256": "ae8a6eef42b40969dc869bf7be41b5d6fdfd3c1235a6dcfa2d13ec642a53e1cb",
+              "tlsh": "6db0926aa276844822a00688f0882f02eca2406019892a79a651499a2aa1a64452883f"
+            },
+            {
+              "path": "prebuilds/linux-x64/.napi_cache",
+              "sha256": "c14dae9325f451c524cf858ecdae5fa68d2c645ee0981c6f42ef913c7ef34a57",
+              "tlsh": "e8b56c0fca08931d3d2819ed2c8f18d570ccadd86469df52f9ac8967e2548b9314f6eb"
+            },
+            {
+              "path": "prebuilds/win32-x64/node.napi.node",
+              "sha256": "3278d1209c738dcbf629f5258f5661870d1d8eb7ee52de8ebdaa7e6c934017b4",
+              "tlsh": "ac945c94b381fdf6dc494b7418d25309a37af081a71eeb2b6624fe3c0a5ab98dc63544"
+            },
+            {
+              "path": "index.js",
+              "sha256": "c2a71f7ad76a5d3a4162a8c6bffdd076ebf162ba40de32648a11d0411d990517",
+              "tlsh": "f2b02b76d236804833a00184f0885f01ece1407008c4163493404dcd2950920001483f"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cache-helper-1.0.6.tgz",
+              "hashes": {
+                "sha1": "ee8f883e3635bbafbcfb2f1ac4d4fa4d3c1df1df",
+                "sha512_sri": "sha512-W2NB2NGhSJecLHb/+w9C5YQNq9kWgAybCgnDyUInMAdoEx82sp6GD6iUeem45swkNh3HUyZfrjPfaunaBZuIyQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022021",
+        "import_time": "2026-10-29T14:14:18.250461018Z",
+        "modified_time": "2026-10-29T13:38:32Z",
+        "sha256": "3ef188a3ae4eae567d3743116d10e586565a2856b53b94add9f84b239aea378e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

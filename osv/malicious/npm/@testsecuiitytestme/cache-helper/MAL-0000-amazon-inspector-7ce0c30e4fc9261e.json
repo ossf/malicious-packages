@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-29T13:38:39Z",
+  "modified": "2026-10-29T13:38:39Z",
+  "summary": "Postinstall native dropper decrypts and executes staged payload with CI/sandbox evasion",
+  "details": "The package ships only prebuilt native addons (`prebuilds/<platform>-<arch>/node.napi.node`) plus an opaque 2.4 MB sidecar `.napi_cache`, with no build system, no source, no README, and an empty `module.exports={}` main — the advertised 'Cache helper utilities' purpose has no implementation. `package.json` declares `postinstall: node _setup.js`, and both `_setup.js` and `index.js` load the platform-specific native addon. On Linux the addon reads `%s/.napi_cache`, writes it to `/tmp/.<pid>`, and executes it via `fork` + `setsid` + `execlp` (daemonization). On Windows it writes `%TEMP%\\<name>.nc<pid>.js`, sets hidden file attributes via `SetFileAttributesA`, and launches it via `CreateProcessA` as `node \"%s\"`. Before executing, the addon gates on anti-analysis checks: environment variables `GITHUB_ACTIONS`, `GITLAB_CI`, `CIRCLECI`, `JENKINS_URL`, `BUILDKITE`, `CODEBUILD_BUILD_ID`, `APPVEYOR`, `SEMAPHORE`, `TEAMCITY_VERSION`, `SANDBOX`; container markers `/proc/1/cgroup`, `kubepod`, `containerd`, `dockerinit`; debugger checks `TracerPid`, `/proc/self/maps`, `IsDebuggerPresent`, `CheckRemoteDebuggerPresent`; and Toolhelp32 process enumeration for `wireshark`/`httpdebug`. Installing the package on a developer workstation causes an opaque encrypted payload to be decoded and executed as a detached process on the installer's host.",
+  "affected": [
+    {
+      "package": {
+        "name": "@testsecuiitytestme/cache-helper",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "prebuilds/linux-x64/node.napi.node",
+              "sha256": "4869759830e75e74e34570be0d67e61fd990432a38352e461164f6671e0eb43f",
+              "tlsh": "af72854bd2a0dd3ec4d86231598b527252a2d070ef30172f0f54a6fb2d97358af7ae52"
+            },
+            {
+              "path": "prebuilds/win32-x64/node.napi.node",
+              "sha256": "85ba3587a0cb0a9f61a1142725856f5da909829a67ca888cb69aa3e0627e0b36",
+              "tlsh": "7a944c94b381fdb6dc494b7418e21319b37ef081971aeb2b6624fe3c059bb98dc63548"
+            },
+            {
+              "path": "package.json",
+              "sha256": "ba46cb8ca94c255614b8193da72e2dc7c83307addf7f90135562a14b82dc7678",
+              "tlsh": "a8d05e288a61993321c49b621a3a924665315d2b4364fc6833e7202c57ea2fa58bf64d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "cache-helper-1.0.5.tgz",
+              "hashes": {
+                "sha1": "0634cc42ffbd7a771c04655e2fcceb8849106005",
+                "sha512_sri": "sha512-u4JnhtCPCV4TzqQwXWcXPiCo5+z3qBqR/qb/sBCV7tHU5GV9lOzVnAhMQyikBNIUHalJF5qAjqq2k8xRwNsdBQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022022",
+        "import_time": "2026-10-29T14:14:18.317829728Z",
+        "modified_time": "2026-10-29T13:38:39Z",
+        "sha256": "7ce0c30e4fc9261e9d0b341e6c4bc07e15e170f68ef56de887ba64bdab21c288",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
