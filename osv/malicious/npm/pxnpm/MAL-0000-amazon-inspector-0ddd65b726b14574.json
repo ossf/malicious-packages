@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-10-29T13:24:02Z",
+  "modified": "2026-10-29T13:24:02Z",
+  "summary": "pxnpm forces all package-manager traffic through a hardcoded, credentialed proxy and private registry",
+  "details": "pxnpm is a package-manager wrapper that, on every CLI invocation, strips the user's existing npm/pnpm registry, proxy, and auth settings from the environment and replaces them with a hardcoded author-controlled registry at https://registry-pxnpm.rdc.nfjbill.ren:20021/ and a credentialed HTTPS/HTTP proxy at https://pn:vt9b1ai@registry-pxnpm.rdc.nfjbill.ren:20022. The proxy URL, including its embedded Basic-Auth credentials, is shipped as a base64 string literal in launcher.cjs and decoded at runtime via Buffer.from(..., 'base64'), rather than appearing as a plain string. CLI flags such as --registry and --proxy are explicitly rejected with an error stating that external network settings are not accepted, so the routing cannot be overridden by the caller. As a result, every package resolution and tarball download performed through pxnpm transits an author-operated MITM point that can observe, log, or substitute the bytes of any dependency installed on the user's machine, including dependencies and transitive dependencies of unrelated projects built with this tool. The postinstall step additionally fetches a native engine binary from the same author domain (version-pinned and SHA-256 verified against a shipped manifest) and executes it as the package-manager engine on each invocation; the fetch mechanism itself matches a legitimate pinned-binary pattern, but the delivered engine runs with full control over the installer's package installations and inherits the forced-proxy routing. The combination of hardcoded credentialed interception of all dependency traffic, base64 concealment of the proxy URL, and refusal to honor user-supplied registry/proxy overrides is inconsistent with a transparent registry mirror or caching proxy and constitutes a dependency-tree interception channel against anyone who installs packages via pxnpm.",
+  "affected": [
+    {
+      "package": {
+        "name": "pxnpm",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "7.0.0-beta.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "dist/launcher.cjs",
+              "sha256": "85209f280b5a9031a9cac69ead044a636df8b4b5606cbe94cb60dad6df1d2618",
+              "tlsh": "0f61c81f59ba885282f808a1bd47a403f77b41276305ccd0f5a8eb802fe506652bf3e7"
+            },
+            {
+              "path": "dist/download.cjs",
+              "sha256": "581a8a00162307841ad3b71395afa9401e0c0003a5a585337aba3758246661b7",
+              "tlsh": "1aa197c415fbb660a2a2a1e156f79129ea2bc003240bc964f5dc46402fe1168dbbadf7"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pxnpm-7.0.0-beta.6.tgz",
+              "hashes": {
+                "sha1": "98cc11b3850508eaee51d7aced1ec8850ce1fd06",
+                "sha512_sri": "sha512-5MWdF4kPmcV6o7RkP2fDGtJoLPpJICgC/v/iE+LvIDVAZuIjIg7ea5HQa1cq770vVNuMaoDWzwO2+0ij6DDi3A=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/pxnpm/v/7.0.0-beta.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021910",
+        "import_time": "2026-10-29T13:37:16.254904402Z",
+        "modified_time": "2026-10-29T13:24:02Z",
+        "sha256": "0ddd65b726b1457456e644252d4500a74faf4d13822f57d3b1c79823d6e8a57e",
+        "source": "amazon-inspector",
+        "versions": [
+          "7.0.0-beta.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
