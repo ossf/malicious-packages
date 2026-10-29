@@ -1,0 +1,136 @@
+// Copyright 2026 Malicious Packages Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+edition = "2024";
+
+package ossf.malicious_packages;
+
+import "google/protobuf/go_features.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "osv/proto/vulnerability.proto";
+
+option go_package = "github.com/ossf/malicious-packages/proto";
+option features.field_presence = IMPLICIT;
+option features.(pb.go).api_level = API_HYBRID;  // TBC - depends on how easy the hybrid API is to use...
+option features.(pb.go).strip_enum_prefix = STRIP_ENUM_PREFIX_STRIP;
+
+// OriginRef is used to represent one origin OSV report that was ingested and
+// merged together to produce the individual OSV report the ref appears in.
+export message OriginRef {
+  // The source where the report for this origin was ingested from.
+  string source = 1;
+
+  // The SHA256 hex digest of the origin report itself.
+  string sha_sum = 2 [json_name = "sha256"];
+
+  // The RFC3339 timestamp indicating when this origin was imported from the
+  // source.
+  google.protobuf.Timestamp import_time = 3 [json_name = "import_time"];
+
+  // The RFC3339 timestamp indicating when this origin was modified.
+  google.protobuf.Timestamp modified_time = 4 [json_name = "modified_time"];
+
+  // The OSV ID of the orign report, if it is present.
+  string id = 5;
+
+  // The OSV ranges in the origin affected record.
+  repeated osv.Range ranges = 6;
+
+  // The OSV versions in the origin affected record.
+  repeated string versions = 7;
+}
+
+export message Indicators {
+  export message File {
+
+    // Paths lists the file names (relative or absolute) at which the file was
+    // observed — the same content can appear in several places. Optional for a
+    // file that never hit disk (source "IN_MEMORY"), which is identified by its
+    // digest alone.
+    repeated string paths = 1;
+
+    // An optional free text note describing the file.
+    string note = 2;
+
+    export enum Source {
+      SOURCE_UNSPECIFIED = 0;
+      PACKAGE_ARCHIVE = 1;
+      DROPPED = 2;
+      IN_MEMORY = 3;
+    }
+
+    // Source records where the file came from.
+    Source source = 3;
+
+    // A set of digests for the entire file.
+    export message Digests {
+      string sha256 = 1;
+      string sha1 = 2;
+      string md5 = 3;
+
+      string tlsh = 4;
+      string ssdeep = 5;
+    }
+
+    // Digests holds one or more content hashes of the file.
+    Digests digests = 4;
+  }
+
+  // A set of domains the malicious package may resolve or connect to while
+  // executing.
+  repeated string domains = 1;
+
+  // A set of IPs the malicious package may connect to while executing.
+  repeated string ips = 2;
+
+  // A set of URLs the malicious pacakge may requests while executing.
+  repeated string urls = 3;
+
+  // A set of files that are created or accessed during the execution of the
+  // malicious package that are specific to the malicious package.
+  repeated File files = 4;
+
+  // Unsupported fields that are unspecified.
+  repeated string unsupported_strings = 5 [json_name = "strings"];
+  repeated string unsupported_hashes = 6 [json_name = "hashes"];
+}
+
+export message CWE {
+  string cwe_id = 1 [json_name = "cweId"];
+  string name = 2;
+  string description = 3;
+}
+
+export message DatabaseSpecificAffected {
+  repeated CWE cwes = 1;
+  Indicators unsupported_iocs = 2;
+  string unsupported_ghsa = 3 [json_name = "ghsa"];
+  google.protobuf.Struct unsupported_indicators = 4 [json_name = "indicators"];
+}
+
+export message Affected {
+  DatabaseSpecificAffected database_specific = 5
+      [json_name = "database_specific"];
+}
+
+message DatabaseSpecific {
+  repeated OriginRef origins = 1 [json_name = "malicious-packages-origins"];
+  Indicators iocs = 2;
+}
+
+export message Vulnerability {
+  repeated Affected affected = 17;
+  DatabaseSpecific database_specific = 15 [json_name = "database_specific"];
+}
