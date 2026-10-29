@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.7.4",
+  "modified": "2026-10-29T00:06:14Z",
+  "published": "2026-10-29T00:06:14Z",
+  "details": "spectral-core contains no library code: where an index.js is present (e.g. 3.0.12) it only exports the package name and version. It ships a binding.gyp (and package.json sets `\"gypfile\": true`), so npm runs `node-gyp rebuild` on install, and the binding.gyp declares a build action (\"Finalizing spectral-core setup\") that runs inline JavaScript with `node -e`. Versions 3.0.3 to 3.0.12 (3.0.8 was never published) were published on 2026-10-28 between 19:42 and 21:24 UTC, each with a different collection script. Depending on the version, the script:\n\n- reads the environment of PID 1 (`/proc/1/environ`; 3.0.4, 3.0.6) and of its own process (`/proc/self/environ`; 3.0.6), greps the environment for `htb` and `flag` (3.0.4), and enumerates `process.env` with `Object.entries` (3.0.11, 3.0.12);\n- searches the filesystem for files named `*flag*` or `*HTB*` and for files containing `HTB{`, and prints the first lines of `/run/secrets/*` (3.0.3); recursively lists `/var/run/secrets` (3.0.5); reads `/flag.txt` (3.0.9);\n- reads `AWS_CONTAINER_CREDENTIALS_RELATIVE_URI` and the ECS container metadata URI variable (3.0.7), and fetches the ECS task metadata endpoint (`$ECS_CONTAINER_METADATA_URI/task`) with curl and posts the result (3.0.11);\n- reads `/fetch.sh`, `/run_test.sh` and `/setup_test.sh` (3.0.5) and `/opt/ph/sitecustomize.py` (3.0.12), lists `/scripts` (3.0.10) and `/opt` (3.0.11), and collects `/etc/resolv.conf`, `ip neigh` and `ip route` output (3.0.6);\n- sends data off the host over HTTPS. In 3.0.7 and 3.0.9 to 3.0.12 the scanned code POSTs to webhook.site (path `/d6092bdc-05c0-45da-a280-c343ea6d6156` in 3.0.7, `/f604623f-fc78-4447-9225-6772f7f12cb1` in 3.0.9 to 3.0.12). In 3.0.3 to 3.0.6 the destination is outside the scanned excerpt, but each version loads `https` and a full-file static rule for webhook/collection services matched.\n\nVersion 3.0.6 also shipped a file named `CTF_HANDOFF_CURSE_DEPENDENT_v2.md`, and the strings searched for suggest the author was targeting a capture-the-flag environment. The script nevertheless runs on any machine where npm builds the package's binding.gyp during install, collects (depending on the version) environment variables, secret files, local scripts and ECS task metadata, and sends data to a third-party endpoint (webhook.site where the destination is visible). The same webhook.site endpoint `/f604623f-...` is used by @dmangal/curse-dependent-ecto@99999.0.0. All 2026 versions (0.0.0-stage and 3.0.1 to 3.0.12) were unpublished on 2026-10-28 at 22:29 UTC.\n\nFound by Gatekeeper (https://github.com/lb2002/gatekeeper), which statically scanned and flagged each version between 11 seconds and about 3.5 minutes after publication; the code described above is from those scans, as the archives are no longer available from the registry.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "spectral-core"
+      },
+      "versions": [
+        "3.0.3",
+        "3.0.4",
+        "3.0.5",
+        "3.0.6",
+        "3.0.7",
+        "3.0.9",
+        "3.0.10",
+        "3.0.11",
+        "3.0.12"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Linus Baumberger (Gatekeeper)",
+      "contact": [
+        "https://github.com/lb2002"
+      ],
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "webhook.site"
+      ],
+      "urls": [
+        "https://webhook.site/f604623f-fc78-4447-9225-6772f7f12cb1",
+        "https://webhook.site/d6092bdc-05c0-45da-a280-c343ea6d6156"
+      ],
+      "files": [
+        {
+          "source": "PACKAGE_ARCHIVE",
+          "paths": [
+            "binding.gyp"
+          ],
+          "note": "node-gyp build action runs inline node -e on install; depending on the version it collects environment data, secret files, flag files and ECS metadata and sends data off-host (POST to webhook.site visible in 3.0.7 and 3.0.9 to 3.0.12)."
+        }
+      ]
+    }
+  }
+}
