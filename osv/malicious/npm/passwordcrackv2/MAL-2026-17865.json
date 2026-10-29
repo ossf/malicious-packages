@@ -1,15 +1,15 @@
 {
-  "modified": "2026-10-12T05:02:46Z",
-  "published": "2026-10-09T22:04:05Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17865",
+  "published": "2026-10-09T22:04:05Z",
+  "modified": "2026-10-29T13:38:38.220698921Z",
   "summary": "Malicious code in passwordcrackv2 (npm)",
-  "details": "passwordcrackv2 poses as a dependency-free Discord MFA library but pulls node-net-pool from the attacker's GitHub repo lunexindonesia/node-net-pool, and on load lib/cache.js runs `try{module['require']('node-net-pool')}catch(_){}` to execute it. On Windows, that index.js downloads a script from a limbomail.com attachment URL, saves it as a hidden winsvc.js under %APPDATA%, %LOCALAPPDATA% or %TEMP%, runs it via a hidden WinSvcHost.vbs, persists through HKCU Run/RunOnce, UserInitMprLogonScript and a Startup shortcut, and re-checks for updates every two hours. Amazon Inspector reported the same loader stub in discord-mfa-solver (MAL-2026-16100). The npm account kingsize published passwordcrackv2 and passwordcracker with identical code on 2026-10-09 and 2026-10-10.",
+  "details": "passwordcrackv2 poses as a dependency-free Discord MFA library but pulls node-net-pool from the attacker's GitHub repo lunexindonesia/node-net-pool, and on load lib/cache.js runs `try{module['require']('node-net-pool')}catch(_){}` to execute it. On Windows, that index.js downloads a script from a limbomail.com attachment URL, saves it as a hidden winsvc.js under %APPDATA%, %LOCALAPPDATA% or %TEMP%, runs it via a hidden WinSvcHost.vbs, persists through HKCU Run/RunOnce, UserInitMprLogonScript and a Startup shortcut, and re-checks for updates every two hours. Amazon Inspector reported the same loader stub in discord-mfa-solver (MAL-2026-16100). The npm account kingsize published passwordcrackv2 and passwordcracker with identical code on 2026-10-09 and 2026-10-10.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5af882b3d847b17692c91b05e8efb4bf9947a0ec3b1ea5e04bb8681fc73f135c)\npackage.json declares its only dependency, 'node-net-pool', as an HTTPS tarball of the 'main' branch of github.com/lunexindonesia/node-net-pool, with no version pin and no integrity hash. npm install fetches whatever bytes that URL returns and runs any lifecycle scripts inside, so whoever controls that repository controls code delivered to every installer. The publisher of this package (mfasolver) does not match the dependency owner (lunexindonesia), so an unrelated third party controls the fetched content. lib/cache.js further wraps the dependency load as try{module['require']('node-net-pool')}catch(_){}, so the remote dependency is pulled in on normal library use via initMFA/cache.get() and any failure is silently swallowed. The package itself is advertised as Discord MFA/token-abuse tooling (PATCH /api/v9/guilds/0/vanity-url, POST /api/v9/mfa/finish, Cloudflare-bypass host rotation, TLS verification disabled via rejectUnauthorized:false); that capability targets operator-chosen Discord accounts rather than the installer directly, but the mutable-branch dependency is a direct install-time and import-time code-execution path against the installer regardless of how the stated API is used.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "passwordcrackv2"
+        "name": "passwordcrackv2",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -21,14 +21,56 @@
           ]
         }
       ],
+      "versions": [
+        "1.1.1",
+        "1.1.0"
+      ],
       "database_specific": {
         "cwes": [
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
             "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
           }
-        ]
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "3715dd9f2baaced346c3ddee89235015034d8561f41c66ec2d723909da337618",
+              "tlsh": "a621b125c9e82c5717c569e0ec194152b6720c0308097c1473c686ad4f9e0bb22fe19e"
+            },
+            {
+              "path": "lib/cache.js",
+              "sha256": "40ad444731103c356ac7643b1a58e6093fcce1ea2f43977fb07f34833d37178a",
+              "tlsh": "1f416c5f39c1f0261bf7a57da91f874ab76c990c200cd5a0796943ecba3213c47b7859"
+            },
+            {
+              "path": "index.js",
+              "sha256": "0e3494d24c490978c9e5e3d8b13e45fd261b6fac692f852045ff8b4241b3b63f",
+              "tlsh": "7a12621121f7203a0367d0ff9bd7d01567345903355ae9b8b78c9684afc361a85b3aee"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "passwordcrackv2-1.1.1.tgz",
+              "hashes": {
+                "sha1": "c1e603e34049ddde5a6041d041c2cbed0d893b5f",
+                "sha512_sri": "sha512-NYKaF3ivlhwjy8IRXnT29Kxq5l3mXgzkMWs3pCj6YOhJcDL8W8DnaXj8wh8D5K0xFKwoX2EUTjDSRXkrq4w5GA=="
+              }
+            }
+          ]
+        }
       }
     }
   ],
@@ -52,16 +94,14 @@
     {
       "type": "WEB",
       "url": "https://osv.dev/vulnerability/MAL-2026-15570"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "InvisiRisk, Inc.",
-      "type": "FINDER",
-      "contact": [
-        "https://www.invisirisk.com",
-        "mailto:research@invisirisk.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/passwordcrackv2/v/1.1.1"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/passwordcrackv2/v/1.1.0"
     }
   ],
   "database_specific": {
@@ -119,6 +159,45 @@
         "https://github.com/trktgq0wbre1/node-net-pool/archive/refs/heads/main.tar.gz",
         "https://github.com/trktgq0wbre1/node-net-pool"
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021871",
+        "import_time": "2026-10-29T13:37:14.181144551Z",
+        "modified_time": "2026-10-29T13:18:56Z",
+        "sha256": "5af882b3d847b17692c91b05e8efb4bf9947a0ec3b1ea5e04bb8681fc73f135c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021854",
+        "import_time": "2026-10-29T13:37:13.411576205Z",
+        "modified_time": "2026-10-29T13:16:42Z",
+        "sha256": "86177fb5df47c6002b7d9313a13482d3f1412edc37415075e5f79e65a5bf8b3d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "InvisiRisk, Inc.",
+      "contact": [
+        "https://www.invisirisk.com",
+        "mailto:research@invisirisk.com"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }

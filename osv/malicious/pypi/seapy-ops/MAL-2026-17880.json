@@ -1,14 +1,15 @@
 {
-  "modified": "2026-10-14T08:01:32Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17880",
+  "published": "2026-10-29T13:17:07Z",
+  "modified": "2026-10-29T13:38:41.521475272Z",
   "summary": "Malicious code in seapy-ops (PyPI)",
-  "details": "In seapy-ops versions 1.0.0, 1.0.1, 1.0.2, 1.1.0, 1.1.1, and 1.1.2, an advertised local file analysis tool conceals folder collection and upload commands behind an unlock gate. Once unlocked, it recursively uploads eligible files from the working directory to a configured remote server; a hidden prompt command also uploads the folder before sending the first prompt. File symlinks can expose content outside that directory. Server-supplied result paths additionally allow files to be written outside the working directory.\n\nVersions 1.2.1 and 1.2.2 instead present a Python REPL that silently sends eligible single-token input to the server as an unlock password, subject to filtering and attempt limits. Other commands, excluding local help, version, unlock, configuration, and uninstall paths, can fetch Base64-encoded, gzip-compressed code, execute it in memory, and call its main function. Loader errors are disguised as Python file-not-found errors.\n\nThe malicious assessment is based on concealed file transmission in the earlier releases and interpreter impersonation, concealed input transmission, remote execution, and failure concealment in the later releases. Official distributions were verified against PyPI digests. Isolated, network-disabled tests across all eight listed versions confirmed the relevant data flows using synthetic credentials and mocked server responses, including symlink-target uploads, writes outside the working directory, REPL input transmission, and execution of a synthetic payload. No live endpoint was contacted; the actual server-supplied payload remains unknown.",
+  "details": "In seapy-ops versions 1.0.0, 1.0.1, 1.0.2, 1.1.0, 1.1.1, and 1.1.2, an advertised local file analysis tool conceals folder collection and upload commands behind an unlock gate. Once unlocked, it recursively uploads eligible files from the working directory to a configured remote server; a hidden prompt command also uploads the folder before sending the first prompt. File symlinks can expose content outside that directory. Server-supplied result paths additionally allow files to be written outside the working directory.\n\nVersions 1.2.1 and 1.2.2 instead present a Python REPL that silently sends eligible single-token input to the server as an unlock password, subject to filtering and attempt limits. Other commands, excluding local help, version, unlock, configuration, and uninstall paths, can fetch Base64-encoded, gzip-compressed code, execute it in memory, and call its main function. Loader errors are disguised as Python file-not-found errors.\n\nThe malicious assessment is based on concealed file transmission in the earlier releases and interpreter impersonation, concealed input transmission, remote execution, and failure concealment in the later releases. Official distributions were verified against PyPI digests. Isolated, network-disabled tests across all eight listed versions confirmed the relevant data flows using synthetic credentials and mocked server responses, including symlink-target uploads, writes outside the working directory, REPL input transmission, and execution of a synthetic payload. No live endpoint was contacted; the actual server-supplied payload remains unknown.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (883d43013b1f974ba316ad87d630e6c0d4e60139a68dff7b379b38cbb91c82e2)\nseapy-ops presents itself in its README as a stdlib-only local file inspection tool (strings/sum/steg/crypto/hints/scan), but cli.py implements undocumented subcommands (-s, -p, -st, -sd, config, uninstall) gated behind a hardcoded salted-SHA256 password (PW_HASH=aa65f53e3bea9f2d908fefbb5d6c8804f2fc11f6135f03ed9234fed4def7f590). Once unlocked, these subcommands communicate with a hardcoded author-controlled server at https://b196q82k8891-d.space-z.ai (fallback https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai, overridable via SEAPY_SERVER). cmd_send_all / cmd_send_prompt / cmd_push_discord invoke collect_files(), which recursively walks the user's current working directory (skipping only.git/__pycache__/node_modules/.venv/venv/.svn and dotfiles, with a 4MB per-file cap) and POSTs the contents as multipart to /api/cli/upload keyed by an apiKey obtained via /api/cli/init — exfiltrating source code, local assets, and any environment or credential files in the workspace. cmd_status polls /api/cli/download and writes every server-returned entry (base64-decoded) into a subdirectory of os.getcwd(), giving the remote operator full control over filenames and contents placed inside the installer's project tree; additional endpoints /api/cli/prompt, /api/cli/push, and /api/cli/pull extend the bidirectional channel. load_config() silently migrates configuration from ~/.verity, ~/.fpeek, and ~/.pythom, indicating the same covert-channel code has been re-published under multiple package names. The combination of a cover-story README, undocumented password-gated flags, bulk workspace upload to a hardcoded endpoint, and attacker-controlled file writes into CWD is a hidden backdoor and active data exfiltration channel, not the local-only utility the package advertises.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "seapy-ops"
+        "name": "seapy-ops",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "1.0.0",
@@ -19,16 +20,94 @@
         "1.1.2",
         "1.2.1",
         "1.2.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "seapy/cli.py",
+              "sha256": "7e32a1e69d2f751aeac2b504df41aeb83f55afe59da2eea5a450ad602abee610",
+              "tlsh": "83139316ac6524a2d303d56e0cdad081f319bc4728026838beddd7d46f8957a93bdbec"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "seapy_ops-1.0.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "501994224d4e7e7842c07a27c590e2044aecd70fceffe8144abfff09eed740ca",
+                "md5": "75c2ef724e94fae087956269bec72e0b",
+                "sha256": "c26d103cd0709e17c51671fc9906e70fa673764bcba704b1fd3aed0f5736c8f3"
+              }
+            },
+            {
+              "filename": "seapy_ops-1.0.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "b77eb34c67de71c7a09cbdbfef4d0997fe8bcaad6536e0d68c919dc60d75059b",
+                "md5": "7b52c2c246fed27a8b2fd7c190814e86",
+                "sha256": "8d33dcb40716caf35175046b1d8158ee0c2d8814f68c104e77d8e4d02ef20013"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
-  "credits": [
+  "references": [
     {
-      "name": "smiling-hyena",
-      "type": "FINDER",
-      "contact": [
-        "smilinghyena4@gmail.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.0.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.1.0/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.1.1/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.1.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.0.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/seapy-ops/1.0.1/"
     }
   ],
   "database_specific": {
@@ -119,6 +198,84 @@
           "source": "PACKAGE_ARCHIVE"
         }
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021876",
+        "import_time": "2026-10-29T13:37:14.574639819Z",
+        "modified_time": "2026-10-29T13:19:32Z",
+        "sha256": "d8d2daddd9187d69dfdf3f8681bbe2628611f183251bc21a99534824493c1f7c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021875",
+        "import_time": "2026-10-29T13:37:14.494373547Z",
+        "modified_time": "2026-10-29T13:19:24Z",
+        "sha256": "decbcc856ef2954b9b92e52bcd6205a1973d75d32bf9fd8b73dd4b96e6682bb8",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021858",
+        "import_time": "2026-10-29T13:37:13.638787839Z",
+        "modified_time": "2026-10-29T13:17:16Z",
+        "sha256": "43f7e546f4f8d080161c007fcc97c630b09f15d639cbec380a82af52b20cc0aa",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.1"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021857",
+        "import_time": "2026-10-29T13:37:13.537132665Z",
+        "modified_time": "2026-10-29T13:17:07Z",
+        "sha256": "883d43013b1f974ba316ad87d630e6c0d4e60139a68dff7b379b38cbb91c82e2",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021977",
+        "import_time": "2026-10-29T13:37:18.532219319Z",
+        "modified_time": "2026-10-29T13:32:53Z",
+        "sha256": "b3d00a38eb94b805de42b8e32d3f7d3315001e390c0128254d8fe879f460af28",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021862",
+        "import_time": "2026-10-29T13:37:13.775776264Z",
+        "modified_time": "2026-10-29T13:17:49Z",
+        "sha256": "d18aa3db0c7e9503f9c04b40c24de3e940030452b0c13417d2e1157b32b5b70f",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }
