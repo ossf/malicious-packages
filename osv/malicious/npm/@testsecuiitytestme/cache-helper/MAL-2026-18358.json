@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-18358",
   "published": "2026-10-29T13:12:02Z",
-  "modified": "2026-10-29T13:15:25.592327128Z",
+  "modified": "2026-10-29T14:15:54.803864379Z",
   "summary": "Malicious code in @testsecuiitytestme/cache-helper (npm)",
-  "details": "This package installs a credential stealer and self-spreading worm. On a developer machine (it exits under CI, in containers and under a debugger), the install script loads a prebuilt native addon that decodes and runs a hidden, obfuscated Bun program. That program collects npm, GitHub, GitLab, PyPI, RubyGems, JFrog, Docker and cloud (AWS, GCP, Azure) credentials, HashiCorp Vault and Kubernetes secrets, SSH keys, .git-credentials and .env files, browser logins, the macOS keychain, 1Password and Bitwarden, and uses stolen publishing tokens to spread: it publishes to npm, PyPI and RubyGems, injects GitHub workflows and GitLab CI templates, and writes hooks into AI coding assistant configuration. Anyone who installed any version should treat every credential reachable from that machine as exposed: rotate npm, GitHub and cloud tokens, check their own packages for unexpected releases, and check repositories for unexpected workflow changes.\n\n@testsecuiitytestme/cache-helper is the only package of the npm account testsecuiitytestme. It was created on 2026-10-27 at 12:08 UTC with npm's staged-publish placeholder 0.0.0-stage, followed by 1.0.1 (12:28 UTC), 1.0.2 (15:33 UTC) and 1.0.3 (16:24 UTC); a 1.0.0 was removed before 14:21 UTC. It describes itself as \"Cache helper utilities\" and has no README, repository or source code. Four more versions followed on 2026-10-27: 1.0.4 (20:33 UTC), 1.0.5 (21:23 UTC), 1.0.6 (21:45 UTC) and 1.0.7 (22:12 UTC). The whole package was then unpublished at 22:17 UTC (0.0.0-stage and 1.0.1 to 1.0.7).\n\nEach version runs a native addon at install time. 1.0.1 has postinstall: node -e \"try{require(process.platform==='win32'?'./addon_win.node':'./addon.node')}catch(e){}\". 1.0.2 and 1.0.3 depend on node-gyp-build and run it as postinstall, which loads the prebuilt addon shipped in prebuilds/linux-x64/node.napi.node or prebuilds/win32-x64/node.napi.node. 1.0.3 adds a binding.gyp with an empty sources list and an install script node-gyp rebuild, so the package looks like an ordinary native module; there is no C source in any version. 1.0.5 drops node-gyp-build and runs postinstall: node _setup.js, a one-line require of the same prebuilds/<platform>-<arch>/node.napi.node. 1.0.7 runs postinstall: patch-package || node index.js; patch-package is not a dependency, so the command falls through to index.js, which requires the same addon. 1.0.5 and 1.0.7 ship the same .napi_cache as 1.0.3. 1.0.4 and 1.0.6 were not retrieved; each was published with the same install script as the version before it.\n\nThe addon (Linux ELF and Windows PE) is a loader. It checks for CI and sandbox environments (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID and others, plus SANDBOX), containers (/proc/1/cgroup: docker, containerd, kubepods, podman), a debugger (TracerPid), memory and CPU count, then reads the sibling file .napi_cache, writes it to a hidden temp file and runs it in a detached process.\n\n.napi_cache is JavaScript encoded with a single-byte XOR (0x96). It exits under CI, decodes a second layer (repeating 32-byte XOR, then brotli), locates the Bun runtime or downloads bun 1.2.18 from the official oven-sh/bun GitHub releases, writes the decoded program to the temp directory and runs it detached with Bun. This loader shape matches the second wave of the Shai-Hulud npm worm.\n\nThe Bun program is obfuscated (javascript-obfuscator string table). Its strings show credential collection for npm, GitHub, GitLab, PyPI, RubyGems, JFrog, Docker Hub and GHCR, AWS, GCP, Azure, HashiCorp Vault and Kubernetes, plus .ssh, .git-credentials, .env files, browser login databases, the macOS keychain, 1Password and Bitwarden. They also show propagation: npm publishing with provenance, PyPI and RubyGems publishing, GitHub workflow and composite-action injection, GitLab CI template changes, and writes to AI assistant configuration (.claude/settings.json hooks, .cursor rules, .mcp.json, copilot-instructions.md, CLAUDE.md). The exfiltration endpoints sit behind a further string-encoding layer that was not decoded. Analysis was static only; nothing was executed.\n\nTarball sha256:\n1.0.1: a9c98033ac14fced8376bb8ba32bd92426b3729e16f5cd3852c5a97fc3503002\n1.0.2: 067a1350278fd1ae4fcc261eaca98964dd23a3c7940988ec43f95758480cf113\n1.0.3: 0e99f9a2eb7abcfe65278ca87a8e11dce25f39de2ff4bd77035e2bf01d26f0ed\n1.0.5: 1e00b10ac8e72cc452e44e6af646d15ba8f12692415e7ee3356d7f0b41d39432\n1.0.7: ba6a7f1fc5e2e6704e3af86bc38cdb9cfa4592e88e119f8d906b125abc80fc43\n\nFile sha256:\n1.0.2 prebuilds/linux-x64/node.napi.node: 2547686f86fe6994bcf79558fcce441edc67aa734e255acf79870d5f47de7bbf\n1.0.2 prebuilds/win32-x64/node.napi.node: 620d2489e18b5a5f8840e96b90673d72db4c4c54d555ad66d179b3a5833e7763\n1.0.2 .napi_cache: 463dda65ebceeca6f5590dcdeae6c1d06ffadb2380a85b613deb2923af5557e7\n1.0.3 prebuilds/linux-x64/node.napi.node: 1fdd50b1bf66c4fd0e94f2be3db1f2f0fd77921136867022ad7e65e21220ad03\n1.0.3 prebuilds/win32-x64/node.napi.node: 5b7a0f53f2eca2dd4bf21e6df7d34e751b6cdf70b2f0a6f1f13edfb5caa9570b\n1.0.3 .napi_cache: c14dae9325f451c524cf858ecdae5fa68d2c645ee0981c6f42ef913c7ef34a57\n1.0.5 prebuilds/linux-x64/node.napi.node: 4869759830e75e74e34570be0d67e61fd990432a38352e461164f6671e0eb43f\n1.0.5 prebuilds/win32-x64/node.napi.node: 85ba3587a0cb0a9f61a1142725856f5da909829a67ca888cb69aa3e0627e0b36\n1.0.7 prebuilds/linux-x64/node.napi.node: 7514c7b8a0a6e50a74b01c9b0c0bc8fbeccce4278c8cb64562b35ce310dc9e1f\n1.0.7 prebuilds/win32-x64/node.napi.node: cc0a87e44fbc376f30a8eedfba61b1e7e1d5a5b09831e84af0facaeade19982f\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (ae1e2c166136deef5f2f928f910041889d6aea8ff097588a013f156220f8f93b)\n@testsecuiitytestme/cache-helper@1.0.2 ships prebuilt native N-API addons (linux-x64 and win32-x64) alongside a 2,395,377-byte byte-identical opaque sibling file prebuilds/<platform>/.napi_cache (sha256 463dda65ebceeca6f5590dcdeae6c1d06ffadb2380a85b613deb2923af5557e7) that has no printable strings. index.js is a one-liner that loads the native addon via node-gyp-build, so simply require()'ing the package triggers the native code. The addon decrypts the.napi_cache blob, writes it to a temp file (/tmp/.<pid> or %TEMP%\\.nc<pid>.js), and spawns a detached node process to execute it (Linux: fork/setsid/execlp/chmod; Windows: CreateProcessA/GetTempPathA/SetFileAttributesA). Before detonation the addon performs environment checks characteristic of a stealth dropper: it enumerates CI environment variables (GITHUB_ACTIONS, GITLAB_CI, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER) and, on Linux, probes /proc/1/cgroup, /proc/1/cmdline, /proc/self/status (TracerPid:), /proc/self/maps, and containerd/dockerinit markers; on Windows it imports IsDebuggerPresent, CheckRemoteDebuggerPresent, CreateToolhelp32Snapshot and scans the process list for analysis tools (wireshark, httpdebug). There is no documented API, no public functionality, and no legitimate reason for a cache helper to decrypt an opaque blob and execute it via a fresh node interpreter while suppressing itself on CI and under debuggers. Any installer that requires this package executes attacker-controlled JavaScript on their host.\n",
+  "details": "This package installs a credential stealer and self-spreading worm. On a developer machine (it exits under CI, in containers and under a debugger), the install script loads a prebuilt native addon that decodes and runs a hidden, obfuscated Bun program. That program collects npm, GitHub, GitLab, PyPI, RubyGems, JFrog, Docker and cloud (AWS, GCP, Azure) credentials, HashiCorp Vault and Kubernetes secrets, SSH keys, .git-credentials and .env files, browser logins, the macOS keychain, 1Password and Bitwarden, and uses stolen publishing tokens to spread: it publishes to npm, PyPI and RubyGems, injects GitHub workflows and GitLab CI templates, and writes hooks into AI coding assistant configuration. Anyone who installed any version should treat every credential reachable from that machine as exposed: rotate npm, GitHub and cloud tokens, check their own packages for unexpected releases, and check repositories for unexpected workflow changes.\n\n@testsecuiitytestme/cache-helper is the only package of the npm account testsecuiitytestme. It was created on 2026-10-27 at 12:08 UTC with npm's staged-publish placeholder 0.0.0-stage, followed by 1.0.1 (12:28 UTC), 1.0.2 (15:33 UTC) and 1.0.3 (16:24 UTC); a 1.0.0 was removed before 14:21 UTC. It describes itself as \"Cache helper utilities\" and has no README, repository or source code. Four more versions followed on 2026-10-27: 1.0.4 (20:33 UTC), 1.0.5 (21:23 UTC), 1.0.6 (21:45 UTC) and 1.0.7 (22:12 UTC). The whole package was then unpublished at 22:17 UTC (0.0.0-stage and 1.0.1 to 1.0.7).\n\nEach version runs a native addon at install time. 1.0.1 has postinstall: node -e \"try{require(process.platform==='win32'?'./addon_win.node':'./addon.node')}catch(e){}\". 1.0.2 and 1.0.3 depend on node-gyp-build and run it as postinstall, which loads the prebuilt addon shipped in prebuilds/linux-x64/node.napi.node or prebuilds/win32-x64/node.napi.node. 1.0.3 adds a binding.gyp with an empty sources list and an install script node-gyp rebuild, so the package looks like an ordinary native module; there is no C source in any version. 1.0.5 drops node-gyp-build and runs postinstall: node _setup.js, a one-line require of the same prebuilds/<platform>-<arch>/node.napi.node. 1.0.7 runs postinstall: patch-package || node index.js; patch-package is not a dependency, so the command falls through to index.js, which requires the same addon. 1.0.5 and 1.0.7 ship the same .napi_cache as 1.0.3. 1.0.4 and 1.0.6 were not retrieved; each was published with the same install script as the version before it.\n\nThe addon (Linux ELF and Windows PE) is a loader. It checks for CI and sandbox environments (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID and others, plus SANDBOX), containers (/proc/1/cgroup: docker, containerd, kubepods, podman), a debugger (TracerPid), memory and CPU count, then reads the sibling file .napi_cache, writes it to a hidden temp file and runs it in a detached process.\n\n.napi_cache is JavaScript encoded with a single-byte XOR (0x96). It exits under CI, decodes a second layer (repeating 32-byte XOR, then brotli), locates the Bun runtime or downloads bun 1.2.18 from the official oven-sh/bun GitHub releases, writes the decoded program to the temp directory and runs it detached with Bun. This loader shape matches the second wave of the Shai-Hulud npm worm.\n\nThe Bun program is obfuscated (javascript-obfuscator string table). Its strings show credential collection for npm, GitHub, GitLab, PyPI, RubyGems, JFrog, Docker Hub and GHCR, AWS, GCP, Azure, HashiCorp Vault and Kubernetes, plus .ssh, .git-credentials, .env files, browser login databases, the macOS keychain, 1Password and Bitwarden. They also show propagation: npm publishing with provenance, PyPI and RubyGems publishing, GitHub workflow and composite-action injection, GitLab CI template changes, and writes to AI assistant configuration (.claude/settings.json hooks, .cursor rules, .mcp.json, copilot-instructions.md, CLAUDE.md). The exfiltration endpoints sit behind a further string-encoding layer that was not decoded. Analysis was static only; nothing was executed.\n\nTarball sha256:\n1.0.1: a9c98033ac14fced8376bb8ba32bd92426b3729e16f5cd3852c5a97fc3503002\n1.0.2: 067a1350278fd1ae4fcc261eaca98964dd23a3c7940988ec43f95758480cf113\n1.0.3: 0e99f9a2eb7abcfe65278ca87a8e11dce25f39de2ff4bd77035e2bf01d26f0ed\n1.0.5: 1e00b10ac8e72cc452e44e6af646d15ba8f12692415e7ee3356d7f0b41d39432\n1.0.7: ba6a7f1fc5e2e6704e3af86bc38cdb9cfa4592e88e119f8d906b125abc80fc43\n\nFile sha256:\n1.0.2 prebuilds/linux-x64/node.napi.node: 2547686f86fe6994bcf79558fcce441edc67aa734e255acf79870d5f47de7bbf\n1.0.2 prebuilds/win32-x64/node.napi.node: 620d2489e18b5a5f8840e96b90673d72db4c4c54d555ad66d179b3a5833e7763\n1.0.2 .napi_cache: 463dda65ebceeca6f5590dcdeae6c1d06ffadb2380a85b613deb2923af5557e7\n1.0.3 prebuilds/linux-x64/node.napi.node: 1fdd50b1bf66c4fd0e94f2be3db1f2f0fd77921136867022ad7e65e21220ad03\n1.0.3 prebuilds/win32-x64/node.napi.node: 5b7a0f53f2eca2dd4bf21e6df7d34e751b6cdf70b2f0a6f1f13edfb5caa9570b\n1.0.3 .napi_cache: c14dae9325f451c524cf858ecdae5fa68d2c645ee0981c6f42ef913c7ef34a57\n1.0.5 prebuilds/linux-x64/node.napi.node: 4869759830e75e74e34570be0d67e61fd990432a38352e461164f6671e0eb43f\n1.0.5 prebuilds/win32-x64/node.napi.node: 85ba3587a0cb0a9f61a1142725856f5da909829a67ca888cb69aa3e0627e0b36\n1.0.7 prebuilds/linux-x64/node.napi.node: 7514c7b8a0a6e50a74b01c9b0c0bc8fbeccce4278c8cb64562b35ce310dc9e1f\n1.0.7 prebuilds/win32-x64/node.napi.node: cc0a87e44fbc376f30a8eedfba61b1e7e1d5a5b09831e84af0facaeade19982f\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3ef188a3ae4eae567d3743116d10e586565a2856b53b94add9f84b239aea378e)\nThe package advertises itself as a cache helper but ships no readable JavaScript logic — index.js and _setup.js are one-line stubs that unconditionally load a prebuilt N-API native addon from prebuilds/<platform>-<arch>/node.napi.node, and module.exports is empty. The addon is paired with a 2,397,565-byte sibling file named.napi_cache that contains no printable strings and is identical across linux-x64 and win32-x64 (sha256 c14dae93...4a57). Strings inside the native addon show it reads %s\\.napi_cache, writes a decoded %s.nc%lu.js to the OS temp directory (GetTempPathA), and spawns node on it (CreateProcessA, \"node \\\"%s\\\"\"). This decrypt-drop-and-exec chain runs both from the postinstall hook (node _setup.js) and from the main entrypoint, so every npm install and every require()/import of the package triggers execution of attacker-controlled code whose content cannot be inspected from the shipped source. The native addon additionally performs anti-analysis gating before executing the payload: enumeration of CI environment variables (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, APPVEYOR, NETLIFY, VERCEL, SANDBOX), checks for analysis tools (wireshark, procmon, procexp, x64dbg, ollydbg, fiddler, httpdebug), Windows debugger checks (IsDebuggerPresent, CheckRemoteDebuggerPresent), and Linux sandbox/container detection (/proc/self/status TracerPid, /proc/1/cgroup, dockerinit). The combination of an empty public API, an opaque 2.4 MB encrypted blob, a native loader that decrypts-writes-execs it to temp, and layered anti-analysis gating has no legitimate caching purpose and matches a classic alternate-execution dropper designed to bypass JavaScript-only scanners.\n",
   "affected": [
     {
       "package": {
@@ -22,6 +22,26 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -86,6 +106,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.6"
     }
   ],
   "database_specific": {
@@ -118,6 +154,46 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022022",
+        "import_time": "2026-10-29T14:14:18.317829728Z",
+        "modified_time": "2026-10-29T13:38:39Z",
+        "sha256": "7ce0c30e4fc9261e9d0b341e6c4bc07e15e170f68ef56de887ba64bdab21c288",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022026",
+        "import_time": "2026-10-29T14:14:18.733083361Z",
+        "modified_time": "2026-10-29T13:39:11Z",
+        "sha256": "cd9f5f7937e1228c7ef8e308b00ebb89661f33f4625ba59a1b40e6f4a65b8e80",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022023",
+        "import_time": "2026-10-29T14:14:18.461924771Z",
+        "modified_time": "2026-10-29T13:38:48Z",
+        "sha256": "2d374d69819d7d395a219f0fb8a90dbbb352791234bd73980977b87c42f4e85c",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022021",
+        "import_time": "2026-10-29T14:14:18.250461018Z",
+        "modified_time": "2026-10-29T13:38:32Z",
+        "sha256": "3ef188a3ae4eae567d3743116d10e586565a2856b53b94add9f84b239aea378e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
         ]
       }
     ]
