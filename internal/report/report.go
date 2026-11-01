@@ -65,7 +65,7 @@ type databaseSpecific struct {
 }
 
 type dbSpecificVuln struct {
-	DatabaseSpecific databaseSpecific `json:"database_specific,omitempty"`
+	DatabaseSpecific databaseSpecific `json:"database_specific"`
 }
 
 type Report struct {
