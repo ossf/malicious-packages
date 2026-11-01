@@ -1,10 +1,10 @@
 {
-  "modified": "2026-09-23T22:18:48Z",
+  "modified": "2026-11-01T00:00:00Z",
   "published": "2026-09-23T22:12:59Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-16483",
   "summary": "Malicious code in @rixxcodex/baileys (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (58b5247e2f10d09b51e8d59c4b36cb2cbe62909af4be588fdb07dabf0afabcf2)\nThis package is a fork of the Baileys WhatsApp library that adds three undocumented channels which use the installer's authenticated WhatsApp session to perform account actions chosen by the author at runtime. In lib/Socket/socket.js around line 334, a base64-encoded URL decodes to https://raw.githubusercontent.com/skyzopedia/Screaper/refs/heads/main/idChannel.json; loadBase is invoked unconditionally from makeNewsletterSocket on every socket creation and, for each id returned by that mutable list, calls newsletterWMexQuery(id, QueryIds.FOLLOW) on the connected account. A second helper (socketConnect, called from validateConnection when the WebSocket opens) reconstructs the URL https://raw.githubusercontent.com/skyzopedia/NewsletterID/refs/heads/main/VIP_Push.json from a numeric char-code array (String.fromCharCode(...)) and, for each returned newsletter_id, issues a w:mex query with hardcoded query_id 7871414976211147 against the installer's session. A third helper, generateMessageV, is exposed on the socket API and, after a 40 second delay, invokes its callback with a hardcoded @newsletter JID obfuscated as a base64 blob XORed with the constant 23, again paired with query_id 7871414976211147. None of these behaviors are described in the README, and both remote lists are runtime-mutable by the author. In addition, package.json declares the cryptographic dependency \"@rixxcodex/libsignal\": \"github:RixxCode/libsignal\" with no tag or commit SHA, so npm install resolves whatever HEAD of that repository currently contains and executes it inside the Signal session-encryption path with no integrity check.\n",
+  "details": "Version 9.0.3 (published 2026-10-02) keeps both covert follow paths described below. lib/Utils/messages-media.js (sha256 657662b2ae2e8cc1808715d8219d4e7ca7182f6eacda8d79b1cee4b721c88939, unchanged from 8.2.0) is called from makeNewsletterSocket on every socket creation; 80 seconds later it fetches https://raw.githubusercontent.com/skyzopedia/Screaper/refs/heads/main/idChannel.json (stored base64) and sends QueryIds.FOLLOW for each id. lib/Socket/socket.js (sha256 dea55c2c0cfdf251e16d313a3d3b618a1b5e3b4e8b5ccf8087b6ef002cc3a78b; the only change from 8.2.0 is the default pairing code) calls socketConnect() from validateConnection, which fetches https://raw.github.com/skyzopedia/NewsletterID/refs/heads/main/VIP_Push.json (stored as character codes) and 200 seconds later sends the raw w:mex query with query_id 7871414976211147 (FOLLOW) for each id. Errors are swallowed and the user is not told. CyberXYZ added 9.0.3 after reading it statically on 2026-10-30; nothing was executed.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (58b5247e2f10d09b51e8d59c4b36cb2cbe62909af4be588fdb07dabf0afabcf2)\nThis package is a fork of the Baileys WhatsApp library that adds three undocumented channels which use the installer's authenticated WhatsApp session to perform account actions chosen by the author at runtime. In lib/Socket/socket.js around line 334, a base64-encoded URL decodes to https://raw.githubusercontent.com/skyzopedia/Screaper/refs/heads/main/idChannel.json; loadBase is invoked unconditionally from makeNewsletterSocket on every socket creation and, for each id returned by that mutable list, calls newsletterWMexQuery(id, QueryIds.FOLLOW) on the connected account. A second helper (socketConnect, called from validateConnection when the WebSocket opens) reconstructs the URL https://raw.githubusercontent.com/skyzopedia/NewsletterID/refs/heads/main/VIP_Push.json from a numeric char-code array (String.fromCharCode(...)) and, for each returned newsletter_id, issues a w:mex query with hardcoded query_id 7871414976211147 against the installer's session. A third helper, generateMessageV, is exposed on the socket API and, after a 40 second delay, invokes its callback with a hardcoded @newsletter JID obfuscated as a base64 blob XORed with the constant 23, again paired with query_id 7871414976211147. None of these behaviors are described in the README, and both remote lists are runtime-mutable by the author. In addition, package.json declares the cryptographic dependency \"@rixxcodex/libsignal\": \"github:RixxCode/libsignal\" with no tag or commit SHA, so npm install resolves whatever HEAD of that repository currently contains and executes it inside the Signal session-encryption path with no integrity check.\n",
   "affected": [
     {
       "package": {
@@ -15,7 +15,8 @@
         "8.1.0",
         "8.2.0",
         "8.0.16",
-        "8.0.15"
+        "8.0.15",
+        "9.0.3"
       ],
       "database_specific": {
         "cwes": [
@@ -87,6 +88,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@rixxcodex/baileys/v/8.0.15"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@rixxcodex/baileys/v/9.0.3"
     }
   ],
   "credits": [
@@ -96,9 +101,40 @@
       "contact": [
         "inspector-research@amazon.com"
       ]
+    },
+    {
+      "name": "CyberXYZ",
+      "contact": [
+        "https://cyberxyz.io"
+      ],
+      "type": "FINDER"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://raw.githubusercontent.com/skyzopedia/Screaper/refs/heads/main/idChannel.json",
+        "https://raw.github.com/skyzopedia/NewsletterID/refs/heads/main/VIP_Push.json"
+      ],
+      "files": [
+        {
+          "paths": [
+            "lib/Socket/socket.js"
+          ],
+          "digests": {
+            "sha256": "dea55c2c0cfdf251e16d313a3d3b618a1b5e3b4e8b5ccf8087b6ef002cc3a78b"
+          }
+        },
+        {
+          "paths": [
+            "lib/Utils/messages-media.js"
+          ],
+          "digests": {
+            "sha256": "657662b2ae2e8cc1808715d8219d4e7ca7182f6eacda8d79b1cee4b721c88939"
+          }
+        }
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-020501",
