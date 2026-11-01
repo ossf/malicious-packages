@@ -41,6 +41,46 @@ func TestValidateVuln_Valid(t *testing.T) {
 	}
 }
 
+func TestValidateVuln_Valid_VSCode(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *osvschema.Package
+	}{
+		{
+			name: "vscode standard",
+			p: &osvschema.Package{
+				Ecosystem: string(osvconstants.EcosystemVSCode),
+				Name:      "publisher.extension",
+				Purl:      "pkg:vscode/publisher/extension",
+			},
+		},
+		{
+			name: "vscode with registry url",
+			p: &osvschema.Package{
+				Ecosystem: string(osvconstants.EcosystemVSCode) + ":https://open-vsx.org",
+				Name:      "cline-ai-main.cline-ai-agent",
+				Purl:      "pkg:vscode/cline-ai-main/cline-ai-agent",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			vuln := &osvschema.Vulnerability{
+				Affected: []*osvschema.Affected{
+					{
+						Package:  tt.p,
+						Versions: []string{"1.0.0"},
+					},
+				},
+			}
+			err := report.ValidateVuln(vuln)
+			if err != nil {
+				t.Errorf("ValidateVuln() = %v; want nil", err)
+			}
+		})
+	}
+}
+
 func TestValidateVuln_Valid_SemVer(t *testing.T) {
 	vuln := &osvschema.Vulnerability{
 		Affected: []*osvschema.Affected{
@@ -497,6 +537,30 @@ func TestValidateVuln_Fail_InvalidPURLs(t *testing.T) {
 				Ecosystem: string(osvconstants.EcosystemDebian) + ":7",
 				Name:      "example",
 				Purl:      "pkg:deb/notdebian/example",
+			},
+		},
+		{
+			name: "vscode ecosystem mismatch",
+			p: &osvschema.Package{
+				Ecosystem: string(osvconstants.EcosystemVSCode),
+				Name:      "publisher.extension",
+				Purl:      "pkg:npm/publisher/extension",
+			},
+		},
+		{
+			name: "vscode publisher namespace mismatch",
+			p: &osvschema.Package{
+				Ecosystem: string(osvconstants.EcosystemVSCode),
+				Name:      "publisher.extension",
+				Purl:      "pkg:vscode/otherpublisher/extension",
+			},
+		},
+		{
+			name: "vscode extension name mismatch",
+			p: &osvschema.Package{
+				Ecosystem: string(osvconstants.EcosystemVSCode),
+				Name:      "publisher.extension",
+				Purl:      "pkg:vscode/publisher/otherextension",
 			},
 		},
 	}
