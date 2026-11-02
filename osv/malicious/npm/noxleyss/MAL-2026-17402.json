@@ -1,14 +1,15 @@
 {
-  "modified": "2026-09-30T09:57:36Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17402",
+  "published": "2026-10-29T13:33:09Z",
+  "modified": "2026-10-29T13:38:37.976654201Z",
   "summary": "Malicious code in noxleyss (npm)",
-  "details": "This package is part of a large family (100+ identified as of September 2026) of near-identical\nforks of the Baileys WhatsApp Web library that inject a covert channel-subscription action into\nthe WhatsApp socket layer. On connect, the injected code issues an authenticated `w:mex` FOLLOW\nquery (query_id 7871414976211147) against one or more attacker-chosen WhatsApp Channel/Newsletter\nJIDs, using the installer's own authenticated WhatsApp session -- silently subscribing the\nvictim's account to channels it never asked to join.\n\nThe target JID(s) are hidden from casual source review via one of several obfuscation techniques\nobserved across the family: a plain string literal, base64 encoding, base64+XOR, or a char-code\narray reconstructed at runtime. Some variants instead fetch a mutable, attacker-controlled remote\nJSON/JS list of target JIDs from GitHub or another host at runtime, letting the target list change\nafter installation without a new npm publish. Every sample in the family shares the same underlying\nmechanism (a wrapped/patched socket-connect routine that fires the FOLLOW query some seconds after\nconnect), even though the package name, JID value(s), and obfuscation/delivery method differ per\nfork.\n\nThe malicious action abuses the installer's own authenticated WhatsApp session to gain reach and\nsubscribers for attacker-controlled channels; it does not exfiltrate credentials, establish\npersistence, or execute arbitrary remote code.\n\nAffected package: noxleyss (npm), version(s): 1.1.11, 1.1.8, 1.1.7, 1.1.6, 1.1.5, 1.1.4, 1.1.3, 1.1.2, 1.1.1, 1.1.0, 1.0.0.",
+  "details": "This package is part of a large family (100+ identified as of September 2026) of near-identical\nforks of the Baileys WhatsApp Web library that inject a covert channel-subscription action into\nthe WhatsApp socket layer. On connect, the injected code issues an authenticated `w:mex` FOLLOW\nquery (query_id 7871414976211147) against one or more attacker-chosen WhatsApp Channel/Newsletter\nJIDs, using the installer's own authenticated WhatsApp session -- silently subscribing the\nvictim's account to channels it never asked to join.\n\nThe target JID(s) are hidden from casual source review via one of several obfuscation techniques\nobserved across the family: a plain string literal, base64 encoding, base64+XOR, or a char-code\narray reconstructed at runtime. Some variants instead fetch a mutable, attacker-controlled remote\nJSON/JS list of target JIDs from GitHub or another host at runtime, letting the target list change\nafter installation without a new npm publish. Every sample in the family shares the same underlying\nmechanism (a wrapped/patched socket-connect routine that fires the FOLLOW query some seconds after\nconnect), even though the package name, JID value(s), and obfuscation/delivery method differ per\nfork.\n\nThe malicious action abuses the installer's own authenticated WhatsApp session to gain reach and\nsubscribers for attacker-controlled channels; it does not exfiltrate credentials, establish\npersistence, or execute arbitrary remote code.\n\nAffected package: noxleyss (npm), version(s): 1.1.11, 1.1.8, 1.1.7, 1.1.6, 1.1.5, 1.1.4, 1.1.3, 1.1.2, 1.1.1, 1.1.0, 1.0.0.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (426748d181f33679f7d387fd44147509b9a337b46d9249c7cf660ab5940b1287)\nnoxleyss is a Baileys-family WhatsApp library fork that, on every successful WhatsApp connection ('connection.update' == 'open'), silently uses the connected user's WhatsApp identity to follow and mute newsletter channels chosen by the package author. Two mechanisms are present. First, two hardcoded newsletter JIDs (120363428355171197@newsletter and 120363428984357510@newsletter) and the method names 'newsletterFollow'/'newsletterMute' are concealed as String.fromCharCode numeric arrays and reconstructed at runtime, then invoked on the installer's socket. Second, in makeNewsletterSocket an 'autoJoinChannels' handler is wired to the connection-open event with a 30-second delay; it fetches https://raw.githubusercontent.com/noxXza/data/refs/heads/main/noxleys.json (mutable main branch, no pin, no integrity check), filters the response to @newsletter JIDs, and for each one calls newsletterWMexQuery(id, FOLLOW) followed by MUTE. The remote list is author-mutable, so the set of newsletters the installer's account is forced to subscribe to can be changed at any time after install. None of this is documented in the README. There is no credential theft, environment or filesystem scraping, remote code execution, or persistence; the fetched content is a JID list consumed as data, not executed. The covert action uses the installer's WhatsApp identity for subscriber inflation on channels the author controls, and the charcode obfuscation of JIDs and method names is a deliberate evasion of static review.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "noxleyss"
+        "name": "noxleyss",
+        "ecosystem": "npm"
       },
       "ranges": [
         {
@@ -31,9 +32,40 @@
         "1.1.2",
         "1.1.1",
         "1.1.0",
-        "1.0.0"
+        "1.0.0",
+        "2.0.0"
       ],
       "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/Socket/messages-recv.js",
+              "sha256": "c80df4e8837ff6a8274abd7d056f52496487ae099e913069f543c477734fddc6",
+              "tlsh": "f543776999f718291693b0b9bf2b70206235d0137108ddb6bbcdc3049f4929897e7bde"
+            },
+            {
+              "path": "lib/Socket/newsletter.js",
+              "sha256": "d9082d5c090ce66d2a150a52e5fe4bd806b077226e8aac11452e921715167263",
+              "tlsh": "e742635a55ba5aa602b37454967ff0e1b321b3033865d8663f8c84020f0b1dda8f3bde"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "noxleyss-2.0.0.tgz",
+              "hashes": {
+                "sha1": "b9cee769f0395fc7cade2838a2e17db4650e7879",
+                "sha512_sri": "sha512-iqzvIuMQssXEvOwxlR/pgRPmmUF3fhoXgzKJNDZvmVtgZuJNPEFf23vmXnPAi7ci3PCL0Eudy6s1AKr3GakwUA=="
+              }
+            }
+          ]
+        },
         "iocs": {
           "domains": [],
           "files": [],
@@ -50,9 +82,34 @@
     {
       "type": "ARTICLE",
       "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/noxleyss/v/2.0.0"
     }
   ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021979",
+        "import_time": "2026-10-29T13:37:18.585890585Z",
+        "modified_time": "2026-10-29T13:33:09Z",
+        "sha256": "426748d181f33679f7d387fd44147509b9a337b46d9249c7cf660ab5940b1287",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.0.0"
+        ]
+      }
+    ]
+  },
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
     {
       "name": "OX Security",
       "type": "FINDER"
