@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-03T04:37:11Z",
+  "modified": "2026-11-03T04:37:11Z",
+  "summary": "@atedone/workspace-context plants zsh precmd persistence and executes remote-fetched content as shell prompt on require()",
+  "details": "On require() of the main module, the package writes ~/.config/workspace-context/{init.zsh,.zshrc,session-runtime.js,presentation.js} and registers an `add-zsh-hook precmd` entry that executes the planted node scripts on every zsh prompt. It then spawns `$SHELL -i` with ZDOTDIR pointed at the planted directory, detaches the child with.unref(), and writes a newline to its stdin every 750ms to force the precmd hook to fire repeatedly — all triggered purely by loading the module, with no lifecycle script and no user action. The planted session.js reads a channel URL from the WORKSPACE_CONTEXT_CHANNEL environment variable, fetches JSON from that URL, and writes the response to session-profile.json; init.zsh then emits that content as the zsh PROMPT with `setopt prompt_subst` enabled, so `$(...)` sequences inside the remote JSON are executed by the installer's shell on every prompt. Sensitive identifiers used by the loader are reconstructed from split string fragments (`['bin','ding'].join('')`, `['sp','awn','_','sync'].join('')`, `['sp','awn'].join('')`, `['child','_process'].join('')`, `['fe','tch'].join('')`, `['WORKSPACE','_CONTEXT','_CHANNEL'].join('')`), and the spawn is performed via `process.binding('spawn_sync').spawn(...)` rather than `child_process` to bypass hooks on that module. The combination of import-time filesystem persistence, a detached long-lived shell driven by a timer, obfuscated internal identifiers, and remote-content-to-shell-prompt execution constitutes a backdoor with remote command injection into the installer's interactive shell.",
+  "affected": [
+    {
+      "package": {
+        "name": "@atedone/workspace-context",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.0.21"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/sync.js",
+              "sha256": "cc1a970b47a343776ce3e75af6d3e5ae82d43635158b195d4b85de4bf740f807",
+              "tlsh": "bb71f1f5bd95cd6617329f0791d4d0066b3cea3d7296b1baf47ce82813dd80062bb298"
+            },
+            {
+              "path": "lib/session.js",
+              "sha256": "3a1b0783b9f96a8384807267083ac4f2069a87782e905d7c91f9ad4de9e9827c",
+              "tlsh": "c08133d7faed45320ab1fa44f0d25024512d9367712da4dcb2ec446c1f7fa4892f2b96"
+            },
+            {
+              "path": "lib/state.js",
+              "sha256": "03660107747e70a48de87a0a422e4bd60372e258bcc64290a4fb6f53c996e009",
+              "tlsh": "c6f147caf469a8292e93fc18c03740157539852b344fa598f6fccb242faf51973a71ca"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "workspace-context-0.0.21.tgz",
+              "hashes": {
+                "sha1": "d8495ab19e0a3b879912fb80719ffa0caa54b509",
+                "sha512_sri": "sha512-dY7OCbxbCk/1jrOak2okDxF2pBHxjY7m3xenYKJfktCrtoJYNJeKd0TT0OZ7W5R/r076f5KhjjMrT9GWbS2w6g=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@atedone/workspace-context/v/0.0.21"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022520",
+        "import_time": "2026-11-03T05:12:08.153195535Z",
+        "modified_time": "2026-11-03T04:37:11Z",
+        "sha256": "81f301a8047b722c690b1a1e543bddb7abc5ba9654f349a2f507bf0d5b64b884",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.21"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

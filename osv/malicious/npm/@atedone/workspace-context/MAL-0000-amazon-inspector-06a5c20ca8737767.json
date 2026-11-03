@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-03T04:36:37Z",
+  "modified": "2026-11-03T04:36:37Z",
+  "summary": "@atedone/workspace-context import-time spawns zsh with remote-controlled PROMPT giving RCE from hardcoded bare-IP server",
+  "details": "On require(), index.js runs state.initialize() as a top-level side effect, which writes files under ~/.config/workspace-context/, spawns a child Node process running sync.js, and spawns an interactive /bin/zsh -i with HOME/ZDOTDIR redirected into the package's own directory. The written.zshrc sources init.zsh, which enables `setopt prompt_subst` and installs a zsh precmd hook (workspace_context_refresh_preview) that re-invokes session-runtime.js on every prompt render. session-runtime.js fetches session-profile.json over plain HTTP from the hardcoded bare-IP endpoint http://150.136.8.159:8080/workspace/profile and interpolates the returned segments[].text field directly into PROMPT; with prompt_subst enabled, any `$(...)` the remote server places in that text executes as a shell command on the installer's host every time a prompt is drawn. The package assembles the sensitive primitives at runtime from split strings to evade static scanners: `['bin','ding'].join('')` + `['sp','awn','_','sync'].join('')` to resolve `process.binding('spawn_sync')`, `['sp','awn'].join('')`, `['child','_process'].join('')`, `['fe','tch'].join('')`, and `['WORKSPACE','_CONTEXT','_CHANNEL'].join('')` for the override env var. Net effect: requiring this package hands persistent remote command execution on the installer's host to whoever controls 150.136.8.159:8080, over an unauthenticated plain-HTTP channel.",
+  "affected": [
+    {
+      "package": {
+        "name": "@atedone/workspace-context",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.0.23"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/default-profile.json",
+              "sha256": "cde3f3d9ee6938a393e2a9edd3f83b164aa2ac486c1ef5b2d493aa511ca47f80",
+              "tlsh": "8dc02b6dc5841c1308dc7e4052e48c4050054c4340023c1257c34b0c8fdca77647080d"
+            },
+            {
+              "path": "lib/state.js",
+              "sha256": "e683a53424f9f5d39de6712865b11ce7296c3fa0ffb90f8be2862b9e44fd7486",
+              "tlsh": "122297cbf4faa41a1e93fc1cd16b402571388527344e9598f5ad86282faf61873e35cb"
+            },
+            {
+              "path": "index.js",
+              "sha256": "7430c7be53898e9d9f68399ca79684b6e5a5b6fd59737b61d676e6b3e09faf48",
+              "tlsh": "65118ecf94599cffed70e944f8fc447351a2242d64232524f8e943da392da5332ad5d2"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "workspace-context-0.0.23.tgz",
+              "hashes": {
+                "sha1": "9fef2461da39e9f18ac226e70f743ccdc925a161",
+                "sha512_sri": "sha512-PJv7S5EkvclkVhzqDDeN1uvqBTaZIXC09oz0tog5PZLfjrPzC8Bq1dHi8TwRrrpCi8jHziN+Cgp9qDSNklmgrg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@atedone/workspace-context/v/0.0.23"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022516",
+        "import_time": "2026-11-03T05:12:07.696434644Z",
+        "modified_time": "2026-11-03T04:36:37Z",
+        "sha256": "06a5c20ca8737767d4a4055c6351a0fc595d36cde1d6ee57c48197c4b5fd9c32",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.23"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
