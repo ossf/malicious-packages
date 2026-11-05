@@ -1,0 +1,273 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-18377",
+  "published": "2026-10-29T00:06:14Z",
+  "modified": "2026-11-03T04:49:53.498972793Z",
+  "summary": "Malicious code in spectral-core (npm)",
+  "details": "spectral-core contains no library code: where an index.js is present (e.g. 3.0.12) it only exports the package name and version. It ships a binding.gyp (and package.json sets `\"gypfile\": true`), so npm runs `node-gyp rebuild` on install, and the binding.gyp declares a build action (\"Finalizing spectral-core setup\") that runs inline JavaScript with `node -e`. Versions 3.0.3 to 3.0.12 (3.0.8 was never published) were published on 2026-10-28 between 19:42 and 21:24 UTC, each with a different collection script. Depending on the version, the script:\n\n- reads the environment of PID 1 (`/proc/1/environ`; 3.0.4, 3.0.6) and of its own process (`/proc/self/environ`; 3.0.6), greps the environment for `htb` and `flag` (3.0.4), and enumerates `process.env` with `Object.entries` (3.0.11, 3.0.12);\n- searches the filesystem for files named `*flag*` or `*HTB*` and for files containing `HTB{`, and prints the first lines of `/run/secrets/*` (3.0.3); recursively lists `/var/run/secrets` (3.0.5); reads `/flag.txt` (3.0.9);\n- reads `AWS_CONTAINER_CREDENTIALS_RELATIVE_URI` and the ECS container metadata URI variable (3.0.7), and fetches the ECS task metadata endpoint (`$ECS_CONTAINER_METADATA_URI/task`) with curl and posts the result (3.0.11);\n- reads `/fetch.sh`, `/run_test.sh` and `/setup_test.sh` (3.0.5) and `/opt/ph/sitecustomize.py` (3.0.12), lists `/scripts` (3.0.10) and `/opt` (3.0.11), and collects `/etc/resolv.conf`, `ip neigh` and `ip route` output (3.0.6);\n- sends data off the host over HTTPS. In 3.0.7 and 3.0.9 to 3.0.12 the scanned code POSTs to webhook.site (path `/d6092bdc-05c0-45da-a280-c343ea6d6156` in 3.0.7, `/f604623f-fc78-4447-9225-6772f7f12cb1` in 3.0.9 to 3.0.12). In 3.0.3 to 3.0.6 the destination is outside the scanned excerpt, but each version loads `https` and a full-file static rule for webhook/collection services matched.\n\nVersion 3.0.6 also shipped a file named `CTF_HANDOFF_CURSE_DEPENDENT_v2.md`, and the strings searched for suggest the author was targeting a capture-the-flag environment. The script nevertheless runs on any machine where npm builds the package's binding.gyp during install, collects (depending on the version) environment variables, secret files, local scripts and ECS task metadata, and sends data to a third-party endpoint (webhook.site where the destination is visible). The same webhook.site endpoint `/f604623f-...` is used by @dmangal/curse-dependent-ecto@99999.0.0. All 2026 versions (0.0.0-stage and 3.0.1 to 3.0.12) were unpublished on 2026-10-28 at 22:29 UTC.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (451c36f03e81be0ff6c85334587d7ff401de1e5134e179557ec4bc454cd7ba76)\nThe tarball ships only package.json and binding.gyp (plus a markdown file), with gypfile: true set in package.json so npm invokes node-gyp rebuild on install. binding.gyp declares a 'none'-type target with no native source files; its sole purpose is an inline action that runs `node -e` with an embedded script. At install time that script reads /proc/1/environ and /proc/self/environ (container/pod entrypoint environment variables, which routinely contain CI/CD secrets and cloud credentials), collects DNS/socket/ARP/route reconnaissance output, queries the AWS EC2 instance metadata service at 169.254.169.254 for user-data and meta-data, and POSTs the collected data to the hardcoded collector https://webhook.site/d6092bdc-05c0-45da-a280-c343ea6d6156. The package exposes no library functionality — main: index.js is declared but index.js is not shipped — so the binding.gyp exists solely as a vehicle for install-time code execution and credential exfiltration. The name resembles the legitimate @stoplight/spectral-core project but the shipped contents are unrelated to it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "spectral-core",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "3.0.6",
+        "3.0.4",
+        "3.0.10",
+        "3.0.5",
+        "3.0.3",
+        "3.0.11",
+        "3.0.7",
+        "3.0.12",
+        "3.0.9",
+        "3.0.2"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "binding.gyp",
+              "sha256": "0f314f2559c6a7efcdb2e539d598afd3f3042b9652ce30bd58fddfd60bfa454c",
+              "tlsh": "d7314098b7748abb56d0461dd6ae8703c133a16286c07ec4b7ec6ded1f0e4411a34ef1"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "spectral-core-3.0.6.tgz",
+              "hashes": {
+                "sha1": "cc4e240b34a543c4945e216757e0ecc65198df1c",
+                "sha512_sri": "sha512-N+bFcMCDAZSFlzi2Xho05OzcUlrQpcM7hJXF+OpyCT0kuVCBdpUtxMz6nUMIJtJnfClvugdxaBfhUC2E2bO6Sw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.6"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.10"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.11"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.12"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.9"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/spectral-core/v/3.0.2"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "urls": [
+        "https://webhook.site/f604623f-fc78-4447-9225-6772f7f12cb1",
+        "https://webhook.site/d6092bdc-05c0-45da-a280-c343ea6d6156"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022409",
+        "import_time": "2026-10-29T15:13:33.239756316Z",
+        "modified_time": "2026-10-29T14:58:15Z",
+        "sha256": "451c36f03e81be0ff6c85334587d7ff401de1e5134e179557ec4bc454cd7ba76",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.6"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022413",
+        "import_time": "2026-10-29T15:13:33.67013451Z",
+        "modified_time": "2026-10-29T14:58:46Z",
+        "sha256": "54cb50bba7e6f19319df8f23816710ec57a29dc6d69025f3b9c5ddf71f01325c",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022407",
+        "import_time": "2026-10-29T15:13:32.968949059Z",
+        "modified_time": "2026-10-29T14:58:00Z",
+        "sha256": "79c6086910623ed4eed9f7bb0f1305df0cacd70ab45112d52a295b47a9d9eb5a",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.10"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022411",
+        "import_time": "2026-10-29T15:13:33.465182254Z",
+        "modified_time": "2026-10-29T14:58:31Z",
+        "sha256": "8b8de448b1a3fae15b672af020951d2cc5556f943bb2a302f4ccb23ffde8aaa1",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022415",
+        "import_time": "2026-10-29T15:13:33.899623308Z",
+        "modified_time": "2026-10-29T14:59:12Z",
+        "sha256": "baeee5e622f864693e676d6fc1c780c842218a5b7a6d06bedce5d732ea40629a",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022406",
+        "import_time": "2026-10-29T15:13:32.87266895Z",
+        "modified_time": "2026-10-29T14:57:51Z",
+        "sha256": "cd35974c3234a6dad4309c3401da17d4fbf5fbf8465bd4f351be966f9500aa09",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.11"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022408",
+        "import_time": "2026-10-29T15:13:33.08671578Z",
+        "modified_time": "2026-10-29T14:58:07Z",
+        "sha256": "de6a163084b23d2a75e3512f9cbe77045ba53182d1e08752c00a0d886e2cd62f",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022412",
+        "import_time": "2026-10-29T15:13:33.566689005Z",
+        "modified_time": "2026-10-29T14:58:39Z",
+        "sha256": "e06fe8f5e55d720c49a2919236fdc93fd33d62a937078c83060ee251bae4cbe4",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.12"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022405",
+        "import_time": "2026-10-29T15:13:32.733484061Z",
+        "modified_time": "2026-10-29T14:57:43Z",
+        "sha256": "fdc14a289befd2f77d2b9d8084d7a8f1db9a8de799407a2f12b338d4101d0272",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.9"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022410",
+        "import_time": "2026-10-29T15:13:33.366659328Z",
+        "modified_time": "2026-10-29T14:58:25Z",
+        "sha256": "d87e383d290979921fc31446bf3aa12ceb70744065334b1ea0eeda11dd4c979f",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Linus Baumberger (Gatekeeper)",
+      "contact": [
+        "https://github.com/lb2002"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
