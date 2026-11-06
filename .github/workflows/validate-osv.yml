@@ -68,30 +68,27 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.base_ref != '' }}
     steps:
-    - name: Checkout target
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         persist-credentials: false
-        ref: ${{ github.base_ref }}
-        path: existing
-    - name: Checkout this branch
-      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      with:
-        persist-credentials: false
-        path: changed
+        # Report IDs match filenames, so the check only needs the git trees of
+        # the PR merge commit (HEAD) and its first parent, the base branch
+        # (HEAD^1). Fetch both commits but keep the working tree tiny.
+        fetch-depth: 2
+        sparse-checkout: config
+        sparse-checkout-cone-mode: true
     - name: Check for deleted reports
       run: |
-        # Extract all the OSV IDs from the existing and changed version of the repo.
-        find existing/osv -name "MAL-*.json" -exec yq -r '.id' {} + > existing-ids.txt
-        find changed/osv -name "MAL-*.json" -exec yq -r '.id' {} + > changed-ids.txt
+        # List the OSV IDs present in a tree by filename, without touching
+        # the working directory.
+        ids() {
+          git ls-tree -r --name-only "$1" -- osv/ \
+            | sed -nE 's|.*/(MAL-[0-9]+-[0-9]+)\.json$|\1|p' \
+            | sort -u
+        }
 
-        # The following command finds all the IDs that are in existing-ids.txt, but
-        # not in changed-ids.txt.
-        # This is acheived by joining the two sets together and returning only
-        # the IDs that are not in both sets. This will include deleted and added
-        # IDs. These are then joined with the existing IDs and only the duplicate
-        # values are returned - outputting the deleted IDs.
-        REMOVED_IDS=`cat existing-ids.txt changed-ids.txt | sort | uniq -u | cat existing-ids.txt - | sort | uniq -d | paste -sd',' -`
+        # IDs present in the base branch but absent from this branch.
+        REMOVED_IDS=$(comm -23 <(ids HEAD^1) <(ids HEAD) | paste -sd',' -)
         echo "::debug ::Result of check = '$REMOVED_IDS'"
 
         if [ -z "$REMOVED_IDS" ]; then
