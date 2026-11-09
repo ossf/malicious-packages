@@ -2,7 +2,7 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-18178",
   "published": "2026-10-21T16:00:00Z",
-  "modified": "2026-10-22T06:32:14.560117401Z",
+  "modified": "2026-10-26T18:58:19.518708335Z",
   "summary": "Malicious code in event-emitter-testmetest (npm)",
   "details": "event-emitter-testmetest was published by npm account `testnewtestme2` on 2026-10-21, first to test the delivery chain of data-pipeline-testmetest 2.0.1 and then to ship it. 1.0.6 and 1.0.7 ship an obfuscated `index.js` loader that decrypts a filler stage and pipes it into Bun with the full environment: 1.0.6 runs it on load, 1.0.7 on `npm install` via a `binding.gyp` source `<!(env node index.js >/dev/null 2>&1; echo stub.c)`. 4.1.0 and 5.0.0 ship rebuilds of the full stealer behind the same `binding.gyp` hook: inline in `index.js` in 4.1.0, and in an encrypted `data.bin` that `index.js` decrypts in 5.0.0. Other versions carry no executable payload.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8d4e6bad5d24d9c63960e77cc82c054c3b14704bea931cd48c86025fa4dc45c9)\nThe package's `main` (index.js) is a multi-layer obfuscated loader: a String.fromCharCode-reconstructed string is Caesar-shifted (k=19) and eval'd, which then AES-128-GCM-decrypts a hardcoded hex ciphertext using embedded key/iv/authTag and executes the plaintext via a dynamic `Function(module, require, process, Buffer, __filename, __dirname, <plaintext>)` call, giving the decrypted bytes full Node module, require, and process access. The payload is opaque to any installer. `binding.gyp` declares a target with no native source files and uses GYP command-expansion (`<!(env node index.js...)`) in `sources`, which runs the loader during `node-gyp rebuild` — npm invokes node-gyp automatically whenever `binding.gyp` is present, so the loader runs on `npm install` even though `package.json.scripts` contains no install hook. The same loader also executes whenever another module `require`s this package. The stacked charcode+Caesar+AES-GCM obfuscation and the use of a no-sources `binding.gyp` purely to trigger node-gyp are consistent only with hiding and auto-executing attacker-controlled code against the installer host.\n",
   "affected": [
@@ -19,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -82,6 +87,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/event-emitter-testmetest/v/1.0.7"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/event-emitter-testmetest/v/1.0.6"
     }
   ],
   "database_specific": {
@@ -182,6 +191,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.7"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-021816",
+        "import_time": "2026-10-26T18:56:20.578800765Z",
+        "modified_time": "2026-10-26T18:37:03Z",
+        "sha256": "061ff2842cee28231d21a2c401f06152fa9030b27d20936a4517b167ab521064",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
         ]
       }
     ]
