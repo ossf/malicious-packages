@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-10T05:07:33Z",
+  "modified": "2026-11-10T05:07:33Z",
+  "summary": "lwd-uri-util build.rs exfiltrates full environment and signing-credential markers to webhook.site",
+  "details": "The crate's build.rs runs on every `cargo build`/`cargo check` (including automatic invocations by rust-analyzer on editor open) and serializes the entire process environment (every variable, unfiltered by name, with values under 8KB), the hostname, and the username into JSON. It then POSTs the payload via a detached background shell (`/bin/sh -c (curl -s -X POST --data-binary @FILE URL &)` on Unix, hidden PowerShell `iwr` on Windows) to a hardcoded webhook.site collector (https://webhook.site/0a60608b-63de-480c-a441-38a8d107a9ea). Both the destination URL and the target-marker list are concealed with a hand-rolled base64 decoder; a comment labels the endpoint a 'build-metrics' sink. Execution is gated to prefer non-CI developer machines and hosts carrying code-signing/keystore markers (Apple KEYCHAIN, APPLE_, SPARKLE_, CODE_SIGN, DEVELOPER_DIR, fastlane MATCH_/FASTLANE_, Android KEYSTORE_/PLAY_/SIGNING, VINOR_, WINDIR, APPVEYOR_, TF_BUILD), i.e. environments where release-signing secrets, registry tokens, and cloud credentials typically reside. Any installer who builds this crate exposes their full environment — commonly including CARGO_REGISTRY_TOKEN, GITHUB_TOKEN, AWS_*, signing passphrases, and other secrets — to an attacker-controlled public request bin.",
+  "affected": [
+    {
+      "package": {
+        "name": "lwd-uri-util",
+        "ecosystem": "crates.io"
+      },
+      "versions": [
+        "0.1.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "build.rs",
+              "sha256": "a2bdc4c20f189c6be6956e467678f8a2a539fc9bc26fc9ce591125c010ba52b7",
+              "tlsh": "ccb1d9d77160743d16b2936c8b66a240ff15512f41a0921db97e43186fff9a881f1fc4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "lwd-uri-util-0.1.3.crate",
+              "hashes": {
+                "sha256": "80c54ff4fe231c363db0c75cbb81f566ea4d10c266ec594165d840df13ab0973"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://crates.io/crates/lwd-uri-util/0.1.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022581",
+        "import_time": "2026-11-10T05:12:34.451395275Z",
+        "modified_time": "2026-11-10T05:07:33Z",
+        "sha256": "194256cec6d17f809a9181e45a363e2548bfbf3ebf51aaa708cec543a66fdb28",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
