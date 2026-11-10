@@ -2,7 +2,10 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-5525",
   "published": "2026-06-10T18:37:05Z",
-  "modified": "2026-08-05T06:02:51.767943238Z",
+  "modified": "2026-09-01T11:20:24.005437588Z",
+  "aliases": [
+    "GHSA-v45f-fr53-php7"
+  ],
   "summary": "Malicious code in @solana-labs/web3.js (npm)",
   "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (91b0523027116b3981b0f1dfe925f01d8956eb19817aae6ea7d0022d5357fba4)\nPackage `@solana-labs/web3.js` impersonates the legitimate `@solana/web3.js` and re-exports it as cover while running a malicious `postinstall` (`node install.js`). On `npm install`, install.js performs sandbox-evasion checks (hostname pattern scoring for Docker/AWS/CI runners, /proc/uptime, presence of strace/tcpdump/auditd, AWS metadata 169.254.169.254, security-tooling dependencies) and aborts if it detects analysis. Otherwise it enumerates installer secrets — `~/.ssh/id_rsa`, `~/.aws/credentials`, `~/.config/solana/id.json`, `.env` files, and scrapes `process.env` for KEY/SECRET/MNEMONIC/NPM/GITHUB tokens — and harvests crypto material including ETH private keys (`/0x[a-fA-F0-9]{64}/`), Solana 64-byte arrays, and AWS keys. Stolen data is tagged `[ETH]/[SOLANA]/[AWS]/[SSH]/[NPM]/[GITHUB]` and exfiltrated to `api.telegram.org/bot<token>/...` using XOR-obfuscated bot token, chat ID, and HMAC auth secret embedded in install.js. install.js then enters a long-poll loop against Telegram `getUpdates` accepting commands `/keys`, `/ssh`, `/env`, `/wallet`, `/sh <cmd>`, and bare text, executing them via `execSync` (PowerShell on Windows) and returning output to the attacker — a full reverse-shell C2 backdoor. Persistence is established via a `@reboot sleep 90 && node <path>` crontab entry. A hardcoded Solana drain address `D4hGgKKaBFZV1NUTWvYRwbpu8HHr3qmDfHyKCTLqbaE7` is present for wallet theft.\n",
   "affected": [
@@ -197,6 +200,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/@solana-labs/web3.js/v/1.98.107"
+    },
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-v45f-fr53-php7"
     }
   ],
   "database_specific": {
@@ -386,6 +393,13 @@
         "versions": [
           "1.98.107"
         ]
+      },
+      {
+        "id": "RLUA-2026-05925",
+        "import_time": "2026-09-01T11:17:44.575357788Z",
+        "modified_time": "2026-08-24T16:31:01Z",
+        "sha256": "8151aa214db21c8e50450e5b3d9087dd7c091ec1fcea7aa2a07e69c2511bca4f",
+        "source": "reversing-labs"
       }
     ]
   },

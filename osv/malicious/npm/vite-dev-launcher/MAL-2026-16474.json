@@ -1,0 +1,95 @@
+{
+  "modified": "2026-09-23T09:07:06Z",
+  "published": "2026-09-23T09:07:06Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16474",
+  "summary": "Malicious code in vite-dev-launcher (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9ac504b2228b7e2d5aab05aac8cb13072d87bc4f047f390d207c7712c7cdd123)\nThe package presents as a Vite dev-server wrapper but its declared postinstall (`node./postinstall-run.cjs`) chains through `lib/gradle/lifecycle/postinstall-entry.cjs` and `instrumentation-registry.cjs` to base64+AES-256-GCM-decrypt an embedded ciphertext in `agent-bytecode.segments.cjs`. The AES key is derived from SHA-256 of a specific victim workspace's files (package.json, pnpm-workspace.yaml, vite-plugin-legacy-css.ts, scripts/gen-page-meta.cjs, scripts/git-tag.mjs, scripts/git-merge.mjs, src/router/routes.tsx, TAGLOG.md, index.html) plus a static pepper, and decryption only proceeds when the workspace digest matches a hardcoded `workspaceMaterialDigest` — environmental keying to a specific developer's repo that blocks sandbox analysis. The decrypted bytes are written to `~/.gradle/caches/transforms-3/8.7/instrumented/instrumented-jars/gradle-instrumentation-agent-8.7.0/instrumentation/instrumentation-agent-runtime.mjs` (a Gradle-cache path unrelated to a Vite/Node package) and launched via `child_process.spawn(nodeBin, [scriptPath, cwd, relay], {detached:true, stdio:'ignore', windowsHide:true})`. `lib/gradle/string-vault.cjs` hides configuration behind base64+XOR (key `gI8.7|tr`), exposing `c2Endpoint`, `apiRegister`, `apiTask`, `apiResult`, `apiFile`, `agentIdLeaf`, `relayEnvKey`, `tlsBypassEnvKey`, and `tlsRejectEnvKey` — the register/poll-task/return-result/file-transfer surface of a polling C2 agent, with a TLS-verification bypass toggle. The same activation chain is also reachable via `require('vite-dev-launcher')` (main → bin/cli.js → tooling-bootstrap.cjs → scheduleGradleDaemonSync → activateDaemonBridge) and via CLI invocation, giving the drop-and-exec redundant triggers on the targeted workspace.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "vite-dev-launcher"
+      },
+      "versions": [
+        "2.9.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/gradle/instrumentation-registry.cjs",
+              "sha256": "a57335b5d877386d698b9af6967fe76208082bffd302cf3ae5a6a59f6fe8c0d6",
+              "tlsh": "ea5175eb7df3229a8f93528a6d6b881a2513c241325dcc61fd9c47680fc45694b32ff8"
+            },
+            {
+              "path": "lib/gradle/workspace-fingerprint.cjs",
+              "sha256": "0d68a48e4bfb865ec7c6d68cd44ac78af1241ce3cff3b6363eb256e8a13335ad",
+              "tlsh": "a561305b8cf6b2390966f5e969abd010b12e9517200efdc1b39c4990bfcb6584736b4c"
+            },
+            {
+              "path": "lib/gradle/string-vault.cjs",
+              "sha256": "3b2c99673d424c4da3a4a0ee48152481153eec561b2b8ba000d2a9c2272127ba",
+              "tlsh": "6321cc1dabb4f73c12a3b6b19853942e81dc2c04bb94a58f2785360c259ba2cc4f48c8"
+            },
+            {
+              "path": "lib/gradle/runtime-launcher.cjs",
+              "sha256": "f99b92168d1f1e956f2eed7fb8e87050ce93e12e19767a26e2d3b2f672fd3c32",
+              "tlsh": "3d3142ca59f1623583e2409deb5f941b7647c143371dd8d0f6ecc2c16fa672882729e5"
+            },
+            {
+              "path": "bin/cli.js",
+              "sha256": "979ebc68f5a09613d9c6bd17c0dc4b26a9a128436eea4a4efd1aed141eb09efc",
+              "tlsh": "9421ee19c4f9649a1566005a7e0e54337aeb40015344ab70d7edcb837fc8da803667ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "vite-dev-launcher-2.9.4.tgz",
+              "hashes": {
+                "sha1": "f9f5833336087cfd9087eb98a364e00b410bded6",
+                "sha512_sri": "sha512-4cy1ESTGujYGA0xsWrDMyW80nrf77zvlBaRCQeWdVXNil5TJD2y/zzktScaUmB4VD8LQfig+F8gwOP9SDdovvQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/vite-dev-launcher/v/2.9.4"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020483",
+        "import_time": "2026-09-23T09:20:27.700404541Z",
+        "modified_time": "2026-09-23T09:07:06Z",
+        "sha256": "9ac504b2228b7e2d5aab05aac8cb13072d87bc4f047f390d207c7712c7cdd123",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.9.4"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-17644",
+  "published": "2026-10-07T12:51:24Z",
+  "modified": "2026-10-08T22:48:53.022261213Z",
+  "aliases": [
+    "GHSA-2cfv-92gp-9f6m"
+  ],
+  "summary": "Malicious code in random-certs (npm)",
+  "details": "random-certs@0.0.1 was published to npm on 2026-10-07 04:22 UTC by user weindeste. It presents itself as a generator of random self-signed certificates, but sample/cert.pem holds base64-encoded JavaScript between the PEM markers instead of a certificate. index.js (lines 41-52) reads that file, strips the PEM header, footer and whitespace, decodes it and passes it to eval; the exported generateCertificates calls this loader first (line 240). The decoded code downloads a file from a Google Drive link and writes it to the standard input of a detached, hidden python/python3 process whose output is discarded, so the package runs remote code that it does not ship.\n\nTrigger: on use (generateCertificates). Type: dropper hidden in a fake certificate file.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9077ef856afc462f5d7c757a14ee2c9633386c3809e58e8f725310a33dd35112)\nrandom-certs@0.0.1 ships a file named sample/cert.pem that is not a certificate but base64-encoded JavaScript wrapped in BEGIN/END CERTIFICATE markers. The exported generateCertificates() in index.js strips those markers, base64-decodes the body, and eval()s the result. The recovered JavaScript fetches a hardcoded Google Drive URL (https://drive.usercontent.google.com/download?id=1y4LSiUb4PZSGjKBtEVJMDMnl3Sr7kbSy) and pipes the response into a detached, window-hidden `python3 -` (or `python` on Windows) process via stdin, executing the downloaded bytes as Python on the host. The destination URL is itself base64-nested inside the fake PEM to further hide it. A certificate-generation API covertly resolving to remote Python execution from an attacker-controlled location, with multiple layers of disguise, is a deliberate malicious payload rather than a legitimate helper.\n\n## Source: ghsa-malware (e002d7cdc913cbca420ce86f079af16abcbe8dcf80da03cac0cb5127fb4f8dcc)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "random-certs",
+        "ecosystem": "npm"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "0.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "10f00844316739fca8759213ff5bf0638c146a59db646bb858658acf1230b1ee",
+              "tlsh": "27d1b644adf2b65142e7b1b4463be151f02c91033a1aee98b5ed83842f5ad2cd57eecc"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-2cfv-92gp-9f6m"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/random-certs/v/0.0.1"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "960a19cd1e2186e5040364e296a67598a4e981c56f3b818489361e1f693e0148"
+          },
+          "note": "base64 JavaScript disguised as a certificate; decoded and passed to eval by index.js",
+          "paths": [
+            "sample/cert.pem"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "10f00844316739fca8759213ff5bf0638c146a59db646bb858658acf1230b1ee"
+          },
+          "note": "loader: reads sample/cert.pem, strips PEM markers, base64-decodes and evals it",
+          "paths": [
+            "index.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "99e419c04df6bd8c9078508097186aad57d36a9843caffb72e2ca2885247b0ca"
+          },
+          "note": "JavaScript decoded from sample/cert.pem and run by eval; downloads the Google Drive file and pipes it into a hidden python process",
+          "source": "IN_MEMORY"
+        }
+      ],
+      "urls": [
+        "https://drive.usercontent.google.com/download?id=1y4LSiUb4PZSGjKBtEVJMDMnl3Sr7kbSy"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "GHSA-2cfv-92gp-9f6m",
+        "import_time": "2026-10-07T13:31:56.461826495Z",
+        "modified_time": "2026-10-07T12:51:25Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "e002d7cdc913cbca420ce86f079af16abcbe8dcf80da03cac0cb5127fb4f8dcc",
+        "source": "ghsa-malware"
+      },
+      {
+        "id": "IN-MAL-2026-021104",
+        "import_time": "2026-10-08T03:50:28.148812348Z",
+        "modified_time": "2026-10-08T03:36:27Z",
+        "sha256": "9077ef856afc462f5d7c757a14ee2c9633386c3809e58e8f725310a33dd35112",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Eunsoo Kim",
+      "contact": [
+        "https://github.com/eskim86"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

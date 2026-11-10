@@ -1,21 +1,39 @@
 {
-  "modified": "2026-05-22T13:45:43Z",
-  "published": "2026-05-22T13:45:43Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-4677",
+  "published": "2026-05-22T13:45:43Z",
+  "modified": "2026-08-25T15:32:18.299756974Z",
+  "aliases": [
+    "GHSA-7vv3-8cx6-w4g3"
+  ],
   "summary": "Malicious code in swift-optimizer (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c54f35da6df5cef65715d49fb7942aff442ee9a0cb486862031e5009277db3a)\nOn `npm install`, swift-optimizer@1.1.0 runs scripts/install-binary.js as a postinstall hook. The script is a hand-rolled JavaScript bytecode VM (~123 KB) with a base64-encoded constant pool that hides all install-time behavior — platform detection, network I/O, environment reads, file writes — from source-level scanners. Decoded behavior:\n\n1. Dropper: fetches a binary from https://telemetry021312.blob.core.windows.net/share/?v=\u003cchecksum\u003e using a spoofed Edge User-Agent, writes it to bin/swift-optimizer-\u003carch\u003e(.exe), and chmods 0755. The destination is anonymous Azure blob storage; the URL is unpinned and the bytes are not hash-verified. The destination domain has no relationship to the package's stated author/homepage. The package's main `Optimizer` API is wired to invoke this binary at runtime.\n\n2. Targeted-victim guardrail: getVersionChecksum reads process.env.USERDNSDOMAIN, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE, os.hostname(), and an internal-IP lookup, SHA-256-hashes them, and only proceeds if the digest matches one of three hardcoded values (GUARDRAIL_DIGESTS = ['9aee64bc...','1e0ad8d7...','680326dc...']). This restricts execution to pre-identified victim organizations.\n\n3. Sandbox evasion: localTestenvCheck issues an HTTPS HEAD to the RFC1918 address https://10.100.135.17/ with rejectUnauthorized:false and inspects ECONNRESET/error signals to determine whether the host is on a real corporate LAN vs. an analyst sandbox; also checks process.env.CI.\n\n4. Anti-debug: process.hrtime.bigint() timing checks set a 'deception detected' flag if execution is slowed by a debugger.\n\n5. Cover-story metadata: package.json author 'Bob Smith' with throwaway GitHub URL bobsmith012545/swift-optimizer and homepage releases.swift-optimizer.io — placeholder publisher consistent with a single-purpose attack package.\n\nThe combination of an unpinned anonymous-host binary drop, victim-domain hash allowlisting, RFC1918 sandbox probing, anti-debug, and bespoke bytecode-VM obfuscation has no legitimate explanation. This is a targeted supply-chain dropper.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5c54f35da6df5cef65715d49fb7942aff442ee9a0cb486862031e5009277db3a)\nOn `npm install`, swift-optimizer@1.1.0 runs scripts/install-binary.js as a postinstall hook. The script is a hand-rolled JavaScript bytecode VM (~123 KB) with a base64-encoded constant pool that hides all install-time behavior — platform detection, network I/O, environment reads, file writes — from source-level scanners. Decoded behavior:\n\n1. Dropper: fetches a binary from https://telemetry021312.blob.core.windows.net/share/?v=<checksum> using a spoofed Edge User-Agent, writes it to bin/swift-optimizer-<arch>(.exe), and chmods 0755. The destination is anonymous Azure blob storage; the URL is unpinned and the bytes are not hash-verified. The destination domain has no relationship to the package's stated author/homepage. The package's main `Optimizer` API is wired to invoke this binary at runtime.\n\n2. Targeted-victim guardrail: getVersionChecksum reads process.env.USERDNSDOMAIN, USERDOMAIN, USERDOMAIN_ROAMINGPROFILE, os.hostname(), and an internal-IP lookup, SHA-256-hashes them, and only proceeds if the digest matches one of three hardcoded values (GUARDRAIL_DIGESTS = ['9aee64bc...','1e0ad8d7...','680326dc...']). This restricts execution to pre-identified victim organizations.\n\n3. Sandbox evasion: localTestenvCheck issues an HTTPS HEAD to the RFC1918 address https://10.100.135.17/ with rejectUnauthorized:false and inspects ECONNRESET/error signals to determine whether the host is on a real corporate LAN vs. an analyst sandbox; also checks process.env.CI.\n\n4. Anti-debug: process.hrtime.bigint() timing checks set a 'deception detected' flag if execution is slowed by a debugger.\n\n5. Cover-story metadata: package.json author 'Bob Smith' with throwaway GitHub URL bobsmith012545/swift-optimizer and homepage releases.swift-optimizer.io — placeholder publisher consistent with a single-purpose attack package.\n\nThe combination of an unpinned anonymous-host binary drop, victim-domain hash allowlisting, RFC1918 sandbox probing, anti-debug, and bespoke bytecode-VM obfuscation has no legitimate explanation. This is a targeted supply-chain dropper.\n\n## Source: ghsa-malware (b3b9f54ec0389f5b582a19d2d9b58c19ca92cb53792b1966da58b182d96ebf0e)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "swift-optimizer"
+        "name": "swift-optimizer",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "1.1.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -47,15 +65,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/swift-optimizer/v/1.1.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "actran@amazon.com"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-7vv3-8cx6-w4g3"
     }
   ],
   "database_specific": {
@@ -69,7 +82,33 @@
         "versions": [
           "1.1.0"
         ]
+      },
+      {
+        "id": "GHSA-7vv3-8cx6-w4g3",
+        "import_time": "2026-08-25T15:30:22.788490901Z",
+        "modified_time": "2026-08-25T14:56:43Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "b3b9f54ec0389f5b582a19d2d9b58c19ca92cb53792b1966da58b182d96ebf0e",
+        "source": "ghsa-malware"
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "actran@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }

@@ -45,11 +45,11 @@ func (s *BlobStorage) String() string {
 
 // beforeListFunc will return a function that can be passed in for the
 // BeforeList field in the blob.ListOptions.
-func beforeListFunc(start string) func(as func(interface{}) bool) error {
+func beforeListFunc(start string) func(as func(any) bool) error {
 	if start == "" {
-		return func(_ func(interface{}) bool) error { return nil }
+		return func(_ func(any) bool) error { return nil }
 	}
-	return func(as func(interface{}) bool) error {
+	return func(as func(any) bool) error {
 		var gcsQ *storage.Query
 		if as(&gcsQ) {
 			gcsQ.StartOffset = start

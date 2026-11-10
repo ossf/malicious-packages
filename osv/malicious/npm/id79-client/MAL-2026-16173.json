@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-16173",
+  "published": "2026-09-12T13:35:09Z",
+  "modified": "2026-09-15T16:21:12.226827555Z",
+  "summary": "Malicious code in id79-client (npm)",
+  "details": "This package is part of a malicious npm campaign published by the `biz44` account. Importing the package automatically launches a detached JavaScript loader that retrieves and executes additional code from npoint.io. The retrieved payload communicates with an attacker-controlled server and implements clipboard collection, keyboard and mouse event collection, filesystem scanning, and theft of Chrome extension storage.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8e7016cebc45328009f3b55af011e7d5d4db068ea04d85602cac0aeafbe3637e)\nOn import, index.js calls initialize() which spawns a detached, stdio-suppressed `node loader.js` child process. loader.js issues an HTTPS GET to https://api.npoint.io/24c12c4b66a29747764f, base64-decodes the `code` field of the response, and executes it via `new Function(require, __dirname, __filename, module, exports, decodedCode)` — arbitrary code from a third-party mutable JSON hosting bin runs with full Node privileges on the installer's machine. loader.js additionally monkey-patches `Module.prototype.require` so any subsequent `require('child_process').spawn`/`execSync` call is rewritten to force `windowsHide:true` and route execSync through a hidden `cmd.exe /c` spawnSync, ensuring commands issued by the remotely fetched payload run invisibly on Windows. The detached-and-unref'd child, suppressed stdio, and stealth child_process wrapper are consistent with a persistent covert loader whose actual behavior is controlled by whoever owns the npoint bin.\n",
+  "affected": [
+    {
+      "package": {
+        "name": "id79-client",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.1.79"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "loader.js",
+              "sha256": "0bca5c92870c78656fe1d30d69a05af2486c6c36672b5172c249af4106c096b7",
+              "tlsh": "e45121a609fb211302b770e6bb0b596a96bba113314ecd94fa9cc3d44fc2421d6d72dc"
+            },
+            {
+              "path": "index.js",
+              "sha256": "11e427eb46163ba1735199f2294e57259403a0a784bc3ba11f410c38ae48d303",
+              "tlsh": "a6f0ac4b10832723855bf3969652d0c00a7a8a1c3a44ba02481f52bd0f840958356f53"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "id79-client-1.1.79.tgz",
+              "hashes": {
+                "sha1": "2c92450c77b6bf49234861f1e130d05beeab5514",
+                "sha512_sri": "sha512-LQpI75RBUsDJWJPLScAZ8uPoYbzpOBvutpa/9wT7VjAbURMUVTRzRiuLQqfX1wOBQpKt6j68O7Vc8zRRerrzEg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "ips": [
+        "103.170.217.184"
+      ],
+      "urls": [
+        "https://api.npoint.io/24c12c4b66a29747764f",
+        "https://api.npoint.io/37c0a0c68bf7a94ed731",
+        "http://103.170.217.184:8787"
+      ],
+      "files": [
+        {
+          "paths": [
+            "loader.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "fetches api.npoint.io and executes the base64 code field via new Function",
+          "digests": {
+            "sha256": "0bca5c92870c78656fe1d30d69a05af2486c6c36672b5172c249af4106c096b7"
+          }
+        },
+        {
+          "paths": [
+            "init.js"
+          ],
+          "source": "PACKAGE_ARCHIVE",
+          "note": "spawns a detached node loader.js on import",
+          "digests": {
+            "sha256": "5e779c0c5c92005241a49d88604d106d53d102a3d6b942c4140410d247a9220c"
+          }
+        }
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-020069",
+        "import_time": "2026-09-15T16:19:16.181777312Z",
+        "modified_time": "2026-09-15T15:56:09Z",
+        "sha256": "8e7016cebc45328009f3b55af011e7d5d4db068ea04d85602cac0aeafbe3637e",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.79"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "ESTsecurity",
+      "type": "FINDER"
+    },
+    {
+      "name": "pkgwarden",
+      "type": "FINDER",
+      "contact": [
+        "https://pkgwarden.com"
+      ]
+    }
+  ]
+}

@@ -27,12 +27,12 @@ jobs:
       with:
         token: ${{ secrets.GH_TOKEN }}
         repository: ossf/osv-schema
-        ref: aeaeeeeb3f6473c294fc1d18a32e9a5a794a5c47
+        ref: 423306dd97fb345252590f8d86d7d9d1b2ecf92c
         path: osv-schema
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: 'go.mod'
-    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: "3.13"
         cache: pipenv
@@ -47,12 +47,43 @@ jobs:
         cd osv-schema/tools/ghsa
         pipenv sync
 
+    - name: Output GitHub quotas pre dump
+      run: |
+        gh api graphql -f query='
+          query {
+            rateLimit {
+              limit
+              cost
+              remaining
+              resetAt
+            }
+          }
+        '
+        gh api -i --silent "/advisories?type=malware&per_page=1&sort=updated&direction=desc"
+      env:
+        GH_TOKEN: ${{ github.token }}
+
     - name: Dump GHSA Malware
       run: |
         cd osv-schema/tools/ghsa
         mkdir OUT
         TIMESINCE=`python3 -c 'import datetime; dt=datetime.datetime.now(datetime.UTC)-datetime.timedelta(hours=24); print(dt.isoformat())'`
-        pipenv run python dump_ghsa.py --token "${{ github.token }}" --query "classifications: [MALWARE] updatedSince: \"$TIMESINCE\"" OUT
+        pipenv run python dump_ghsa.py --token "${{ github.token }}" --query "classifications: [MALWARE] updatedSince: \"$TIMESINCE\" orderBy: { direction: ASC field: UPDATED_AT }" OUT
+
+    - name: Output GitHub quotas post dump
+      run: |
+        gh api graphql -f query='
+          query {
+            rateLimit {
+              limit
+              cost
+              remaining
+              resetAt
+            }
+          }
+        '
+      env:
+        GH_TOKEN: ${{ github.token }}
 
     - name: Convert GHSA to OSV
       run: |
@@ -76,7 +107,7 @@ jobs:
       run: git push
 
     - name: Save OSV for debugging
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: ghsa-osv
         path: osv-schema/tools/ghsa/OSV/*.json
