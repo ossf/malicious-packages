@@ -35,13 +35,15 @@ evidence.
 
 1. Clear, Short Human-Readable Details.
 Explain the malicious package report briefly (in 2-4 sentences).
-Clearly describe why the package is malicious, what it does, and the impact it
-may have. No unnecessary filler, boilerplate, discovery process detail or
-intricate explanations. State clearly why this package is malicious rather than
-just buggy, low-quality, or a security research proof-of-concept (PoC).
+Clearly describe why the package is malicious, a summary of what it does, and
+the impact it may have. The detail should be terse, with no unnecessary filler,
+boilerplate, discovery process detail, credits or intricate explanations. State
+clearly why this package is malicious rather than just buggy, low-quality, or a
+security research proof-of-concept (PoC). For extra detail use the `references`
+section to point to a blog post or scanner output web page.
 
 2. Accurate & Sufficient Metadata.
-Provide the essential package ids (ecosystem, name, versions/ranges).
+Provide the essential package identifiers (ecosystem, name, versions/ranges).
 The schema for additions is specified
 [here](https://github.com/ossf/malicious-packages/blob/main/docs/schema_additions.md).
 Avoid over-inflating reports with vague or speculative metadata. If available,

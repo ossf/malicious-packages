@@ -44,7 +44,7 @@ When 1 and 2 are combined this results in every internal version of an internal
 package being flagged.
 
 > [!IMPORTANT]
-> If you encounter a situation where an internally publish package matches a
+> If you encounter a situation where an internally published package matches a
 > report for a malicious public package, please ensure that you have not
 > *actually* fallen victim to a dependency confusion attack!
 >
