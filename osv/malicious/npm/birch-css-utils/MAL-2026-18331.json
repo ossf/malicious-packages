@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-18331",
-  "published": "2026-10-26T16:17:58Z",
-  "modified": "2026-10-29T14:38:22.100743452Z",
+  "published": "2026-10-26T00:00:00Z",
+  "modified": "2026-11-05T05:02:16.441436764Z",
   "aliases": [
     "GHSA-p597-2ggw-c82r"
   ],
   "summary": "Malicious code in birch-css-utils (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (22815f068ecaf85065c389553848537859f9e37623285a9e71b3e81ee9e9b685)\nPackage advertises itself as a zero-runtime CSS theme kit and instructs installation as a Tailwind name-overlay (`npm install -D tailwindcss@npm:birch-css-utils`), but the published tarball contains ~760KB of heavily obfuscated JS (`build-cache.mjs`, `cache-sweep.mjs`, `cache-warm.mjs`) hidden behind a `tailwindcss-theme-kit build cache manifest` cover comment. The declared `./tokens` export (`tokens.mjs`) top-level-imports `cache-warm.mjs`, so consumers that import `birch-css-utils/tokens` execute the obfuscated code on module load. The bundles use a hex-named XOR-encoded string array; decoding with key 0xED reveals AWS Sigv4 signing primitives (`AWS4-HMAC-SHA256#Credential=`), an AWS Access Key ID regex (`^(?:AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16}$`), and git identity env var names (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_DATE`) embedded in the string array. A CSS custom-properties package has no legitimate use for AWS v4 signing material or an AWS key-ID matcher. The combination of Tailwind name-overlay install instructions, a README denying runtime JS, obfuscated executable bundles reachable from a public export, and decoded AWS credential-harvesting primitives constitutes a Tailwind imposter that steals AWS credentials from importing consumers.\n\n## Source: ghsa-malware (55ac470ab3260611fd8b69f59b1d1faae26e80e1c7e9c243cb0b65db56d5c231)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "birch-css-utils ships index.mjs, byte-identical to the noelc-css-blender payload, and an obfuscated build-cache.mjs that reassembles and exec()s encoded chunks. It is a new name for the noelc-css-blender (MAL-2026-18249) campaign; the file hashes below match that record's evidence. The package presents itself as an ordinary utility, so the code runs on import or install without the user knowing.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (22815f068ecaf85065c389553848537859f9e37623285a9e71b3e81ee9e9b685)\nPackage advertises itself as a zero-runtime CSS theme kit and instructs installation as a Tailwind name-overlay (`npm install -D tailwindcss@npm:birch-css-utils`), but the published tarball contains ~760KB of heavily obfuscated JS (`build-cache.mjs`, `cache-sweep.mjs`, `cache-warm.mjs`) hidden behind a `tailwindcss-theme-kit build cache manifest` cover comment. The declared `./tokens` export (`tokens.mjs`) top-level-imports `cache-warm.mjs`, so consumers that import `birch-css-utils/tokens` execute the obfuscated code on module load. The bundles use a hex-named XOR-encoded string array; decoding with key 0xED reveals AWS Sigv4 signing primitives (`AWS4-HMAC-SHA256#Credential=`), an AWS Access Key ID regex (`^(?:AKIA|ASIA|ABIA|ACCA)[A-Z0-9]{16}$`), and git identity env var names (`GIT_AUTHOR_NAME`, `GIT_AUTHOR_DATE`) embedded in the string array. A CSS custom-properties package has no legitimate use for AWS v4 signing material or an AWS key-ID matcher. The combination of Tailwind name-overlay install instructions, a README denying runtime JS, obfuscated executable bundles reachable from a public export, and decoded AWS credential-harvesting primitives constitutes a Tailwind imposter that steals AWS credentials from importing consumers.\n\n## Source: ghsa-malware (55ac470ab3260611fd8b69f59b1d1faae26e80e1c7e9c243cb0b65db56d5c231)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -33,6 +33,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -114,9 +119,40 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/birch-css-utils/v/0.0.0-stage"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/birch-css-utils"
+    },
+    {
+      "type": "WEB",
+      "url": "https://osv.dev/vulnerability/MAL-2026-18249"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [],
+      "files": [
+        {
+          "digests": {
+            "sha256": "e5b7ff8f65cd07d2bc7e0c301dfadd06d871dbdffa9e834c9a18229a897dd4c6"
+          },
+          "paths": [
+            "build-cache.mjs"
+          ]
+        },
+        {
+          "digests": {
+            "sha256": "d7f2e6126f30199d791c30c52560c06205640a26ea17ceb53a06231be653d976"
+          },
+          "paths": [
+            "index.mjs"
+          ]
+        }
+      ],
+      "ips": [],
+      "urls": []
+    },
     "malicious-packages-origins": [
       {
         "id": "GHSA-p597-2ggw-c82r",
@@ -192,6 +228,13 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "CyberXYZ",
+      "contact": [
+        "https://cyberxyz.io"
       ],
       "type": "FINDER"
     }

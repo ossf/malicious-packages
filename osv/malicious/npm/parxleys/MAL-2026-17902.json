@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-17902",
   "published": "2026-10-16T12:55:55Z",
-  "modified": "2026-10-29T14:15:58.767787974Z",
+  "modified": "2026-11-06T00:22:29.821607065Z",
   "aliases": [
     "GHSA-rg3c-8x72-6pmc"
   ],
   "summary": "Malicious code in parxleys (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7c6385ac9e557c4028ed62c213d8f08d21d4a11ba01be0e41d847888e268f3f8)\nReview of parxleys@1.0.1 did not surface any code paths associated with supply-chain attack behavior: no install-time or import-time network fetch, no lifecycle script that downloads or executes remote content, no reads of installer secret paths (such as ~/.aws, ~/.ssh, ~/.npmrc, or browser/wallet stores), no environment-variable scraping, no hardcoded author-controlled exfiltration endpoint, no backdoor or reverse-shell mechanism, and no shipped third-party credentials or registry-redirect configuration. The package exposes no behavior that would route installer data outward or run attacker-controlled code on install or require.\n\n## Source: ghsa-malware (adc95934afa570c30516223277d5ce0b704ded948877a6d5562ad81acf255d1d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to subscribe that account to WhatsApp Channels (newsletters) the publisher chose, by sending the WhatsApp `w:mex` FOLLOW query (query_id 7871414976211147) for each target channel JID, and then MUTES each channel so the victim is not notified of its posts.\n\nThe package carries two independent follow routines, both unconditional and undocumented (the package ships no README):\n\n1. `package/lib/Socket/messages-recv.js` lines 45-66 build three values at runtime from char-code arrays through a helper `qvnr = a => a.map(v => String.fromCharCode(v)).join('')`: the channel JID `120363428355171197@newsletter` (`xkmt`) and the socket method names `newsletterFollow` (`pzha`) and `newsletterMute` (`wjcf`). Lines 1119-1137, in a `connection.update` handler: 30 seconds after the connection opens, for each JID it calls `sock[pzha](id)` (FOLLOW), waits 3 seconds, calls `sock[wjcf](id)` (MUTE), and swallows every error.\n\n2. `package/lib/Socket/newsletter.js` lines 86-116: `autoJoinChannels` fetches `https://raw.githubusercontent.com/noxXza/data/refs/heads/main/noxleys.json` 30 seconds after the connection opens and, for every `@newsletter` id it lists, sends `QueryIds.FOLLOW`, waits 3 seconds, and sends `QueryIds.MUTE`, so the target list can change without a new npm release. On 2026-10-08 the list contained `120363428355171197@newsletter`, `120363428984357510@newsletter` and `120363425751417260@newsletter`.\n\nThe char-code block and target JID `120363428355171197` are the same as in ichigo-baileys and wailib (both derived from noxleyss, MAL-2026-17402) and in cantarella-baileys (MAL-2026-17390); the remote list's file name, `noxleys.json`, points the same way.\n\nLine numbers refer to versions 1.0.0 and 1.0.1, whose two cited files are byte-identical.\n\nStatic review of the published tarballs found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook is Baileys' stock Node.js version check in `engine-requirements.js`; `prepare` and `prepack` only echo a banner), and no persistence. `package/lib/Utils/messages-media.js` exports an `uploadFile(buffer)` helper that posts a caller-supplied buffer to public file hosts (qu.ax, uguu.se, tmpfiles.org); nothing inside the library calls it. The payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel subscribers.\n\nSHA-256 of the published npm tarball(s): 1.0.0: `35f3dadb31ae670f801e0f98f6ca49d0b54ae5aca49c220d6abe3053799025f6`; 1.0.1: `ca15841d74670172731929a694aa5d8bb3c6d8c8a12b58f80729c50093b938c6`.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (7c6385ac9e557c4028ed62c213d8f08d21d4a11ba01be0e41d847888e268f3f8)\nReview of parxleys@1.0.1 did not surface any code paths associated with supply-chain attack behavior: no install-time or import-time network fetch, no lifecycle script that downloads or executes remote content, no reads of installer secret paths (such as ~/.aws, ~/.ssh, ~/.npmrc, or browser/wallet stores), no environment-variable scraping, no hardcoded author-controlled exfiltration endpoint, no backdoor or reverse-shell mechanism, and no shipped third-party credentials or registry-redirect configuration. The package exposes no behavior that would route installer data outward or run attacker-controlled code on install or require.\n\n## Source: ghsa-malware (adc95934afa570c30516223277d5ce0b704ded948877a6d5562ad81acf255d1d)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -61,9 +61,44 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/parxleys/v/1.0.0"
+    },
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/parxleys"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "ea7db91458653aabf50f3687c48d4421f272ca5813810c2f158d3c6da81b7caa"
+          },
+          "note": "File containing the injected WhatsApp Channel follow-and-mute code (char-code obfuscated).",
+          "paths": [
+            "package/lib/Socket/messages-recv.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "d9082d5c090ce66d2a150a52e5fe4bd806b077226e8aac11452e921715167263"
+          },
+          "note": "File containing the remote-list WhatsApp Channel follow-and-mute code.",
+          "paths": [
+            "package/lib/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://raw.githubusercontent.com/noxXza/data/refs/heads/main/noxleys.json"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "GHSA-rg3c-8x72-6pmc",
@@ -109,6 +144,13 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Rising Sun Solutions LLC",
+      "contact": [
+        "https://github.com/jaym2026"
       ],
       "type": "FINDER"
     }
