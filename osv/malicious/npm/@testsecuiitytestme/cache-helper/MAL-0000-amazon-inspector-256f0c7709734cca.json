@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-13T03:44:13Z",
+  "modified": "2026-11-13T03:44:13Z",
+  "summary": "Postinstall native addon drops and executes an opaque encrypted payload with sandbox/CI evasion",
+  "details": "@testsecuiitytestme/cache-helper@1.0.0 ships a package.json postinstall hook that loads a platform-specific prebuilt native addon (addon.node on Linux, addon_win.node on Windows) on npm install. The addon reads a sibling ~30MB opaque.napi_cache blob, decrypts it, writes the result to a hidden file under /tmp (format \"/tmp/.%u\"), chmods it, and executes it with the installer's node binary. The Linux addon imports fork, setsid, _exit, execlp and chmod from libc — the double-fork + detach pattern used to spawn a background process that outlives the npm install. Both addons contain CI/sandbox evasion that gates execution on absence of GITHUB_ACTIONS, GITLAB_CI, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID and SANDBOX environment variables, container checks against /proc/1/cgroup, /proc/1/cmdline and /proc/meminfo, and anti-debug logic reading /proc/self/status TracerPid, calling IsDebuggerPresent and CheckRemoteDebuggerPresent, and checking for analysis tools (wireshark, procmon, procexp, x64dbg, ollydbg, fiddler). The package presents itself as a cache helper but ships no inspectable library code consistent with that purpose; its only install-time effect is to decrypt and run an unauditable payload on the installer's host and leave a detached node process running.",
+  "affected": [
+    {
+      "package": {
+        "name": "@testsecuiitytestme/cache-helper",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "package.json",
+              "sha256": "47ac5c1cbef538324eaa3c021317466f38f20c6d14fad7428bf2fff00be25468",
+              "tlsh": "a9e0262487b0993331c4a7e11a9a4603b0325d570254ed1c27e7202c5be92f648ff29d"
+            },
+            {
+              "path": "addon.node",
+              "sha256": "73f274f77bfa80cc0a996e942399820954e39433cd00c044445c7f2e0d819b02",
+              "tlsh": "ed72534bd2a0dd3ec4d89231598b527253a2d470ef30172f0f54a2fb2d973586ebae52"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@testsecuiitytestme/cache-helper/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022761",
+        "import_time": "2026-11-13T04:13:30.707761273Z",
+        "modified_time": "2026-11-13T03:44:13Z",
+        "sha256": "256f0c7709734ccaf93d18fb604f126fccd55fb3a31d3b13604000ae43605741",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
