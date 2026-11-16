@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-19952",
   "published": "2026-11-16T09:21:14Z",
-  "modified": "2026-11-16T10:16:06.138640784Z",
+  "modified": "2026-11-16T22:37:52.050957046Z",
   "summary": "Malicious code in usdm-minting-client (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (b1ae99636d7eb86ee7c8000ddb08003dd3f5613af27581e668fe12d783b0d665)\nThe package is a dependency-confusion lure targeting internal USDm/Utila minting tooling. setup.py defines an _exfil() routine that runs both at module import time and inside a custom install cmdclass, so it fires on `pip install` as well as any sdist build. _exfil() reads wallet and cloud secrets from environment variables (PRIVATE_KEY, MNEMONIC, USDM_PRIVATE_KEY, AWS_SECRET_ACCESS_KEY, GOOGLE_APPLICATION_CREDENTIALS, UTILA_SA_PRIVATE_KEY and similar), reads.env files from the current working directory and $HOME, and recursively collects.pem/.key/.json/.yaml files under ~/.utila and ~/.config/utila. The collected material is JSON-encoded and POSTed via urllib.request.urlopen to a hardcoded destination, https://webhook.site/ec3e3cb9-4cc1-4cb8-a273-4811768a631d (overridable via COLLECTOR_URL). The top-level usdm_minting_client/__init__.py repeats the exfiltration on every `import usdm_minting_client`, sending USDM_PRIVATE_KEY, PRIVATE_KEY, MNEMONIC, USDM_RPC_URL and the contents of ~/.env and ~/.usdm.env to the same collector endpoint. A header comment in setup.py self-describes the package as a dependency-confusion PoC impersonating an internal `usdm-minting-client`, and the metadata uses a placeholder homepage (example.com) with a free-mail author address, consistent with a lure rather than a legitimate release.\n\n## Source: kam193 (78ca43ab87b214f4da683e6b9f171e762e4956e6db3210796b6ed8bc92e92e72)\nDuring installation the package exfiltrates credential files and environment variables, focusing on cryptocurrency- and cloud-related entries. The package seems to be targeting users of a package from GitHub (https://github.com/ethena-labs/usdm-minting-client) which has not been published to PyPI.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-usdm-minting-client\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-env-variables\n\n\n - crypto-related\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3a76785d8f5b95d2ce973cec36ca5d1e7416205636b7d652a2fcd7f5124d7c01)\nusdm-minting-client 0.1.1 performs credential theft at both install time and import time. setup.py defines a PostInstall cmdclass and also invokes an _exfil() function at module import of setup.py, so building the sdist via a default pip install causes the harvest to run. The function reads a curated set of wallet and cloud environment variables (PRIVATE_KEY, MNEMONIC, AWS_*, GOOGLE_APPLICATION_CREDENTIALS, UTILA_*, and similar) and walks the current working directory, INIT_CWD, $HOME, ~/.utila, and ~/.config for.env,.pem,.key,.json, and.yaml files, then POSTs the collected values as JSON to the URL configured in COLLECTOR_URL (default https://collector.example/collect) via urllib.request.urlopen. The package's top-level __init__.py repeats the exfiltration on import without any guard other than a ~/.usdm_client_exfil_done marker file: it reads USDM_PRIVATE_KEY, PRIVATE_KEY, MNEMONIC, and USDM_RPC_URL from the environment along with cwd/.env, ~/.env, and ~/.usdm.env, and POSTs them to the same collector. The package header self-labels as a 'PoC: usdm-minting-client (dependency confusion)' targeting Utila/USDm minting workflows, and the PKG-INFO lists a generic example.com homepage with a free-mail author. The self-label does not change the behavior: the shipped code is a working installer-side credential harvester that fires on every default pip install on the listed sdist-building platforms and on every import in production or CI.\n\n## Source: kam193 (78ca43ab87b214f4da683e6b9f171e762e4956e6db3210796b6ed8bc92e92e72)\nDuring installation the package exfiltrates credential files and environment variables, focusing on cryptocurrency- and cloud-related entries. The package seems to be targeting users of a package from GitHub (https://github.com/ethena-labs/usdm-minting-client) which has not been published to PyPI.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-usdm-minting-client\n\n\nReasons (based on the campaign):\n\n\n - The package overrides the install command in setup.py to execute malicious code during installation.\n\n\n - exfiltration-env-variables\n\n\n - crypto-related\n\n\n - exfiltration-crypto\n\n\n - exfiltration-credentials\n",
   "affected": [
     {
       "package": {
@@ -19,6 +19,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -84,6 +89,10 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/usdm-minting-client"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/usdm-minting-client/0.1.1/"
     }
   ],
   "database_specific": {
@@ -147,6 +156,16 @@
           "0.1.1",
           "0.1.2",
           "0.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022816",
+        "import_time": "2026-11-16T22:36:32.377947657Z",
+        "modified_time": "2026-11-16T22:30:57Z",
+        "sha256": "3a76785d8f5b95d2ce973cec36ca5d1e7416205636b7d652a2fcd7f5124d7c01",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
         ]
       }
     ]
