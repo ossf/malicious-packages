@@ -1,21 +1,27 @@
 {
-  "modified": "2026-10-22T06:11:06Z",
-  "published": "2026-10-22T06:11:06Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18184",
+  "published": "2026-10-22T06:11:06Z",
+  "modified": "2026-11-13T04:15:03.600692959Z",
   "summary": "Malicious code in formatting-subtitles (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (25577370189f57a5678b2f2c45e212abfc79a3675dc7d51581f633e78aba47a6)\npackage.json declares `preinstall: sh./prepare.js \u0026\u0026 exit 0`. prepare.js is shaped like JavaScript (ending with `console.log('hello world')`) but is executed by /bin/sh, which does not treat `/**... */` as a comment. Inside that block, sh evaluates two `$(...)` command substitutions: one issues a GET to the hardcoded collector https://webhook.site/9e8c8742-3102-4716-aa8b-e150e9e84fe7/stats_1, and the other downloads https://api.github.com/gists/da04f14c93acbe9a7aef827be0a2e91c, extracts a file via jq, writes it to disk as `x`, and runs it with `sh x`. On `npm install`, the installer host fetches and executes arbitrary, unpinned, attacker-controlled content from a mutable GitHub Gist, and the webhook.site beacon discloses the install (and curl-visible metadata such as public IP and user-agent) to the attacker. The JS-comment-wrapping of the shell payload is a deliberate cover story so prepare.js reads as a trivial hello-world when viewed as JavaScript.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (947d74b456114e4caca402883ca016d51419b0a1e23781855b705741f52f6ffe)\nThe package publishes as formatting-subtitles but its README, bin entry, and sole dependency identify as unicode-title-normalizer, a facade used to lure installs. The tarball ships x.js, a JavaScript/shell polyglot: when read as JavaScript it prints a hello message, but when executed by sh the `/**... */` header is interpreted as shell containing command substitutions that beacon to https://webhook.site/9e8c8742-3102-4716-aa8b-e150e9e84fe7/stats_1 and curl https://api.github.com/gists/da04f14c93acbe9a7aef827be0a2e91c, piping the gist body through jq into a file and executing it with sh. package.json declares a preinstall hook `sh./prepare.js && exit 0`; prepare.js is not shipped so the current tarball fails open, but x.js is listed in `files` and matches the exact `sh <file>` invocation shape, leaving the dropper one filename change (or a manual `sh x.js`) away from live execution. The gist body is attacker-mutable, allowing arbitrary code to be delivered to any host that executes x.js via sh, and the webhook endpoint acts as an install beacon.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "formatting-subtitles"
+        "name": "formatting-subtitles",
+        "ecosystem": "npm"
       },
       "versions": [
-        "1.0.2"
+        "1.0.2",
+        "1.0.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +58,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/formatting-subtitles/v/1.0.2"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/formatting-subtitles/v/1.0.1"
     }
   ],
   "database_specific": {
@@ -74,7 +75,26 @@
         "versions": [
           "1.0.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022758",
+        "import_time": "2026-11-13T04:13:30.241460295Z",
+        "modified_time": "2026-11-13T03:42:46Z",
+        "sha256": "947d74b456114e4caca402883ca016d51419b0a1e23781855b705741f52f6ffe",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
