@@ -1,0 +1,73 @@
+{
+  "modified": "2026-11-16T04:10:00Z",
+  "published": "2026-11-16T04:10:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20043",
+  "summary": "Malicious code in @wppconnect/server (npm)",
+  "details": "@wppconnect/server 2.10.82, a REST server for WhatsApp automation, ships dist/util/diagnostics.js, loaded unconditionally on server start by dist/server.js:18 (2.10.81's dist/server.js does not load it). It collects every environment variable, the files .env, .env.local, .env.production, config.js, config.json and ormconfig.json from the working directory, and the WhatsApp session-token files under tokens/ and wppconnect_tokens/, looks up the machine's public IP at https://api.ipify.org, and uploads the report as a document to the Telegram Bot API (bot 9034051102, chat_id 7343578055, method sendDocument). It waits a random 30 to 240 seconds before sending, sends at most once per 24 hours per machine (a marker file in the temp directory), and does nothing on machines it identifies as CI or a sandbox (CI, GITHUB_ACTIONS and RUNNER_* variables, sandbox-like hostnames). The Telegram endpoint is assembled from base64 parts (dist/util/diagnostics.js:27-33); collection is at lines 113-207 and the upload at 196-233. The same module reaches the server through its dependency @wppconnect-team/wppconnect 2.4.1, which runs it on import.\n\n2.10.82 was published on 2026-11-16 at 03:09 UTC through the project's release workflow; the source line was added in the repository's commit bdddf54 (2026-11-16 02:43 UTC) and removed by pull request #2733 at 03:44 UTC, but 2.10.82 is still served by npm. Anyone who installed or started 2.10.82 should treat the machine's environment variables, those files and its WhatsApp sessions as exposed, rotate the credentials and log the sessions out.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@wppconnect/server"
+      },
+      "versions": [
+        "2.10.82"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://registry.bitbison.io/npm/@wppconnect/server"
+    },
+    {
+      "type": "REPORT",
+      "url": "https://github.com/wppconnect-team/wppconnect-server/issues/2734"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@wppconnect/server"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Bitbison",
+      "type": "FINDER",
+      "contact": [
+        "https://bitbison.io",
+        "https://registry.bitbison.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "note": "collects environment variables, .env and config files and WhatsApp session tokens and uploads them to Telegram bot 9034051102 (chat 7343578055)",
+          "paths": [
+            "package/dist/util/diagnostics.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "line 18 requires ./util/diagnostics on server start",
+          "paths": [
+            "package/dist/server.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "note": "once-per-24h marker written in the temp directory",
+          "paths": [
+            "/tmp/.wpp-diag"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "urls": [
+        "https://api.telegram.org/bot9034051102"
+      ]
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "modified": "2026-11-16T03:40:00Z",
+  "published": "2026-11-16T02:55:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20041",
+  "summary": "Malicious code in @brandkit/theme (npm)",
+  "details": "@brandkit/theme presents itself as a design-token library (colors, spacing, radii, type and shadows over a vendored copy of Stitches, with a Tailwind preset). Its library code under dist/ is ordinary; the harm is in installing it. package.json declares a postinstall script, `node scripts/setup.js`, said to pre-compile dist/tokens.css with a native binary.\n\nscripts/setup.js (lines 22 and 43-51) sets the download base to https://gitea.com/MichaelTrowel/brandkit/releases/download/v\u003cversion\u003e, fetches runtime-\u003cplatform\u003e-\u003carch\u003e.gz over HTTPS following redirects (lines 53-87), then writes it to the temp directory as brandkit-\u003cversion\u003e-runtime-\u003cplatform\u003e, gunzips it, marks it executable and runs it with its output discarded (lines 94-105). No hash is pinned and no signature is checked.\n\nThe downloaded runtime-linux-x64 binary, identical for v2.4.1 and v2.4.2, is a stripped, statically linked Go executable (module brandkit/runtime, source file leaker.go). It decodes its configuration from hex and XOR with the key \"BrKt2026\", collects the hostname, the current time and the values of ANTHROPIC_API_KEY, GEMINI_API_KEY and AI_GATEWAY_KEY from the environment, and POSTs them as JSON (keys h, t, v0, v1, v2; User-Agent brandkit-runtime/1.0) to https://brandkit-9e7fae92.requestcatcher.com/activate, an inbox on a public request-recording service read by whoever created it.\n\nThe npm account gmeen published 0.0.0-stage (a placeholder with no install script) on 2026-11-15 at 22:24 UTC, 2.4.1 at 22:26 and 2.4.2 at 22:39; 2.4.1 and 2.4.2 carry the postinstall. The gitea repository serving the binary was created at 21:41 the same day. By 2026-11-16 02:00 UTC the npm registry no longer served the package; the binary was still downloadable from the gitea release.\n\nAnyone who installed 2.4.1 or 2.4.2 should treat ANTHROPIC_API_KEY, GEMINI_API_KEY and AI_GATEWAY_KEY present in the installing environment as exposed and rotate them.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@brandkit/theme"
+      },
+      "versions": [
+        "2.4.1",
+        "2.4.2"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://registry.bitbison.io/npm/@brandkit/theme"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@brandkit/theme"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Bitbison",
+      "type": "FINDER",
+      "contact": [
+        "https://bitbison.io",
+        "https://registry.bitbison.io"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "brandkit-9e7fae92.requestcatcher.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "dbc8425b11ddaa8d070dbe8642e603ba1f63ba45f1d9b89a56a35f3e2138aa8b"
+          },
+          "note": "Go binary downloaded and run by the postinstall; sends the hostname and ANTHROPIC_API_KEY, GEMINI_API_KEY and AI_GATEWAY_KEY to brandkit-9e7fae92.requestcatcher.com",
+          "paths": [
+            "/tmp/brandkit-2.4.1-runtime-linux-x64",
+            "/tmp/brandkit-2.4.2-runtime-linux-x64"
+          ],
+          "source": "DROPPED"
+        },
+        {
+          "note": "postinstall script: downloads runtime-\u003cplatform\u003e-\u003carch\u003e.gz from the gitea release, gunzips it to the temp directory and executes it without any hash or signature check",
+          "paths": [
+            "package/scripts/setup.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ],
+      "urls": [
+        "https://brandkit-9e7fae92.requestcatcher.com/activate",
+        "https://gitea.com/MichaelTrowel/brandkit",
+        "https://gitea.com/MichaelTrowel/brandkit/releases/download/v2.4.1/runtime-linux-x64.gz",
+        "https://gitea.com/MichaelTrowel/brandkit/releases/download/v2.4.2/runtime-linux-x64.gz"
+      ]
+    }
+  }
+}
