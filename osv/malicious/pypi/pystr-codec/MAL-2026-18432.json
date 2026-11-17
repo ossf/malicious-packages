@@ -1,21 +1,64 @@
 {
-  "modified": "2026-11-01T00:13:02Z",
-  "published": "2026-11-01T00:13:02Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-18432",
+  "published": "2026-11-01T00:13:02Z",
+  "modified": "2026-11-12T04:14:51.930808007Z",
   "summary": "Malicious code in pystr-codec (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (9f8b8630f88afc0b4a1aedeefb4e20adbf3fb9dea06f64747fb0bdf65c0a7bc1)\nPackage embeds a malicious PTH file that on every Python startup executes obfuscated JavaScript code, using a Bun engine. It then exfiltrates credentials to a public Github repository, establishes persistence awaiting remote commands, attempts spreading using discovered credentials as well as periodically checks if discovered credentials are valid. Once they are invalidated, it performs destructive actions on the local machine. It seems to be part of the Miasma-family worm (also known under testmetest).\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-pystr-codec\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - abuses-pth\n\n\n - infostealer\n\n\n - worm\n\n\n - backdoor\n\n\n - persistence\n\n\n - exfiltration-credentials\n\n\n - destructive-actions\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (512abf8460812ee7c89336aa6734adcd7d3b502c8d6abcc9cbc891577c8ba7e4)\npystr-codec 0.1.1 installs a site-packages `.pth` file (pystr_codec-setup.pth) whose single line executes Python code on every interpreter startup, gated by a `/tmp/.bun_ran` sentinel. The executed code locates the sibling `pystr_codec/ci.js`, downloads the Bun runtime zip from github.com/oven-sh/bun/releases/download/bun-v1.2.18/bun-<platform>-<arch>.zip into /tmp/b/bun, marks it executable, and invokes `bun run ci.js`. The `ci.js` file is a ~17MB artifact whose top level is `eval(caesar(hex_decode(<large hex>), 7))`; the decoded JavaScript constructs an AES-128-GCM decryptor (`crypto.createDecipheriv('aes-128-gcm',...)`) with hardcoded key/IV bytes to decrypt and run a further payload. The package's `__init__.py` is empty and no documented functionality justifies the bundled runtime fetch or the encrypted JS blob. The combination — a.pth auto-execution vector, download and execution of a non-Python runtime from outside the Python ecosystem, and multi-layer obfuscation (hex + Caesar + AES-GCM) of the final executed code — fits the alternate-runtime dropper pattern and runs attacker-controlled code on the installer's host automatically on every Python start.\n\n## Source: kam193 (9f8b8630f88afc0b4a1aedeefb4e20adbf3fb9dea06f64747fb0bdf65c0a7bc1)\nPackage embeds a malicious PTH file that on every Python startup executes obfuscated JavaScript code, using a Bun engine. It then exfiltrates credentials to a public Github repository, establishes persistence awaiting remote commands, attempts spreading using discovered credentials as well as periodically checks if discovered credentials are valid. Once they are invalidated, it performs destructive actions on the local machine. It seems to be part of the Miasma-family worm (also known under testmetest).\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-pystr-codec\n\n\nReasons (based on the campaign):\n\n\n - obfuscation\n\n\n - abuses-pth\n\n\n - infostealer\n\n\n - worm\n\n\n - backdoor\n\n\n - persistence\n\n\n - exfiltration-credentials\n\n\n - destructive-actions\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "pystr-codec"
+        "name": "pystr-codec",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1.0",
         "0.1.1",
         "0.1.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pystr_codec-setup.pth",
+              "sha256": "14dc1f185be61f2b0f49dc4118e48e44445d204c62106c01316b163cb64c5eba",
+              "tlsh": "de21305781038160da75d32bcb2525f8275b5cfb8e53875b8de8c9c03290d1197b2b8c"
+            },
+            {
+              "path": "pystr_codec/ci.js",
+              "sha256": "87eca5d10087906f4d8c85b3f66017e2f4bdf3ab9fef253c4e0a439e1d9b83d2",
+              "tlsh": "b20787f0ae01d4c1f57e5b6bf3ed7908a1343227eadd5a4a00a466591ef6a01fd0ecc9"
+            },
+            {
+              "path": "pystr_codec-0.1.2.dist-info/METADATA",
+              "sha256": "47cdd31d2ffb7881a80ad26f4e9a61c760286862133feaa449ab51892dfa61f9",
+              "tlsh": "cdb02200a20080b30800828b80ec0a2ac2fca30820be08ac8caa0220c383308c0308fc"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "pystr_codec-0.1.2-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "0a15d3da8a3aae99589a0606bdc00e174f01aeedcfc02150b89ec55b661794a4",
+                "md5": "9fec31a6d8c0c61be09dc8928bb9585f",
+                "sha256": "29a6134c9fe3849e9b84ce889d8ad59dc1b0b5fa6a9b710d4178fa1f736abf3b"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -26,16 +69,14 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/pystr-codec"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pystr-codec/0.1.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/pystr-codec/0.1.1/"
     }
   ],
   "database_specific": {
@@ -59,7 +100,44 @@
           "0.1.1",
           "0.1.2"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022638",
+        "import_time": "2026-11-12T04:13:26.92820707Z",
+        "modified_time": "2026-11-12T03:39:13Z",
+        "sha256": "1bac683aabaa62655d630fcba388d2f4b81940a5eb3b4fa4e27e106805307a0a",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022639",
+        "import_time": "2026-11-12T04:13:27.004893886Z",
+        "modified_time": "2026-11-12T03:39:21Z",
+        "sha256": "512abf8460812ee7c89336aa6734adcd7d3b502c8d6abcc9cbc891577c8ba7e4",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }

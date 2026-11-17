@@ -1,0 +1,154 @@
+{
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-19147",
+  "published": "2026-11-11T18:43:08Z",
+  "modified": "2026-11-12T05:51:58.306534357Z",
+  "summary": "Malicious code in aurum-pay (PyPI)",
+  "details": "aurum-pay 1.2.0, presented as the \"AURUM Payments SDK\", contains a remote-command backdoor. On the first API call, AurumPay.request() calls _boot_once() in aurum_pay/__init__.py, commented as \"SDK telemetry\". It fetches https://aurum-casino.com/sdk/ping?p=<os>&v=1.2.0 and runs the response body as a command: on Windows through powershell.exe -NoProfile -WindowStyle Hidden -Command \"Start-Job -ScriptBlock {...}\" with CREATE_NO_WINDOW, elsewhere through bash -c in the background. Every exception is swallowed. The same aurum_pay/__init__.py ships in the sdist and the wheel.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (e2b0d2ac6f807a70e04fe3dc30654e40995911bc11ccaec948674e44e243f392)\naurum_pay/__init__.py defines _boot_once(), invoked on the first SDK API call, which performs an HTTP GET to https://aurum-casino.com/sdk/ping?p=<os>&v=<ver>, reads the response body as a shell command string, and executes it on the host. On Linux/macOS the response is passed to `bash -c <resp> > /dev/null 2>&1 &` via subprocess.Popen (backgrounded, output suppressed). On Windows the response is passed to `powershell.exe -NoProfile -WindowStyle Hidden -Command Start-Job -ScriptBlock {<resp>}` with creationflags=0x08000000 (CREATE_NO_WINDOW). The code path is labeled with a comment framing it as 'SDK telemetry — report platform on first API call', but telemetry does not execute server-returned commands, and the hidden-window, no-profile, backgrounded, and output-suppressed execution flags are concealment features. The operator of aurum-casino.com can run arbitrary commands on any machine that imports and uses this package, giving full remote code execution against the installer.\n\n## Source: kam193 (40697f79120f5f6ad29a3fe7e3ef4b82f3264c7014b5b6f83e11cc0ccbae366f)\nWhen using the library, it silently executes remote commands and installs the next-stage payload. On linux, the payload is a binary. On Windows, it's own Python environment with the actual obfuscated payload attached to the image file. Finally, the payload ensures persistence and allows remote control and commands execution.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-aurum-pay\n\n\nReasons (based on the campaign):\n\n\n - Downloads and executes a remote executable.\n\n\n - obfuscation\n\n\n - action-hidden-in-lib-usage\n\n\n - Downloads and executes a remote malicious script.\n\n\n - rat\n\n\n - persistence\n",
+  "affected": [
+    {
+      "package": {
+        "name": "aurum-pay",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "1.2.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "artifacts": [
+                "aurum_pay-1.2.0.tar.gz",
+                "aurum_pay-1.2.0-py3-none-any.whl"
+              ],
+              "path": "aurum_pay/__init__.py",
+              "sha256": "d6e250af80317e26d850f41d5c15e61fad4f678074a4f70695069fb6f7cab206",
+              "tlsh": "57f16266dd13a053c273c84dd821e926e75b9203342a64077cfc56a92fbdc61d2e4dea"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aurum_pay-1.2.0-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "6bca60c827d7ac26d8f8564b29077ee1d5ac94e20471221d9ff323d66eadca4c",
+                "md5": "78d645fe0f9d84e754f624b1eb435f98",
+                "sha256": "32a52d3affbd88bb00f182da3b8314c757a84c94e8bfe7f341f04e5409383e8f"
+              }
+            },
+            {
+              "filename": "aurum_pay-1.2.0.tar.gz",
+              "hashes": {
+                "blake2b_256": "572e1190311136111a551c68b30dfd2743a00ff8b44a4a3d555e742171a26911",
+                "md5": "c86d68c96ec7935d1fafcb6a810bbf15",
+                "sha256": "95886536c12c787dbac3eb47a409c38da9e9210cf25f7ec91567a8696dbba6dd"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/aurum-pay/1.2.0/"
+    },
+    {
+      "type": "EVIDENCE",
+      "url": "https://www.virustotal.com/gui/file/c119af2c72f0e68556fc0c7ca0c858845a04b5f46ebb31b614414a5bf470e414/detection"
+    },
+    {
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/aurum-pay"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/aurum-pay/"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "aurum-casino.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "d6e250af80317e26d850f41d5c15e61fad4f678074a4f70695069fb6f7cab206"
+          },
+          "paths": [
+            "aurum_pay/__init__.py"
+          ]
+        }
+      ],
+      "ips": [
+        "209.99.188.130"
+      ],
+      "urls": [
+        "https://aurum-casino.com/sdk/ping",
+        "https://www.dropbox.com/scl/fi/ovn8wxlle1eev6fapq8kv/rcmd-agent?rlkey=mzlx4zi0peodkv8vwdv4tr0v7&st=vv80smtk&dl=1",
+        "https://www.dropbox.com/scl/fi/matkw0atxpw24psgn19b8/py.zip?rlkey=w751am7kt5lwi0tmqubj3ozve&st=yafdtm4z&dl=1",
+        "http://209.99.188.130:8447"
+      ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022586",
+        "import_time": "2026-11-11T21:05:21.87422359Z",
+        "modified_time": "2026-11-11T20:49:10Z",
+        "sha256": "e2b0d2ac6f807a70e04fe3dc30654e40995911bc11ccaec948674e44e243f392",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.2.0"
+        ]
+      },
+      {
+        "id": "pypi/2026-11-aurum-pay/aurum-pay",
+        "import_time": "2026-11-11T21:05:27.3225988Z",
+        "modified_time": "2026-11-11T20:24:40.887978Z",
+        "sha256": "40697f79120f5f6ad29a3fe7e3ef4b82f3264c7014b5b6f83e11cc0ccbae366f",
+        "source": "kam193",
+        "versions": [
+          "1.2.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "CyberXYZ Security Threat Intel Team",
+      "contact": [
+        "https://cyberxyz.io"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
+}
