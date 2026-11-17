@@ -1,28 +1,52 @@
 {
-  "modified": "2026-09-28T10:09:05Z",
-  "published": "2026-09-28T10:09:05Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17315",
+  "published": "2026-09-28T10:09:05Z",
+  "modified": "2026-10-29T13:38:36.584811546Z",
   "summary": "Malicious code in godsplan (npm)",
-  "details": "Running the godsplan 3.0.2 CLI connects to Chrome's debugging port (9222) and injects JavaScript into every open page. It bypasses Content Security Policy and intercepts selected test-page requests. When triggered by a mouse gesture or keyboard shortcut, the injected script collects the page text and current editor input; the CLI sends that content to https://ai-script.test0ing7.workers.dev/ for AI-generated answers and inserts the response into the page. The package also disables TLS certificate verification with NODE_TLS_REJECT_UNAUTHORIZED=0. This behavior can disclose browser-page and editor contents to an external service and alter test-page content. The observed trigger is CLI execution; no install-time execution was identified.\n\nEvidence: package/cdp_inject.js:2 disables TLS verification; lines 150-180 collect page and editor content; lines 252-282 send the content to the external endpoint; lines 330-350 connect to Chrome, bypass CSP and inject the script; lines 370-390 forward the collected content. Static review of the published npm tarball (sha256 8627139afbb193624535de0c32348e7b2747449ed9940f9c29e4dfb5a3f9a350); the package was not executed during manual review.",
+  "details": "Running the godsplan 3.0.2 CLI connects to Chrome's debugging port (9222) and injects JavaScript into every open page. It bypasses Content Security Policy and intercepts selected test-page requests. When triggered by a mouse gesture or keyboard shortcut, the injected script collects the page text and current editor input; the CLI sends that content to https://ai-script.test0ing7.workers.dev/ for AI-generated answers and inserts the response into the page. The package also disables TLS certificate verification with NODE_TLS_REJECT_UNAUTHORIZED=0. This behavior can disclose browser-page and editor contents to an external service and alter test-page content. The observed trigger is CLI execution; no install-time execution was identified.\n\nEvidence: package/cdp_inject.js:2 disables TLS verification; lines 150-180 collect page and editor content; lines 252-282 send the content to the external endpoint; lines 330-350 connect to Chrome, bypass CSP and inject the script; lines 370-390 forward the collected content. Static review of the published npm tarball (sha256 8627139afbb193624535de0c32348e7b2747449ed9940f9c29e4dfb5a3f9a350); the package was not executed during manual review.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (05dc2e058b489230e57e20471e55ae2f1e2d453f25a759ea5742f340eec85d0a)\nWhen invoked via its bin entry, the package connects to a local Chrome DevTools endpoint, extracts the active page's innerText and editor contents from the user's browser, and POSTs that payload to a hardcoded destination at https://ai-script.test0ing7.workers.dev/ using an author-embedded Groq API key from an in-source keyPool. The destination is not documented (README is empty) and is not caller-configurable. cdp_inject.js also sets process.env.NODE_TLS_REJECT_UNAUTHORIZED='0' at startup, disabling certificate verification for all HTTPS traffic in the Node process. The shipped Groq key (gsk_752HSU9TDJ3n...) is a live third-party credential that routes proxied traffic through the key owner's Groq account. The relay shape — caller-visible browser content going to an author-controlled proxy through an author-owned API key, with no disclosure and no opt-out — is consistent with an undocumented LLM-gateway wrapper: the relay is the product, but the user has no way to know the content of their browser tab is being sent to a third-party worker. No installer secrets are read (no ~/.aws, ~/.ssh, ~/.npmrc, env scraping), no install-time or import-time execution occurs (behavior is gated on the user running the bin CLI against a locally-launched Chrome DevTools session), and no persistence or remote code fetch is present.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "godsplan"
+        "name": "godsplan",
+        "ecosystem": "npm"
       },
       "versions": [
         "3.0.2"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "cdp_inject.js",
+              "sha256": "e8cd7729997babf809d59dbf14b34f9f416fd47ff4ca006fc42b88382910e99e",
+              "tlsh": "fd92d58b6496213586b6b3b98f539415fb3ad023710143b4fd5c86982ff187482b6fcd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "godsplan-3.0.2.tgz",
+              "hashes": {
+                "sha1": "26ec8405d7d74bcb6e9f38a8f179d50e06b1d7f3",
+                "sha512_sri": "sha512-Oy5R5jx9WZbvRxdVgXRQFri8eTygXELyYhnCMJpcwYFMgNpDhOSKWd3VyU03owPw1FHI81LAxTUWGI/qcfQnqA=="
+              }
+            }
+          ]
+        }
+      }
     }
   ],
-  "credits": [
+  "references": [
     {
-      "name": "smiling-hyena",
-      "type": "FINDER",
-      "contact": [
-        "smilinghyena4@gmail.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/godsplan/v/3.0.2"
     }
   ],
   "database_specific": {
@@ -45,6 +69,34 @@
       "urls": [
         "https://ai-script.test0ing7.workers.dev/"
       ]
+    },
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-021967",
+        "import_time": "2026-10-29T13:37:18.24567645Z",
+        "modified_time": "2026-10-29T13:31:29Z",
+        "sha256": "05dc2e058b489230e57e20471e55ae2f1e2d453f25a759ea5742f340eec85d0a",
+        "source": "amazon-inspector",
+        "versions": [
+          "3.0.2"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "smiling-hyena",
+      "contact": [
+        "smilinghyena4@gmail.com"
+      ],
+      "type": "FINDER"
     }
-  }
+  ]
 }
