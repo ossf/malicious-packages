@@ -2,12 +2,12 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-2144",
   "published": "2026-03-24T11:15:14Z",
-  "modified": "2026-10-21T21:47:44.202885129Z",
+  "modified": "2026-10-29T14:16:01.288833195Z",
   "aliases": [
     "PYSEC-2026-2"
   ],
   "summary": "Malicious code in litellm (PyPI)",
-  "details": "litellm 1.107.0, uploaded to PyPI on 2026-10-21 between 11:39 and 11:40 UTC, contains a credential stealer and a remote code execution backdoor that are not in the upstream source (the v1.107.0 git tag of BerriAI/litellm does not contain them): they were injected at build or upload time. Every wheel ships three extra files under litellm-1.107.0.data/purelib/, which pip installs at the site-packages root, so the payload is triggered at every Python interpreter start, without importing litellm.\n\n- cook.pth contains `import cook`.\n- cook.py runs `exec(zlib.decompress(base64.b64decode(...)))`, an info stealer (self-named \"privcollect\") that collects browser passwords and history, SSH keys, shell history, AWS/GCP/Azure credentials and cloud instance metadata (169.254.169.254, 169.254.170.2), Kubernetes, Docker, Vault and CI secrets, AI developer tool configurations (~/.cursor, ~/.claude, ~/.kiro, Windsurf), GPG and TLS private keys, .npmrc, .pypirc, .git-credentials and environment variables, encrypts them with an embedded RSA-4096 key and POSTs them to http://www.litellm.dev/healthcheck. It leaves the marker /tmp/.pc_once_72129118c59f5636c0bb.\n- sitecustomize.py daemonizes at interpreter start and, every hour, fetches a domain list from https://raw.githubusercontent.com/letters9813/pythonclient-test/main/domain.txt, then downloads and executes code from http://<domain>/codepy (remote shell / dropper).\n\nThe same mechanism (a .pth file run at interpreter start) was used in litellm 1.82.7 and 1.82.8 (MAL-2026-2144). Releases 1.106.2 and 1.107.0rc1/rc2 are not affected. Any environment where 1.107.0 was installed should be treated as compromised and its credentials rotated.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: google-open-source-security (6a89401cbf53902e8374fbf3b424a77bb5e5f8c437176232eab7c3237d10ecbe)\nLiteLLM was compromised through trivy security scan in a GitHub workflow.\nAttackers uploaded malicious versions of LiteLLM to PyPI. The malicious\ncode would exfiltrate sensitive secrets to an attcker controlled domain.\n\n## Source: ossf-package-analysis (c1d5a2e721c5f8b33b0530ddf98150cadf034a8cd16483e143fc2925b2cfa70c)\nThe OpenSSF Package Analysis project identified 'litellm' @ 1.82.8 (pypi) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "details": "litellm 1.107.0, uploaded to PyPI on 2026-10-21 between 11:39 and 11:40 UTC, contains a credential stealer and a remote code execution backdoor that are not in the upstream source (the v1.107.0 git tag of BerriAI/litellm does not contain them): they were injected at build or upload time. Every wheel ships three extra files under litellm-1.107.0.data/purelib/, which pip installs at the site-packages root, so the payload is triggered at every Python interpreter start, without importing litellm.\n\n- cook.pth contains `import cook`.\n- cook.py runs `exec(zlib.decompress(base64.b64decode(...)))`, an info stealer (self-named \"privcollect\") that collects browser passwords and history, SSH keys, shell history, AWS/GCP/Azure credentials and cloud instance metadata (169.254.169.254, 169.254.170.2), Kubernetes, Docker, Vault and CI secrets, AI developer tool configurations (~/.cursor, ~/.claude, ~/.kiro, Windsurf), GPG and TLS private keys, .npmrc, .pypirc, .git-credentials and environment variables, encrypts them with an embedded RSA-4096 key and POSTs them to http://www.litellm.dev/healthcheck. It leaves the marker /tmp/.pc_once_72129118c59f5636c0bb.\n- sitecustomize.py daemonizes at interpreter start and, every hour, fetches a domain list from https://raw.githubusercontent.com/letters9813/pythonclient-test/main/domain.txt, then downloads and executes code from http://<domain>/codepy (remote shell / dropper).\n\nThe same mechanism (a .pth file run at interpreter start) was used in litellm 1.82.7 and 1.82.8 (MAL-2026-2144). Releases 1.106.2 and 1.107.0rc1/rc2 are not affected. Any environment where 1.107.0 was installed should be treated as compromised and its credentials rotated.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d588e32a0d0ef4ceb28300723f845056e9ea26b79358479186124cd37c13d394)\nlitellm 1.107.0 is a Python LLM gateway/proxy library. No install-time or import-time code paths were observed that exfiltrate installer secrets, fetch and execute remote payloads, open a backdoor, redirect the installer's package manager, or distribute live third-party credentials. No lifecycle hooks performing network I/O, no.pth side effects beyond sys.path handling, and no credential-harvesting primitives against installer-owned paths (~/.aws, ~/.ssh, ~/.npmrc, browser or wallet stores) were found in the shipped artifact.\n\n## Source: google-open-source-security (6a89401cbf53902e8374fbf3b424a77bb5e5f8c437176232eab7c3237d10ecbe)\nLiteLLM was compromised through trivy security scan in a GitHub workflow.\nAttackers uploaded malicious versions of LiteLLM to PyPI. The malicious\ncode would exfiltrate sensitive secrets to an attcker controlled domain.\n\n## Source: ossf-package-analysis (c1d5a2e721c5f8b33b0530ddf98150cadf034a8cd16483e143fc2925b2cfa70c)\nThe OpenSSF Package Analysis project identified 'litellm' @ 1.82.8 (pypi) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -18,7 +18,16 @@
         "1.82.7",
         "1.82.8",
         "1.107.0"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ]
+      }
     }
   ],
   "references": [
@@ -118,10 +127,27 @@
         "versions": [
           "1.82.8"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022275",
+        "import_time": "2026-10-29T14:14:39.386127062Z",
+        "modified_time": "2026-10-29T14:11:39Z",
+        "sha256": "d588e32a0d0ef4ceb28300723f845056e9ea26b79358479186124cd37c13d394",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.107.0"
+        ]
       }
     ]
   },
   "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
     {
       "name": "OpenSSF: Package Analysis",
       "contact": [
