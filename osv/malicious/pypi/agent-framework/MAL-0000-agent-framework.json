@@ -1,0 +1,58 @@
+{
+  "modified": "2026-11-17T21:40:14Z",
+  "schema_version": "1.7.4",
+  "details": "Malicious releases of the legitimate \"agent-framework\" package (Microsoft Agent Framework). Versions 1.26.1 and 1.26.2 add a credential stealer that is not present in the last clean release, 1.26.0. Both releases were published on 2026-11-17 (1.26.1 at 20:35 UTC as a wheel only, 1.26.2 at 21:08 UTC) and have since been removed from PyPI.\n\nHow it triggers: each wheel adds an executable .pth startup hook that imports a helper module. Python runs .pth files at every interpreter start, so the code executes as soon as the package is installed, without importing agent_framework. In 1.26.1 the files are agent_framework_meta.pth and agent_framework_meta/_telemetry.py, started from a hook added to agent_framework_meta/__init__.py. In 1.26.2 they are renamed to af_runtime_diag.pth and af_runtime_diag.py; agent_framework_meta/__init__.py is identical to the clean 1.26.0 and the module calls its own _start() on import, so the .pth is the only trigger. The helper detaches into a background process (os.fork, os.setsid), is guarded by the environment marker _AF_TEL, and silences all errors. The rest of the wheel matches 1.26.0 and the dependency is unchanged (agent-framework-core[all]==1.26.0).\n\nWhat it does (info stealer): it collects hostname, user, working directory and arguments; environment variables whose names contain TOKEN, SECRET, PASSWORD, KEY, AZURE, AWS, GITHUB, HF_, OPENAI, NPM, PIP or CI_; the environment of other processes (/proc/*/environ); credential files (~/.azure, .npmrc, .netrc, .git-credentials, .docker/config.json, Hugging Face token, Azure DevOps agent .credentials, .env files); Azure DevOps OIDC tokens (SYSTEM_ACCESSTOKEN, SYSTEM_OIDCREQUESTURI); and Azure managed-identity tokens from the instance metadata service (169.254.169.254, IDENTITY_ENDPOINT). 1.26.2 adds theft of GitHub Actions OIDC tokens (ACTIONS_ID_TOKEN_REQUEST_URL, ACTIONS_ID_TOKEN_REQUEST_TOKEN, ACTIONS_RUNTIME_TOKEN), adds the /home/runner paths, and raises the limit on captured files from 60 to 80.\n\nExfiltration: the data is compressed with zlib, base64-encoded and sent by HTTP POST to https://webhook.site/d381fd80-ec62-42ad-8f5c-d1b15103c9bb. The URL is stored base64-encoded (_ENC) and is identical in both releases. The User-Agent is af-runtime-diagnostics/1 in 1.26.1 and runtime-diagnostics/1 in 1.26.2.\n\nWheel sha256: 1.26.1 d27fa34414e6201d5e03e559ef634f020057554d7b3f4898dd5d7cd3e989e110; 1.26.2 3d20a8bc91351a9a16b6db243b848ceca0206b7a8623b02d2af553a9c9f7e0a9.\n\nAnyone who installed 1.26.1 or 1.26.2 should treat the environment as exposed and rotate the credentials reachable from it, including CI and GitHub Actions secrets. 1.26.0 and earlier are not affected. We have not attributed this to a known campaign.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "agent-framework"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.26.2",
+        "1.26.1"
+      ],
+      "database_specific": {
+        "iocs": {
+          "domains": [
+            "webhook.site"
+          ],
+          "urls": [
+            "https://webhook.site/"
+          ],
+          "ips": [
+            "169.254.169.254"
+          ],
+          "files": []
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/agent-framework/1.26.2/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/agent-framework/1.26.1/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "OX Security",
+      "contact": [],
+      "type": "FINDER"
+    }
+  ]
+}
