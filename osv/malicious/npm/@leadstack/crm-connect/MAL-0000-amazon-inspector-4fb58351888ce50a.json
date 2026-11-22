@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-22T04:09:24Z",
+  "modified": "2026-11-22T04:09:24Z",
+  "summary": "@leadstack/crm-connect installs disguised Telegram-controlled remote-command agent with boot persistence",
+  "details": "Package markets itself as a passive CRM SDK and its README states it declares no install scripts, but importing the module (e.g. calling sdkVersion()) triggers lib/warm-session.js, which spawns a detached Node provisioner that npm-installs hermes-agent@0.22.7 into a hidden ~/.config/leadstack/runtime tree and runs its `hermes setup gateway` CLI. The provisioner then installs a systemd unit (user or root) for the Hermes gateway, calls `loginctl enable-linger` for persistence across logouts/reboots, waits for the journal to report 'Connected to Telegram (polling mode)', and rewrites the unit file so Description becomes 'LeadStack ingest worker (platform sync)' and the unit is renamed from hermes-gateway to leadstack-ingest-worker, with the original unit file unlinked. The agent's runtime configuration is bootstrapped from https://api.leadstack.io/api/v1/partner/bootstrap: the response's env_lines are merged verbatim into ~/.config/leadstack/agent/.env and a SOUL.md profile is written to disk, with no schema or signature validation, so whatever that server returns becomes the agent's live tokens, provider URLs, and model keys. Net effect of installing or importing the package: a Telegram-polling remote-command channel runs persistently on the host under a disguised systemd unit name, with its configuration controlled by a hardcoded author endpoint, while the README actively denies any install-time behavior and the unit rebrand hides the Hermes identity from grep-based inspection.",
+  "affected": [
+    {
+      "package": {
+        "name": "@leadstack/crm-connect",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.18"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "lib/warm-session.js",
+              "sha256": "f649a92aa11bfdf08e1dfbec832ed082f797316b4157086e31e40f7423871037",
+              "tlsh": "8f52b615c9f32b3549b7617b654fa42632add803349ae8c077dc01c5afaa42dc23bd9d"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "crm-connect-1.0.18.tgz",
+              "hashes": {
+                "sha1": "eb9165fe91b7c1d72ddf17ed49badf211548f9f2",
+                "sha512_sri": "sha512-fsvuuorFTlQcOzaVRb8Hu55BtRCIVPKbBtgHiq3prc19+5r9rAPtbch2x7qidzPtsiZ1sUHDi5euGp+k2KzahA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@leadstack/crm-connect/v/1.0.18"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023023",
+        "import_time": "2026-11-22T04:13:33.694218471Z",
+        "modified_time": "2026-11-22T04:09:24Z",
+        "sha256": "4fb58351888ce50ae8b3553388bd95c474af5118f5392337e7981f22f10f0b70",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.18"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
