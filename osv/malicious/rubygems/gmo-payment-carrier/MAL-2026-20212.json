@@ -1,0 +1,79 @@
+{
+  "modified": "2026-11-19T09:08:31Z",
+  "published": "2026-11-19T09:08:31Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20212",
+  "summary": "Malicious code in gmo-payment-carrier (RubyGems)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (98f131dbde032aa5e99feeaa4175c1fbccf2f634cad07c43ee2b4a0a86044d1b)\nThe gem executes credential-theft code on two surfaces. At install time, extconf.rb (invoked during `gem install`) collects host identity (hostname, whoami, `uname -a`, pwd, local IPv4), performs an IMDSv2 token request against 169.254.169.254 and reads the IAM role plus security-credentials, enumerates ECS task metadata, and sweeps environment variables matching DATABASE/DB_/MYSQL/AURORA/POSTGRES/REDIS/RDS, then HTTP GETs the collected data to a hardcoded collector at https://webhook.site/4b2354a7-67fd-4641-92ac-e18bac8c09e8. The library entry point lib/gmo-payment-carrier.rb unconditionally `require_relative 'runtime_payload'`, which repeats the same IMDSv2 credential harvest, ECS metadata read, DB env-var sweep, and host-recon exfil to the same webhook.site URL on every `require 'gmo-payment-carrier'`. Both paths target the installer / CI / production host and ship AWS IAM role credentials and database secrets to a third-party collector unrelated to any declared publisher.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "RubyGems",
+        "name": "gmo-payment-carrier"
+      },
+      "versions": [
+        "0.0.99"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/gmo-payment-carrier/extconf.rb",
+              "sha256": "45855ecfdd3577b4a1b5ef0d0bc78ce74931051925ae30aa6b87b56c554a9b66",
+              "tlsh": "82417545a6d93462da949571fc1e42137b11e70f1e8c2650aec04ecd1fade3bb2336e1"
+            },
+            {
+              "path": "lib/runtime_payload.rb",
+              "sha256": "3722a762ad6ab7bc694d3e19e806bd221d1530d5b1cbe8a2a92825d6d4ba278c",
+              "tlsh": "04415589ead93472da945571fc1902126b11e70f1a882b50aed08edd1f6cf3bf1376e0"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "gmo-payment-carrier-0.0.99.gem",
+              "hashes": {
+                "sha256": "66bfdd78ea5da36a7599435e4e6c4202c08df2b634c21b8ceda0a7f42571f976"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/gmo-payment-carrier/versions/0.0.99"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022888",
+        "import_time": "2026-11-19T09:13:05.339767091Z",
+        "modified_time": "2026-11-19T09:08:31Z",
+        "sha256": "98f131dbde032aa5e99feeaa4175c1fbccf2f634cad07c43ee2b4a0a86044d1b",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.99"
+        ]
+      }
+    ]
+  }
+}

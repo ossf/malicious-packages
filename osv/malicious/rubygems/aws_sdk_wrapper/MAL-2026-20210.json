@@ -1,0 +1,84 @@
+{
+  "modified": "2026-11-19T09:08:39Z",
+  "published": "2026-11-19T09:08:39Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20210",
+  "summary": "Malicious code in aws_sdk_wrapper (RubyGems)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d7d404dac5d62c717d33c80682fe93f240bb31f71d0886311752dfbfdb390abe)\nThe gem presents itself as an AWS SDK wrapper but ships no SDK functionality. Two code paths perform identical credential theft against the installer. First, ext/.../extconf.rb runs automatically during `gem install` via the gemspec `extensions:` entry: it queries the EC2 Instance Metadata Service (IMDSv2 and IMDSv1) at 169.254.169.254 to read the host's IAM role security credentials, collects host fingerprint data (hostname, whoami, uname, pwd, local IP), ECS task metadata, and every environment variable matching DATABASE/MYSQL/POSTGRES/REDIS/RDS, and POSTs the data to the hardcoded endpoint https://webhook.site/4b2354a7-67fd-4641-92ac-e18bac8c09e8. It then writes a stub Makefile so the build appears to succeed and no native source is actually compiled. Second, lib/runtime_payload.rb is loaded unconditionally from lib/aws_sdk_wrapper.rb, so `require 'aws_sdk_wrapper'` repeats the same IMDS credential read, host fingerprint, DB env scrape, and ECS metadata exfiltration to the same webhook.site URL in any consumer process. The gem name mimics the AWS SDK namespace; the package is a lure whose only behavior is credential exfiltration at install time and at require time.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "RubyGems",
+        "name": "aws_sdk_wrapper"
+      },
+      "versions": [
+        "0.0.99"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "ext/aws_sdk_wrapper/extconf.rb",
+              "sha256": "45855ecfdd3577b4a1b5ef0d0bc78ce74931051925ae30aa6b87b56c554a9b66",
+              "tlsh": "82417545a6d93462da949571fc1e42137b11e70f1e8c2650aec04ecd1fade3bb2336e1"
+            },
+            {
+              "path": "lib/runtime_payload.rb",
+              "sha256": "3722a762ad6ab7bc694d3e19e806bd221d1530d5b1cbe8a2a92825d6d4ba278c",
+              "tlsh": "04415589ead93472da945571fc1902126b11e70f1a882b50aed08edd1f6cf3bf1376e0"
+            },
+            {
+              "path": "metadata.yaml",
+              "sha256": "44281ae9973a06e111d79b000b37e7b6056d517dd89ec2c3f46763dd00b25db5",
+              "tlsh": "be11809175c6f4bbf402f2ee88402603e3b2d558be52399d45e7c19a43c415e270a112"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "aws_sdk_wrapper-0.0.99.gem",
+              "hashes": {
+                "sha256": "7b1ca113f18bb8b3a31b7d0671a4e7bd396a2609cf8e7b97826dfba56fce7c00"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://rubygems.org/gems/aws_sdk_wrapper/versions/0.0.99"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-022889",
+        "import_time": "2026-11-19T09:13:05.497778155Z",
+        "modified_time": "2026-11-19T09:08:39Z",
+        "sha256": "d7d404dac5d62c717d33c80682fe93f240bb31f71d0886311752dfbfdb390abe",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.0.99"
+        ]
+      }
+    ]
+  }
+}
