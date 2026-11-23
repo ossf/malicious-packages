@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-23T18:01:24Z",
+  "modified": "2026-11-23T18:01:24Z",
+  "summary": "caspian-client 2.9.13 exfiltrates full environment, cwd listing, and process tree to a hardcoded Sentry DSN at install and import",
+  "details": "caspian-client 2.9.13 ships a `_telemetry_diagnostics` routine that iterates every entry in `os.environ` and embeds the full `KEY=VALUE` list, together with the machine hostname, an `ls -laht`-style listing of the current working directory (up to 500 entries including sizes, mtimes and symlink targets) and a `/proc` process-tree snapshot, into an event body POSTed to the hardcoded Sentry ingest endpoint `https://o4512443838169088.ingest.us.sentry.io/4512443881684992`. This fires from `setup.py` at top level and from a custom PEP 517 build backend declared in `pyproject.toml` (`build-backend = \"backend\"`, `backend-path = [\".\"]`), whose `build_wheel` and `prepare_metadata_for_build_wheel` hooks invoke `report_environment()` before delegating to setuptools, so the exfiltration runs during `pip install` even under build isolation and without any declared install script. The same code path also runs from `caspian_client/__init__.py` on every import. On CI and developer machines `os.environ` routinely contains credentials such as `AWS_SECRET_ACCESS_KEY`, `GITHUB_TOKEN`, `NPM_TOKEN`, database URLs and other API keys, all of which leave the host to the author-controlled ingest endpoint. The behavior is labeled `_telemetry_diagnostics` while the README states environment variables are not collected.",
+  "affected": [
+    {
+      "package": {
+        "name": "caspian-client",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.9.13"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "artifacts": [
+                "caspian_client-2.9.13.tar.gz"
+              ],
+              "path": "_sentry.py",
+              "sha256": "c423f570e329b35afab73c496712f174caecdaf91a0d426822aa0ee68085f1fb",
+              "tlsh": "8a72d717d8286d7bd7c3926d4466e0c1b3345a131a052938fceca36c2f8c57982f66ee"
+            },
+            {
+              "artifacts": [
+                "caspian_client-2.9.13.tar.gz"
+              ],
+              "path": "backend.py",
+              "sha256": "c68abf95d6fdcaa7a247f375d64ee93c9a781ad0626ffa5522a2cfdbf1787548",
+              "tlsh": "7b21797272643d476087e5c88577c324e6367be3698a8435fe989fa40f7388083eb093"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "caspian_client-2.9.13-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "ad42bb95f779fbbf469917a2dbabaa1e5de8af0aa782857ac6e87e9ffce2f76c",
+                "md5": "97b186aa52fe314585699701562395e3",
+                "sha256": "aeb9993b84e2c5f0239c92d7554d1015bb3ce88eee27c32d6166f6d78d415738"
+              }
+            },
+            {
+              "filename": "caspian_client-2.9.13.tar.gz",
+              "hashes": {
+                "blake2b_256": "fcb2d9384241585d84d504fb04f9c881c4b2de23b47a1a081f7e9f295f10a293",
+                "md5": "b635be37b087ad927040fa8502eba3fa",
+                "sha256": "3f34912f1fba2247d98cfd7b8d65fbdfbd035e5025072d76d2b9182e5575fc5a"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/caspian-client/2.9.13/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023058",
+        "import_time": "2026-11-23T18:13:34.45326395Z",
+        "modified_time": "2026-11-23T18:01:24Z",
+        "sha256": "ebaac0f7ffc3acd9ae19a0efd89233a4467c0a255fff41144c44a558071afe5f",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.9.13"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

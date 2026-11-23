@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-23T18:01:38Z",
+  "modified": "2026-11-23T18:01:38Z",
+  "summary": "caspian-client exfiltrates full process environment to hardcoded Sentry DSN on import",
+  "details": "On every import of caspian_client, __init__.py invokes report_environment(), which deliberately raises an exception (via the misspelled attribute `wheel_platfrom`) to route execution into capture_exception(). The common-fields collector then calls _telemetry_diagnostics(), which iterates os.environ.items() and concatenates every key=value pair into the Sentry event. The DISABLE_TELEMETRY gate defaults to the string 'false', which is truthy, so the dump fires unconditionally unless the installer explicitly sets the variable. The event is POSTed via urllib to the hardcoded Sentry DSN at o4512443838169088.ingest.us.sentry.io, an author-controlled ingest endpoint. The bulk os.environ sweep is indiscriminate and in CI/build and developer contexts routinely captures credential-grade variables (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, GITHUB_TOKEN, NPM_TOKEN, database URLs with embedded passwords, OIDC tokens, SSH-agent sockets). The same import-time path also attaches a full /proc enumeration (_process_tree reads cmdline, comm, stat for every PID) and an `ls -laht` listing of the current working directory including hidden files (_cwd_diagnostics, up to 500 entries), disclosing host workload and project layout. The README explicitly denies that environment variables are collected, contradicting the actual behavior.",
+  "affected": [
+    {
+      "package": {
+        "name": "caspian-client",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.9.12"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "artifacts": [
+                "caspian_client-2.9.12-py3-none-any.whl"
+              ],
+              "path": "caspian_client/_sentry.py",
+              "sha256": "f855e3950544a848c85e196e84f94618c03c0f31a8a05e5d3e8ace3a22152f06",
+              "tlsh": "e672c717d8246d7bd7c392694467e0d1b3385a531a052938fceca36c2f8c47982f66ee"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "caspian_client-2.9.12-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "69243d325ff2200ebbad7c3d32f4893b5d4d993b737a45a791ae305d5f060886",
+                "md5": "b8d0130327fc6d9ea622dac6db1f8ada",
+                "sha256": "66723201a6650dfd1c650fbb9e5dac7e48461b4813a2b0590d1ea12861fa2764"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/caspian-client/2.9.12/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023060",
+        "import_time": "2026-11-23T18:13:34.677880551Z",
+        "modified_time": "2026-11-23T18:01:38Z",
+        "sha256": "7ced624f4fba42c63164425d0f3a99dd31e16045827ea3bf7951e096ae38d1b0",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.9.12"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
