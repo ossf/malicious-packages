@@ -1,13 +1,13 @@
 {
   "schema_version": "1.7.4",
   "id": "MAL-2026-20188",
-  "published": "2026-11-19T07:03:48Z",
-  "modified": "2026-11-20T20:19:38.878674664Z",
+  "published": "2026-11-18T15:15:25Z",
+  "modified": "2026-11-23T09:59:05.263268887Z",
   "aliases": [
     "GHSA-94wh-c496-hm43"
   ],
   "summary": "Malicious code in @basis-theory-elements/api-client (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f84e5b8dd56ced8cdd78e5d5f3b4498111ebcb490cb6e6572674766ab0193dd3)\nPackage @basis-theory-elements/api-client@99.9.1 declares its sole dependency as an HTTPS tarball URL (`\"ltidisafe\": \"https://ltidi.storage.googleapis.com/depenconf/ltidisafe-4.0.9.tgz\"`) rather than a registry version range. On `npm install`, npm fetches whatever bytes that URL currently serves and runs any lifecycle scripts contained in that tarball, with no version pin, no integrity hash, and no publisher-match check. The shipped index.js is an empty stub, so dependency resolution is the package's entire on-install effect. The package name shadows the `@basis-theory` vendor scope, and the 99.9.1 version is implausibly high for the name — the shape associated with dependency-confusion resolution attacks against internal `@basis-theory-elements/*` packages.\n\n## Source: ghsa-malware (f5184871c5335799fd89bbfa052c3975c90631140b0f4b2864b0fd8af6e07849)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
+  "details": "@basis-theory-elements/api-client 99.9.1 is a dependency-confusion package with an inflated version number and no code of its own (`index.js` exports an empty object; the `0.0.0-stage` placeholder published four minutes earlier is inert and not listed). It declares a single dependency, `ltidisafe`, as a tarball URL outside the npm registry (`https://ltidi.storage.googleapis.com/depenconf/ltidisafe-4.0.9.tgz`). That tarball's `preinstall` script runs `node test.js` with all output discarded. The script reads the OS user name, host name and home directory, hex-encodes each, and sends each one as the leading label of a cleartext HTTP GET to `basis-theory-elements.3z3m8pklr6jii5uhsorwmxf0trzlnbb0.oastify.com`, a Burp Collaborator out-of-band callback host, so the values leave the machine through the DNS lookup alone even if the HTTP request fails. It runs on install without the package being imported. The script collects the machine's non-internal IPv4 addresses but does not send them. The name imitates the `@basis-theory` vendor namespace; the package belongs to the same campaign as `@clickwraps/fetch` (MAL-2026-20119), `@clikwraps/navigate` and `react-native-datepickerror`, which use the same payload with per-package callback hosts. The payload is hosted outside the registry, so the publisher can change it without a new npm release. Remove the package, treat any machine that installed it as having disclosed its host identity, and block the callback and tarball hosts on build hosts.\n\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (f84e5b8dd56ced8cdd78e5d5f3b4498111ebcb490cb6e6572674766ab0193dd3)\nPackage @basis-theory-elements/api-client@99.9.1 declares its sole dependency as an HTTPS tarball URL (`\"ltidisafe\": \"https://ltidi.storage.googleapis.com/depenconf/ltidisafe-4.0.9.tgz\"`) rather than a registry version range. On `npm install`, npm fetches whatever bytes that URL currently serves and runs any lifecycle scripts contained in that tarball, with no version pin, no integrity hash, and no publisher-match check. The shipped index.js is an empty stub, so dependency resolution is the package's entire on-install effect. The package name shadows the `@basis-theory` vendor scope, and the 99.9.1 version is implausibly high for the name — the shape associated with dependency-confusion resolution attacks against internal `@basis-theory-elements/*` packages.\n\n## Source: ghsa-malware (f5184871c5335799fd89bbfa052c3975c90631140b0f4b2864b0fd8af6e07849)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
@@ -29,6 +29,11 @@
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -72,6 +77,37 @@
     }
   ],
   "database_specific": {
+    "iocs": {
+      "domains": [
+        "basis-theory-elements.3z3m8pklr6jii5uhsorwmxf0trzlnbb0.oastify.com",
+        "ltidi.storage.googleapis.com"
+      ],
+      "files": [
+        {
+          "digests": {
+            "sha256": "be6134a9d7c4118dd825a38393cfbd5ac9f80f14e1dcba88efabb07df5133dea"
+          },
+          "note": "declares the off-registry ltidisafe tarball dependency",
+          "paths": [
+            "package.json"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "cf5d1d0dca7009981430fd130e134a3847e930705cdf3695f8699012fa93e6a7"
+          },
+          "note": "preinstall of the remote dependency: hex-encodes user, host and home directory into callback hostnames",
+          "paths": [
+            "node_modules/ltidisafe/test.js"
+          ],
+          "source": "DROPPED"
+        }
+      ],
+      "urls": [
+        "https://ltidi.storage.googleapis.com/depenconf/ltidisafe-4.0.9.tgz"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-022884",
@@ -107,6 +143,14 @@
       "name": "Amazon Inspector",
       "contact": [
         "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Robin Frehner, Protet",
+      "contact": [
+        "https://protet.io",
+        "mailto:hello@protet.io"
       ],
       "type": "FINDER"
     }
