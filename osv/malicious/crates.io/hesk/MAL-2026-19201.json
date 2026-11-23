@@ -1,21 +1,27 @@
 {
-  "modified": "2026-11-12T21:47:28Z",
-  "published": "2026-11-12T21:47:28Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-19201",
+  "published": "2026-11-12T21:47:28Z",
+  "modified": "2026-11-18T20:37:45.606934639Z",
   "summary": "Malicious code in hesk (crates.io)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (83716a1c499cecbd64fe45f5ff56ab70ea6d1543e922c55e0514f2e2a69fe391)\nThe crate ships two reachable async payloads — `pub async fn dat` in src/test.rs and `pub async fn bs` in src/parse.rs, both imported from src/lib.rs — that walk the user's home directory with walkdir, build a zip archive via zip::ZipWriter including wallet artefacts (e.g. `exodus.wallet`), and upload the archive via reqwest multipart to a hardcoded Telegram Bot API endpoint using embedded `API_` token and `chat_id` constants. Both payload files (parse.rs ~40KB, test.rs ~60KB) are padded with roughly a hundred nonsense filler functions with invented identifiers (Modemir65, mix_wisp_30, Flagzelk147, shuffle_zelkvak_73, etc.) surrounding the exfiltration functions at the end of each file, consistent with deliberate camouflage. The dependency set — evdev and rdev (keyboard capture), winreg plus winapi winuser/processthreadsapi/memoryapi (Windows registry and process/memory primitives), walkdir, zip, and reqwest with the multipart feature — extends the capability surface to cross-platform keylogging and Windows persistence. The crate description `Это учебный проект для тестирования кибербезопасности` (\"educational project for cybersecurity testing\") does not match the shipped behavior.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (de5b04ce46240775a3b5e4d9ddecbd2c578779ea13b11d743e976c4aa09babb9)\nThe crate ships a runtime payload in src/parse.rs and src/test.rs, reached from a public async function in src/lib.rs, that uses walkdir + dirs::home_dir to search the consumer's filesystem for browser `Local Extension Settings` directories and for `exodus.wallet` directories, ZIPs the matches, and POSTs them to https://api.groq.com/openai/v1/chat/completions authenticated with a hardcoded Groq API key (`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`) embedded in the source. Browser extension stores and the Exodus wallet directory contain private keys, seed phrases, and session secrets, so this flow exfiltrates crypto-wallet and browser-wallet secrets from the consumer's host into an author-controlled Groq account. The stealer entrypoints `bs` and `dat` are concealed inside ~40 KB and ~60 KB of Markov-style filler functions with randomized identifiers (e.g. `apply_twice_torvak_78`, `shuffle_zelkvak_73`, `Flagzelk147`) surrounding the only functional code paths, and the crate self-labels as an 'educational cybersecurity project' in Russian while performing live wallet theft. Cargo.toml additionally declares rdev, evdev, winreg, signal-hook, zip, walkdir, and reqwest — a dependency set consistent with keystroke capture and Windows-registry persistence capability alongside the confirmed exfiltration path.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "crates.io",
-        "name": "hesk"
+        "name": "hesk",
+        "ecosystem": "crates.io"
       },
       "versions": [
-        "0.1.0"
+        "0.1.0",
+        "0.1.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -56,15 +62,10 @@
     {
       "type": "PACKAGE",
       "url": "https://crates.io/crates/hesk/0.1.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://crates.io/crates/hesk/0.1.1"
     }
   ],
   "database_specific": {
@@ -78,7 +79,26 @@
         "versions": [
           "0.1.0"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022828",
+        "import_time": "2026-11-18T20:36:30.310860772Z",
+        "modified_time": "2026-11-18T20:27:43Z",
+        "sha256": "de5b04ce46240775a3b5e4d9ddecbd2c578779ea13b11d743e976c4aa09babb9",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
