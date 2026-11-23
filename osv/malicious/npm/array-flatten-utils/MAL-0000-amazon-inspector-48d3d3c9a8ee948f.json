@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-23T08:08:12Z",
+  "modified": "2026-11-23T08:08:12Z",
+  "summary": "array-flatten-utils typosquat drops and executes opaque payload on require() with CI-gating and anti-analysis evasion",
+  "details": "The package presents itself as a trivial array utility (flatten/compact/unique) and mimics the name of the well-known `array-flatten` library, but index.js top-level loads a platform-specific native addon (`native_win.node` / `native_mac.node` / `native.napi.node`) inside a swallowed try/catch at require() time. The native addons read a shipped 6.7MB high-entropy `.napi_cache` blob, decode it, write it to a cache path (`%s.nc%lu.js`), and execute it as JavaScript via `node \"<path>\"` + CreateProcessA on Windows, and via fork + setsid + execlp with an `__IS_DAEMON` re-exec flag on Linux/macOS to detach the dropped process. The Windows loader additionally calls SetFileAttributesA to hide the dropped `.nc<uid>.js` file in TEMP. Execution is gated to CI/build environments by checking a wide list of CI env vars (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NETLIFY, VERCEL, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER) and skipped when analysis tools or debuggers are detected (wireshark, procmon, procexp, x64dbg, ollydbg, fiddler, httpdebug, IsDebuggerPresent, CheckRemoteDebuggerPresent, /proc/self/status TracerPid, /proc/1/cgroup containerd). A pure-JS array helper has no legitimate reason to ship three native addons plus a 6.7MB opaque blob; the trivial JS surface is a cover story over an obfuscated staged loader targeting CI environments where credentials and deploy tokens are concentrated.",
+  "affected": [
+    {
+      "package": {
+        "name": "array-flatten-utils",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native_win.node",
+              "sha256": "cdefbd4ff465d8a990586513587862d6b66c6cb3fc78d01a7699b5cf3d8e7432",
+              "tlsh": "2f945c94b381fdf6dc494b7418d25309a37af081a71eeb3b6624fe3c0a5ab98dc63544"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "a8975a71bd1ca57f72695ed9f44bfcbaf0194f710d16c8d7418e90cf5f2e429d",
+              "tlsh": "a8667c0fca19931d3c2819ed2c8f18d530ccadd86469df52f9ac8967e2548b9314f6eb"
+            },
+            {
+              "path": "native.napi.node",
+              "sha256": "79c360453577d56f43f735418d436e7de1501c7a67d70743e606c908337bcebb",
+              "tlsh": "0472744bd2a0dd3ec4d86231598b527252a2d070ef30172f0f54a6fb2d97358ae7ae52"
+            },
+            {
+              "path": "index.js",
+              "sha256": "80eca5a62e5a0f5e51398e6899471b345316a2132ce95683fda92086e044f06a",
+              "tlsh": "d901b1c93bf8714c166425f523edc686e4e1d421814e475dca8ea5b51ad4ca0af2ccff"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "array-flatten-utils-1.0.5.tgz",
+              "hashes": {
+                "sha1": "e9750caedbbc2b3ee62ae923ab51d53a412d3356",
+                "sha512_sri": "sha512-Keo/8tgZDqB251W0zZqtDrEpEGNIXaXCIMNArQDIvXxRZt7licz2kG5FX+REGEoNf4yVlkWpNxgIqaOmprqR5Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/array-flatten-utils/v/1.0.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023046",
+        "import_time": "2026-11-23T08:17:31.400355651Z",
+        "modified_time": "2026-11-23T08:08:12Z",
+        "sha256": "48d3d3c9a8ee948f45acdef2355140fb44bd2fe21ab48d0da8b972d0e93e7dfc",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
