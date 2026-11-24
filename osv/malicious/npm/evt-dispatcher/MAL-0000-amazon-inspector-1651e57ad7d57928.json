@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-24T04:15:18Z",
+  "modified": "2026-11-24T04:15:18Z",
+  "summary": "evt-dispatcher ships native loader that decodes opaque blob and executes it via node on require()",
+  "details": "Package presents as a ~10-line event emitter but index.js unconditionally loads a platform-selected native addon (`native.napi.node` on Linux/macOS, `native_win.node` on Windows) inside four repeated try/catch blocks, so merely `require()`ing the package runs the native code. The addon references the strings `%s/.napi_cache`, `/tmp/.%u`, `%s.nc%lu.js`, and `node \"%s\"`, and imports `fopen64`/`fread`/`fwrite`/`chmod`/`fork`/`setsid`/`execlp`/`_exit`; the Windows build mirrors this via `node.exe` and `CreateProcessA`. A 1,328,481-byte sibling file `.napi_cache` is shipped at the package root with no printable strings — an opaque payload the loader decodes, writes to `/tmp/.<n>.nc<n>.js`, and executes with `node`. The addon also contains an evasion harness that checks for CI runners (GITHUB_ACTIONS, GITLAB_CI, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER), containers (`/proc/1/cgroup`, `/proc/1/cmdline`, `dockerinit`, `/proc/meminfo`, `/proc/cpuinfo`), and debuggers (`TracerPid:` in `/proc/self/status`, `wireshark`/`httpdebug` in `/proc/self/maps`, `IsDebuggerPresent`/`CheckRemoteDebuggerPresent`/`CreateToolhelp32Snapshot` on Windows) to gate execution so the dropper stays dormant in automated analysis environments and fires only on developer workstations. None of this behavior is required by, or related to, the advertised event-emitter API.",
+  "affected": [
+    {
+      "package": {
+        "name": "evt-dispatcher",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.5"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native.napi.node",
+              "sha256": "603b601b47d5783c947900baaa05eb76dc52ce87c8e0c49f8c78875ebe07fcf4",
+              "tlsh": "be72844bd3a0ed3ec4d86231598b527253a2d070ef30172f0f54a2bb2d933586e7ae52"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "e32b41e2614984846110cb72547a046b3b4ed10c0b59c4aae8b63efbaf081262",
+              "tlsh": "3b557c0fca09931d3d2819ec2c8f18d530ccadd96469df52f9ac8967e2548b9314f6eb"
+            },
+            {
+              "path": "index.js",
+              "sha256": "aa1b9ed6e669601d1cc67c8306cb228c16b56f2a8585dfc1658b0f0036e8ecf8",
+              "tlsh": "bb11804e63b4603c6eb813ea11f147467883e648158a161db9c8abf67ebccc91f90d77"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "evt-dispatcher-1.0.5.tgz",
+              "hashes": {
+                "sha1": "69eeac5a98c10c650c7b9cd241c78c0eefcbfde3",
+                "sha512_sri": "sha512-xhM0S2tIvZpfRv4lcPt59xzh5REebMLGIe9tpPkHGoHVvfDcu6Hgs9qy7KPrQ3PJTLa/xUwgqcG9Ton+uV3cPQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/evt-dispatcher/v/1.0.5"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023075",
+        "import_time": "2026-11-24T04:37:06.501265882Z",
+        "modified_time": "2026-11-24T04:15:18Z",
+        "sha256": "1651e57ad7d57928d036520e53a98e0c6d1782349849ef77ea10b0d0c3a1c9e5",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.5"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

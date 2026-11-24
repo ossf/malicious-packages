@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-24T04:15:11Z",
+  "modified": "2026-11-24T04:15:11Z",
+  "summary": "evt-dispatcher ships opaque native loader that decrypts and executes a bundled payload on require()",
+  "details": "The package advertises itself as a lightweight pure-JS event dispatcher, and index.js contains a complete EventBus implementation that needs no native code. index.js nonetheless unconditionally require()s one of two shipped native binaries (native.napi.node ELF on Linux, native_win.node PE on Windows), which stage a 1.3 MB opaque.napi_cache blob to a temp path and execute it: on Linux the ELF forks, calls setsid, chmods, and execlp's /tmp/.<pid>; on Windows the DLL writes %TEMP%\\.napi_cache\\*.nc<lu>.js and spawns it via CreateProcessA with command line `node \"%s\"`. Before executing, the native loader enumerates CI providers (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NETLIFY, VERCEL), container indicators (/proc/1/cgroup, docker, containerd, kubepod, podman), and debugger state (/proc/self/status TracerPid, /proc/self/maps), gating execution so the payload stays dormant in analysis environments and runs only on real developer or production hosts. The payload bytes are opaque with no readable strings or URLs, so the loader itself is the attack surface and the executed content is attacker-chosen. The combination of doc-mismatched native binaries in a trivial pure-JS package, import-time decrypt-and-exec of an opaque blob, and sandbox/CI/debugger evasion is a hidden-payload dropper that runs on every require() of the package.",
+  "affected": [
+    {
+      "package": {
+        "name": "evt-dispatcher",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "1ef6ed6ecc56031e5aafaf6670af89f24b1ab7eb828af46bd908bd3b50bf600c",
+              "tlsh": "e4019e0f63b420386eb413ab11f186477983e6482186191c79c8ebf97ebcccd1e91d76"
+            },
+            {
+              "path": "native.napi.node",
+              "sha256": "ce4fc60e1314e8d8e64002acc873959ea31f0d6012d4f13e88cd3229a598bdf1",
+              "tlsh": "4072854bd2a0ed3ec4d86231598b527153a2d070ef30172f0f54a6fb2d97358ae7ae52"
+            },
+            {
+              "path": "package.json",
+              "sha256": "2b4a0dc1bf9d521f9582e3ede1bbfc2978bf2139b0f93198dd629d1762e0a1aa",
+              "tlsh": "abe0c27096542c6310cc9b681f275a86322319ab212c7e0c33df791847ae66760fe9dd"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "evt-dispatcher-1.0.3.tgz",
+              "hashes": {
+                "sha1": "24346721922b2c27342d3100f1878318c76aa52a",
+                "sha512_sri": "sha512-a84KuKfFY6AVjAtNFHMDoYHTVux/nXoSow8P8D3Ub8ubQf5MBhGajYpCqSpt7/RdoO2Ax411m+lw5/zpPyreMQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/evt-dispatcher/v/1.0.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023074",
+        "import_time": "2026-11-24T04:37:06.383322441Z",
+        "modified_time": "2026-11-24T04:15:11Z",
+        "sha256": "fe178ae49d7280173364bc1cf09daa2472fb91e99e6775a647d6fbcdad0d61f6",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

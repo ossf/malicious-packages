@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-24T04:14:57Z",
+  "modified": "2026-11-24T04:14:57Z",
+  "summary": "evt-dispatcher ships a native dropper that executes a bundled opaque payload on require",
+  "details": "The package advertises itself as a lightweight pure-JS event dispatcher but ships two prebuilt native addons (native.napi.node for Linux, native_win.node for Windows) plus a 1.3 MB high-entropy opaque file named.napi_cache at the package root. index.js unconditionally require()s the native addon at the top of the module (repeated five times inside try/catch to maximize load reliability) before declaring a trivial EventBus class. On require, the native addon reads the bundled.napi_cache blob, writes the decoded bytes to /tmp/.<pid>, chmods the file, and spawns it as a detached process via fork + setsid + execlp, giving the installer arbitrary native code execution that persists beyond the Node process. The native loader also contains dedicated anti-analysis logic with no benign purpose in an event-emitter: it enumerates CI/sandbox environment variables (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, NETLIFY, VERCEL, SANDBOX), reads /proc/1/cgroup for docker/containerd/kubepod/podman markers, checks /proc/self/status TracerPid, and on Windows calls IsDebuggerPresent / CheckRemoteDebuggerPresent and scans running processes for wireshark and httpdebug. No binding.gyp, C sources, or install hooks are declared, and the shipped JS has no legitimate need for native code — the native addon is a decoder/dropper for the opaque payload, and the JS is a cover story.",
+  "affected": [
+    {
+      "package": {
+        "name": "evt-dispatcher",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.6"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native.napi.node",
+              "sha256": "0ca9bb3e6eed57f9244280dbd62d2bc0aa4cbb700731296c35fb430a7f9f96e5",
+              "tlsh": "3e82854ba2a0ed3ec4d86271598b527252a2d070ef30172f0f54a6f72dd73586e7ae12"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "e32b41e2614984846110cb72547a046b3b4ed10c0b59c4aae8b63efbaf081262",
+              "tlsh": "3b557c0fca09931d3d2819ec2c8f18d530ccadd96469df52f9ac8967e2548b9314f6eb"
+            },
+            {
+              "path": "index.js",
+              "sha256": "48fdb010f9e1bc6a0095003550201c1d1de49b7e83c7cc02404b24f914d776ea",
+              "tlsh": "4a117b4a63b4603c6eb823ea11f047427883e644158a161db8c8aaf63eb88c81f90d77"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "evt-dispatcher-1.0.6.tgz",
+              "hashes": {
+                "sha1": "9e51b51e6014eabef5858c2ccfbd30893b40cc45",
+                "sha512_sri": "sha512-8IxaUGS690lUlKr3mUbnArcmjOcO35bNHy1RvIabzevJ4sL/DPrFRpIL+Pi+HIYN0HfouW8AfXSAImA5DRv9gg=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/evt-dispatcher/v/1.0.6"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023072",
+        "import_time": "2026-11-24T04:37:06.132671061Z",
+        "modified_time": "2026-11-24T04:14:57Z",
+        "sha256": "be108d02b7664da83f1f86a03ba9be247f385bd1a7d7dd82b9bc6cf96f658213",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.6"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
