@@ -1,22 +1,28 @@
 {
-  "modified": "2026-09-30T05:21:35Z",
-  "published": "2026-09-30T04:51:09Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-17328",
+  "published": "2026-09-30T04:51:09Z",
+  "modified": "2026-11-23T07:37:53.714750175Z",
   "summary": "Malicious code in fca-raihan (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (241006adda5ea773d76d48d874c80a4054215ed18f05de3e392cdd86c0379785)\npackage.json for fca-raihan declares a dependency whose key equals the package's own name (`fca-raihan`) with source `github:raihan9099/fca-raihan`. This is an off-registry dependency source with no ref pin and no integrity check: on `npm install`, npm fetches the current HEAD of that GitHub repository and installs whatever tree it returns, running any lifecycle scripts contained in the fetched code. Whoever controls the repository can change what gets installed at any time, independently of what is published to the npm registry, and the self-named dependency-confusion shape (dependency key equal to the package's own name) causes this source to be resolved during normal installs of fca-raihan. Additional patterns observed in the shipped source include Buffer.from(..., 'base64') decoding in messaging/e2ee modules and `ping` string occurrences in a bundled Facebook e2ee vendor file; these are consistent with the package's advertised messaging/E2EE functionality and are not by themselves indicative of installer harm, but they are not analyzable independently of whatever the mutable GitHub source resolves to at install time.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (d9b06cc7afdf50cff0459a4bc3333b89e9f0f6fac1371f8b0133adcfa09365c3)\nfca-raihan is advertised as an unofficial Facebook Chat API client, but its login path routes the caller's Facebook email, password, and 2FA Base32 secret to the hardcoded third-party endpoint https://minhdong.site/api/v1/facebook/login_ios rather than to Facebook. The exported login() function builds the request as `${apiBaseUrl || config.apiServer || 'https://minhdong.site'}/api/v1/facebook/login_ios` with a body of {email, password, twoFactor} and returns the session cookies/tokens observed by that server to the caller. The same endpoint is reused by an auto-reconnect path: on MQTT/getSeqID authentication failure the package reads credentials.email, credentials.password, and credentials.twofactor from the installer's fca-config.json and re-POSTs them to minhdong.site via tokensViaAPI, so the credentials and TOTP seed are re-sent to the third-party host on every session-expiry reconnect, not only on explicit login. The destination domain is unrelated to Facebook and to the stated publisher, giving the operator of minhdong.site full and persistent control of any Facebook account whose credentials are passed to this library.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "fca-raihan"
+        "name": "fca-raihan",
+        "ecosystem": "npm"
       },
       "versions": [
         "37.2.5",
-        "37.2.6"
+        "37.2.6",
+        "37.2.7"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -57,15 +63,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/fca-raihan/v/37.2.6"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fca-raihan/v/37.2.7"
     }
   ],
   "database_specific": {
@@ -89,7 +90,26 @@
         "versions": [
           "37.2.6"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-023044",
+        "import_time": "2026-11-23T07:36:25.024145837Z",
+        "modified_time": "2026-11-23T07:30:42Z",
+        "sha256": "d9b06cc7afdf50cff0459a4bc3333b89e9f0f6fac1371f8b0133adcfa09365c3",
+        "source": "amazon-inspector",
+        "versions": [
+          "37.2.7"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
