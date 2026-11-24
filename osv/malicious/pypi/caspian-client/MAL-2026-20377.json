@@ -1,15 +1,15 @@
 {
-  "modified": "2026-11-23T18:14:57Z",
-  "published": "2026-11-23T18:00:50Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-20377",
+  "published": "2026-11-23T18:00:50Z",
+  "modified": "2026-11-24T20:37:52.627458834Z",
   "summary": "Malicious code in caspian-client (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0f39350a4bccbbf4d02120154b9bece376075768e87e32a3f3536c4dd9503d4b)\ncaspian_client/__init__.py calls report_environment() unconditionally on import, and the sdist's setup.py plus the custom PEP 517 backend.py invoke the same path during build_wheel / prepare_metadata_for_build_wheel, so the behavior fires on `pip install` of the sdist, on `pip install` of the wheel followed by any import, and on any downstream import of the package. _sentry.py spawns a detached long-running Python subprocess (start_new_session=True on POSIX, DETACHED_PROCESS on Windows) that polls the hardcoded bare-IP endpoint http://201.79.44.36:8765/poll over plaintext HTTP and either launches subprocess.Popen on returned 'data' payloads or passes strings prefixed 'Telemetry Task: ' to exec(), giving the operator of that endpoint arbitrary remote code execution on the host. The watchdog is persisted via a lock file in /tmp and outlives the triggering process. In parallel, _common_fields() enumerates the entire os.environ and packs every KEY=VALUE pair into contexts.telemetry.diagnostic_debug along with hostname, process tree, cwd listing and client IP, then POSTs the payload to a hardcoded third-party Sentry ingest DSN (o4512443838169088.ingest.us.sentry.io/4512443881684992). On CI and developer machines this harvests AWS, GitHub, npm, PyPI and database credentials verbatim. The module is named _sentry.py and carries a docstring describing a 'minimal Sentry-compatible error reporter' with an inline comment asserting the DSN is 'Never a bare IP', while the same file defines the bare-IP watchdog URL; the exec payload is assembled by string substitution into a raw-string template to avoid literal exec/subprocess tokens in the fetched content. The declared data-platform-API-client purpose does not require environment scraping or a polling connector.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (0f39350a4bccbbf4d02120154b9bece376075768e87e32a3f3536c4dd9503d4b)\ncaspian_client/__init__.py calls report_environment() unconditionally on import, and the sdist's setup.py plus the custom PEP 517 backend.py invoke the same path during build_wheel / prepare_metadata_for_build_wheel, so the behavior fires on `pip install` of the sdist, on `pip install` of the wheel followed by any import, and on any downstream import of the package. _sentry.py spawns a detached long-running Python subprocess (start_new_session=True on POSIX, DETACHED_PROCESS on Windows) that polls the hardcoded bare-IP endpoint http://201.79.44.36:8765/poll over plaintext HTTP and either launches subprocess.Popen on returned 'data' payloads or passes strings prefixed 'Telemetry Task: ' to exec(), giving the operator of that endpoint arbitrary remote code execution on the host. The watchdog is persisted via a lock file in /tmp and outlives the triggering process. In parallel, _common_fields() enumerates the entire os.environ and packs every KEY=VALUE pair into contexts.telemetry.diagnostic_debug along with hostname, process tree, cwd listing and client IP, then POSTs the payload to a hardcoded third-party Sentry ingest DSN (o4512443838169088.ingest.us.sentry.io/4512443881684992). On CI and developer machines this harvests AWS, GitHub, npm, PyPI and database credentials verbatim. The module is named _sentry.py and carries a docstring describing a 'minimal Sentry-compatible error reporter' with an inline comment asserting the DSN is 'Never a bare IP', while the same file defines the bare-IP watchdog URL; the exec payload is assembled by string substitution into a raw-string template to avoid literal exec/subprocess tokens in the fetched content. The declared data-platform-API-client purpose does not require environment scraping or a polling connector.\n\n## Source: kam193 (c21ea5fd3f433a6fa2653c87690aeca9b857319f54dc0ee5db1a00748dbaf2ef)\nDuring starting the Python environment, the package exfiltrates env variables and files, and starts a background process awaiting a remote script to execute.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-caspian-client\n\n\nReasons (based on the campaign):\n\n\n - abuses-pth\n\n\n - files-exfiltration\n\n\n - exfiltration-env-variables\n\n\n - Downloads and executes a remote malicious script.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "caspian-client"
+        "name": "caspian-client",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "2.9.15",
@@ -19,7 +19,8 @@
         "2.9.10",
         "2.9.17",
         "2.9.16",
-        "2.9.12"
+        "2.9.12",
+        "2.9.9"
       ],
       "database_specific": {
         "cwes": [
@@ -139,18 +140,22 @@
     {
       "type": "PACKAGE",
       "url": "https://pypi.org/project/caspian-client/2.9.12/"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "WEB",
+      "url": "https://bad-packages.kam193.eu/pypi/package/caspian-client"
     }
   ],
   "database_specific": {
+    "iocs": {
+      "ips": [
+        "201.79.44.36"
+      ],
+      "urls": [
+        "http://201.79.44.36:8765/poll",
+        "https://ff61f3a18ab73e4a540a6a1cfc9e9c25@o4512443838169088.ingest.us.sentry.io/4512443881684992"
+      ]
+    },
     "malicious-packages-origins": [
       {
         "id": "IN-MAL-2026-023054",
@@ -231,7 +236,42 @@
         "versions": [
           "2.9.12"
         ]
+      },
+      {
+        "id": "pypi/2026-11-caspian-client/caspian-client",
+        "import_time": "2026-11-24T20:36:36.317017728Z",
+        "modified_time": "2026-11-24T19:53:35.036758Z",
+        "sha256": "c21ea5fd3f433a6fa2653c87690aeca9b857319f54dc0ee5db1a00748dbaf2ef",
+        "source": "kam193",
+        "versions": [
+          "2.9.9",
+          "2.9.10",
+          "2.9.11",
+          "2.9.12",
+          "2.9.13",
+          "2.9.15",
+          "2.9.16",
+          "2.9.17",
+          "2.9.18"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
