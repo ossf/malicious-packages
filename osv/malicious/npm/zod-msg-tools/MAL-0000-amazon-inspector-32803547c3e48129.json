@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-24T06:04:20Z",
+  "modified": "2026-11-24T06:04:20Z",
+  "summary": "zod-msg-tools ships a hidden HTTP SQL/RCE backdoor disguised as a Zod validation helper",
+  "details": "Package is published on npm as a helper for Zod validation messages, but its actual code monkey-patches Node's http.createServer so that any HTTP server the host process subsequently creates transparently serves a hidden POST endpoint at paths like /api/aff-service/zod-tools and /api/backoffice/<service>/zod-tools. Requests to that path are intercepted before the host's router/middleware, bypassing application authentication, and execute attacker-supplied queries against the mysql/postgres/clickhouse pools the host passed to registerTools(). For dbType 'postgres', queries beginning with a backslash are forwarded to the psql CLI via execFile with the caller-controlled string passed to -c; psql's \\! meta-command runs arbitrary shell commands, escalating the DB backdoor to OS command execution as the Node process user. To enable that path, registerTools() also runs `apk add --no-cache postgresql-client` via execSync at library-init time, silently modifying Alpine-based hosts. The npm README describes a Zod message helper, while the package.json description acknowledges a 'Drop-in, hidden admin SQL-console endpoint' — a deliberate cover-story mismatch that hides the backdoor from developers browsing the package page.",
+  "affected": [
+    {
+      "package": {
+        "name": "zod-msg-tools",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "0.1.4"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "src/http/patch-server.js",
+              "sha256": "025eb3b16d4927d4c4717b70d0152e79d124d8d51627ffd0e39ddd29f87bff99",
+              "tlsh": "2a41359a3be012e641c7d36f66561340d3a0e161324d4da4bbced7e60fc5db4d225ec4"
+            },
+            {
+              "path": "src/db/run-psql-command.js",
+              "sha256": "8e9352d8cffd5cfcde65a5fe5954bd9e935c648d2b4486744b6cd9072719ea3a",
+              "tlsh": "8f11ab2a82ee181441d2db2270ed846b74fd31032a917974357ea9422fdc4698272c9e"
+            },
+            {
+              "path": "src/db/ensure-psql.js",
+              "sha256": "27ed1f44f841fdd667bb7791a3f74df9ae1377ed0b7b6c7c67b72cac199247a4",
+              "tlsh": "9ee0687796d823b4dec448912b3b84b2697b43614b3a2a64d3df828d5f181280b79b90"
+            },
+            {
+              "path": "README.md",
+              "sha256": "a70396866ca9088450422ff58f5e0795acebdd5b35f32ce91097c05fa84012bc",
+              "tlsh": "edb09256ee291ad69f270a45f8c4a100e9da6aad52256baed669009102054584636329"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "zod-msg-tools-0.1.4.tgz",
+              "hashes": {
+                "sha1": "67d15dfed0c45e6ec2b4ebb4aa84fb2cf93e8dc5",
+                "sha512_sri": "sha512-G5W5fw1Nhl2eSx+xYas674op0oiL9z+gw5rLJT1exEIaMYgB044spS7emOFjHMvz2QzMKmItD1C3mGOsR+cBbQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/zod-msg-tools/v/0.1.4"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023081",
+        "import_time": "2026-11-24T06:19:37.354542887Z",
+        "modified_time": "2026-11-24T06:04:20Z",
+        "sha256": "32803547c3e48129e87b2661d4dcd865886bb13604c69738fd26798861b72931",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.4"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
