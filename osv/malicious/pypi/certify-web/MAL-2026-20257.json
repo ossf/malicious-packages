@@ -1,19 +1,76 @@
 {
-  "modified": "2026-11-19T21:50:33Z",
-  "published": "2026-11-19T21:50:33Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-20257",
+  "published": "2026-11-19T21:50:33Z",
+  "modified": "2026-11-20T01:14:02.398981301Z",
   "summary": "Malicious code in certify-web (PyPI)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: kam193 (0967f829a27c14c8f6fdec12a380352683e1752bb117a4c8bec3c9554844b797)\nPackage installs a PTH file that during every Python startup installs a NinjaOne (legitimate remote management tool) agent tied to the attacker-controlled account and ensures its persistence. As such, the attacker gains full control over the machine.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-certify-web\n\n\nReasons (based on the campaign):\n\n\n - rat\n\n\n - abuses-pth\n\n\n - persistence\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (3632ae3bbd980743b5a64d69c328ad10e35ed1998c202f3e4a437d687f31f7a3)\nOn `pip install certify-web`, setup.py's install command invokes ensure_ninja_agent(), which downloads a NinjaOne remote-management.deb from eu.ninjarmm.com hardcoded to the author's tenant (organization UUID e9f1a699-f8b3-4386-9d2d-68cb8f3e3801, 'Oficinaprincipal') and installs it via `dpkg -i` on Linux amd64/arm64. A shipped.pth file (`import certify_web_postinstall; certify_web_postinstall.run()`) re-runs the same ensure-agent path on every Python interpreter start. The installed NinjaOne agent is launched as a daemon (DAEMON_RUN=1) and provides the tenant operator with remote shell, arbitrary script execution, file transfer, and software deployment on the enrolled host; enrollment is not caller-configurable. container_runtime.install_runtime_scripts writes /usr/local/bin/certify-web-ninja-keepalive.sh, /usr/local/bin/certify-web-ninja-on-boot.sh, and /etc/xdg/autostart/certify-web-ninja.desktop, and spawns a nohup keepalive loop that re-runs the ensure-agent path every 60 seconds, resurrecting the agent after reboots or process kills. Evasion steps include a fake systemctl shim prepended to PATH during dpkg to bypass the vendor preinst's refusal to install without systemd (e.g., inside containers), and a spoofed Chrome User-Agent on the.deb download. The package name and description do not disclose any of this behavior.\n\n## Source: kam193 (0967f829a27c14c8f6fdec12a380352683e1752bb117a4c8bec3c9554844b797)\nPackage installs a PTH file that during every Python startup installs a NinjaOne (legitimate remote management tool) agent tied to the attacker-controlled account and ensures its persistence. As such, the attacker gains full control over the machine.\n\n\n---\n\nCategory: MALICIOUS - The campaign has clearly malicious intent, like infostealers.\n\n\nCampaign: 2026-11-certify-web\n\n\nReasons (based on the campaign):\n\n\n - rat\n\n\n - abuses-pth\n\n\n - persistence\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "PyPI",
-        "name": "certify-web"
+        "name": "certify-web",
+        "ecosystem": "PyPI"
       },
       "versions": [
         "0.1.3"
-      ]
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "artifacts": [
+                "certify_web-0.1.3.tar.gz"
+              ],
+              "path": "setup.py",
+              "sha256": "6826cbd9414df592073507d3715dc47d592cf6f05f904263215958cf3d85349e",
+              "tlsh": "a3416312c9596874ed96cbac1c87c260cbb06d630a4524b8bdfe4214af97471d22b27b"
+            },
+            {
+              "artifacts": [
+                "certify_web-0.1.3.tar.gz",
+                "certify_web-0.1.3-py3-none-any.whl"
+              ],
+              "path": "src/certify_web/agent_install.py",
+              "sha256": "f6077bc4a1168d220e3a69c7848dc0399994695b8e2677c347aa6109ec1b9410",
+              "tlsh": "1142a701ea282c73c791ca7c6c56d111977aac070e197c38fddd81256f8e06ad1fa6be"
+            },
+            {
+              "artifacts": [
+                "certify_web-0.1.3.tar.gz",
+                "certify_web-0.1.3-py3-none-any.whl"
+              ],
+              "path": "src/certify_web/container_runtime.py",
+              "sha256": "3bede696c38c0eeea2a0b2d041535943f8604f711210bd1a5a0e841e7f3344c0",
+              "tlsh": "c3e18641f6052e32dab48a2c596ad010736dbc177e446834f8dde064bfdc1bb90b576c"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "certify_web-0.1.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "33e5ffee4e95a1d43e893ea86af24f1b4ad3156ad1e14d2cafa4c3daccb4708e",
+                "md5": "bb095d1002d59d0c262fa14752514e4e",
+                "sha256": "74741027720ad7f9aacc6cecfe557f59c75e2e62068b7294e6ef5f6c81714bd5"
+              }
+            },
+            {
+              "filename": "certify_web-0.1.3.tar.gz",
+              "hashes": {
+                "blake2b_256": "92544d46d9cfd2b0bc0deafc4edc1b795136cb97d4eb440c6f0bc69a22a4a94d",
+                "md5": "8166ee18d6c7a3403a1ceaa0a5a85f16",
+                "sha256": "518976f48120183bb1c64689e296fd7501346ece5e23586823b143a6018b0522"
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "references": [
@@ -24,16 +81,10 @@
     {
       "type": "WEB",
       "url": "https://bad-packages.kam193.eu/pypi/package/certify-web"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Kamil Mańkowski (kam193)",
-      "type": "REPORTER",
-      "contact": [
-        "https://github.com/kam193",
-        "https://bad-packages.kam193.eu/"
-      ]
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/certify-web/0.1.3/"
     }
   ],
   "database_specific": {
@@ -47,7 +98,34 @@
         "versions": [
           "0.1.3"
         ]
+      },
+      {
+        "id": "IN-MAL-2026-022909",
+        "import_time": "2026-11-20T01:12:26.755914617Z",
+        "modified_time": "2026-11-20T01:08:05Z",
+        "sha256": "3632ae3bbd980743b5a64d69c328ad10e35ed1998c202f3e4a437d687f31f7a3",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.3"
+        ]
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    },
+    {
+      "name": "Kamil Mańkowski (kam193)",
+      "contact": [
+        "https://github.com/kam193",
+        "https://bad-packages.kam193.eu/"
+      ],
+      "type": "REPORTER"
+    }
+  ]
 }
