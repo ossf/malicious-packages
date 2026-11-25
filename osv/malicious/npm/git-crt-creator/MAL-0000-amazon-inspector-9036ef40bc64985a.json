@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T15:43:50Z",
+  "modified": "2026-11-25T15:43:50Z",
+  "summary": "Malicious code in git-crt-creator (npm): hijacks the `tsc` command to steal GitHub Actions secrets",
+  "details": "git-crt-creator is part of the Ghost Compiler campaign, a cluster of npm packages published by the account `jikaya497` (jikaya497@gmail.com) between October and November 2026. The weaponized packages in this campaign register themselves as `tsc`, the TypeScript compiler command, and hide their payload in a file that reads as a JavaScript comment but runs as a shell script.\n\nHow it executes: from version 1.0.2, `package.json` maps `bin.tsc` to `./index.js`, so installing the package links `node_modules/.bin/tsc` to that file. Whichever package is installed last owns that link, so installing git-crt-creator after `typescript` replaces the real compiler. `index.js` has no shebang line and is marked executable (mode 0755). When a build script or CI step runs `tsc`, the kernel cannot execute the file directly and the shell falls back to interpreting it as a shell script. The command substitution inside what a reviewer reads as a JavaScript comment then runs.\n\nPayload in 1.0.3 and 10.13.0 (GitHub Actions secret theft): the script downloads `memdump.py` from GitHub gist `madder-g/d3f2f180c7ed4925de58e5f32d2a00a8` (sha256 3f43650218b53a0391925a612b2d1c3a897ca5e0a3ada2b15d807e4528830102) and runs it with `sudo python3`. The script finds the GitHub Actions `Runner.Worker` process and dumps its readable memory. The chain extracts every masked secret held there (entries matching `\"<name>\":{\"value\":\"<value>\",\"isSecret\":true}`), base64-encodes them and posts them as the body of a new issue titled \"Claude bot\" in the repository `hiko97851/podzal` through `https://api.github.com/repos/hiko97851/podzal/issues`, authenticating with the job's own `GITHUB_TOKEN`. Every secret exposed to the job leaves the runner. The base64 encoding keeps the stolen values from being recognized by secret scanning, and the traffic goes only to api.github.com and gist.githubusercontent.com, so it blends in with normal CI egress. The sink repository already contains secrets captured from GitHub Actions runs. Version 10.13.0 is byte-identical to 1.0.3 apart from its version number, republished so it wins semver ranges.\n\nVersion 1.0.2: uses the same `tsc` hijack to send one POST to the same GitHub issues endpoint, authenticating with the runner's `GITHUB_TOKEN` and carrying a static body. It does not collect data from the host, but it executes undisclosed network code whenever `tsc` runs and was the test release for the theft chain above.\n\nIndicators: `node_modules/.bin/tsc` resolving to any package other than `typescript`; a `bin`-exposed `.js` file with no shebang and mode 0755; CI requests to `gist.githubusercontent.com/madder-g/` or to `api.github.com/repos/hiko97851/podzal/issues`; issues titled \"Claude bot\" in `hiko97851/podzal`.\n\nAny CI pipeline that installed these versions and then ran `tsc` should rotate every secret available to that workflow, including cloud, registry-publishing and API credentials.",
+  "affected": [
+    {
+      "package": {
+        "name": "git-crt-creator",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "8562919a5a1a1144f9e0ef67c25a46829a97594d92532ff3afa201fb2a67c1f7",
+              "tlsh": "16f062c695694830cb9721657f92a6f34b4aa6eca2b2b2783132c069430c42423cf71c"
+            },
+            {
+              "path": "package.json",
+              "sha256": "35474fdf548db6a437e362fd04f8b94bdee5889ec1606109e76cb487986bbaf6",
+              "tlsh": "e5d02e209aa1182301c502220d3aa40ab2b18f2f00847c0857cb683cc1deab758fe32e"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "git-crt-creator-1.0.3.tgz",
+              "hashes": {
+                "sha1": "f60e3291ff4beee91e8c523c07938ecd65b78ac2",
+                "sha512_sri": "sha512-t5LBTC1sm+S2aL2KlEm3bgHP2jdi00Bem26WGmn2s12eiunWK6sj4RDSFehtAIgJy7FYLQsc3kCtV82GXhratA=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/git-crt-creator/v/1.0.3"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023118",
+        "import_time": "2026-11-25T16:15:54.172503937Z",
+        "modified_time": "2026-11-25T15:43:50Z",
+        "sha256": "9036ef40bc64985a4722b7a92bf614213e592c9745c5fe347279e889c3f34510",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
