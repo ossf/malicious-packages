@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T06:25:20Z",
+  "modified": "2026-11-25T06:25:20Z",
+  "summary": "py2ops impersonates the python2 interpreter and runs operator-supplied code on the installer's host",
+  "details": "The package installs a CLI binary named `python2`, colliding with the historical real Python 2 interpreter name so users who type `python2` unintentionally invoke this loader. On invocation, `cli.run_payload()` performs an HTTPS GET to a hardcoded server (`https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai/api/cli/payload`, with a fallback at `https://b196q82k8891-d.space-z.ai`), base64-decodes and gunzips the response, and executes it in-process via `exec(compile(src, '<adv>', 'exec'), g); g['main'](argv)`. The payload is never written to disk, is unpinned and unsigned, and is chosen by the remote server on each call — a persistent operator-controlled remote code execution channel on the installer's machine. Enrollment is performed by `_register()`, which POSTs `os.uname().nodename` and OS/platform to `/api/cli/init` and stores the returned `apiKey` under `~/.python2/state.json`, pinning the host to the operator's control plane. A `_GateConsole` prints a banner mimicking the real Python REPL and reads single-token lines with terminal echo suppressed, then POSTs each entered token to `/api/cli/unlock` on the same server and stores an XOR-scrambled copy locally — any password, API token, or secret the user types by muscle memory into what they believe is a Python interpreter is uploaded to the operator. The package's own METADATA states that it `connects this machine to your ops server` and that `what the shell may run is decided by the operator on the server side`, and comments describe the fake REPL as `the whole cover`.",
+  "affected": [
+    {
+      "package": {
+        "name": "py2ops",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.3.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyops/cli.py",
+              "sha256": "7544408018e818896b6fb3d065acae9c17dafe6116162e9aeb65cf5649601807",
+              "tlsh": "89a2b4239e165433c783c56e0d9ad181f32a7c9326096438beddc2943f9a53681bebd9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "py2ops-2.3.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "0b7782696754ab59db2eb144cd0eef5dc1fb253301ea756d488cfc12e5684914",
+                "md5": "b83cfd4f6d74bc13a1aefc65efc757e1",
+                "sha256": "f89350b99d217af91ff2e446ddaa010eb9dca95cfa6cbf2d32aa7e058dd9cfa6"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/py2ops/2.3.1/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023107",
+        "import_time": "2026-11-25T06:44:07.045478324Z",
+        "modified_time": "2026-11-25T06:25:20Z",
+        "sha256": "a9a74f3074cecc3664413a77f71721857d30a0012b630af60731e6480c11dac3",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.3.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

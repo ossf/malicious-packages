@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T06:28:07Z",
+  "modified": "2026-11-25T06:28:07Z",
+  "summary": "qs-native-parse ships hidden native loader that decrypts and executes an opaque payload on require()",
+  "details": "qs-native-parse@1.0.1 presents itself as a pure-JavaScript query-string parser (package.json main=index.js, keywords 'querystring,qs,parse,stringify,url') but silently bundles two prebuilt native addons (native.napi.node for Linux, native_win.node for Windows) and a 3.7MB opaque sibling file named.napi_cache. index.js loads the platform-appropriate.node binary on module load inside a try/catch that swallows any error, so failures are hidden from the caller. The native addons contain format strings and syscalls consistent with staging and executing a decrypted JavaScript payload from the.napi_cache blob (strings '%s/.napi_cache', '%s.nc%lu.js', '/tmp/.%u', 'node \"%s\"'; imports fork, setsid, chmod, execlp) — i.e., the addon writes a derived.js file to /tmp and spawns node on it outside the Node module loader, bypassing any JS-level inspection. Both addons additionally gate execution on anti-analysis checks: the Linux variant enumerates CI environment variables (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NETLIFY, VERCEL, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER, SANDBOX), inspects /proc/1/cgroup for docker/containerd/kubepod/podman markers, reads /proc/self/status for TracerPid and /proc/self/maps; the Windows variant calls IsDebuggerPresent/CheckRemoteDebuggerPresent and checks for wireshark/httpdebug. No binding.gyp, C/C++/Rust sources, install script, or documentation of a native component is shipped, so there is no legitimate build artifact these binaries correspond to. The combination of undocumented native code, an opaque encrypted payload decrypted and exec'd via node on require(), swallowed load errors, and sandbox/CI/debugger evasion is the obfuscated-loader dropper shape and executes attacker-controlled code on the installer's host as soon as the module is required.",
+  "affected": [
+    {
+      "package": {
+        "name": "qs-native-parse",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native.napi.node",
+              "sha256": "cd1f62c6853d3d9b58013017263417e9c3ed0dc93ddfbcd847a65d85145020b0",
+              "tlsh": "3772854bd3a0dd3ec4d86235598b527252a2d070ef30172f0f54a2fb2d97358ab7ae52"
+            },
+            {
+              "path": "index.js",
+              "sha256": "1ccd4ea73b0de3626b405b2d8e2379e8c08ec2e7bb28943d8410e9905c1e1c29",
+              "tlsh": "b81165ce3491b48006df50340deee645f0dd651258fdbc18a891eaf56f644248ab7eb4"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "qs-native-parse-1.0.1.tgz",
+              "hashes": {
+                "sha1": "fb9b85975e45fcb111c6c15ff0ab472c9c9e7b4d",
+                "sha512_sri": "sha512-FQrqO4BtllJ+g4+lnJbafAxUGU/T+C0VLdFzEhpMWNy/SLUo1fMsXOHjmsa7oef5jC2vCPY/lDBDQRfbNGNjjQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/qs-native-parse/v/1.0.1"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023114",
+        "import_time": "2026-11-25T06:44:07.453397594Z",
+        "modified_time": "2026-11-25T06:28:07Z",
+        "sha256": "9d7a59ef9bedd72e64eb405d63a5037689bea25b38544a988f49ee1953d2d633",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

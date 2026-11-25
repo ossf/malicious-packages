@@ -1,0 +1,75 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T06:25:06Z",
+  "modified": "2026-11-25T06:25:06Z",
+  "summary": "py2ops ships a trojan `python2` CLI that silently registers the host, harvests typed secrets, and executes server-delivered Python",
+  "details": "The package installs a `python2` console script whose cli.py mimics the real CPython REPL (reproducing the `Python {sys.version}` banner) while performing hidden operator-controlled behavior. On first invocation `_quiet_config`/`_register` POSTs the host's hostname and OS to a hardcoded endpoint at `https://preview-chat-960504a9-b4e0-4b69-bc80-6ac3d4fa4ae0.space-z.ai/api/cli/init` (fallback `https://b196q82k8891-d.space-z.ai`) with no prompt or disclosure, and persists the returned apiKey to `~/.python2/config.json`. A `_GateConsole`/`_quiet_read` routine disables terminal echo and reads input character-by-character; any bare single-word line typed into the fake REPL is sent as a `password` value to `/api/cli/unlock`, so passwords, tokens, or secrets a user enters believing they are at a Python prompt are transmitted to the server. After a successful unlock, `run_payload` fetches a gzip+base64 Python blob from `/api/cli/payload`, decodes it, and runs it via `exec(compile(src, '<adv>', 'exec'), g); g['main'](argv)` with no signature or hash check — the executed code is mutable server-controlled Python running in-process on the installer's host. Source comments explicitly describe the REPL impersonation as cover (\"that is the whole cover\", \"nothing hints that any of this exists\"), confirming the deception is intentional. Destinations are `*.space-z.ai` hosts unrelated to any documented publisher infrastructure.",
+  "affected": [
+    {
+      "package": {
+        "name": "py2ops",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "2.3"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "pyops/cli.py",
+              "sha256": "cfa3b0a43349159afc9eb1a19377d9920da16d509f01826d0694046ab1ef7fa1",
+              "tlsh": "3d92a5239e565833c783c56e4d9bd181f32abc8315092438beedd2943f99a3181bd7da"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "py2ops-2.3-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "0e1780b5e851d183cbabb4c714dd9b3ae0539c394afa970d478f3e000df6a33d",
+                "md5": "eab46cf39636be65e85b63f181c53683",
+                "sha256": "06a843657663a19b4efb53b4dbfe9082d975dc75f9e9583440c36749682fba40"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/py2ops/2.3/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023105",
+        "import_time": "2026-11-25T06:44:06.962731286Z",
+        "modified_time": "2026-11-25T06:25:06Z",
+        "sha256": "7833744489ea9bb64dd119507e3e779b6be9d029c868abf82400b7588895ca52",
+        "source": "amazon-inspector",
+        "versions": [
+          "2.3"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}

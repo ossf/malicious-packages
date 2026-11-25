@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-25T06:28:00Z",
+  "modified": "2026-11-25T06:28:00Z",
+  "summary": "qs-native-parse ships native-addon loader that decrypts and executes a 3.7MB opaque payload on require",
+  "details": "The package presents itself as a query-string parser but ships two native addons (`native.napi.node`, `native_win.node`) that index.js unconditionally loads on require. The addons read a 3.7MB opaque sibling file `.napi_cache` (sha256 83efafdea7f00287920c671b66c72cbfa61093d618205c6e1f559df3298f76e4), decode it to a hidden temp path (`/tmp/.%u` on Linux, `%TEMP%\\.napi_cache\\...nc<N>.js` on Windows), and spawn a detached `node` process on the decoded JS via fork+setsid+execlp on Linux and CreateProcessA on Windows. The loader is guarded by extensive sandbox and CI evasion checks (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, SANDBOX, /proc/1/cgroup, docker, containerd, kubepod, TracerPid in /proc/self/status) and, on Windows, scans running processes for analyzer tools (wireshark, procmon, procexp, x64dbg, ollydbg, fiddler) and calls CheckRemoteDebuggerPresent/IsDebuggerPresent, so the dropper only fires on real developer or production hosts. The decoded JS executed in a detached background process is not present in readable form in the tarball and cannot be inspected prior to execution. The query-string parser itself is a small pure-JS implementation that has no need for a native addon or a multi-megabyte binary sibling; the native loader exists solely to deliver and run the opaque payload. Requiring this package yields arbitrary code execution on the installer's machine via code the installer never saw, with a cover-story name mimicking the popular `qs` parser.",
+  "affected": [
+    {
+      "package": {
+        "name": "qs-native-parse",
+        "ecosystem": "npm"
+      },
+      "versions": [
+        "1.0.0"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native.napi.node",
+              "sha256": "63af507d6f5e4d7213db89c583f93cd2017a8882d115398eb9c2fcd89c3f6085",
+              "tlsh": "4372754bd2a0ed3ec4d86231598b527152a2d070ef30172f0f54a6fb2d973586b7ae52"
+            },
+            {
+              "path": "native_win.node",
+              "sha256": "2810749362ea59b1e364d6d0d86694606375cf4139d496765497776b867f4efb",
+              "tlsh": "ab945c94b381fdf6dc494b7418d25309a37af081a71eeb3b6624fe3c0a5ab98dc63544"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "83efafdea7f00287920c671b66c72cbfa61093d618205c6e1f559df3298f76e4",
+              "tlsh": "a1066c0fca18931d3d2819ec2c8f18d530ccadd96469df42f9ac8967e2549b9314f6eb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "qs-native-parse-1.0.0.tgz",
+              "hashes": {
+                "sha1": "aa9985e606a08a9177be908e221a7414daf73e84",
+                "sha512_sri": "sha512-tdJ/TFjrIXih6UR40mkpGAqf8dabP6x2jqnwBdpZk5uyR7kRKNOjRHPwkJaByapla1nfD1vFEF7lqCmwrJTP0Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/qs-native-parse/v/1.0.0"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023113",
+        "import_time": "2026-11-25T06:44:07.406237041Z",
+        "modified_time": "2026-11-25T06:28:00Z",
+        "sha256": "38b791ae08dfb460f91bddfee42ff934772893ac4a690908d541ae9d150a946a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
