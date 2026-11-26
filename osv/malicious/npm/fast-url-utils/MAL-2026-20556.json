@@ -1,0 +1,165 @@
+{
+  "modified": "2026-11-25T06:45:31Z",
+  "published": "2026-11-25T06:27:23Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20556",
+  "summary": "Malicious code in fast-url-utils (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (dfe43baa179f806258b2dca8560148e23c136c2d9882a0755b977bb642364232)\nThe package is advertised as a pure JavaScript URL-parsing utility (parseUrl/buildUrl/getParams) but index.js unconditionally loads a platform-specific native addon at module load: `require('./native_win.node')` on win32, otherwise `./native.napi.node`. Neither binary contains URL-parsing logic; both are small loaders that extract a bundled 1,321,343-byte opaque file named `.napi_cache` (zero printable strings, i.e. encrypted/packed) to a staging location and execute it. The Windows loader references `%s\\.napi_cache`, `%s.nc%lu.js`, and `node \"%s\"`, decrypting the blob to a staged.js file and spawning `node` on it. The Linux loader dynamically links `fork`, `setsid`, `execlp`, `chmod`, `fopen64`, and `fwrite`, performing the standard write-chmod-fork-setsid-exec daemonization sequence; the Windows loader uses `CreateProcessA` and `SetFileAttributesA` for the same drop-detach-execute flow, producing a session-detached child process that outlives the importing Node process. Both native binaries also embed broad sandbox-evasion gating: CI environment variable checks (GITHUB_ACTIONS, GITLAB_CI, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER), container detection (/proc/1/cgroup, containerd, /proc/1/cmdline, dockerinit), and debugger/analysis-tool detection (TracerPid, IsDebuggerPresent, CheckRemoteDebuggerPresent, Process32First/Next, wireshark, httpdebug), so the dropper stays dormant on scanning infrastructure and only fires on real developer hosts. A URL-parsing library has no legitimate need for a native addon, an opaque multi-megabyte blob, daemonization primitives, or anti-analysis gating; the stated purpose is a cover story for an import-time dropper that executes attacker-chosen code on the installer with no network fetch required.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-url-utils"
+      },
+      "versions": [
+        "1.1.2",
+        "1.1.3",
+        "1.1.4",
+        "1.1.5",
+        "1.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "index.js",
+              "sha256": "fecaf9bc76b46f42523c3603d8ee76646fa39bbdbc341db3228bddc605c80a74",
+              "tlsh": "0a01b19972e1e1ac15fa23f405925321f5fee240358ca3d770ec51906c68c684e23cf7"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "02c8e4a9444526ae6c3b4428caede26ac4fa187cc8c1097e4a5a6e054b13cd33",
+              "tlsh": "41557c0fca09931d3c2819ed2c8f18d530ccadd96465df52f9ac8967e2588b9314f6eb"
+            },
+            {
+              "path": "native.napi.node",
+              "sha256": "57518d0410a70420f04c2238b52abde3862d174d9e67cdc5b96a74b5556e3620",
+              "tlsh": "b872854bd2a0dd3ec4d86235598b527252a2d070ef30172f0f54a2fb2dd7358ae7ae52"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "fast-url-utils-1.1.2.tgz",
+              "hashes": {
+                "sha1": "14e9779b92c9f0187cf2187f1bdab4f37aa90e63",
+                "sha512_sri": "sha512-6OXReZT/2sqZX1gIrEY2sO5F17H5Mv9eukTwy4U5I/erhtN84pMDkVVpHVHxIiPHOcXRSYvZ7orVuh1e7QgSgQ=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fast-url-utils/v/1.1.2"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fast-url-utils/v/1.1.3"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fast-url-utils/v/1.1.4"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fast-url-utils/v/1.1.5"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/fast-url-utils/v/1.1.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023108",
+        "import_time": "2026-11-25T06:44:07.158126668Z",
+        "modified_time": "2026-11-25T06:27:23Z",
+        "sha256": "286b9591ca8920365696fdf54ba9df523c5c186029179dcbd3cb14e9b4fc6388",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.2"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023112",
+        "import_time": "2026-11-25T06:44:07.375489594Z",
+        "modified_time": "2026-11-25T06:27:52Z",
+        "sha256": "626fb6253cdc27ab201b3380274cd1469ce57cb43dbaaf8168a623532f2b4408",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.3"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023109",
+        "import_time": "2026-11-25T06:44:07.202063571Z",
+        "modified_time": "2026-11-25T06:27:30Z",
+        "sha256": "8e12af3536879108fd1f333a46183aeb78355a3b82c452620b52a6330ede9384",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.4"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023110",
+        "import_time": "2026-11-25T06:44:07.269425706Z",
+        "modified_time": "2026-11-25T06:27:39Z",
+        "sha256": "bb5481ee75061ed42fd6202e27f80a4604e0d670eaa541e070e822c2a3b85ab0",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.5"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023111",
+        "import_time": "2026-11-25T06:44:07.316546881Z",
+        "modified_time": "2026-11-25T06:27:45Z",
+        "sha256": "dfe43baa179f806258b2dca8560148e23c136c2d9882a0755b977bb642364232",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.1.1"
+        ]
+      }
+    ]
+  }
+}
