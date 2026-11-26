@@ -1,0 +1,105 @@
+{
+  "modified": "2026-11-25T06:45:34Z",
+  "published": "2026-11-25T06:28:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-2026-20557",
+  "summary": "Malicious code in qs-native-parse (npm)",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (9d7a59ef9bedd72e64eb405d63a5037689bea25b38544a988f49ee1953d2d633)\nqs-native-parse@1.0.1 presents itself as a pure-JavaScript query-string parser (package.json main=index.js, keywords 'querystring,qs,parse,stringify,url') but silently bundles two prebuilt native addons (native.napi.node for Linux, native_win.node for Windows) and a 3.7MB opaque sibling file named.napi_cache. index.js loads the platform-appropriate.node binary on module load inside a try/catch that swallows any error, so failures are hidden from the caller. The native addons contain format strings and syscalls consistent with staging and executing a decrypted JavaScript payload from the.napi_cache blob (strings '%s/.napi_cache', '%s.nc%lu.js', '/tmp/.%u', 'node \"%s\"'; imports fork, setsid, chmod, execlp) — i.e., the addon writes a derived.js file to /tmp and spawns node on it outside the Node module loader, bypassing any JS-level inspection. Both addons additionally gate execution on anti-analysis checks: the Linux variant enumerates CI environment variables (GITHUB_ACTIONS, GITLAB_CI, TRAVIS, CIRCLECI, JENKINS_URL, BUILDKITE, CODEBUILD_BUILD_ID, APPVEYOR, SEMAPHORE, TEAMCITY_VERSION, BITBUCKET_BUILD_NUMBER, NETLIFY, VERCEL, NOW_GITHUB_DEPLOYMENT, CF_BUILD_ID, SCREWDRIVER, SANDBOX), inspects /proc/1/cgroup for docker/containerd/kubepod/podman markers, reads /proc/self/status for TracerPid and /proc/self/maps; the Windows variant calls IsDebuggerPresent/CheckRemoteDebuggerPresent and checks for wireshark/httpdebug. No binding.gyp, C/C++/Rust sources, install script, or documentation of a native component is shipped, so there is no legitimate build artifact these binaries correspond to. The combination of undocumented native code, an opaque encrypted payload decrypted and exec'd via node on require(), swallowed load errors, and sandbox/CI/debugger evasion is the obfuscated-loader dropper shape and executes attacker-controlled code on the installer's host as soon as the module is required.\n",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs-native-parse"
+      },
+      "versions": [
+        "1.0.0",
+        "1.0.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "path": "native.napi.node",
+              "sha256": "63af507d6f5e4d7213db89c583f93cd2017a8882d115398eb9c2fcd89c3f6085",
+              "tlsh": "4372754bd2a0ed3ec4d86231598b527152a2d070ef30172f0f54a6fb2d973586b7ae52"
+            },
+            {
+              "path": "native_win.node",
+              "sha256": "2810749362ea59b1e364d6d0d86694606375cf4139d496765497776b867f4efb",
+              "tlsh": "ab945c94b381fdf6dc494b7418d25309a37af081a71eeb3b6624fe3c0a5ab98dc63544"
+            },
+            {
+              "path": ".napi_cache",
+              "sha256": "83efafdea7f00287920c671b66c72cbfa61093d618205c6e1f559df3298f76e4",
+              "tlsh": "a1066c0fca18931d3d2819ec2c8f18d530ccadd96469df42f9ac8967e2549b9314f6eb"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "qs-native-parse-1.0.0.tgz",
+              "hashes": {
+                "sha1": "aa9985e606a08a9177be908e221a7414daf73e84",
+                "sha512_sri": "sha512-tdJ/TFjrIXih6UR40mkpGAqf8dabP6x2jqnwBdpZk5uyR7kRKNOjRHPwkJaByapla1nfD1vFEF7lqCmwrJTP0Q=="
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/qs-native-parse/v/1.0.0"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/qs-native-parse/v/1.0.1"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "type": "FINDER",
+      "contact": [
+        "inspector-research@amazon.com"
+      ]
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023113",
+        "import_time": "2026-11-25T06:44:07.406237041Z",
+        "modified_time": "2026-11-25T06:28:00Z",
+        "sha256": "38b791ae08dfb460f91bddfee42ff934772893ac4a690908d541ae9d150a946a",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.0"
+        ]
+      },
+      {
+        "id": "IN-MAL-2026-023114",
+        "import_time": "2026-11-25T06:44:07.453397594Z",
+        "modified_time": "2026-11-25T06:28:07Z",
+        "sha256": "9d7a59ef9bedd72e64eb405d63a5037689bea25b38544a988f49ee1953d2d633",
+        "source": "amazon-inspector",
+        "versions": [
+          "1.0.1"
+        ]
+      }
+    ]
+  }
+}
