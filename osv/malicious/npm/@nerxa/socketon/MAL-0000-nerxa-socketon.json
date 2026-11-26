@@ -1,0 +1,75 @@
+{
+  "modified": "2026-11-14T21:30:00Z",
+  "schema_version": "1.7.4",
+  "id": "MAL-0000-nerxa-socketon",
+  "summary": "Malicious code in @nerxa/socketon (npm)",
+  "details": "This package is a fork of the Baileys WhatsApp Web library (npm) and belongs to the \"PhantomSub\" family described by OX Security in September 2026: the publisher injected code that, without the installer asking, uses the installer's own authenticated WhatsApp session to follow WhatsApp Channels (newsletters) the publisher chose.\n\n`package/src/Socket/messages-recv.js` line 37 defines a character-code decoder (`qvnr`). Lines 39-47 use it to build two channel identifiers (`120363428355171197@newsletter` and `120363428984357510@newsletter`) and the method names `newsletterFollow` and `newsletterMute`, so none of them appears in the source as text.\n\nLines 1744-1757: 30 seconds after the connection opens, the library follows each channel and, 3 seconds later, mutes it, so the user is not notified of its posts.\n\n`package/src/Socket/newsletter.js` lines 167-193 also download a channel list from a file on raw.githubusercontent.com (`noxXza/data/refs/heads/main/noxleys.json`) 30 seconds after the connection opens, and follow every channel in it. The publisher can change that list without publishing a new version. I did not fetch it.\n\nThe README does not mention it. The repository field names `mazikenzagentz-create/luna-baileys-1`.\n\n`vp-baileys` 9.0.34 and `xdc-baileys` 1.22.4 ship byte-identical copies of both files, so the three packages carry one payload.\n\nLine numbers refer to version 1.21.2.\n\nStatic review of the published tarball found no code that sends WhatsApp credentials or session keys off-host, no install-time payload (the only install hook, where present, is Baileys' stock Node.js version check in `engine-requirements.js`), and no persistence; the payload runs when an application creates a WhatsApp socket with the library. The harm is the covert use of the victim's account to inflate the publisher's channel followers.\n\nSHA-256 of the published npm tarball: 1.21.2: `6829ca4f165a28a3cf4f5c0cf7c9cac5f707d779cac7a625799e2e81239a44cd`.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "npm",
+        "name": "@nerxa/socketon"
+      },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
+      "versions": [
+        "1.21.0",
+        "1.21.1",
+        "1.21.2"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "ARTICLE",
+      "url": "https://www.ox.security/blog/phantomsub-malicious-npm-campaign-secretly-adds-users-to-whatsapp-spam-channels/"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://www.npmjs.com/package/@nerxa/socketon"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Rising Sun Solutions LLC",
+      "type": "FINDER",
+      "contact": [
+        "https://github.com/jaym2026"
+      ]
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "files": [
+        {
+          "digests": {
+            "sha256": "be52666363c41f1e6fac9059100da3f02ba648fb9dd2204c2d3bc4e8cd5f0ecc"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/src/Socket/messages-recv.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        },
+        {
+          "digests": {
+            "sha256": "d8fcc3c9b3991ef497d6312c826f160451a119d444067d41db81fd93a9805860"
+          },
+          "note": "File containing the injected WhatsApp Channel follow code.",
+          "paths": [
+            "package/src/Socket/newsletter.js"
+          ],
+          "source": "PACKAGE_ARCHIVE"
+        }
+      ]
+    }
+  }
+}
