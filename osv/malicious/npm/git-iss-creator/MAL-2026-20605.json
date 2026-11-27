@@ -1,21 +1,39 @@
 {
-  "modified": "2026-11-25T15:44:10Z",
-  "published": "2026-11-25T15:44:10Z",
   "schema_version": "1.7.4",
   "id": "MAL-2026-20605",
+  "published": "2026-11-25T15:44:10Z",
+  "modified": "2026-11-27T15:19:35.329604130Z",
+  "aliases": [
+    "GHSA-g947-3cf3-wv98"
+  ],
   "summary": "Malicious code in git-iss-creator (npm)",
-  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a816c6d188cf8b9198ab3f92bed2f539f0ddcfa6aba9fc9b35ca9b00f6e5cf4)\ngit-iss-creator is part of the Ghost Compiler campaign, a cluster of npm packages published by the account `jikaya497` (jikaya497@gmail.com) between October and November 2026. The weaponized packages in this campaign register themselves as `tsc`, the TypeScript compiler command, and hide their payload in a file that reads as a JavaScript comment but runs as a shell script.\n\nHow it executes: `package.json` maps `bin.tsc` to `./index.js`, so installing the package links `node_modules/.bin/tsc` to that file. Whichever package is installed last owns that link, so installing git-iss-creator after `typescript` replaces the real compiler. `index.js` has no shebang line and is marked executable (mode 0755). When a build script or CI step runs `tsc`, the kernel cannot execute the file directly and the shell falls back to interpreting it as a shell script. The command substitution inside what a reviewer reads as a JavaScript comment then runs.\n\nPayload (GitHub Actions secret theft): the script retrieves `memdump.py` through the GitHub API (`https://api.github.com/gists/d3f2f180c7ed4925de58e5f32d2a00a8`, read with `jq`), a second route to the same payload used by the related package `git-crt-creator` that keeps working if the gist CDN is blocked. It runs the script with `sudo python3`; the script finds the GitHub Actions `Runner.Worker` process and dumps its readable memory. The chain extracts every masked secret held there (entries matching `\"\u003cname\u003e\":{\"value\":\"\u003cvalue\u003e\",\"isSecret\":true}`), base64-encodes them and posts them as the body of a new issue titled \"Claude bot\" in the repository `hiko97851/podzal` through `https://api.github.com/repos/hiko97851/podzal/issues`, authenticating with the job's own `GITHUB_TOKEN`. Every secret exposed to the job leaves the runner. The base64 encoding keeps the stolen values from being recognized by secret scanning, and the traffic goes only to api.github.com, so it blends in with normal CI egress. The sink repository already contains secrets captured from GitHub Actions runs.\n\nIndicators: `node_modules/.bin/tsc` resolving to any package other than `typescript`; a `bin`-exposed `.js` file with no shebang and mode 0755; CI requests to `api.github.com/gists/d3f2f180c7ed4925de58e5f32d2a00a8` or to `api.github.com/repos/hiko97851/podzal/issues`; memdump.py sha256 3f43650218b53a0391925a612b2d1c3a897ca5e0a3ada2b15d807e4528830102.\n\nAny CI pipeline that installed this package and then ran `tsc` should rotate every secret available to that workflow, including cloud, registry-publishing and API credentials.\n",
+  "details": "\n---\n_-= Per source details. Do not edit below this line.=-_\n\n## Source: amazon-inspector (8a816c6d188cf8b9198ab3f92bed2f539f0ddcfa6aba9fc9b35ca9b00f6e5cf4)\ngit-iss-creator is part of the Ghost Compiler campaign, a cluster of npm packages published by the account `jikaya497` (jikaya497@gmail.com) between October and November 2026. The weaponized packages in this campaign register themselves as `tsc`, the TypeScript compiler command, and hide their payload in a file that reads as a JavaScript comment but runs as a shell script.\n\nHow it executes: `package.json` maps `bin.tsc` to `./index.js`, so installing the package links `node_modules/.bin/tsc` to that file. Whichever package is installed last owns that link, so installing git-iss-creator after `typescript` replaces the real compiler. `index.js` has no shebang line and is marked executable (mode 0755). When a build script or CI step runs `tsc`, the kernel cannot execute the file directly and the shell falls back to interpreting it as a shell script. The command substitution inside what a reviewer reads as a JavaScript comment then runs.\n\nPayload (GitHub Actions secret theft): the script retrieves `memdump.py` through the GitHub API (`https://api.github.com/gists/d3f2f180c7ed4925de58e5f32d2a00a8`, read with `jq`), a second route to the same payload used by the related package `git-crt-creator` that keeps working if the gist CDN is blocked. It runs the script with `sudo python3`; the script finds the GitHub Actions `Runner.Worker` process and dumps its readable memory. The chain extracts every masked secret held there (entries matching `\"<name>\":{\"value\":\"<value>\",\"isSecret\":true}`), base64-encodes them and posts them as the body of a new issue titled \"Claude bot\" in the repository `hiko97851/podzal` through `https://api.github.com/repos/hiko97851/podzal/issues`, authenticating with the job's own `GITHUB_TOKEN`. Every secret exposed to the job leaves the runner. The base64 encoding keeps the stolen values from being recognized by secret scanning, and the traffic goes only to api.github.com, so it blends in with normal CI egress. The sink repository already contains secrets captured from GitHub Actions runs.\n\nIndicators: `node_modules/.bin/tsc` resolving to any package other than `typescript`; a `bin`-exposed `.js` file with no shebang and mode 0755; CI requests to `api.github.com/gists/d3f2f180c7ed4925de58e5f32d2a00a8` or to `api.github.com/repos/hiko97851/podzal/issues`; memdump.py sha256 3f43650218b53a0391925a612b2d1c3a897ca5e0a3ada2b15d807e4528830102.\n\nAny CI pipeline that installed this package and then ran `tsc` should rotate every secret available to that workflow, including cloud, registry-publishing and API credentials.\n\n## Source: ghsa-malware (ed9ef4a533af86f31d17bd50b8bac93571af71cd88126c5894065972d5fffa26)\nAny computer that has this package installed or running should be considered fully compromised. All secrets and keys stored on that computer should be rotated immediately from a different computer. The package should be removed, but as full control of the computer may have been given to an outside entity, there is no guarantee that removing the package will remove all malicious software resulting from installing it.\n",
   "affected": [
     {
       "package": {
-        "ecosystem": "npm",
-        "name": "git-iss-creator"
+        "name": "git-iss-creator",
+        "ecosystem": "npm"
       },
+      "ranges": [
+        {
+          "type": "SEMVER",
+          "events": [
+            {
+              "introduced": "0"
+            }
+          ]
+        }
+      ],
       "versions": [
         "10.13.0"
       ],
       "database_specific": {
         "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          },
           {
             "cweId": "CWE-506",
             "description": "The product contains code that appears to be malicious in nature.",
@@ -52,15 +70,10 @@
     {
       "type": "PACKAGE",
       "url": "https://www.npmjs.com/package/git-iss-creator/v/10.13.0"
-    }
-  ],
-  "credits": [
+    },
     {
-      "name": "Amazon Inspector",
-      "type": "FINDER",
-      "contact": [
-        "inspector-research@amazon.com"
-      ]
+      "type": "ADVISORY",
+      "url": "https://github.com/advisories/GHSA-g947-3cf3-wv98"
     }
   ],
   "database_specific": {
@@ -74,7 +87,33 @@
         "versions": [
           "10.13.0"
         ]
+      },
+      {
+        "id": "GHSA-g947-3cf3-wv98",
+        "import_time": "2026-11-27T15:18:04.117027042Z",
+        "modified_time": "2026-11-27T14:56:47Z",
+        "ranges": [
+          {
+            "events": [
+              {
+                "introduced": "0"
+              }
+            ],
+            "type": "SEMVER"
+          }
+        ],
+        "sha256": "ed9ef4a533af86f31d17bd50b8bac93571af71cd88126c5894065972d5fffa26",
+        "source": "ghsa-malware"
       }
     ]
-  }
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
 }
