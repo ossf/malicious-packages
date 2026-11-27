@@ -1,0 +1,64 @@
+{
+  "modified": "2026-11-09T01:12:36Z",
+  "published": "2026-11-06T23:00:00Z",
+  "schema_version": "1.7.4",
+  "details": "dynamic-mcp presents itself as an MCP server for crash-dump and kernel analysis (wrapping the crash utility and bpftrace). Every version, by default, opens a public Cloudflare quick tunnel to an unauthenticated HTTP server on the user's machine and reports the tunnel URL to a host the publisher controls, giving whoever holds that URL the server's tools; from 1.0.4 the tools include arbitrary command execution (bash -c) with the user's privileges. The README describes only local stdio and HTTP use and mentions none of this.\n\nTrigger: launching the server (dynamic-mcp or dynamic-mcp-http; the CLI has no --help path, so dynamic-mcp --help launches it too), unless ENABLE_REVERSE_CONNECTION is set to false.\n\nLines below are from 1.0.9 (sdist sha256 cebb5d206b015b1b851121e31946f5a0a0b42daa697cfece1429d6f396623179):\n- src/dynamic_mcp/server.py:1489-1490 sets ENABLE_REVERSE_CONNECTION=true when it is not set, turning the tunnel on by default\n- src/dynamic_mcp/server.py:1530-1552 starts the HTTP server on 0.0.0.0:8080 unless --stdio is given\n- src/dynamic_mcp/tunnel_manager.py:83-104 downloads cloudflared from the cloudflare/cloudflared latest GitHub release into ~/.local/bin/cloudflared, with no version pin or checksum\n- src/dynamic_mcp/tunnel_manager.py:126-131 runs cloudflared tunnel --url http://localhost:<port>\n- src/dynamic_mcp/server.py:1387-1406 POSTs the server name, capabilities and tunnel URL to https://production.dynamic-agent.workers.dev/api/mcp/connect, and server.py:1409-1432 sends a heartbeat there every 20 seconds\n- src/dynamic_mcp/server.py:989-1080 dispatches /api/mcp/request calls straight to the tool handlers with no authentication, and server.py:643-680 runs bash -c <command> and returns its output\n\nHistory: 0.2.0 (2025-12-28) through 0.3.4 already open the tunnel by default and register the URL with https://dynamic.artem-blagodarenko.workers.dev, exposing the crash and bpftrace tools; 1.0.4 (2026-07-25) adds bash -c execution; 1.0.6 onward register with production.dynamic-agent.workers.dev.\n\nFound by Bitbison (https://bitbison.io) in its registry's backfill of packages already on PyPI, which builds each release in a sandbox and records what it does; a review confirming it from the source was published on 2026-11-06. The package has opened the tunnel by default since its first version, 2025-12-28 (about ten months), and exposed command execution since 1.0.4, 2026-07-25 (about three and a half months), with no report; pypistats counts 1,172 downloads in the last 180 days.",
+  "affected": [
+    {
+      "package": {
+        "ecosystem": "PyPI",
+        "name": "dynamic-mcp"
+      },
+      "versions": [
+        "0.2.0",
+        "0.3.0",
+        "0.3.4",
+        "1.0.4",
+        "1.0.6",
+        "1.0.7",
+        "1.0.8",
+        "1.0.9"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "type": "REPORT",
+      "url": "https://registry.bitbison.io/pypi/dynamic-mcp"
+    },
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/dynamic-mcp/"
+    }
+  ],
+  "credits": [
+    {
+      "name": "Bitbison",
+      "contact": [
+        "https://bitbison.io",
+        "https://registry.bitbison.io"
+      ],
+      "type": "FINDER"
+    }
+  ],
+  "database_specific": {
+    "iocs": {
+      "domains": [
+        "production.dynamic-agent.workers.dev",
+        "dynamic.artem-blagodarenko.workers.dev"
+      ],
+      "urls": [
+        "https://production.dynamic-agent.workers.dev/api/mcp/connect"
+      ],
+      "files": [
+        {
+          "paths": [
+            "~/.local/bin/cloudflared"
+          ],
+          "note": "cloudflared downloaded and run to open the tunnel",
+          "source": "DROPPED"
+        }
+      ]
+    }
+  }
+}
