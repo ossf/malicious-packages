@@ -1,0 +1,87 @@
+{
+  "schema_version": "1.7.4",
+  "published": "2026-11-27T00:11:39Z",
+  "modified": "2026-11-27T00:11:39Z",
+  "summary": "httpnex fetches remote code on import and injects a C2 polling backdoor into the project's entry scripts",
+  "details": "httpnex is an httpx look-alike whose `httpnex/__init__.py` ends with an undocumented `from._warmup import _boot` call. On import, `_warmup.py` starts a background thread that downloads Python source from https://fpapi.cc.cd/load (overridable via an HX_URL environment variable) and writes it, wrapped in `#hx` marker comments, into the installer's own entry scripts (main.py, run.py, bot.py, app.py, __main__.py, start.py) in the current working directory, after creating `.bak` copies. No signature or integrity verification is performed and the destination domain is unrelated to the declared upstream project. The fallback payload embedded in `_warmup.py` as `_DEFAULT` — the block written into the entry files when the remote fetch fails — spawns a daemon thread that polls https://fpapi.cc.cd/pool roughly every 60 seconds, sends the machine hostname from `socket.gethostname()` in an `X-H` request header, and executes the base64- plus zlib-decoded response via `exec(compile(...))`. The result is unauthenticated remote command execution on the host, host-identifier disclosure to the operator domain, and persistence written directly into the developer's project source so the channel reopens on every subsequent run of the modified program.",
+  "affected": [
+    {
+      "package": {
+        "name": "httpnex",
+        "ecosystem": "PyPI"
+      },
+      "versions": [
+        "0.1.1"
+      ],
+      "database_specific": {
+        "cwes": [
+          {
+            "cweId": "CWE-506",
+            "description": "The product contains code that appears to be malicious in nature.",
+            "name": "Embedded Malicious Code"
+          }
+        ],
+        "indicators": {
+          "evidence_files": [
+            {
+              "artifacts": [
+                "httpnex-0.1.1.tar.gz",
+                "httpnex-0.1.1-py3-none-any.whl"
+              ],
+              "path": "httpnex/_warmup.py",
+              "sha256": "6668d5b2c9ac49c595e73407f4a799443a0c6f54121df4b7714ca4027b4fdfff",
+              "tlsh": "430242919c556cb3c7a293bc1d25c260a33ebd83ad066574feec93582f5e179c0f02a9"
+            }
+          ],
+          "package_integrity": [
+            {
+              "filename": "httpnex-0.1.1-py3-none-any.whl",
+              "hashes": {
+                "blake2b_256": "6fcd5a69af0fbe45f5d90bd5eaea3ad704e2cc8351150ba977ab7a122cc34fcd",
+                "md5": "b00b9a843bc2d4467496486b5066d344",
+                "sha256": "29c05dd2282f67b68d580b0bf6e9444974a16553e708b57e2a54a6ff523b7634"
+              }
+            },
+            {
+              "filename": "httpnex-0.1.1.tar.gz",
+              "hashes": {
+                "blake2b_256": "92146d7305e373ea6da005df1288c4a48b01378a920f637bfec74e46bc648d8b",
+                "md5": "eccecf43c6e8366c2706eee5cf9126fb",
+                "sha256": "ebb9702f3cac1c07fb74d7e99bac87ec6bbf68b070a5cd28d656887d3c730716"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "references": [
+    {
+      "type": "PACKAGE",
+      "url": "https://pypi.org/project/httpnex/0.1.1/"
+    }
+  ],
+  "database_specific": {
+    "malicious-packages-origins": [
+      {
+        "id": "IN-MAL-2026-023134",
+        "import_time": "2026-11-27T00:30:27.862145367Z",
+        "modified_time": "2026-11-27T00:11:39Z",
+        "sha256": "e4b0b6a8a90903d9183cb60e31a9afbca2ab29188a1168079f703e47ab5bfb2e",
+        "source": "amazon-inspector",
+        "versions": [
+          "0.1.1"
+        ]
+      }
+    ]
+  },
+  "credits": [
+    {
+      "name": "Amazon Inspector",
+      "contact": [
+        "inspector-research@amazon.com"
+      ],
+      "type": "FINDER"
+    }
+  ]
+}
